@@ -1,5 +1,6 @@
 #include "Utilities/HUDSubsystem.h"
 #include "Blueprint/UserWidget.h"
+#include "Core/UI/GameplayHUDs/UW_HUD_Status_Base.h"
 #include "Core/UI/VehicleHUDs/UW_HUD_Vehicle_Base.h"
 #include "Core/UI/VehicleHUDs/UW_VehicleHUDComp_Reticle.h"
 #include "Core/UI/VehicleHUDs/UW_VehicleHUDComp_Rangefinder.h"
@@ -13,6 +14,14 @@
 #include "Character_Base.h"
 #include "Vehicle_Base.h"
 #include "Core/Weapons/VehicleWeaponLogicComponent.h"
+
+void UHUDSubsystem::SpawnStatusHUD(TSubclassOf<UUserWidget> HUDClass)
+{
+	APlayerController* PC = GetLocalPlayer()->GetPlayerController(GetWorld());
+	ACharacter_Base* Character = (PC) ? Cast<ACharacter_Base>(PC->GetPawn()) : nullptr;
+	StatusHUD = CreateWidget<UUW_HUD_Status_Base>(PC, HUDClass);
+	StatusHUD->AddToViewport();
+}
 
 void UHUDSubsystem::SpawnVehicleSeatHUD(TSubclassOf<UUserWidget> HUDClass)
 {
@@ -59,17 +68,34 @@ void UHUDSubsystem::SetupVehicleGunnerHUD()
 	Vehicle->OnVehicleYawUpdate.AddUniqueDynamic(this, &UHUDSubsystem::UpdateCompassHUD_Vehicle);	
 	Vehicle->VehicleWeaponLogicComponent->OnTurretRotated.AddUniqueDynamic(this, &UHUDSubsystem::HandleTurretRotationUpdate);
 	Vehicle->VehicleWeaponLogicComponent->OnTurretPitched.AddUniqueDynamic(this, &UHUDSubsystem::HandleTurretPitchUpdate);
+	Vehicle->VehicleWeaponLogicComponent->OnVehicleWeaponFired.AddUniqueDynamic(this, &UHUDSubsystem::UpdateStatusHUD_CAMCount_Vehicle);
 	Vehicle->VehicleWeaponLogicComponent->OnVehicleWeaponSwapped.AddUniqueDynamic(this, &UHUDSubsystem::UpdateEquippedWeaponHUD_Vehicle);
 	//reload
 	//shoot
 
 	//call once to update/sync on start
+	UpdateStatusHUD_CAMCount_Vehicle(CSI);
 	UpdateEquippedWeaponHUD_Vehicle(CSI);		//reticle, name, status
 	UpdateCompassHUD_Vehicle(CSI);
 	HandleTurretRotationUpdate(CSI);
 	HandleTurretPitchUpdate(CSI);
 	//optic
 	//countermeasure
+}
+
+void UHUDSubsystem::UpdateStatusHUD_CAMCount_Vehicle(int32 SeatIndex)
+{
+	APlayerController* PC = GetLocalPlayer()->GetPlayerController(GetWorld());
+	ACharacter_Base* Character = (PC) ? Cast<ACharacter_Base>(PC->GetPawn()) : nullptr;
+	AVehicle_Base* Vehicle = Character->CharacterState.CharacterVehicleState.CurrentVehicle;
+	if (SeatIndex != Character->CharacterState.CharacterVehicleState.CSI)
+	{
+		return;
+	}
+	int32& CWI = Vehicle->VehicleWeaponLogicComponent->VehicleWeaponSystem.Find(SeatIndex)->VehicleWeaponSystemState.EquippedWeaponState.CurrentWeaponIndex;
+	int32& CAM = Vehicle->VehicleWeaponLogicComponent->VehicleWeaponSystem.Find(SeatIndex)->Weapons[CWI].VehicleWeaponState.BaseWeaponRuntimeData.WeaponState.CurrentAmmoinMag;
+	
+	StatusHUD->UpdateCAMCount(CAM);
 }
 
 void UHUDSubsystem::UpdateSpeedHUD_Vehicle()

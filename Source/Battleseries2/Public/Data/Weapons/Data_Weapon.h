@@ -143,14 +143,17 @@ struct FAmmoData
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	EAmmoDepletionMethod AmmoDepletionMethod = EAmmoDepletionMethod::Default;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	float ReloadSpeed = 0.0f;
-
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ToolTip = "Maximum ammo in one magazine"))
 	int32 MagSize = 0;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ToolTip = "Maximum reserve ammo for the weapon"))
 	int32 MaxReserveAmmo = 0;					//<-- this ties it to the gun, not the player inventory (if there even is one... BR mode)
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ToolTip = "Time it takes to reload"))
+	float ReloadSpeed = 0.0f;		//is this gonna work with anim-based reloads?
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ToolTip = "Time it takes between 1 mag size reserve replenish"))
+	float RefillReserveSpeed = 0.0f;
 };
 
 //culmnination of everything in this data container

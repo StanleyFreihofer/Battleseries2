@@ -27,6 +27,7 @@ struct FEquippedWeaponState;					//WeaponTypes.h
 DECLARE_DELEGATE(FOnTriggerReleased);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnVehicleWeaponSystemCleared);
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnVehicleWeaponFired, int32, SeatIndex);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnVehicleWeaponSwapped, int32, SeatIndex);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnTurretRotated, int32, SeatIndex);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnTurretPitched, int32, SeatIndex);
@@ -129,6 +130,8 @@ public:
 	FOnVehicleWeaponSystemCleared OnVWSCleared;
 
 	UPROPERTY(BlueprintAssignable, Category = "Event Dispatchers")
+	FOnVehicleWeaponFired OnVehicleWeaponFired;
+	UPROPERTY(BlueprintAssignable, Category = "Event Dispatchers")
 	FOnVehicleWeaponSwapped OnVehicleWeaponSwapped;
 	UPROPERTY(BlueprintAssignable, Category = "Event Dispatchers")
 	FWindowedRangefinder WindowedRangefinder;
@@ -209,6 +212,10 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void FireVehicleWeapon(int32 SeatIndex);
 	UFUNCTION(BlueprintCallable)
+	void HandleStartAutoload(int32 SeatIndex);
+	UFUNCTION(BlueprintCallable)
+	void AutoloadNewMag(int32 SeatIndex, int32 WeaponIndex, int32 MagSize);
+	UFUNCTION(BlueprintCallable)
 	void ApplyWeaponRecoilJostle(int32 SeatIndex, int32 WeaponIndex);
 	UFUNCTION(BlueprintCallable)
 	void StopFire(int32 SeatIndex);
@@ -243,5 +250,7 @@ private:
 	UProjectilePoolSubsystem* ProjectileSubsystem;
 	IVehicleDataAccessor* OwnerDataAccessor;
 
-	FTimerHandle TimerHandle_AutoFire;
+	FTimerHandle TimerHandle_AutoFire;			//put into actual architecture/move somewhere else
+	FTimerHandle TimerHandle_Reload;			//put into actual architecture/move somewhere else (per weapon, weapons need to track their own progress)
+	FTimerHandle TimerHandle_ReserveResupply; //put into actual architecture/move somewhere else
 };

@@ -61,11 +61,6 @@ void UWeaponFunctions::CalculateReload(int32 MagSize, int32 CAM, int32 CRA, int3
 	OutCAM = CAM + BulletsToLoad;
 }
 
-int32 UWeaponFunctions::ReloadMag(int32 CAM, int32 CRA)
-{
-	return int32();
-}
-
 int32 UWeaponFunctions::UpdateWeaponIndex(TArray<FWeapon_Runtime> Weapons, int32 CurrentWeaponIndex)
 {
 	int32 NewWeaponIndex = CurrentWeaponIndex++;

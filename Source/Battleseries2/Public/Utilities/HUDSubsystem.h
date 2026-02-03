@@ -4,6 +4,7 @@
 #include "Subsystems/LocalPlayerSubsystem.h"
 #include "HUDSubsystem.generated.h"
 
+class UUW_HUD_Status_Base;
 class UUW_HUD_Vehicle_Base;
 class AVehicle_Base;
 
@@ -13,6 +14,8 @@ class BATTLESERIES2_API UHUDSubsystem : public ULocalPlayerSubsystem
 	GENERATED_BODY()
 
 public:
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    UUW_HUD_Status_Base* StatusHUD;         //ammo, health
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
     UUW_HUD_Vehicle_Base* CurrentVehicleHUD;
@@ -23,13 +26,16 @@ public:
     //scorefeed
     //ammohealth
 
-
+    UFUNCTION(BlueprintCallable)
+    void SpawnStatusHUD(TSubclassOf<UUserWidget> HUDClass);
     UFUNCTION(BlueprintCallable)
     void SpawnVehicleSeatHUD(TSubclassOf<UUserWidget> HUDClass);
     UFUNCTION(BlueprintCallable)
     void SetupVehicleDriverHUD();
     UFUNCTION(BlueprintCallable)
     void SetupVehicleGunnerHUD();
+    UFUNCTION(BlueprintCallable)
+    void UpdateStatusHUD_CAMCount_Vehicle(int32 SeatIndex);
     UFUNCTION(BlueprintCallable)
     void UpdateEquippedWeaponHUD_Vehicle(int32 SeatIndex);
     UFUNCTION(BlueprintCallable)

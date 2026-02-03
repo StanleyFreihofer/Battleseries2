@@ -847,10 +847,55 @@ void UVehicleWeaponLogicComponent::FireVehicleWeapon(int32 SeatIndex)
 
 	//handle ammo depletion
 	UWeaponFunctions::UpdateCurrentAmmoInMag(CurrentWeapon, -1, StaticWeaponData.AmmoData.MagSize);
+	OnVehicleWeaponFired.Broadcast(SeatIndex);
 	if (CurrentWeapon.WeaponState.CurrentAmmoinMag == 0)
 	{
 		StopFire(SeatIndex);
-		//StartAutoload
+		HandleStartAutoload(SeatIndex);
+	}
+}
+
+void UVehicleWeaponLogicComponent::HandleStartAutoload(int32 SeatIndex)
+{
+	FVehicleWeaponSystem_Runtime& SeatWeaponSystem = *VehicleWeaponSystem.Find(SeatIndex);
+	int32& CWI = SeatWeaponSystem.VehicleWeaponSystemState.EquippedWeaponState.CurrentWeaponIndex;
+	const FBaseWeaponData& StaticWeaponData = GetBaseWeaponDataInSlot(SeatIndex, CWI);
+	FWeapon_Runtime& CurrentWeapon = SeatWeaponSystem.Weapons[CWI].VehicleWeaponState.BaseWeaponRuntimeData;
+
+	if (CurrentWeapon.WeaponState.CurrentReserveAmmo > 0)
+	{
+		if (!GetWorld()->GetTimerManager().IsTimerActive(TimerHandle_Reload))
+		{
+			const float& ReloadSpeed = StaticWeaponData.AmmoData.ReloadSpeed;
+			const int32& MagSize = StaticWeaponData.AmmoData.MagSize;
+
+			GetWorld()->GetTimerManager().SetTimer(TimerHandle_Reload, [this, SeatIndex, CWI, MagSize]()
+			{
+				AutoloadNewMag(SeatIndex, CWI, MagSize);
+			}, ReloadSpeed, false);
+		}
+	}
+	else
+	{
+		//add dynamic that listens for when reserve ammo is refilled
+	}
+}
+
+void UVehicleWeaponLogicComponent::AutoloadNewMag(int32 SeatIndex, int32 WeaponIndex, int32 MagSize)
+{
+	FVehicleWeaponSystem_Runtime& SeatWeaponSystem = *VehicleWeaponSystem.Find(SeatIndex);
+	FWeapon_Runtime& CurrentWeapon = SeatWeaponSystem.Weapons[WeaponIndex].VehicleWeaponState.BaseWeaponRuntimeData;
+	int32 NewCAM, NewCRA;
+	UWeaponFunctions::CalculateReload(MagSize, CurrentWeapon.WeaponState.CurrentAmmoinMag, CurrentWeapon.WeaponState.CurrentReserveAmmo, NewCAM, NewCRA);
+
+	CurrentWeapon.WeaponState.CurrentAmmoinMag = NewCAM;
+	CurrentWeapon.WeaponState.CurrentAmmoinMag = NewCRA;
+
+	CurrentWeapon.WeaponState.canFire = true;
+
+	if (SeatWeaponSystem.Weapons[WeaponIndex].VehicleWeaponInstanceData.bAreProjectilesMounted)
+	{
+		MountProjectiles(SeatIndex, WeaponIndex);
 	}
 }
 
