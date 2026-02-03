@@ -24,6 +24,8 @@ public:
 	static bool PerformWeaponLineTrace(const UObject* WorldContextObject, const FTransform& StartTransform, FHitResult& OutHit, TArray<AActor*> ActorsToIgnore);
 	UFUNCTION(BlueprintCallable)
 	static int32 UpdateCurrentAmmoInMag(FWeapon_Runtime& CurrentWeapon, int32 AmmoDelta, int32 MagSize);
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	static void CalculateReload(int32 MagSize, int32 CAM, int32 CRA, int32& OutCAM, int32& OutCRA);
 	UFUNCTION(BlueprintCallable)
 	static int32 ReloadMag(int32 CAM, int32 CRA);
 	UFUNCTION(BlueprintCallable, BlueprintPure)

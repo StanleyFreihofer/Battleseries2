@@ -40,6 +40,7 @@ bool UWeaponFunctions::PerformWeaponLineTrace(const UObject* WorldContextObject,
 
 int32 UWeaponFunctions::UpdateCurrentAmmoInMag(FWeapon_Runtime& CurrentWeapon, int32 AmmoDelta, int32 MagSize)
 {
+	//can be used for firing or resupplying logic
 	CurrentWeapon.WeaponState.CurrentAmmoinMag = FMath::Clamp(CurrentWeapon.WeaponState.CurrentAmmoinMag + AmmoDelta, 0, MagSize);
 	if (CurrentWeapon.WeaponState.CurrentAmmoinMag == 0)
 	{
@@ -47,7 +48,17 @@ int32 UWeaponFunctions::UpdateCurrentAmmoInMag(FWeapon_Runtime& CurrentWeapon, i
 		//CeaseFire();
 		//DryFire();
 	}
+	UE_LOG(LogTemp, Warning, TEXT("WeaponFunction::UpdateCurrentAmmoInMag] CAM = %d"), CurrentWeapon.WeaponState.CurrentAmmoinMag);
 	return CurrentWeapon.WeaponState.CurrentAmmoinMag;
+}
+
+void UWeaponFunctions::CalculateReload(int32 MagSize, int32 CAM, int32 CRA, int32& OutCAM, int32& OutCRA)
+{
+	//need max reserve ammo input?
+	int32 BulletsFiredFromMag = MagSize - CAM;
+	int32 BulletsToLoad = FMath::Min(BulletsFiredFromMag, CRA);
+	OutCRA = CRA - BulletsToLoad;
+	OutCAM = CAM + BulletsToLoad;
 }
 
 int32 UWeaponFunctions::ReloadMag(int32 CAM, int32 CRA)

@@ -743,7 +743,7 @@ void UVehicleWeaponLogicComponent::HandleStartFire(int32 SeatIndex)
 					StartFire(SeatIndex);
 
 					//autofire
-					if (CurrentWeapon.WeaponState.canFire)	//if here so if the first fire changed this state
+					if (CurrentWeapon.WeaponState.canFire)
 					{
 						FTimerDelegate FireDelegate;
 						FireDelegate.BindUFunction(this, FName("FireVehicleWeapon"), SeatIndex);
@@ -849,11 +849,11 @@ void UVehicleWeaponLogicComponent::FireVehicleWeapon(int32 SeatIndex)
 	UWeaponFunctions::UpdateCurrentAmmoInMag(CurrentWeapon, -1, StaticWeaponData.AmmoData.MagSize);
 	if (CurrentWeapon.WeaponState.CurrentAmmoinMag == 0)
 	{
-		int32 SI = SeatIndex;
-		//GetWorld()->GetTimerManager().SetTimerForNextTick([this, SI]()
-		//{
-			StopFire(SI);
-		//});
+		GetWorld()->GetTimerManager().SetTimerForNextTick([this]()
+		{
+			StopFire(0);
+		});
+		//StopFire(SeatIndex);
 	}
 }
 
@@ -895,13 +895,14 @@ void UVehicleWeaponLogicComponent::StopWeaponSlotFire(int32 SeatIndex, int32 Wea
 	FVehicleWeaponState& VehicleWeaponState = SeatWeaponSystem.Weapons[WeaponIndex].VehicleWeaponState;
 	FWeapon_Runtime& CurrentWeapon = VehicleWeaponState.BaseWeaponRuntimeData;
 	
-	//GetWorld()->GetTimerManager().SetTimerForNextTick([this, &SeatWeaponSystem]()
-	//{
+	GetWorld()->GetTimerManager().SetTimerForNextTick([this, &SeatWeaponSystem]()
+	{
 		SeatWeaponSystem.VehicleWeaponSystemState.WeaponAudioComponent->SetTriggerParameter(FName("Event_StopFire"));
-	//});
+	});
 
 	GetWorld()->GetTimerManager().SetTimerForNextTick([this, &VehicleWeaponState]()
 	{
+		UE_LOG(LogTemp, Warning, TEXT("[VWLC::StopWeaponSlotFire] StopFire Audio"))
 		for (int V = 0; V < VehicleWeaponState.MuzzleVFXPool.Num(); V++)
 		{
 			VehicleWeaponState.MuzzleVFXPool[V]->Deactivate();
