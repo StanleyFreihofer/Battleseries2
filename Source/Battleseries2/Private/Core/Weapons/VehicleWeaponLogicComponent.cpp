@@ -849,11 +849,8 @@ void UVehicleWeaponLogicComponent::FireVehicleWeapon(int32 SeatIndex)
 	UWeaponFunctions::UpdateCurrentAmmoInMag(CurrentWeapon, -1, StaticWeaponData.AmmoData.MagSize);
 	if (CurrentWeapon.WeaponState.CurrentAmmoinMag == 0)
 	{
-		int32 SI = SeatIndex;
-		//GetWorld()->GetTimerManager().SetTimerForNextTick([this, SI]()
-		//{
-			StopFire(SI);
-		//});
+		StopFire(SeatIndex);
+		//StartAutoload
 	}
 }
 
@@ -895,10 +892,7 @@ void UVehicleWeaponLogicComponent::StopWeaponSlotFire(int32 SeatIndex, int32 Wea
 	FVehicleWeaponState& VehicleWeaponState = SeatWeaponSystem.Weapons[WeaponIndex].VehicleWeaponState;
 	FWeapon_Runtime& CurrentWeapon = VehicleWeaponState.BaseWeaponRuntimeData;
 	
-	//GetWorld()->GetTimerManager().SetTimerForNextTick([this, &SeatWeaponSystem]()
-	//{
-		SeatWeaponSystem.VehicleWeaponSystemState.WeaponAudioComponent->SetTriggerParameter(FName("Event_StopFire"));
-	//});
+	SeatWeaponSystem.VehicleWeaponSystemState.WeaponAudioComponent->SetTriggerParameter(FName("Event_StopFire"));
 
 	GetWorld()->GetTimerManager().SetTimerForNextTick([this, &VehicleWeaponState]()
 	{
