@@ -120,6 +120,50 @@ void ACharacter_Base::CharacterExitVehicle()
 	bUseControllerRotationYaw = true;
 }
 
+void ACharacter_Base::CharacterEnterSeat(const FCharacterSeatContext& SeatContext)
+{
+	SetActorRelativeTransform(SeatContext.SeatTransform);
+	UpdateCharacterStance(SeatContext.SeatStance);
+	ManageIMC(nullptr, SeatContext.InputMappingContext, 1);
+	UpdateCharacterMeshVisibility(SeatContext.bIsCharacterVisible);
+	if (SeatContext.SeatHUD)
+	{
+		UpdateVehicleHUD(SeatContext.SeatHUD);
+	}
+
+	//sync vehicle states for hud
+	switch (CharacterState.CharacterVehicleState.CurrentVehicle->VehicleData->Seats[CharacterState.CharacterVehicleState.CSI].SeatRole)
+	{
+		case E_SeatRole::Driver:
+			GetLocalPlayerHUDSystem()->UpdateSpeedHUD_Vehicle(GetCurrentVehicle()->GetVelocity().Size());
+			break;
+		case E_SeatRole::Gunner:
+			break;
+		case E_SeatRole::DriverGunner:
+			GetLocalPlayerHUDSystem()->UpdateSpeedHUD_Vehicle(GetCurrentVehicle()->GetVelocity().Size());
+
+			//turrets/heading
+			GetLocalPlayerHUDSystem()->UpdateCompassHUD_Vehicle(GetCurrentVehicle()->VehicleCurrentState.SeatStates[GetCSI()].ActiveCamera->GetComponentRotation().Yaw);
+			const int32& CTI = GetCurrentVehicle()->VehicleData->Seats[GetCSI()].AvailableItems.ControlledTurretIndexes[0];
+
+			GetLocalPlayerHUDSystem()->HandleTurretRotationUpdate(GetCurrentVehicle()->VehicleCurrentState.SeatStates[GetCSI()].ActiveCamera->GetComponentRotation().Yaw);
+			
+			GetLocalPlayerHUDSystem()->HandleTurretPitchUpdate
+			(
+				GetCurrentVehicle()->VehicleData->Turrets[CTI].TurretPitch.TurretMinMax.GetLowerBoundValue(),
+				GetCurrentVehicle()->VehicleData->Turrets[CTI].TurretPitch.TurretMinMax.GetUpperBoundValue(),
+				GetCurrentVehicle()->VehicleWeaponLogicComponent->TurretStates[CTI].CurrentTurretPitch
+			);
+			break;
+	}
+}
+
+void ACharacter_Base::CharacterExitSeat(const FCharacterSeatContext& SeatContext)
+{
+	UpdateVehicleHUD(nullptr);
+	ManageIMC(SeatContext.InputMappingContext, nullptr, 0);
+}
+
 void ACharacter_Base::UpdateSeatIndexes(int32 NewLSI, int32 NewCSI, int32 NewNSI)
 {
 	CharacterState.CharacterVehicleState.LSI = NewLSI;
@@ -192,15 +236,15 @@ void ACharacter_Base::ShowCharacterMesh()
 	GetMesh()->UpdateComponentToWorld();
 }
 
-void ACharacter_Base::UpdateCharacterMeshVisibility(bool HideMesh)
+void ACharacter_Base::UpdateCharacterMeshVisibility(bool ShowMesh)
 {
-	if (HideMesh)
+	if (ShowMesh)
 	{
-		HideCharacterMesh();
+		ShowCharacterMesh();
 	}
 	else
 	{
-		ShowCharacterMesh();
+		HideCharacterMesh();
 	}
 }
 
@@ -242,19 +286,37 @@ UHUDSubsystem* ACharacter_Base::GetLocalPlayerHUDSystem()
 	return nullptr;
 }
 
+AVehicle_Base* ACharacter_Base::GetCurrentVehicle()
+{
+	if (CharacterState.CharacterVehicleState.CurrentVehicle)
+	{
+		return CharacterState.CharacterVehicleState.CurrentVehicle;
+	}
+	else
+	{
+		return nullptr;
+	}
+}
+
+int32& ACharacter_Base::GetCSI()
+{
+	return CharacterState.CharacterVehicleState.CSI;
+}
+
 void ACharacter_Base::UpdateVehicleHUD(TSubclassOf<UUserWidget> HUDClass)
 {
 	if (UHUDSubsystem* HUDSub = GetLocalPlayerHUDSystem())
 	{
-		if (!HUDSub->CurrentVehicleHUD)
+		if (!HUDSub->CurrentVehicleHUD && HUDClass)
 		{
 			HUDSub->SpawnVehicleSeatHUD(HUDClass);
 		}
 		else
 		{
-			if (!HUDClass)
+			if (!HUDClass && HUDSub->CurrentVehicleHUD)
 			{
 				HUDSub->CurrentVehicleHUD->RemoveFromParent();
+				HUDSub->CurrentVehicleHUD = nullptr;
 			}
 		}
 	}

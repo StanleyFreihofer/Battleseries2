@@ -17,6 +17,7 @@ class ACharacter_Base;
 class AProjectile_Base;
 class UWeaponLogicComponent;
 class UDataManagerSubsystem;
+class UHUDSubsystem;
 struct FWeapon_Runtime;							//WeaponTypes.h
 struct FEquippedWeaponState;					//WeaponTypes.h
 
@@ -27,7 +28,8 @@ struct FEquippedWeaponState;					//WeaponTypes.h
 DECLARE_DELEGATE(FOnTriggerReleased);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnVehicleWeaponSystemCleared);
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnVehicleWeaponFired, int32, SeatIndex);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnCAMUpdated, int32, SeatIndex);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnCRAUpdated, int32, SeatIndex, int32, CRA);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnVehicleWeaponSwapped, int32, SeatIndex);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnTurretRotated, int32, SeatIndex);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnTurretPitched, int32, SeatIndex);
@@ -130,7 +132,9 @@ public:
 	FOnVehicleWeaponSystemCleared OnVWSCleared;
 
 	UPROPERTY(BlueprintAssignable, Category = "Event Dispatchers")
-	FOnVehicleWeaponFired OnVehicleWeaponFired;
+	FOnCAMUpdated OnCAMUpdated;
+	UPROPERTY(BlueprintAssignable, Category = "Event Dispatchers")
+	FOnCRAUpdated OnCRAUpdated;
 	UPROPERTY(BlueprintAssignable, Category = "Event Dispatchers")
 	FOnVehicleWeaponSwapped OnVehicleWeaponSwapped;
 	UPROPERTY(BlueprintAssignable, Category = "Event Dispatchers")
@@ -231,13 +235,19 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void BindToInput(ACharacter_Base* Character);
 
+	//GETTERS
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	const FBaseWeaponData& GetBaseWeaponDataInSlot(int32 SeatIndex, int32 WeaponIndex);
-
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	float GetTurretWorldYaw(int32 TurretIndex);
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	int32 GetSeatIndexForTurret(int32 TurretIndex);
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	int32& GetCWIForSeat(int32 SeatIndex);
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	FVehicleWeapon_Runtime& GetEquippedWeaponInSeat(int32 SeatIndex);
+	UFUNCTION()
+	TWeakObjectPtr<UHUDSubsystem> GetHUDSystem();
 
 protected:
 	//(SeatIndex, [WeaponIndex] BaseWeaponData)

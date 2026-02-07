@@ -174,18 +174,9 @@ struct FAvailableItems
 };
 
 USTRUCT(BlueprintType)
-struct FSeatData
+struct FCharacterSeatContext
 {
 	GENERATED_BODY()
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	FText SeatName = FText::GetEmpty();
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	E_SeatRole SeatRole = E_SeatRole::Driver;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	E_ViewMethod ViewMethod = E_ViewMethod::Windowed;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	bool bIsCharacterVisible = true;
@@ -201,6 +192,24 @@ struct FSeatData
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	ECharacterCurrentStance SeatStance = ECharacterCurrentStance::Sitting;
+};
+
+USTRUCT(BlueprintType)
+struct FSeatData
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	FText SeatName = FText::GetEmpty();
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	E_SeatRole SeatRole = E_SeatRole::Driver;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	E_ViewMethod ViewMethod = E_ViewMethod::Windowed;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	FCharacterSeatContext DefaultCharacterContext;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (EditCondition = "SeatRole == E_SeatRole::DriverGunner || SeatRole == E_SeatRole::Gunner", EditConditionHides))
 	FAvailableItems AvailableItems;

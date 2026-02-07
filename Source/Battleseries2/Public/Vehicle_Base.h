@@ -21,12 +21,13 @@ class ACharacter_Base;
 class USaveSubsystem;
 class UPlayerSave_Loadout;
 class UVehicleWeaponLogicComponent;
+class UHUDSubsystem;
 struct FSavedSeatLoadout;
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnSeatsInitialized);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnMeshReady);
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnVehicleYawUpdate, int32, SeatIndex);		//broadcast when vehicle is turned/steered/yawed
-DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnVehicleSpeedUpdate);		//broadcast on when throttle input
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnVehicleYawUpdate, float, Yaw);		//broadcast when vehicle is turned/steered/yawed
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnVehicleSpeedUpdate, float, Speed);		//broadcast on when throttle input
 
 
 
@@ -192,10 +193,12 @@ public:
 	void SetupNewSeat(ACharacter_Base* Character);
 	UFUNCTION(BlueprintCallable)
 	void SetupDriver(ACharacter_Base* Character);
-	UFUNCTION(BlueprintCallable)
-	void DropDriver();
+	UFUNCTION()
+	void DropDriver(TWeakObjectPtr<ACharacter_Base> Character);
 	UFUNCTION(BlueprintCallable)
 	void SetupGunner(ACharacter_Base* Character);
+	UFUNCTION()
+	void DropGunner(TWeakObjectPtr<ACharacter_Base> Character);
 
 	UFUNCTION(BlueprintCallable)
 	void EnterVehicle(ACharacter_Base* Character);
@@ -222,7 +225,7 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void HandleThrottle_GV(float InputValue);	//groundvehicle reactionary to ApplyThrottle
 	UFUNCTION(BlueprintCallable)
-	void ApplySteering_GV(const FInputActionValue& SteeringValue);
+	void ApplySteering_GV(float SteeringValue);
 
 	//Applying
 	UFUNCTION(BlueprintCallable)
@@ -230,10 +233,12 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void SetVehicleAndInit(FVehicleStartingData InputVehicleStartingData);		//used to hook in during runtime i guess? (also calls init/kicks off vehicle setup)
-	UFUNCTION(BlueprintCallable)
-	void UpdateSeatRangefinders();
+
 	UFUNCTION(BlueprintCallable)
 	void UpdateSeatList_AllOccupants();
+
+	UFUNCTION()
+	TWeakObjectPtr<UHUDSubsystem> GetHUDSystem();
 
 	//Interfaces
 	virtual USkeletalMeshComponent* GetVehicleMesh() const override;
@@ -241,6 +246,8 @@ public:
 	virtual const FVehicleData& GetVehicleData() const override;
 	virtual const FVehicleCurrentState& GetVehicleState() const override;
 	virtual AVehicle_Base& GetVehicle() override;
+
+	//Getters
 
 	//BP Wrappers
 	UFUNCTION(BlueprintCallable, BlueprintPure)

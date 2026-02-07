@@ -63,7 +63,6 @@ void AVehicle_Base::BeginPlay()
 void AVehicle_Base::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	//UpdateSeatRangefinders();
 }
 
 // Called to bind functionality to input
@@ -326,17 +325,6 @@ void AVehicle_Base::SetVehicleAndInit(FVehicleStartingData InputVehicleStartingD
 	Init_VehicleData();
 }
 
-void AVehicle_Base::UpdateSeatRangefinders()
-{
-	//for each seat, if seat is a gunner and if occupied, fire rangefinder based on view method context
-	if (!VehicleData)
-	{
-		return;
-	}
-
-
-}
-
 void AVehicle_Base::UpdateSeatList_AllOccupants()
 {
 	//update seat list/call update seat list function on character side for each character in vehicle
@@ -363,7 +351,6 @@ void AVehicle_Base::UpdateSeatList_AllOccupants()
 void AVehicle_Base::ApplyLoadoutToSeat(int32 SeatIndex)		//this functions applies everything in the loadout (weapons, optics, upgrades, camos (if applicable), etc)
 {
 	//now only called by ApplyLoadoutToVehicle when enter main seat (driver/drivergunner) and is then applied TO EVERY SEAT
-	//by loadout we mean gunner/drivergunner type shiii
 	switch (VehicleData->Seats[SeatIndex].SeatRole)
 	{
 		case E_SeatRole::DriverGunner:
@@ -375,11 +362,15 @@ void AVehicle_Base::ApplyLoadoutToSeat(int32 SeatIndex)		//this functions applie
 
 void AVehicle_Base::ApplyLoadoutToVehicle()
 {
-	for (int32 i = 0; i < VehicleData->Seats.Num(); i++)
+	if (!VehicleCurrentState.GenericVehicleState.LoadoutApplied)
 	{
-		ApplyLoadoutToSeat(i);
+		for (int32 i = 0; i < VehicleData->Seats.Num(); i++)
+		{
+			ApplyLoadoutToSeat(i);
+		}
+		ApplyCamoToVehicle(SaveSubsystem->GetVehicleLoadout(VehicleData->Vehicle_Type).VehicleCamo);
+		VehicleCurrentState.GenericVehicleState.LoadoutApplied = true;
 	}
-	ApplyCamoToVehicle(SaveSubsystem->GetVehicleLoadout(VehicleData->Vehicle_Type).VehicleCamo);
 }
 
 void AVehicle_Base::ApplyCamoToVehicle(FName CamoID)
@@ -472,24 +463,19 @@ UCameraComponent* AVehicle_Base::SpawnAndAttachCamera(FName SocketToAttach, USke
 bool AVehicle_Base::CycleThroughSeats(ACharacter_Base* Character)
 {
 	int32 TotalSeats = VehicleData->Seats.Num();
-	int32 StartIndex = Character->CharacterState.CharacterVehicleState.CSI;
+	int32& StartIndex = Character->GetCSI();
 	int32 Offset = (TotalSeats == 1) ? 0 : 1;
 
 	//try each seat exactly once, skipping the current seat
 	for (; Offset < TotalSeats; ++Offset)
 	{
 		int32 CheckIndex = (StartIndex + Offset) % TotalSeats;		//wraps around the seat list circularly, so if you’re at the last seat, it loops back to seat 0.
-		UE_LOG(LogTemp, Warning, TEXT("Seat that we are checking: %d"), CheckIndex);
 		if (!VehicleCurrentState.SeatStates[CheckIndex].isOccupied)
 		{
 			Character->UpdateSeatIndexes(Character->CharacterState.CharacterVehicleState.CSI, CheckIndex, CheckIndex);
-
-			UE_LOG(LogTemp, Warning, TEXT("Switched to seat %d"), CheckIndex);
 			return true;
 		}
 	}
-
-	UE_LOG(LogTemp, Warning, TEXT("No available seats to switch to"));
 	return false;
 }
 
@@ -561,8 +547,13 @@ void AVehicle_Base::DropSeat(ACharacter_Base* Character)
 {
 	//should usually be LSI
 	const FSeatData& SeatData = VehicleData->Seats[Character->CharacterState.CharacterVehicleState.LSI];
+	Character->CharacterExitSeat(SeatData.DefaultCharacterContext);
+	if (Character->IsLocallyControlled())
+	{
+		VehicleCurrentState.SeatStates[Character->GetCSI()].UpdateHUD = false;
+	}
 	HandleSeatOccupationStatus(false, Character->CharacterState.CharacterVehicleState.LSI);
-	Character->ManageIMC(SeatData.InputMappingContext, nullptr, 0);
+
 	if (SeatData.ViewMethod == E_ViewMethod::Remote)
 	{
 		if (VehicleCurrentState.SeatStates[Character->CharacterState.CharacterVehicleState.LSI].ActiveCamera)
@@ -573,32 +564,25 @@ void AVehicle_Base::DropSeat(ACharacter_Base* Character)
 	switch (SeatData.SeatRole)
 	{
 		case E_SeatRole::Driver:
+			DropDriver(Character);
+			break;
+		case E_SeatRole::Gunner:
+			DropGunner(Character);
+			break;
 		case E_SeatRole::DriverGunner:
-			DropDriver();
+			DropDriver(Character);
+			DropGunner(Character);
 			break;
 	}
 }
 
 void AVehicle_Base::SetupNewSeat(ACharacter_Base* Character)
 {
-	//should usually be CSI
-	UE_LOG(LogTemp, Log, TEXT("SETUP NEW SEAT"));
+	const FSeatData& SeatData = VehicleData->Seats[Character->GetCSI()];
+	HandleSeatOccupationStatus(true, Character->GetCSI());
 
-	const FSeatData& SeatData = VehicleData->Seats[Character->CharacterState.CharacterVehicleState.CSI];
-
-	HandleSeatOccupationStatus(true, Character->CharacterState.CharacterVehicleState.CSI);
 	UpdateSeatList_AllOccupants();
-	Character->SetActorRelativeTransform(SeatData.SeatTransform); //do this somewhere else?
-	Character->UpdateCharacterStance(SeatData.SeatStance); //do this somewhere else?
-	Character->ManageIMC(nullptr, SeatData.InputMappingContext, 1);
-	Character->UpdateCharacterMeshVisibility(!SeatData.bIsCharacterVisible);
-	//add seat hud
-	if (SeatData.SeatHUD)
-	{
-		Character->UpdateVehicleHUD(SeatData.SeatHUD);
-	}
 
-	UE_LOG(LogTemp, Error, TEXT("[Vehicle_Base::SetupNewSeat] ApplyLoadoutToSeat will be fired here"));
 	switch (SeatData.SeatRole)
 	{
 		case E_SeatRole::Driver:
@@ -616,14 +600,17 @@ void AVehicle_Base::SetupNewSeat(ACharacter_Base* Character)
 		case E_SeatRole::Passenger:
 			break;
 	}
-
 	HandleViewMethod(Character, SeatData);
+
+	Character->CharacterEnterSeat(SeatData.DefaultCharacterContext);
+	if (Character->IsLocallyControlled())
+	{
+		VehicleCurrentState.SeatStates[Character->GetCSI()].UpdateHUD = true;
+	}
 }
 
 void AVehicle_Base::SetupDriver(ACharacter_Base* Character)
 {
-	Character->GetLocalPlayerHUDSystem()->SetupVehicleDriverHUD();
-
 	//start engine
 	UGameplayStatics::PlaySoundAtLocation(this, Cast<USoundBase>(VehicleData->GenericVehicleAudio.EngineStartupAudio), GetActorLocation(), FRotator::ZeroRotator, 1.0f, 1.0f, 0.0f);
 	if (!VehicleCurrentState.GenericVehicleState.EngineAudioComponent)
@@ -641,7 +628,7 @@ void AVehicle_Base::SetupDriver(ACharacter_Base* Character)
 	//engine/whatever else start up audio
 }
 
-void AVehicle_Base::DropDriver()
+void AVehicle_Base::DropDriver(TWeakObjectPtr<ACharacter_Base> Character)
 {
 	//shutdown engine
 	VehicleCurrentState.GenericVehicleState.EngineAudioComponent->Stop();
@@ -658,9 +645,13 @@ void AVehicle_Base::SetupGunner(ACharacter_Base* Character)
 	{
 		VehicleWeaponLogicComponent->WindowedRangefinder.AddDynamic(Character, &ACharacter_Base::UpdateRangefinder_WindowedVehicle);
 	}
-	Character->GetLocalPlayerHUDSystem()->SetupVehicleGunnerHUD();		//<-- all hud related bindings happen here
 
 	VehicleWeaponLogicComponent->SelectWeapon(Character->CharacterState.CharacterVehicleState.CSI, 0);
+}
+
+void AVehicle_Base::DropGunner(TWeakObjectPtr<ACharacter_Base> Character)
+{
+	VehicleWeaponLogicComponent->WindowedRangefinder.RemoveDynamic(Character.Get(), &ACharacter_Base::UpdateRangefinder_WindowedVehicle);
 }
 
 void AVehicle_Base::EnterVehicle(ACharacter_Base* Character)
@@ -707,12 +698,10 @@ void AVehicle_Base::HandleThrottle_GV(float InputValue)
 	if (InputValue > 0)
 	{
 		ChaosVehicleMovement->SetThrottleInput(InputValue);
-		OnVehicleSpeedUpdate.Broadcast();
 	}
 	if (InputValue < 0)
 	{
 		ChaosVehicleMovement->SetBrakeInput(FMath::Abs(InputValue));
-		OnVehicleSpeedUpdate.Broadcast();
 	}
 	if (InputValue == 0)
 	{
@@ -721,7 +710,6 @@ void AVehicle_Base::HandleThrottle_GV(float InputValue)
 		
 		GetWorld()->GetTimerManager().SetTimer(SpeedTimer, [this]()
 		{
-			OnVehicleSpeedUpdate.Broadcast();
 		}, 0.05f, true);
 		if (GetVelocity().Size() <= 0.0f)
 		{
@@ -730,15 +718,15 @@ void AVehicle_Base::HandleThrottle_GV(float InputValue)
 	}
 }
 
-void AVehicle_Base::ApplySteering_GV(const FInputActionValue& SteeringValue)
+void AVehicle_Base::ApplySteering_GV(float SteeringValue)
 {
 	if (VehicleData->GroundVehicle_Data.canIdleTurn)
 	{
-		ChaosVehicleMovement->SetYawInput(SteeringValue.Get<float>());
+		ChaosVehicleMovement->SetYawInput(SteeringValue);
 	}
 	else
 	{
-		ChaosVehicleMovement->SetSteeringInput(SteeringValue.Get<float>());
+		ChaosVehicleMovement->SetSteeringInput(SteeringValue);
 	}
 	for (int32 i = 0; i < VehicleCurrentState.SeatStates.Num(); i++)
 	{
@@ -768,6 +756,18 @@ void AVehicle_Base::ReleaseThrottle()
 			break;
 	}
 }
+
+TWeakObjectPtr<UHUDSubsystem> AVehicle_Base::GetHUDSystem()
+{
+	TWeakObjectPtr<ULocalPlayer> LP = GetWorld()->GetFirstLocalPlayerFromController();
+	if (LP.Get())
+	{
+		TWeakObjectPtr<UHUDSubsystem> HUDSub = LP->GetSubsystem<UHUDSubsystem>();
+		return HUDSub;
+	}
+	return nullptr;
+}
+
 
 USkeletalMeshComponent* AVehicle_Base::GetVehicleMesh() const
 {

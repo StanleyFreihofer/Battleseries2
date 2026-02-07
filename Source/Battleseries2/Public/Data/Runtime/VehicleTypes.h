@@ -14,6 +14,9 @@ struct FSeatState
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	bool isOccupied = false;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool UpdateHUD = false;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
 	USpringArmComponent* DefaultSpringArm = nullptr;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
@@ -59,6 +62,9 @@ struct FGenericVehicleState
 	class UAudioComponent* HornAudioComponent = nullptr;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FName CurrentCamo = NAME_None;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool LoadoutApplied = false;			//<--- change to string, denote WHO's loadout it is?
 };
 
 USTRUCT(BlueprintType)

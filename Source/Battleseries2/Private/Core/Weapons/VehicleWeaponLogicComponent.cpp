@@ -254,13 +254,7 @@ void UVehicleWeaponLogicComponent::ApplyWeaponsToSeat(int32 SeatIndex, TArray<FN
 	int32 NumWeapons = WeaponIDs.Num();
 	check(VehicleWeaponSystem.Find(SeatIndex));
 	VehicleWeaponSystem.Find(SeatIndex)->Weapons.SetNum(NumWeapons);
-	/**
-	if (!CurrentVehicleBaseWeaponData.Find(SeatIndex))
-	{
-		//add static weapon data to seat map if none
-		CurrentVehicleBaseWeaponData.Add(SeatIndex, TArray<const FBaseWeaponData*>());
-	}
-	**/
+
 	for (int32 WeaponIndex = 0; WeaponIndex < NumWeapons; WeaponIndex++)
 	{
 		ApplyWeaponAtIndexToSeat(SeatIndex, WeaponIndex, WeaponIDs[WeaponIndex]);
@@ -492,6 +486,8 @@ void UVehicleWeaponLogicComponent::ControlTurret(FVector2D InputValue, int32 Sea
 	FTurretState& TurretState = TurretStates[ControlledTurretIndex];
 	float PreviousTurretRotation = TurretState.CurrentTurretRotation;
 	float PreviousTurretPitch = TurretState.CurrentTurretPitch;
+	float PitchMin;
+	float PitchMax;
 
 	//rotation
 	float RotRaw = CalculateTurret(InputValue.X, TurretData.TurretRotation.TurretSpeed, TurretState.CurrentTurretRotation);
@@ -522,9 +518,9 @@ void UVehicleWeaponLogicComponent::ControlTurret(FVector2D InputValue, int32 Sea
 
 	if (PitchHasMin || PitchHasMax)
 	{
-		float Min = TurretData.TurretPitch.TurretMinMax.GetLowerBoundValue();
-		float Max = TurretData.TurretPitch.TurretMinMax.GetUpperBoundValue();
-		NewTurretPitch = FMath::Clamp(PitchRaw, Min, Max);
+		PitchMin = TurretData.TurretPitch.TurretMinMax.GetLowerBoundValue();
+		PitchMax = TurretData.TurretPitch.TurretMinMax.GetUpperBoundValue();
+		NewTurretPitch = FMath::Clamp(PitchRaw, PitchMin, PitchMax);
 	}
 	else
 	{
@@ -541,12 +537,17 @@ void UVehicleWeaponLogicComponent::ControlTurret(FVector2D InputValue, int32 Sea
 	//Update UI
 	if (PreviousTurretRotation != NewTurretRotation)
 	{
-		OnTurretRotated.Broadcast(SeatIndex);	//here to update compass FOR THAT PLAYER 
-		//when this broadcasts, EVERYONE should see that update on their turret line HUD side
+		if (OwnerDataAccessor->GetVehicleState().SeatStates[SeatIndex].UpdateHUD)
+		{
+			GetHUDSystem()->HandleTurretRotationUpdate(OwnerDataAccessor->GetVehicleState().SeatStates[SeatIndex].ActiveCamera->GetComponentRotation().Yaw);
+		}
 	}
 	if (PreviousTurretPitch != NewTurretPitch)
 	{
-		OnTurretPitched.Broadcast(SeatIndex);
+		if (OwnerDataAccessor->GetVehicleState().SeatStates[SeatIndex].UpdateHUD)
+		{
+			GetHUDSystem()->HandleTurretPitchUpdate(PitchMin, PitchMax, NewTurretPitch);
+		}
 	}
 }
 
@@ -617,11 +618,9 @@ void UVehicleWeaponLogicComponent::UpdateSeatRangefinder(int32 SeatIndex, UCamer
 	bHit = UWeaponFunctions::PerformWeaponLineTrace(this, Camera->GetComponentTransform(), HitResult, ActorsToIgnore);
 	VehicleWeaponSystem.Find(SeatIndex)->VehicleWeaponSystemState.EquippedWeaponState.RaycastData.RangefinderData = HitResult;		//cache trace data
 
-	ULocalPlayer* LP = GetWorld()->GetFirstLocalPlayerFromController();
-	if (LP)
+	if (OwnerDataAccessor->GetVehicleState().SeatStates[SeatIndex].UpdateHUD)
 	{
-		UHUDSubsystem* HUDSub = LP->GetSubsystem<UHUDSubsystem>();
-		HUDSub->UpdateRangefinderHUD_Vehicle(Cast<AVehicle_Base>(GetOwner()), SeatIndex, HitResult.Distance/100);	//distance in meter
+		GetHUDSystem()->UpdateRangefinderHUD_Vehicle(HitResult.Distance / 100);	//distance in meter
 	}
 }
 
@@ -847,11 +846,20 @@ void UVehicleWeaponLogicComponent::FireVehicleWeapon(int32 SeatIndex)
 
 	//handle ammo depletion
 	UWeaponFunctions::UpdateCurrentAmmoInMag(CurrentWeapon, -1, StaticWeaponData.AmmoData.MagSize);
-	OnVehicleWeaponFired.Broadcast(SeatIndex);
+
+	if (OwnerDataAccessor->GetVehicleState().SeatStates[SeatIndex].UpdateHUD)
+	{
+		GetHUDSystem()->UpdateStatusHUD_CAMCount_Vehicle(CurrentWeapon.WeaponState.CurrentAmmoinMag);
+	}
+
 	if (CurrentWeapon.WeaponState.CurrentAmmoinMag == 0)
 	{
 		StopFire(SeatIndex);
 		HandleStartAutoload(SeatIndex);
+		if (OwnerDataAccessor->GetVehicleState().SeatStates[SeatIndex].UpdateHUD)
+		{
+			GetHUDSystem()->UpdateWeaponStatusHUD_Vehicle(CurrentWeapon.WeaponState.canFire);
+		}
 	}
 }
 
@@ -861,7 +869,7 @@ void UVehicleWeaponLogicComponent::HandleStartAutoload(int32 SeatIndex)
 	int32& CWI = SeatWeaponSystem.VehicleWeaponSystemState.EquippedWeaponState.CurrentWeaponIndex;
 	const FBaseWeaponData& StaticWeaponData = GetBaseWeaponDataInSlot(SeatIndex, CWI);
 	FWeapon_Runtime& CurrentWeapon = SeatWeaponSystem.Weapons[CWI].VehicleWeaponState.BaseWeaponRuntimeData;
-
+	CurrentWeapon.WeaponState.isReloading = true;
 	if (CurrentWeapon.WeaponState.CurrentReserveAmmo > 0)
 	{
 		if (!GetWorld()->GetTimerManager().IsTimerActive(TimerHandle_Reload))
@@ -891,11 +899,17 @@ void UVehicleWeaponLogicComponent::AutoloadNewMag(int32 SeatIndex, int32 WeaponI
 	CurrentWeapon.WeaponState.CurrentAmmoinMag = NewCAM;
 	CurrentWeapon.WeaponState.CurrentAmmoinMag = NewCRA;
 
-	CurrentWeapon.WeaponState.canFire = true;
-
 	if (SeatWeaponSystem.Weapons[WeaponIndex].VehicleWeaponInstanceData.bAreProjectilesMounted)
 	{
 		MountProjectiles(SeatIndex, WeaponIndex);
+	}
+
+	CurrentWeapon.WeaponState.canFire = true;
+
+	if (OwnerDataAccessor->GetVehicleState().SeatStates[SeatIndex].UpdateHUD)
+	{
+		GetHUDSystem()->UpdateStatusHUD_CAMCount_Vehicle(NewCAM);
+		GetHUDSystem()->UpdateWeaponStatusHUD_Vehicle(CurrentWeapon.WeaponState.canFire);
 	}
 }
 
@@ -965,7 +979,6 @@ void UVehicleWeaponLogicComponent::SwitchWeapon(int32 SeatIndex)
 	if (PreviousCWI != CWI && bWasFiring)
 	{
 		StopWeaponSlotFire(SeatIndex, PreviousCWI);
-		//SeatWeaponSystem.Weapons[CWI].VehicleWeaponState.BaseWeaponRuntimeData.WeaponState.canFire = false;
 	}
 	SelectWeapon(SeatIndex, CWI);
 }
@@ -983,8 +996,20 @@ void UVehicleWeaponLogicComponent::SelectWeapon(int32 SeatIndex, int32 WeaponInd
 	{
 		FVehicleWeaponSystem_Runtime& SWS = *VehicleWeaponSystem.Find(SeatIndex);
 		FWeapon_Runtime& NewWeapon = SWS.Weapons[WeaponIndex].VehicleWeaponState.BaseWeaponRuntimeData;
-		//NewWeapon.WeaponState.canFire = true;
+
+		if (OwnerDataAccessor->GetVehicleState().SeatStates[SeatIndex].UpdateHUD)
+		{
+			GetHUDSystem()->UpdateStatusHUD_CAMCount_Vehicle(NewWeapon.WeaponState.CurrentAmmoinMag);
+			GetHUDSystem()->UpdateEquippedWeaponHUD_Vehicle
+			(
+				GetBaseWeaponDataInSlot(SeatIndex, WeaponIndex).WeaponClassification.WeaponDisplayNameAbrev,
+				GetEquippedWeaponInSeat(SeatIndex).VehicleWeaponInstanceData.WeaponReticle,
+				GetEquippedWeaponInSeat(SeatIndex).VehicleWeaponInstanceData.ReticleScale,
+				GetEquippedWeaponInSeat(SeatIndex).VehicleWeaponState.BaseWeaponRuntimeData.WeaponState.canFire
+			);
+		}
 	});
+
 
 	//equip weapon audio
 	//equip weapon animation
@@ -1010,6 +1035,7 @@ void UVehicleWeaponLogicComponent::UpdateWeaponAudioCompData(int32 SeatIndex, in
 
 void UVehicleWeaponLogicComponent::BindToInput(ACharacter_Base* Character)
 {
+	//move to character probably
 	Character->OnFireReleased_Vehicle.RemoveDynamic(this, &UVehicleWeaponLogicComponent::StopFire);
 	Character->OnFireReleased_Vehicle.AddDynamic(this, &UVehicleWeaponLogicComponent::StopFire);
 }
@@ -1062,4 +1088,25 @@ int32 UVehicleWeaponLogicComponent::GetSeatIndexForTurret(int32 TurretIndex)
 		}
 	}
 	return SI;
+}
+
+int32& UVehicleWeaponLogicComponent::GetCWIForSeat(int32 SeatIndex)
+{
+	return VehicleWeaponSystem.Find(SeatIndex)->VehicleWeaponSystemState.EquippedWeaponState.CurrentWeaponIndex;
+}
+
+FVehicleWeapon_Runtime& UVehicleWeaponLogicComponent::GetEquippedWeaponInSeat(int32 SeatIndex)
+{
+	return VehicleWeaponSystem.Find(SeatIndex)->Weapons[GetCWIForSeat(SeatIndex)];
+}
+
+TWeakObjectPtr<UHUDSubsystem> UVehicleWeaponLogicComponent::GetHUDSystem()
+{
+	TWeakObjectPtr<ULocalPlayer> LP = GetWorld()->GetFirstLocalPlayerFromController();
+	if (LP.Get())
+	{
+		TWeakObjectPtr<UHUDSubsystem> HUDSub = LP->GetSubsystem<UHUDSubsystem>();
+		return HUDSub;
+	}
+	return nullptr;
 }

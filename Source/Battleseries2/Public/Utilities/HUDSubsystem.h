@@ -31,33 +31,29 @@ public:
     UFUNCTION(BlueprintCallable)
     void SpawnVehicleSeatHUD(TSubclassOf<UUserWidget> HUDClass);
     UFUNCTION(BlueprintCallable)
-    void SetupVehicleDriverHUD();
+    void UpdateStatusHUD_CAMCount_Vehicle(int32 CAM);
     UFUNCTION(BlueprintCallable)
-    void SetupVehicleGunnerHUD();
+    void UpdateEquippedWeaponHUD_Vehicle(FText WeaponName, UTexture2D* Reticle, float ReticleScale, bool canFire);
     UFUNCTION(BlueprintCallable)
-    void UpdateStatusHUD_CAMCount_Vehicle(int32 SeatIndex);
-    UFUNCTION(BlueprintCallable)
-    void UpdateEquippedWeaponHUD_Vehicle(int32 SeatIndex);
-    UFUNCTION(BlueprintCallable)
-    void UpdateSpeedHUD_Vehicle();
+    void UpdateSpeedHUD_Vehicle(float Speed);
     UFUNCTION(BlueprintCallable)
     void UpdateWeaponReticleHUD_Vehicle(UTexture2D* ImageBrush);
     UFUNCTION(BlueprintCallable)
     void UpdateWeaponReticleSize_Vehicle(float NewScale);
     UFUNCTION(BlueprintCallable)
-    void UpdateRangefinderHUD_Vehicle(AVehicle_Base* ReportingVehicle, int32 SeatIndex, float NewRange);
+    void UpdateRangefinderHUD_Vehicle(float NewRange);
     UFUNCTION(BlueprintCallable)
     void UpdateWeaponNameHUD_Vehicle(FText WeaponDisplayName);
     UFUNCTION(BlueprintCallable)
-    void UpdateWeaponStatusHUD_Vehicle(FText WeaponStatus);
+    void UpdateWeaponStatusHUD_Vehicle(bool canFire);
     UFUNCTION(BlueprintCallable)
-    void UpdateCompassHUD_Vehicle(int32 SeatIndex);
+    void UpdateCompassHUD_Vehicle(float Yaw);
     UFUNCTION(BlueprintCallable)
     void UpdateTurretLinesHUD_Vehicle();
     UFUNCTION(BlueprintCallable)
-    void UpdateTurretElevationHUD_Vehicle(int32 SeatIndex);
+    void UpdateTurretElevationHUD_Vehicle(float MinPitch, float MaxPitch, float CurrentPitch);
     UFUNCTION(BlueprintCallable)
-    void HandleTurretRotationUpdate(int32 SeatIndex);
+    void HandleTurretRotationUpdate(float Yaw);
     UFUNCTION(BlueprintCallable)
-    void HandleTurretPitchUpdate(int32 SeatIndex);
+    void HandleTurretPitchUpdate(float MinPitch, float MaxPitch, float CurrentPitch);
 };
