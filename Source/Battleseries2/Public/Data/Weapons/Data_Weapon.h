@@ -185,3 +185,7 @@ struct FBaseWeaponData
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FAmmoData AmmoData = FAmmoData();
 };
+
+//special attributes
+//lazes/designates
+//autofires (no trigger pull needed)

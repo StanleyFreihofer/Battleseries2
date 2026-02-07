@@ -692,24 +692,27 @@ void AVehicle_Base::UpdateEngineAudio()
 	}
 }
 
-void AVehicle_Base::HandleThrottle_GV(float InputValue)
+void AVehicle_Base::ApplyThrottle_GV(float InputValue, int32 SeatIndex)
 {
 	//if this doesnt work reference that 1 tutorial you did
 	if (InputValue > 0)
 	{
 		ChaosVehicleMovement->SetThrottleInput(InputValue);
+		GetHUDSystem()->UpdateSpeedHUD_Vehicle(GetVelocity().Size());
 	}
-	if (InputValue < 0)
+	else if (InputValue < 0)
 	{
 		ChaosVehicleMovement->SetBrakeInput(FMath::Abs(InputValue));
+		GetHUDSystem()->UpdateSpeedHUD_Vehicle(GetVelocity().Size());
 	}
-	if (InputValue == 0)
+	else if (InputValue == 0)
 	{
 		ChaosVehicleMovement->SetThrottleInput(0);
 		ChaosVehicleMovement->SetBrakeInput(0);
 		
 		GetWorld()->GetTimerManager().SetTimer(SpeedTimer, [this]()
 		{
+			GetHUDSystem()->UpdateSpeedHUD_Vehicle(GetVelocity().Size());
 		}, 0.05f, true);
 		if (GetVelocity().Size() <= 0.0f)
 		{
@@ -718,7 +721,7 @@ void AVehicle_Base::HandleThrottle_GV(float InputValue)
 	}
 }
 
-void AVehicle_Base::ApplySteering_GV(float SteeringValue)
+void AVehicle_Base::ApplySteering_GV(float SteeringValue, int32 SeatIndex)
 {
 	if (VehicleData->GroundVehicle_Data.canIdleTurn)
 	{
@@ -728,31 +731,27 @@ void AVehicle_Base::ApplySteering_GV(float SteeringValue)
 	{
 		ChaosVehicleMovement->SetSteeringInput(SteeringValue);
 	}
-	for (int32 i = 0; i < VehicleCurrentState.SeatStates.Num(); i++)
-	{
-		OnVehicleYawUpdate.Broadcast(i);
-		//when this broadcasts, EVERYONE should that update on their compass HUD side
-	}
+	GetHUDSystem()->UpdateCompassHUD_Vehicle(VehicleCurrentState.SeatStates[SeatIndex].ActiveCamera->GetComponentRotation().Yaw);
 }
 
-void AVehicle_Base::ApplyThrottle(const FInputActionValue& ThrottleValue)
+void AVehicle_Base::HandleThrottle(float ThrottleValue, int32 SeatIndex)
 {
 	E_MovementType VehicleType = VehicleData->Movement_Type;
 	switch (VehicleType)
 	{
 		case E_MovementType::GroundVehicle:
-			HandleThrottle_GV(ThrottleValue.Get<float>());
+			ApplyThrottle_GV(ThrottleValue, SeatIndex);
 			break;
 	}
 }
 
-void AVehicle_Base::ReleaseThrottle()
+void AVehicle_Base::ReleaseThrottle(int32 SeatIndex)
 {
 	E_MovementType VehicleType = VehicleData->Movement_Type;
 	switch (VehicleType)
 	{
 		case E_MovementType::GroundVehicle:
-			HandleThrottle_GV(0);
+			ApplyThrottle_GV(0, SeatIndex);
 			break;
 	}
 }
@@ -767,7 +766,6 @@ TWeakObjectPtr<UHUDSubsystem> AVehicle_Base::GetHUDSystem()
 	}
 	return nullptr;
 }
-
 
 USkeletalMeshComponent* AVehicle_Base::GetVehicleMesh() const
 {

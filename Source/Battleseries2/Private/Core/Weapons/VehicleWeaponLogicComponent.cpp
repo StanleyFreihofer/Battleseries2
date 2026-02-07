@@ -906,7 +906,7 @@ void UVehicleWeaponLogicComponent::AutoloadNewMag(int32 SeatIndex, int32 WeaponI
 
 	CurrentWeapon.WeaponState.canFire = true;
 
-	if (OwnerDataAccessor->GetVehicleState().SeatStates[SeatIndex].UpdateHUD)
+	if (OwnerDataAccessor->GetVehicleState().SeatStates[SeatIndex].UpdateHUD && CurrentWeapon.WeaponState.isEquipped)
 	{
 		GetHUDSystem()->UpdateStatusHUD_CAMCount_Vehicle(NewCAM);
 		GetHUDSystem()->UpdateWeaponStatusHUD_Vehicle(CurrentWeapon.WeaponState.canFire);
@@ -980,6 +980,8 @@ void UVehicleWeaponLogicComponent::SwitchWeapon(int32 SeatIndex)
 	{
 		StopWeaponSlotFire(SeatIndex, PreviousCWI);
 	}
+	//Unequip Weapon Function?
+	SeatWeaponSystem.Weapons[PreviousCWI].VehicleWeaponState.BaseWeaponRuntimeData.WeaponState.isEquipped = false;
 	SelectWeapon(SeatIndex, CWI);
 }
 
@@ -1009,6 +1011,7 @@ void UVehicleWeaponLogicComponent::SelectWeapon(int32 SeatIndex, int32 WeaponInd
 			);
 		}
 	});
+	SeatWeaponSystem.Weapons[WeaponIndex].VehicleWeaponState.BaseWeaponRuntimeData.WeaponState.isEquipped = true;
 
 
 	//equip weapon audio

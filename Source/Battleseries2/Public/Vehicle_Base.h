@@ -218,14 +218,14 @@ public:
 
 	//Movement, Generic
 	UFUNCTION(BlueprintCallable)
-	void ApplyThrottle(const FInputActionValue& ThrottleValue);		//called from seat
+	void HandleThrottle(float ThrottleValue, int32 SeatIndex);		//called from seat
 	UFUNCTION(BlueprintCallable)
-	void ReleaseThrottle();
+	void ReleaseThrottle(int32 SeatIndex);
 	//Movement, Ground Vehicle
 	UFUNCTION(BlueprintCallable)
-	void HandleThrottle_GV(float InputValue);	//groundvehicle reactionary to ApplyThrottle
+	void ApplyThrottle_GV(float InputValue, int32 SeatIndex);	
 	UFUNCTION(BlueprintCallable)
-	void ApplySteering_GV(float SteeringValue);
+	void ApplySteering_GV(float SteeringValue, int32 SeatIndex);
 
 	//Applying
 	UFUNCTION(BlueprintCallable)
