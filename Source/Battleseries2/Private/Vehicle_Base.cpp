@@ -652,6 +652,10 @@ void AVehicle_Base::SetupGunner(ACharacter_Base* Character)
 void AVehicle_Base::DropGunner(TWeakObjectPtr<ACharacter_Base> Character)
 {
 	VehicleWeaponLogicComponent->WindowedRangefinder.RemoveDynamic(Character.Get(), &ACharacter_Base::UpdateRangefinder_WindowedVehicle);
+	if (VehicleWeaponLogicComponent->GetEquippedWeaponInSeat(Character->CharacterState.CharacterVehicleState.LSI).VehicleWeaponState.BaseWeaponRuntimeData.WeaponState.isFiring)
+	{
+		VehicleWeaponLogicComponent->StopFire(Character->CharacterState.CharacterVehicleState.LSI);
+	}
 }
 
 void AVehicle_Base::EnterVehicle(ACharacter_Base* Character)

@@ -138,8 +138,16 @@ void ACharacter_Base::CharacterEnterSeat(const FCharacterSeatContext& SeatContex
 			GetLocalPlayerHUDSystem()->UpdateSpeedHUD_Vehicle(GetCurrentVehicle()->GetVelocity().Size());
 			break;
 		case E_SeatRole::Gunner:
+			//BindInputAction(InputComponent_Player, IA_Fire, ETriggerEvent::Completed, GetCurrentVehicle()->VehicleWeaponLogicComponent, FName("StopFire"));
+			//OnFireReleased_Vehicle.RemoveDynamic(GetCurrentVehicle()->VehicleWeaponLogicComponent, &UVehicleWeaponLogicComponent::StopFire);
+			//OnFireReleased_Vehicle.AddDynamic(GetCurrentVehicle()->VehicleWeaponLogicComponent, &UVehicleWeaponLogicComponent::StopFire);
 			break;
 		case E_SeatRole::DriverGunner:
+			//INPUT
+			//BindInputAction(InputComponent_Player, IA_Fire, ETriggerEvent::Completed, GetCurrentVehicle()->VehicleWeaponLogicComponent, FName("StopFire"));
+			//OnFireReleased_Vehicle.AddDynamic(GetCurrentVehicle()->VehicleWeaponLogicComponent, &UVehicleWeaponLogicComponent::StopFire);
+
+			//HUD
 			GetLocalPlayerHUDSystem()->UpdateSpeedHUD_Vehicle(GetCurrentVehicle()->GetVelocity().Size());
 
 			//turrets/heading
@@ -162,6 +170,10 @@ void ACharacter_Base::CharacterExitSeat(const FCharacterSeatContext& SeatContext
 {
 	UpdateVehicleHUD(nullptr);
 	ManageIMC(SeatContext.InputMappingContext, nullptr, 0);
+	//UEnhancedInputComponent* EnhancedInput = Cast<UEnhancedInputComponent>(InputComponent);
+	//EnhancedInput->ClearBindingsForObject(GetCurrentVehicle()->VehicleWeaponLogicComponent);
+	//OnFireReleased_Vehicle.RemoveDynamic(GetCurrentVehicle()->VehicleWeaponLogicComponent, &UVehicleWeaponLogicComponent::StopFire);
+	
 }
 
 void ACharacter_Base::UpdateSeatIndexes(int32 NewLSI, int32 NewCSI, int32 NewNSI)
@@ -185,14 +197,15 @@ void ACharacter_Base::UpdateViewTarget(TWeakObjectPtr<AActor> NewViewTarget, TWe
 	}
 }
 
-void ACharacter_Base::BindInputAction(class UInputComponent* PlayerInputComponent, const UInputAction* IA, ETriggerEvent InputType, FName InputFunctionName)
+void ACharacter_Base::BindInputAction(class UInputComponent* PlayerInputComponent, const UInputAction* IA, ETriggerEvent InputType, UObject* TargetObject, FName InputFunctionName)
 {
-	UEnhancedInputComponent* EnhancedInput = Cast<UEnhancedInputComponent>(PlayerInputComponent);
-	if (UFunction* Function = FindFunction(InputFunctionName))
+	if (!TargetObject) TargetObject = this;
+	UEnhancedInputComponent* EnhancedInput = Cast<UEnhancedInputComponent>(InputComponent_Player);
+	if (UFunction* Function = TargetObject->FindFunction(InputFunctionName))
 	{
-		FEnhancedInputActionHandlerDynamicSignature Delegate;
-		Delegate.BindUFunction(this, InputFunctionName);
-		EnhancedInput->BindAction(IA, InputType, this, InputFunctionName);
+		//FEnhancedInputActionHandlerDynamicSignature Delegate;
+		//Delegate.BindUFunction(this, InputFunctionName);
+		EnhancedInput->BindAction(IA, InputType, TargetObject, InputFunctionName);
 	}
 }
 

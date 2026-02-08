@@ -41,8 +41,10 @@ UENUM(BlueprintType)		//The different behaviors of a weapon that dictates if it 
 enum class ELockOnRequirement : uint8
 {
 	NoLockOn			UMETA(DisplayName = "No Lock On"),			//Cannot lock on to a target
-	CanLockOn_Soft		UMETA(DisplayName = "Soft Lock On"),		//Can lock on without target being lazed
-	CanLockOn_Hard		UMETA(DisplayName = "Hard Lock On"),		//Can only lock on if target is lazed
+
+	//IF ANY OF THE FOLLOWING ARE SELECTED, WEAPON SHOULD HAVE FUNCTIONALITY TO AUTOLOCK/FIRE OUT A SPHERE TRACE BY DEFAULT
+	CanSoftLockOn		UMETA(DisplayName = "Soft Lock On"),		//Can lock on without target being lazed
+	CanHardLockOn		UMETA(DisplayName = "Hard Lock On"),		//Can only lock on if target is lazed
 	RequiresLockOn		UMETA(DisplayName = "Requires Lock On")		//Requires lockon to fire
 };
 

@@ -41,7 +41,8 @@ public:
 	UInputComponent* InputComponent_Player = nullptr;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
 	TSoftObjectPtr<UInputMappingContext> DefaultIMCSoft = nullptr;
-	// Hard pointer used at runtime after loading the soft object
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
+	UInputAction* IA_Fire;
 	UInputMappingContext* DefaultIMC = nullptr;
 
 	//FUNCTIONS
@@ -67,7 +68,7 @@ public:
 	void UpdateViewTarget(TWeakObjectPtr<AActor> NewViewTarget, TWeakObjectPtr<UCameraComponent> CameraComponent);
 
 	UFUNCTION(BlueprintCallable)
-	void BindInputAction(class UInputComponent* PlayerInputComponent, const UInputAction* IA, ETriggerEvent InputType, FName InputFunctionName);
+	void BindInputAction(class UInputComponent* PlayerInputComponent, const UInputAction* IA, ETriggerEvent InputType, UObject* TargetObject, FName InputFunctionName);
 
 	UFUNCTION(BlueprintCallable)
 	void HandleFireCompleted();

@@ -615,6 +615,8 @@ void UVehicleWeaponLogicComponent::UpdateSeatRangefinder(int32 SeatIndex, UCamer
 	const FSeatData& SeatData = OwnerDataAccessor->GetVehicleData().Seats[SeatIndex];
 	FHitResult HitResult;
 	bool bHit;
+
+	//need to grab current weapon to see if it's a lock on (decide whether to do a sphere or line trace)?
 	bHit = UWeaponFunctions::PerformWeaponLineTrace(this, Camera->GetComponentTransform(), HitResult, ActorsToIgnore);
 	VehicleWeaponSystem.Find(SeatIndex)->VehicleWeaponSystemState.EquippedWeaponState.RaycastData.RangefinderData = HitResult;		//cache trace data
 
@@ -813,7 +815,6 @@ void UVehicleWeaponLogicComponent::FireVehicleWeapon(int32 SeatIndex)
 
 				case EProjectileType::Rocket:			//contains own initial velocity
 				case EProjectileType::Missile:			//contains own initial velocity
-				//case EProjectileType::Bomb:
 					//handle SHOOT projectileactor
 					if (VehicleWeapon.VehicleWeaponInstanceData.bAreProjectilesMounted && VehicleWeaponState.CurrentMountedProjectiles.Num() > 0)
 					{
@@ -872,6 +873,7 @@ void UVehicleWeaponLogicComponent::HandleStartAutoload(int32 SeatIndex)
 	CurrentWeapon.WeaponState.isReloading = true;
 	if (CurrentWeapon.WeaponState.CurrentReserveAmmo > 0)
 	{
+		//start autoload
 		if (!GetWorld()->GetTimerManager().IsTimerActive(TimerHandle_Reload))
 		{
 			const float& ReloadSpeed = StaticWeaponData.AmmoData.ReloadSpeed;
@@ -942,6 +944,7 @@ void UVehicleWeaponLogicComponent::ApplyWeaponRecoilJostle(int32 SeatIndex, int3
 void UVehicleWeaponLogicComponent::StopFire(int32 SeatIndex)
 {
 	FVehicleWeaponSystem_Runtime& SeatWeaponSystem = *VehicleWeaponSystem.Find(SeatIndex);
+	UE_LOG(LogTemp, Warning, TEXT("[VWLC::StopFire] CWI = %d"), SeatWeaponSystem.VehicleWeaponSystemState.EquippedWeaponState.CurrentWeaponIndex);
 	StopWeaponSlotFire(SeatIndex, SeatWeaponSystem.VehicleWeaponSystemState.EquippedWeaponState.CurrentWeaponIndex);
 }
 
@@ -950,7 +953,7 @@ void UVehicleWeaponLogicComponent::StopWeaponSlotFire(int32 SeatIndex, int32 Wea
 	FVehicleWeaponSystem_Runtime& SeatWeaponSystem = *VehicleWeaponSystem.Find(SeatIndex);
 	FVehicleWeaponState& VehicleWeaponState = SeatWeaponSystem.Weapons[WeaponIndex].VehicleWeaponState;
 	FWeapon_Runtime& CurrentWeapon = VehicleWeaponState.BaseWeaponRuntimeData;
-	
+	UE_LOG(LogTemp, Warning, TEXT("[VWLC::StopWeaponSlotFire] WeaponIndex = %d"), WeaponIndex);
 	SeatWeaponSystem.VehicleWeaponSystemState.WeaponAudioComponent->SetTriggerParameter(FName("Event_StopFire"));
 
 	GetWorld()->GetTimerManager().SetTimerForNextTick([this, &VehicleWeaponState]()
@@ -1039,8 +1042,8 @@ void UVehicleWeaponLogicComponent::UpdateWeaponAudioCompData(int32 SeatIndex, in
 void UVehicleWeaponLogicComponent::BindToInput(ACharacter_Base* Character)
 {
 	//move to character probably
-	Character->OnFireReleased_Vehicle.RemoveDynamic(this, &UVehicleWeaponLogicComponent::StopFire);
-	Character->OnFireReleased_Vehicle.AddDynamic(this, &UVehicleWeaponLogicComponent::StopFire);
+	//Character->OnFireReleased_Vehicle.RemoveDynamic(this, &UVehicleWeaponLogicComponent::StopFire);
+	//Character->OnFireReleased_Vehicle.AddDynamic(this, &UVehicleWeaponLogicComponent::StopFire);
 }
 
 const FBaseWeaponData& UVehicleWeaponLogicComponent::GetBaseWeaponDataInSlot(int32 SeatIndex, int32 WeaponIndex)
