@@ -110,14 +110,24 @@ void ACharacter_Base::CharacterEnterVehicle()
 
 void ACharacter_Base::CharacterExitVehicle()
 {
-	if (CharacterState.CharacterVehicleState.CurrentVehicle)
+	if (GetCurrentVehicle())
 	{
+		CharacterExitSeat(GetCurrentVehicle()->VehicleData->Seats[GetCSI()].DefaultCharacterContext);
+		GetCurrentVehicle()->DropSeat(this);
 		DetachFromActor(FDetachmentTransformRules::KeepRelativeTransform);
+
+		FVector ExitLocation = CalculateSafeExitLocation(GetCurrentVehicle());
+		SetActorLocation(ExitLocation);
+
+		UpdateCharacterStance(ECharacterCurrentStance::Standing);
+		GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Vehicle, ECR_Block);
+		GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Vehicle, ECollisionResponse::ECR_Block);
+		GetCharacterMovement()->SetMovementMode(MOVE_Walking);
+		Camera->bUsePawnControlRotation = true;
+		bUseControllerRotationYaw = true;
+		UpdateViewTarget(this, Camera);
+		CharacterState.CharacterVehicleState = FCharacterVehicleState();
 	}
-	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Vehicle, ECR_Block);
-	GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Vehicle, ECollisionResponse::ECR_Block);
-	Camera->bUsePawnControlRotation = true;
-	bUseControllerRotationYaw = true;
 }
 
 void ACharacter_Base::CharacterEnterSeat(const FCharacterSeatContext& SeatContext)
@@ -163,6 +173,43 @@ void ACharacter_Base::CharacterExitSeat(const FCharacterSeatContext& SeatContext
 {
 	UpdateVehicleHUD(nullptr);
 	ManageIMC(SeatContext.InputMappingContext, nullptr, 0);
+}
+
+FVector ACharacter_Base::CalculateSafeExitLocation(AActor* Vehicle)
+{
+	// Define exit points relative to the vehicle (Right, Left, Back)
+	TArray<FVector> ExitOffsets;
+	ExitOffsets.Add(FVector(0, 250, 50));   // Right
+	ExitOffsets.Add(FVector(0, -250, 50));  // Left
+	ExitOffsets.Add(FVector(-300, 0, 50));  // Back
+
+	FVector BestLocation = Vehicle->GetActorLocation() + FVector(0, 0, 150); // Fallback: Above vehicle
+
+	for (FVector Offset : ExitOffsets)
+	{
+		FVector TargetLocation = Vehicle->GetActorTransform().TransformPosition(Offset);
+
+		//trace to see if the capsule fits there
+		FHitResult Hit;
+		FCollisionQueryParams Params;
+		Params.AddIgnoredActor(Vehicle);
+		Params.AddIgnoredActor(this);
+		bool bHit = GetWorld()->SweepSingleByChannel
+		(
+			Hit,
+			TargetLocation + FVector(0, 0, 10),
+			TargetLocation,
+			FQuat::Identity,
+			ECC_Visibility,
+			GetCapsuleComponent()->GetCollisionShape(),
+			Params
+		);
+		if (!bHit)
+		{
+			return TargetLocation;
+		}
+	}
+	return BestLocation;
 }
 
 void ACharacter_Base::UpdateSeatIndexes(int32 NewLSI, int32 NewCSI, int32 NewNSI)

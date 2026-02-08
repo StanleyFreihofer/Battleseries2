@@ -59,6 +59,8 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void CharacterExitSeat(const FCharacterSeatContext& SeatContext);
 	UFUNCTION(BlueprintCallable)
+	FVector CalculateSafeExitLocation(AActor* Vehicle);
+	UFUNCTION(BlueprintCallable)
 	void UpdateSeatIndexes(int32 NewLSI, int32 NewCSI, int32 NewNSI);
 
 	UFUNCTION(BlueprintCallable)

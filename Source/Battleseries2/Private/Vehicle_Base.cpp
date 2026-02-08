@@ -546,6 +546,10 @@ void AVehicle_Base::HandleSeatOccupationStatus(bool Occupy, int32 SeatIndex)
 void AVehicle_Base::DropSeat(ACharacter_Base* Character)
 {
 	//should usually be LSI
+	if (Character->CharacterState.CharacterVehicleState.LSI == -1)
+	{
+		Character->CharacterState.CharacterVehicleState.LSI = 0;
+	}
 	const FSeatData& SeatData = VehicleData->Seats[Character->CharacterState.CharacterVehicleState.LSI];
 	Character->CharacterExitSeat(SeatData.DefaultCharacterContext);
 	if (Character->IsLocallyControlled())

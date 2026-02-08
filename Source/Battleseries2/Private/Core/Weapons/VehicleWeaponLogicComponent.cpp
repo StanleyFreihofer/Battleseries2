@@ -892,7 +892,6 @@ void UVehicleWeaponLogicComponent::HandleStartAutoload(int32 SeatIndex)
 	CurrentWeapon.WeaponState.isReloading = true;
 	if (CurrentWeapon.WeaponState.CurrentReserveAmmo > 0)
 	{
-		//start autoload
 		StartAutoload(StaticWeaponData, SeatIndex, CWI);
 	}
 	else
