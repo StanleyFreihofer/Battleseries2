@@ -37,6 +37,7 @@ void UVehicleWeaponLogicComponent::TickComponent(float DeltaTime, ELevelTick Tic
 	HandleSeatRangefinders();
 }
 
+//FACTORY FUNCTIONS
 void UVehicleWeaponLogicComponent::Init_VehicleWeaponSystem(TMap<int32, FSavedSeatLoadout> SeatLoadouts)
 {
 	const FVehicleData& VehicleData = OwnerDataAccessor->GetVehicleData();
@@ -468,6 +469,7 @@ TWeakObjectPtr<AActor> UVehicleWeaponLogicComponent::GetCurrentViewTargetAtSeatI
 	}
 }
 
+//TURRETS
 float UVehicleWeaponLogicComponent::CalculateTurret(float InputValue, float TurretSpeed, float CurrentTurretValue)
 {
 	float NewTurretValue = InputValue * TurretSpeed + CurrentTurretValue;
@@ -761,17 +763,23 @@ void UVehicleWeaponLogicComponent::HandleStartFire(int32 SeatIndex)
 void UVehicleWeaponLogicComponent::StartFire(int32 SeatIndex)
 {
 	//fires exactly one time
+	//assumes canFire is true
 	FVehicleWeaponSystem_Runtime& SeatWeaponSystem = *VehicleWeaponSystem.Find(SeatIndex);
 	FWeapon_Runtime& CurrentWeapon = SeatWeaponSystem.Weapons[SeatWeaponSystem.VehicleWeaponSystemState.EquippedWeaponState.CurrentWeaponIndex].VehicleWeaponState.BaseWeaponRuntimeData;
 	const FBaseWeaponData StaticWeaponData = GetBaseWeaponDataInSlot(SeatIndex, SeatWeaponSystem.VehicleWeaponSystemState.EquippedWeaponState.CurrentWeaponIndex);
 
-	//start audio
-	UE_LOG(LogTemp, Warning, TEXT("[VWLC::StartFire] Start audio"));
-	TWeakObjectPtr<UAudioComponent> WAC = SeatWeaponSystem.VehicleWeaponSystemState.WeaponAudioComponent;
-	WAC->SetTriggerParameter(FName("Event_StartFire"));
+	StartWeaponFireAudio(SeatIndex);
 		
 	CurrentWeapon.WeaponState.isFiring = true;
 	FireVehicleWeapon(SeatIndex);	//fire weapon immediately AND THEN (if auto/burst) fire rate every shot after
+}
+
+void UVehicleWeaponLogicComponent::StartWeaponFireAudio(int32 SeatIndex)
+{
+	FVehicleWeaponSystem_Runtime& SeatWeaponSystem = *VehicleWeaponSystem.Find(SeatIndex);
+	UE_LOG(LogTemp, Warning, TEXT("[VWLC::StartFire] Start audio"));
+	TWeakObjectPtr<UAudioComponent> WAC = SeatWeaponSystem.VehicleWeaponSystemState.WeaponAudioComponent;
+	WAC->SetTriggerParameter(FName("Event_StartFire"));
 }
 
 void UVehicleWeaponLogicComponent::FireVehicleWeapon(int32 SeatIndex)
@@ -792,7 +800,7 @@ void UVehicleWeaponLogicComponent::FireVehicleWeapon(int32 SeatIndex)
 				case EProjectileType::Pellet:
 				case EProjectileType::Shell:
 					//handle SHOOT simprojectile
-					FVector MuzzleLocation;
+					FVector MuzzleLocation = FVector::ForwardVector;
 					if (SeatWeaponSystem.VehicleWeaponSystemState.WeaponSystemMesh.IsValid())
 					{
 						MuzzleLocation = UWeaponFunctions::GetMuzzleTransform(VehicleWeaponState.MuzzleSockets[0], SeatWeaponSystem.VehicleWeaponSystemState.WeaponSystemMesh).GetLocation();
@@ -845,22 +853,32 @@ void UVehicleWeaponLogicComponent::FireVehicleWeapon(int32 SeatIndex)
 			break;
 	}
 
-	//handle ammo depletion
-	UWeaponFunctions::UpdateCurrentAmmoInMag(CurrentWeapon, -1, StaticWeaponData.AmmoData.MagSize);
+	HandleAmmoDepletion(StaticWeaponData, CurrentWeapon, SeatIndex);
+}
 
-	if (OwnerDataAccessor->GetVehicleState().SeatStates[SeatIndex].UpdateHUD)
+void UVehicleWeaponLogicComponent::HandleAmmoDepletion(const FBaseWeaponData& StaticWeaponData, FWeapon_Runtime& CurrentWeapon, int32 SeatIndex)
+{
+	switch (StaticWeaponData.AmmoData.AmmoDepletionMethod)
 	{
-		GetHUDSystem()->UpdateStatusHUD_CAMCount_Vehicle(CurrentWeapon.WeaponState.CurrentAmmoinMag);
-	}
+		case EAmmoDepletionMethod::Default:
+			UWeaponFunctions::UpdateCurrentAmmoInMag(CurrentWeapon, -1, StaticWeaponData.AmmoData.MagSize);
+			if (OwnerDataAccessor->GetVehicleState().SeatStates[SeatIndex].UpdateHUD)
+			{
+				GetHUDSystem()->UpdateStatusHUD_CAMCount_Vehicle(CurrentWeapon.WeaponState.CurrentAmmoinMag);
+			}
 
-	if (CurrentWeapon.WeaponState.CurrentAmmoinMag == 0)
-	{
-		StopFire(SeatIndex);
-		HandleStartAutoload(SeatIndex);
-		if (OwnerDataAccessor->GetVehicleState().SeatStates[SeatIndex].UpdateHUD)
-		{
-			GetHUDSystem()->UpdateWeaponStatusHUD_Vehicle(CurrentWeapon.WeaponState.canFire);
-		}
+			if (CurrentWeapon.WeaponState.CurrentAmmoinMag == 0)
+			{
+				StopFire(SeatIndex);
+				HandleStartAutoload(SeatIndex);
+				if (OwnerDataAccessor->GetVehicleState().SeatStates[SeatIndex].UpdateHUD)
+				{
+					GetHUDSystem()->UpdateWeaponStatusHUD_Vehicle(CurrentWeapon.WeaponState.canFire);
+				}
+			}
+			break;
+		case EAmmoDepletionMethod::Heat:
+			break;
 	}
 }
 
@@ -870,24 +888,31 @@ void UVehicleWeaponLogicComponent::HandleStartAutoload(int32 SeatIndex)
 	int32& CWI = SeatWeaponSystem.VehicleWeaponSystemState.EquippedWeaponState.CurrentWeaponIndex;
 	const FBaseWeaponData& StaticWeaponData = GetBaseWeaponDataInSlot(SeatIndex, CWI);
 	FWeapon_Runtime& CurrentWeapon = SeatWeaponSystem.Weapons[CWI].VehicleWeaponState.BaseWeaponRuntimeData;
+
 	CurrentWeapon.WeaponState.isReloading = true;
 	if (CurrentWeapon.WeaponState.CurrentReserveAmmo > 0)
 	{
 		//start autoload
-		if (!GetWorld()->GetTimerManager().IsTimerActive(TimerHandle_Reload))
-		{
-			const float& ReloadSpeed = StaticWeaponData.AmmoData.ReloadSpeed;
-			const int32& MagSize = StaticWeaponData.AmmoData.MagSize;
-
-			GetWorld()->GetTimerManager().SetTimer(TimerHandle_Reload, [this, SeatIndex, CWI, MagSize]()
-			{
-				AutoloadNewMag(SeatIndex, CWI, MagSize);
-			}, ReloadSpeed, false);
-		}
+		StartAutoload(StaticWeaponData, SeatIndex, CWI);
 	}
 	else
 	{
 		//add dynamic that listens for when reserve ammo is refilled
+	}
+}
+
+void UVehicleWeaponLogicComponent::StartAutoload(const FBaseWeaponData& StaticWeaponData, int32 SeatIndex, int32 WeaponIndex)
+{
+	if (!GetWorld()->GetTimerManager().IsTimerActive(TimerHandle_Reload))
+	{
+		const float& ReloadSpeed = StaticWeaponData.AmmoData.ReloadSpeed;
+		const int32& MagSize = StaticWeaponData.AmmoData.MagSize;
+
+		GetWorld()->GetTimerManager().SetTimer(TimerHandle_Reload, [this, SeatIndex, WeaponIndex, MagSize]()
+		{
+			AutoloadNewMag(SeatIndex, WeaponIndex, MagSize);
+		}, ReloadSpeed, false);
+		//set another timer to track previous timers progress for ui purposes
 	}
 }
 
@@ -899,7 +924,7 @@ void UVehicleWeaponLogicComponent::AutoloadNewMag(int32 SeatIndex, int32 WeaponI
 	UWeaponFunctions::CalculateReload(MagSize, CurrentWeapon.WeaponState.CurrentAmmoinMag, CurrentWeapon.WeaponState.CurrentReserveAmmo, NewCAM, NewCRA);
 
 	CurrentWeapon.WeaponState.CurrentAmmoinMag = NewCAM;
-	CurrentWeapon.WeaponState.CurrentAmmoinMag = NewCRA;
+	CurrentWeapon.WeaponState.CurrentReserveAmmo = NewCRA;
 
 	if (SeatWeaponSystem.Weapons[WeaponIndex].VehicleWeaponInstanceData.bAreProjectilesMounted)
 	{
@@ -911,6 +936,7 @@ void UVehicleWeaponLogicComponent::AutoloadNewMag(int32 SeatIndex, int32 WeaponI
 	if (OwnerDataAccessor->GetVehicleState().SeatStates[SeatIndex].UpdateHUD && CurrentWeapon.WeaponState.isEquipped)
 	{
 		GetHUDSystem()->UpdateStatusHUD_CAMCount_Vehicle(NewCAM);
+		GetHUDSystem()->UpdateStatusHUD_CRACount(NewCRA);
 		GetHUDSystem()->UpdateWeaponStatusHUD_Vehicle(CurrentWeapon.WeaponState.canFire);
 	}
 }
@@ -994,7 +1020,7 @@ void UVehicleWeaponLogicComponent::SelectWeapon(int32 SeatIndex, int32 WeaponInd
 	//assumes weapon index in array is valid
 	FVehicleWeaponSystem_Runtime& SeatWeaponSystem = *VehicleWeaponSystem.Find(SeatIndex);
 	SeatWeaponSystem.VehicleWeaponSystemState.EquippedWeaponState.CurrentWeaponIndex = WeaponIndex;
-	OnVehicleWeaponSwapped.Broadcast(SeatIndex);
+	//OnVehicleWeaponSwapped.Broadcast(SeatIndex);
 	UpdateWeaponAudioCompData(SeatIndex, WeaponIndex);
 
 	GetWorld()->GetTimerManager().SetTimerForNextTick([this, SeatIndex, WeaponIndex]()
@@ -1005,6 +1031,7 @@ void UVehicleWeaponLogicComponent::SelectWeapon(int32 SeatIndex, int32 WeaponInd
 		if (OwnerDataAccessor->GetVehicleState().SeatStates[SeatIndex].UpdateHUD)
 		{
 			GetHUDSystem()->UpdateStatusHUD_CAMCount_Vehicle(NewWeapon.WeaponState.CurrentAmmoinMag);
+			GetHUDSystem()->UpdateStatusHUD_CRACount(NewWeapon.WeaponState.CurrentReserveAmmo);
 			GetHUDSystem()->UpdateEquippedWeaponHUD_Vehicle
 			(
 				GetBaseWeaponDataInSlot(SeatIndex, WeaponIndex).WeaponClassification.WeaponDisplayNameAbrev,
@@ -1037,13 +1064,6 @@ void UVehicleWeaponLogicComponent::UpdateWeaponAudioCompData(int32 SeatIndex, in
 		LoadedWaves.Add(Wave);
 	}
 	WAC->SetObjectArrayParameter(FName("Data_FireLoopAudio"), LoadedWaves);
-}
-
-void UVehicleWeaponLogicComponent::BindToInput(ACharacter_Base* Character)
-{
-	//move to character probably
-	//Character->OnFireReleased_Vehicle.RemoveDynamic(this, &UVehicleWeaponLogicComponent::StopFire);
-	//Character->OnFireReleased_Vehicle.AddDynamic(this, &UVehicleWeaponLogicComponent::StopFire);
 }
 
 const FBaseWeaponData& UVehicleWeaponLogicComponent::GetBaseWeaponDataInSlot(int32 SeatIndex, int32 WeaponIndex)

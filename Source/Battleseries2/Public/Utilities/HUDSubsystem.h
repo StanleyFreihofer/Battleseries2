@@ -24,7 +24,6 @@ public:
     //onfootreticle
     //minimap
     //scorefeed
-    //ammohealth
 
     UFUNCTION(BlueprintCallable)
     void SpawnStatusHUD(TSubclassOf<UUserWidget> HUDClass);
@@ -32,6 +31,8 @@ public:
     void SpawnVehicleSeatHUD(TSubclassOf<UUserWidget> HUDClass);
     UFUNCTION(BlueprintCallable)
     void UpdateStatusHUD_CAMCount_Vehicle(int32 CAM);
+    UFUNCTION(BlueprintCallable)
+    void UpdateStatusHUD_CRACount(int32 CRA);
     UFUNCTION(BlueprintCallable)
     void UpdateEquippedWeaponHUD_Vehicle(FText WeaponName, UTexture2D* Reticle, float ReticleScale, bool canFire);
     UFUNCTION(BlueprintCallable)

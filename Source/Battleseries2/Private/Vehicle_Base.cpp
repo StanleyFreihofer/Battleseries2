@@ -640,7 +640,6 @@ void AVehicle_Base::SetupGunner(ACharacter_Base* Character)
 {
 	//called once on enter of a gunner seat, seat hud should already be on viewport
 	const FSeatData& SeatData = VehicleData->Seats[Character->CharacterState.CharacterVehicleState.CSI];
-	VehicleWeaponLogicComponent->BindToInput(Character);
 	if (SeatData.ViewMethod == E_ViewMethod::Windowed)
 	{
 		VehicleWeaponLogicComponent->WindowedRangefinder.AddDynamic(Character, &ACharacter_Base::UpdateRangefinder_WindowedVehicle);

@@ -132,21 +132,14 @@ void ACharacter_Base::CharacterEnterSeat(const FCharacterSeatContext& SeatContex
 	}
 
 	//sync vehicle states for hud
-	switch (CharacterState.CharacterVehicleState.CurrentVehicle->VehicleData->Seats[CharacterState.CharacterVehicleState.CSI].SeatRole)
+	switch (GetCurrentVehicle()->VehicleData->Seats[GetCSI()].SeatRole)
 	{
 		case E_SeatRole::Driver:
 			GetLocalPlayerHUDSystem()->UpdateSpeedHUD_Vehicle(GetCurrentVehicle()->GetVelocity().Size());
 			break;
 		case E_SeatRole::Gunner:
-			//BindInputAction(InputComponent_Player, IA_Fire, ETriggerEvent::Completed, GetCurrentVehicle()->VehicleWeaponLogicComponent, FName("StopFire"));
-			//OnFireReleased_Vehicle.RemoveDynamic(GetCurrentVehicle()->VehicleWeaponLogicComponent, &UVehicleWeaponLogicComponent::StopFire);
-			//OnFireReleased_Vehicle.AddDynamic(GetCurrentVehicle()->VehicleWeaponLogicComponent, &UVehicleWeaponLogicComponent::StopFire);
 			break;
 		case E_SeatRole::DriverGunner:
-			//INPUT
-			//BindInputAction(InputComponent_Player, IA_Fire, ETriggerEvent::Completed, GetCurrentVehicle()->VehicleWeaponLogicComponent, FName("StopFire"));
-			//OnFireReleased_Vehicle.AddDynamic(GetCurrentVehicle()->VehicleWeaponLogicComponent, &UVehicleWeaponLogicComponent::StopFire);
-
 			//HUD
 			GetLocalPlayerHUDSystem()->UpdateSpeedHUD_Vehicle(GetCurrentVehicle()->GetVelocity().Size());
 
@@ -170,10 +163,6 @@ void ACharacter_Base::CharacterExitSeat(const FCharacterSeatContext& SeatContext
 {
 	UpdateVehicleHUD(nullptr);
 	ManageIMC(SeatContext.InputMappingContext, nullptr, 0);
-	//UEnhancedInputComponent* EnhancedInput = Cast<UEnhancedInputComponent>(InputComponent);
-	//EnhancedInput->ClearBindingsForObject(GetCurrentVehicle()->VehicleWeaponLogicComponent);
-	//OnFireReleased_Vehicle.RemoveDynamic(GetCurrentVehicle()->VehicleWeaponLogicComponent, &UVehicleWeaponLogicComponent::StopFire);
-	
 }
 
 void ACharacter_Base::UpdateSeatIndexes(int32 NewLSI, int32 NewCSI, int32 NewNSI)
@@ -324,14 +313,10 @@ void ACharacter_Base::UpdateVehicleHUD(TSubclassOf<UUserWidget> HUDClass)
 		{
 			HUDSub->SpawnVehicleSeatHUD(HUDClass);
 		}
-		else
+		else if (!HUDClass && HUDSub->CurrentVehicleHUD)
 		{
-			if (!HUDClass && HUDSub->CurrentVehicleHUD)
-			{
-				HUDSub->CurrentVehicleHUD->RemoveFromParent();
-				HUDSub->CurrentVehicleHUD = nullptr;
-			}
+			HUDSub->CurrentVehicleHUD->RemoveFromParent();
+			HUDSub->CurrentVehicleHUD = nullptr;
 		}
 	}
-
 }

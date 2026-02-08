@@ -67,6 +67,12 @@ struct FWeaponRaycastData_Runtime
 {
 	GENERATED_BODY()
 
+	FWeaponRaycastData_Runtime()
+	{
+		// Ensure there is always at least one entry to prevent index out of bounds
+		MuzzleAimDirections.Add(FVector::ForwardVector);
+	}
+
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
 	FHitResult RangefinderData = FHitResult();
 
@@ -96,5 +102,4 @@ struct FBaseWeaponSystem_Runtime
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
 	FEquippedWeaponState EquippedWeaponState = FEquippedWeaponState();
-
 };

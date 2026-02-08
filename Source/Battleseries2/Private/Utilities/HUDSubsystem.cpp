@@ -38,6 +38,11 @@ void UHUDSubsystem::UpdateStatusHUD_CAMCount_Vehicle(int32 CAM)
 	StatusHUD->UpdateCAMCount(CAM);
 }
 
+void UHUDSubsystem::UpdateStatusHUD_CRACount(int32 CRA)
+{
+	StatusHUD->UpdateCRACount(CRA);
+}
+
 void UHUDSubsystem::UpdateSpeedHUD_Vehicle(float Speed)
 {
 	if (CurrentVehicleHUD && CurrentVehicleHUD->Speedometer)

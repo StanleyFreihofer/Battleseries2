@@ -28,11 +28,6 @@ struct FEquippedWeaponState;					//WeaponTypes.h
 DECLARE_DELEGATE(FOnTriggerReleased);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnVehicleWeaponSystemCleared);
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnCAMUpdated, int32, SeatIndex);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnCRAUpdated, int32, SeatIndex, int32, CRA);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnVehicleWeaponSwapped, int32, SeatIndex);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnTurretRotated, int32, SeatIndex);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnTurretPitched, int32, SeatIndex);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FWindowedRangefinder);
 
 USTRUCT(BlueprintType)									//contextualizes base weapon state data w/vehicle weapon specific state
@@ -132,17 +127,7 @@ public:
 	FOnVehicleWeaponSystemCleared OnVWSCleared;
 
 	UPROPERTY(BlueprintAssignable, Category = "Event Dispatchers")
-	FOnCAMUpdated OnCAMUpdated;
-	UPROPERTY(BlueprintAssignable, Category = "Event Dispatchers")
-	FOnCRAUpdated OnCRAUpdated;
-	UPROPERTY(BlueprintAssignable, Category = "Event Dispatchers")
-	FOnVehicleWeaponSwapped OnVehicleWeaponSwapped;
-	UPROPERTY(BlueprintAssignable, Category = "Event Dispatchers")
 	FWindowedRangefinder WindowedRangefinder;
-	UPROPERTY(BlueprintAssignable, Category = "Event Dispatchers")
-	FOnTurretRotated OnTurretRotated;
-	UPROPERTY(BlueprintAssignable, Category = "Event Dispatchers")
-	FOnTurretPitched OnTurretPitched;
 
 
 	UFUNCTION(BlueprintCallable)
@@ -214,9 +199,15 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void StartFire(int32 SeatIndex);
 	UFUNCTION(BlueprintCallable)
+	void StartWeaponFireAudio(int32 SeatIndex);
+	UFUNCTION(BlueprintCallable)
 	void FireVehicleWeapon(int32 SeatIndex);
 	UFUNCTION(BlueprintCallable)
+	void HandleAmmoDepletion(const FBaseWeaponData& StaticWeaponData, FWeapon_Runtime& CurrentWeapon, int32 SeatIndex);
+	UFUNCTION(BlueprintCallable)
 	void HandleStartAutoload(int32 SeatIndex);
+	UFUNCTION(BlueprintCallable)
+	void StartAutoload(const FBaseWeaponData& StaticWeaponData, int32 SeatIndex, int32 WeaponIndex);
 	UFUNCTION(BlueprintCallable)
 	void AutoloadNewMag(int32 SeatIndex, int32 WeaponIndex, int32 MagSize);
 	UFUNCTION(BlueprintCallable)
@@ -231,9 +222,6 @@ public:
 	void SelectWeapon(int32 SeatIndex, int32 WeaponIndex);
 	UFUNCTION(BlueprintCallable)
 	void UpdateWeaponAudioCompData(int32 SeatIndex, int32 WeaponIndex);
-
-	UFUNCTION(BlueprintCallable)
-	void BindToInput(ACharacter_Base* Character);
 
 	//GETTERS
 	UFUNCTION(BlueprintCallable, BlueprintPure)
