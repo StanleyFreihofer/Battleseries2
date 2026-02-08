@@ -1020,7 +1020,7 @@ void UVehicleWeaponLogicComponent::SelectWeapon(int32 SeatIndex, int32 WeaponInd
 	//assumes weapon index in array is valid
 	FVehicleWeaponSystem_Runtime& SeatWeaponSystem = *VehicleWeaponSystem.Find(SeatIndex);
 	SeatWeaponSystem.VehicleWeaponSystemState.EquippedWeaponState.CurrentWeaponIndex = WeaponIndex;
-	//OnVehicleWeaponSwapped.Broadcast(SeatIndex);
+
 	UpdateWeaponAudioCompData(SeatIndex, WeaponIndex);
 
 	GetWorld()->GetTimerManager().SetTimerForNextTick([this, SeatIndex, WeaponIndex]()
@@ -1042,7 +1042,6 @@ void UVehicleWeaponLogicComponent::SelectWeapon(int32 SeatIndex, int32 WeaponInd
 		}
 	});
 	SeatWeaponSystem.Weapons[WeaponIndex].VehicleWeaponState.BaseWeaponRuntimeData.WeaponState.isEquipped = true;
-
 
 	//equip weapon audio
 	//equip weapon animation
