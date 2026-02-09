@@ -187,18 +187,18 @@ public:
 	void ClearEntireLoadoutFromVehicle();
 
 	UFUNCTION(BlueprintCallable)
-	void DropSeat(ACharacter_Base* Character);
+	void DropSeat(ACharacter_Base* Character, int32& SeatIndex);
 
 	UFUNCTION(BlueprintCallable)
 	void SetupNewSeat(ACharacter_Base* Character);
 	UFUNCTION(BlueprintCallable)
 	void SetupDriver(ACharacter_Base* Character);
 	UFUNCTION()
-	void DropDriver(TWeakObjectPtr<ACharacter_Base> Character);
+	void DropDriver();
 	UFUNCTION(BlueprintCallable)
 	void SetupGunner(ACharacter_Base* Character);
 	UFUNCTION()
-	void DropGunner(TWeakObjectPtr<ACharacter_Base> Character);
+	void DropGunner(TWeakObjectPtr<ACharacter_Base> Character, int32& SeatIndex);
 
 	UFUNCTION(BlueprintCallable)
 	void EnterVehicle(ACharacter_Base* Character);

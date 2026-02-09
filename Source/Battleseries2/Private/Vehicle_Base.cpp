@@ -543,39 +543,39 @@ void AVehicle_Base::HandleSeatOccupationStatus(bool Occupy, int32 SeatIndex)
 	}
 }
 
-void AVehicle_Base::DropSeat(ACharacter_Base* Character)
+void AVehicle_Base::DropSeat(ACharacter_Base* Character, int32& SeatIndex)
 {
 	//should usually be LSI
-	if (Character->CharacterState.CharacterVehicleState.LSI == -1)
+	if (SeatIndex == -1)
 	{
-		Character->CharacterState.CharacterVehicleState.LSI = 0;
+		SeatIndex = 0;
 	}
-	const FSeatData& SeatData = VehicleData->Seats[Character->CharacterState.CharacterVehicleState.LSI];
+	const FSeatData& SeatData = VehicleData->Seats[SeatIndex];
 	Character->CharacterExitSeat(SeatData.DefaultCharacterContext);
 	if (Character->IsLocallyControlled())
 	{
 		VehicleCurrentState.SeatStates[Character->GetCSI()].UpdateHUD = false;
 	}
-	HandleSeatOccupationStatus(false, Character->CharacterState.CharacterVehicleState.LSI);
+	HandleSeatOccupationStatus(false, SeatIndex);
 
 	if (SeatData.ViewMethod == E_ViewMethod::Remote)
 	{
-		if (VehicleCurrentState.SeatStates[Character->CharacterState.CharacterVehicleState.LSI].ActiveCamera)
+		if (VehicleCurrentState.SeatStates[SeatIndex].ActiveCamera)
 		{
-			VehicleCurrentState.SeatStates[Character->CharacterState.CharacterVehicleState.LSI].ActiveCamera->SetActive(false);
+			VehicleCurrentState.SeatStates[SeatIndex].ActiveCamera->SetActive(false);
 		}
 	}
 	switch (SeatData.SeatRole)
 	{
 		case E_SeatRole::Driver:
-			DropDriver(Character);
+			DropDriver();
 			break;
 		case E_SeatRole::Gunner:
-			DropGunner(Character);
+			DropGunner(Character, SeatIndex);
 			break;
 		case E_SeatRole::DriverGunner:
-			DropDriver(Character);
-			DropGunner(Character);
+			DropDriver();
+			DropGunner(Character, SeatIndex);
 			break;
 	}
 }
@@ -632,7 +632,7 @@ void AVehicle_Base::SetupDriver(ACharacter_Base* Character)
 	//engine/whatever else start up audio
 }
 
-void AVehicle_Base::DropDriver(TWeakObjectPtr<ACharacter_Base> Character)
+void AVehicle_Base::DropDriver()
 {
 	//shutdown engine
 	VehicleCurrentState.GenericVehicleState.EngineAudioComponent->Stop();
@@ -652,12 +652,12 @@ void AVehicle_Base::SetupGunner(ACharacter_Base* Character)
 	VehicleWeaponLogicComponent->SelectWeapon(Character->CharacterState.CharacterVehicleState.CSI, 0);
 }
 
-void AVehicle_Base::DropGunner(TWeakObjectPtr<ACharacter_Base> Character)
+void AVehicle_Base::DropGunner(TWeakObjectPtr<ACharacter_Base> Character, int32& SeatIndex)
 {
 	VehicleWeaponLogicComponent->WindowedRangefinder.RemoveDynamic(Character.Get(), &ACharacter_Base::UpdateRangefinder_WindowedVehicle);
-	if (VehicleWeaponLogicComponent->GetEquippedWeaponInSeat(Character->CharacterState.CharacterVehicleState.LSI).VehicleWeaponState.BaseWeaponRuntimeData.WeaponState.isFiring)
+	if (VehicleWeaponLogicComponent->GetEquippedWeaponInSeat(SeatIndex).VehicleWeaponState.BaseWeaponRuntimeData.WeaponState.isFiring)
 	{
-		VehicleWeaponLogicComponent->StopFire(Character->CharacterState.CharacterVehicleState.LSI);
+		VehicleWeaponLogicComponent->StopFire(SeatIndex);
 	}
 }
 
@@ -678,7 +678,7 @@ void AVehicle_Base::ChangeSeat(ACharacter_Base* Character)
 	bool bFoundSeat = CycleThroughSeats(Character);
 	if (bFoundSeat)
 	{
-		DropSeat(Character);
+		DropSeat(Character, Character->CharacterState.CharacterVehicleState.LSI);
 		SetupNewSeat(Character);
 	}
 }

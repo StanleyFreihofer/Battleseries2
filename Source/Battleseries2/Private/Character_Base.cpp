@@ -113,7 +113,7 @@ void ACharacter_Base::CharacterExitVehicle()
 	if (GetCurrentVehicle())
 	{
 		CharacterExitSeat(GetCurrentVehicle()->VehicleData->Seats[GetCSI()].DefaultCharacterContext);
-		GetCurrentVehicle()->DropSeat(this);
+		GetCurrentVehicle()->DropSeat(this, GetCSI());
 		DetachFromActor(FDetachmentTransformRules::KeepRelativeTransform);
 
 		FVector ExitLocation = CalculateSafeExitLocation(GetCurrentVehicle());
