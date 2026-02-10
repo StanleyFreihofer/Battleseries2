@@ -615,12 +615,18 @@ void UVehicleWeaponLogicComponent::UpdateSeatRangefinder(int32 SeatIndex, UCamer
 {
 	const FSeatState& CurrentSeatState = OwnerDataAccessor->GetVehicleState().SeatStates[SeatIndex];
 	const FSeatData& SeatData = OwnerDataAccessor->GetVehicleData().Seats[SeatIndex];
+	FVehicleWeaponSystem_Runtime* SystemPtr = VehicleWeaponSystem.Find(SeatIndex);
 	FHitResult HitResult;
 	bool bHit;
 
 	//need to grab current weapon to see if it's a lock on (decide whether to do a sphere or line trace)?
 	bHit = UWeaponFunctions::PerformWeaponLineTrace(this, Camera->GetComponentTransform(), HitResult, ActorsToIgnore);
-	VehicleWeaponSystem.Find(SeatIndex)->VehicleWeaponSystemState.EquippedWeaponState.RaycastData.RangefinderData = HitResult;		//cache trace data
+	SystemPtr->VehicleWeaponSystemState.EquippedWeaponState.RaycastData.RangefinderData = HitResult;		//cache trace data
+
+	UE_LOG(LogTemp, Warning, TEXT("[VWLC::UpdateSeatRangefinder] Seat %d Address: %p | Impact: %s"),
+		SeatIndex,
+		&SystemPtr->VehicleWeaponSystemState.EquippedWeaponState.RaycastData.RangefinderData,
+		*HitResult.ImpactPoint.ToString());
 
 	if (OwnerDataAccessor->GetVehicleState().SeatStates[SeatIndex].UpdateHUD)
 	{
@@ -717,7 +723,7 @@ void UVehicleWeaponLogicComponent::CalculateAimDirection(TWeakObjectPtr<USkeleta
 		SeatWeaponSystem.VehicleWeaponSystemState.EquippedWeaponState.RaycastData.MuzzleAimDirections[MI] = UWeaponFunctions::CalculateAimDirection(HitResult, MuzzleLocation);
 
 		// DEBUG: Draw the convergence line
-		//UWeaponFunctions::Debug_ProjectilePath(GetWorld(), MuzzleLocation, HitResult);
+		UWeaponFunctions::Debug_ProjectilePath(GetWorld(), MuzzleLocation, HitResult);
 	}
 }
 
@@ -799,26 +805,7 @@ void UVehicleWeaponLogicComponent::FireVehicleWeapon(int32 SeatIndex)
 				case EProjectileType::Bullet:
 				case EProjectileType::Pellet:
 				case EProjectileType::Shell:
-					//handle SHOOT simprojectile
-					FVector MuzzleLocation = FVector::ForwardVector;
-					if (SeatWeaponSystem.VehicleWeaponSystemState.WeaponSystemMesh.IsValid())
-					{
-						MuzzleLocation = UWeaponFunctions::GetMuzzleTransform(VehicleWeaponState.MuzzleSockets[0], SeatWeaponSystem.VehicleWeaponSystemState.WeaponSystemMesh).GetLocation();
-					}
-					else
-					{
-						MuzzleLocation = UWeaponFunctions::GetMuzzleTransform(VehicleWeaponState.MuzzleSockets[0], OwnerDataAccessor->GetVehicleMesh()).GetLocation();
-					}
-					UWeaponFunctions::CreateSimProjectile(StaticWeaponData.WeaponFireData.ProjectileID, MuzzleLocation, StaticWeaponData.WeaponPerformance.MuzzleVelocity, ProjectileData.ProjectileFlightPlan[0].GuidanceParams.GravityScale, SeatWeaponSystem.VehicleWeaponSystemState.EquippedWeaponState.RaycastData.MuzzleAimDirections[0], ProjectileSubsystem);
-					//VFX
-					for (int32 MuzzleIndex : VehicleWeaponState.CurrentMuzzleIndexes)
-					{
-						TWeakObjectPtr<UNiagaraComponent> VFXComp = VehicleWeaponState.MuzzleVFXPool[MuzzleIndex];
-						if (UNiagaraComponent* VFX = VehicleWeaponState.MuzzleVFXPool[MuzzleIndex].Get())
-						{
-							VFX->Activate(true);
-						}
-					}
+					HandleShootSimProjectile(VehicleWeaponState, StaticWeaponData, SeatWeaponSystem, ProjectileData);
 					break;
 
 				case EProjectileType::Rocket:			//contains own initial velocity
@@ -854,6 +841,44 @@ void UVehicleWeaponLogicComponent::FireVehicleWeapon(int32 SeatIndex)
 	}
 
 	HandleAmmoDepletion(StaticWeaponData, CurrentWeapon, SeatIndex);
+}
+
+void UVehicleWeaponLogicComponent::HandleShootSimProjectile(FVehicleWeaponState& VehicleWeaponState, const FBaseWeaponData& StaticWeaponData, FVehicleWeaponSystem_Runtime& SeatWeaponSystem, const FProjectileData& ProjectileData)
+{
+	FVector MuzzleLocation = FVector::ForwardVector;
+	if (SeatWeaponSystem.VehicleWeaponSystemState.WeaponSystemMesh.IsValid())
+	{
+		MuzzleLocation = UWeaponFunctions::GetMuzzleTransform(VehicleWeaponState.MuzzleSockets[0], SeatWeaponSystem.VehicleWeaponSystemState.WeaponSystemMesh).GetLocation();
+	}
+	else
+	{
+		MuzzleLocation = UWeaponFunctions::GetMuzzleTransform(VehicleWeaponState.MuzzleSockets[0], OwnerDataAccessor->GetVehicleMesh()).GetLocation();
+	}
+
+	UE_LOG(LogTemp, Error, TEXT("[VWLC::HandleShootSimProjectile] Fire Address: %p | Impact: %s"),
+		&SeatWeaponSystem.VehicleWeaponSystemState.EquippedWeaponState.RaycastData.RangefinderData,
+		*SeatWeaponSystem.VehicleWeaponSystemState.EquippedWeaponState.RaycastData.RangefinderData.ImpactPoint.ToString());
+	UWeaponFunctions::CreateSimProjectile
+	(
+		StaticWeaponData.WeaponFireData.ProjectileID,
+		nullptr,
+		MuzzleLocation, 
+		StaticWeaponData.WeaponPerformance.MuzzleVelocity,
+		ProjectileData.ProjectileFlightPlan[0].GuidanceParams.GravityScale, 
+		SeatWeaponSystem.VehicleWeaponSystemState.EquippedWeaponState.RaycastData.MuzzleAimDirections[0], 
+		StaticWeaponData.WeaponPerformance.WeaponDamageData.BaseDamage,
+		StaticWeaponData.WeaponPerformance.WeaponDamageData.DamageDropoffCurve,
+		ProjectileSubsystem
+	);
+	//VFX
+	for (int32 MuzzleIndex : VehicleWeaponState.CurrentMuzzleIndexes)
+	{
+		TWeakObjectPtr<UNiagaraComponent> VFXComp = VehicleWeaponState.MuzzleVFXPool[MuzzleIndex];
+		if (UNiagaraComponent* VFX = VehicleWeaponState.MuzzleVFXPool[MuzzleIndex].Get())
+		{
+			VFX->Activate(true);
+		}
+	}
 }
 
 void UVehicleWeaponLogicComponent::HandleAmmoDepletion(const FBaseWeaponData& StaticWeaponData, FWeapon_Runtime& CurrentWeapon, int32 SeatIndex)
@@ -955,8 +980,17 @@ void UVehicleWeaponLogicComponent::ApplyWeaponRecoilJostle(int32 SeatIndex, int3
 	//jostle
 	AVehicle_Base& Vehicle = OwnerDataAccessor->GetVehicle();
 	UPrimitiveComponent* RootBody = Cast<UPrimitiveComponent>(Vehicle.GetRootComponent());
-	int32 TurretIndex = OwnerDataAccessor->GetVehicleData().Seats[SeatIndex].AvailableItems.ControlledTurretIndexes[0];
-	float RelativeYaw = GetTurretWorldYaw(TurretIndex);
+	float RelativeYaw;
+	if (OwnerDataAccessor->GetVehicleData().Seats[SeatIndex].AvailableItems.ControlledTurretIndexes.Num() > 0)
+	{
+		int32 TurretIndex = OwnerDataAccessor->GetVehicleData().Seats[SeatIndex].AvailableItems.ControlledTurretIndexes[0];
+		RelativeYaw = GetTurretWorldYaw(TurretIndex);
+	}
+	else
+	{
+		RelativeYaw = Vehicle.GetActorForwardVector().Y;
+	}
+
 	float RadianYaw = FMath::DegreesToRadians(RelativeYaw);
 	float PitchFactor = FMath::Cos(RadianYaw);
 	float RollFactor = FMath::Sin(RadianYaw);
@@ -1009,6 +1043,7 @@ void UVehicleWeaponLogicComponent::SwitchWeapon(int32 SeatIndex)
 		StopWeaponSlotFire(SeatIndex, PreviousCWI);
 	}
 	//Unequip Weapon Function?
+	//camera/view method
 	SeatWeaponSystem.Weapons[PreviousCWI].VehicleWeaponState.BaseWeaponRuntimeData.WeaponState.isEquipped = false;
 	SelectWeapon(SeatIndex, CWI);
 }
@@ -1042,6 +1077,7 @@ void UVehicleWeaponLogicComponent::SelectWeapon(int32 SeatIndex, int32 WeaponInd
 	});
 	SeatWeaponSystem.Weapons[WeaponIndex].VehicleWeaponState.BaseWeaponRuntimeData.WeaponState.isEquipped = true;
 
+	//camera/view method
 	//equip weapon audio
 	//equip weapon animation
 }

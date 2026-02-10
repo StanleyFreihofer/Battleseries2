@@ -29,7 +29,7 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	static int32 UpdateWeaponIndex(TArray<FWeapon_Runtime> Weapons, int32 WeaponIndex);
 	UFUNCTION(BlueprintCallable)
-	static FProjectile_Runtime CreateSimProjectile(FName ProjectileID, FVector MuzzleLocation, float MuzzleSpeed, float GravityScale, FVector AimDirection, UProjectilePoolSubsystem* ProjectileSubsystem);
+	static FProjectile_Runtime CreateSimProjectile(FName ProjectileID, class APlayerState* InstigatorPlayerState, FVector MuzzleLocation, float MuzzleSpeed, float GravityScale, FVector AimDirection, float BaseDamage, UCurveFloat* DamageDropoffCurve, UProjectilePoolSubsystem* ProjectileSubsystem);
 	UFUNCTION(BlueprintCallable)
 	static void Debug_ProjectilePath(const UObject* WorldContextObject, FVector MuzzleLocation, FHitResult HitResult);
 };

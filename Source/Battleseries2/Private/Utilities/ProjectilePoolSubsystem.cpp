@@ -30,7 +30,7 @@ void UProjectilePoolSubsystem::SpawnPoolofProjectile(FName ProjectileID, int32 P
 {
 	FProjectilePoolEntry PoolEntry;
 	DataManager = GetWorld()->GetGameInstance()->GetSubsystem<UDataManagerSubsystem>();
-	//UDataManagerSubsystem* DataManager = GetWorld()->GetGameInstance()->GetSubsystem<UDataManagerSubsystem>();
+
 	const FProjectileData* ProjectileData = DataManager->GetProjectileDataRow(ProjectileID);
 	switch (ProjectileData->ProjectileClassificationData.ProjectileType)
 	{
@@ -121,7 +121,7 @@ void UProjectilePoolSubsystem::UpdateSimulatedProjectiles(float DeltaSeconds)
 		SimulatedProjectile.CurrentLocation = NewLocation;
 		SimulatedProjectile.CurrentVelocity = NewVelocity;
 		DrawDebugSphere(GetWorld(), NewLocation, 10.f, 8, FColor::Blue, false, -1.f);
-		if (SimulatedProjectile.ProjectileMesh)
+		if (SimulatedProjectile.ProjectileMesh.Get())
 		{
 			SimulatedProjectile.ProjectileMesh->SetActorLocation(NewLocation);
 		}

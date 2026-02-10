@@ -34,6 +34,7 @@ void ACharacter_Base::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 	if (CharacterState.CharacterVehicleState.inVehicle)
 	{
+		//UpdateRangefinder_WindowedVehicle();
 		//GetLocalPlayerHUDSystem()->UpdateCompassHUD_Vehicle();		//this or on steer and control turret 
 		//GetLocalPlayerHUDSystem()->UpdateTurretLinesHUD_Vehicle();		//control turret
 	}
@@ -154,17 +155,23 @@ void ACharacter_Base::CharacterEnterSeat(const FCharacterSeatContext& SeatContex
 			GetLocalPlayerHUDSystem()->UpdateSpeedHUD_Vehicle(GetCurrentVehicle()->GetVelocity().Size());
 
 			//turrets/heading
-			GetLocalPlayerHUDSystem()->UpdateCompassHUD_Vehicle(GetCurrentVehicle()->VehicleCurrentState.SeatStates[GetCSI()].ActiveCamera->GetComponentRotation().Yaw);
-			const int32& CTI = GetCurrentVehicle()->VehicleData->Seats[GetCSI()].AvailableItems.ControlledTurretIndexes[0];
+			if (GetCurrentVehicle()->VehicleCurrentState.SeatStates[GetCSI()].ActiveCamera)
+			{
+				GetLocalPlayerHUDSystem()->UpdateCompassHUD_Vehicle(GetCurrentVehicle()->VehicleCurrentState.SeatStates[GetCSI()].ActiveCamera->GetComponentRotation().Yaw);
+				GetLocalPlayerHUDSystem()->HandleTurretRotationUpdate(GetCurrentVehicle()->VehicleCurrentState.SeatStates[GetCSI()].ActiveCamera->GetComponentRotation().Yaw);
+			}
+			if (GetCurrentVehicle()->VehicleData->Seats[GetCSI()].AvailableItems.ControlledTurretIndexes.Num())
+			{
+				const int32& CTI = GetCurrentVehicle()->VehicleData->Seats[GetCSI()].AvailableItems.ControlledTurretIndexes[0];
 
-			GetLocalPlayerHUDSystem()->HandleTurretRotationUpdate(GetCurrentVehicle()->VehicleCurrentState.SeatStates[GetCSI()].ActiveCamera->GetComponentRotation().Yaw);
-			
-			GetLocalPlayerHUDSystem()->HandleTurretPitchUpdate
-			(
-				GetCurrentVehicle()->VehicleData->Turrets[CTI].TurretPitch.TurretMinMax.GetLowerBoundValue(),
-				GetCurrentVehicle()->VehicleData->Turrets[CTI].TurretPitch.TurretMinMax.GetUpperBoundValue(),
-				GetCurrentVehicle()->VehicleWeaponLogicComponent->TurretStates[CTI].CurrentTurretPitch
-			);
+				GetLocalPlayerHUDSystem()->HandleTurretPitchUpdate
+				(
+					GetCurrentVehicle()->VehicleData->Turrets[CTI].TurretPitch.TurretMinMax.GetLowerBoundValue(),
+					GetCurrentVehicle()->VehicleData->Turrets[CTI].TurretPitch.TurretMinMax.GetUpperBoundValue(),
+					GetCurrentVehicle()->VehicleWeaponLogicComponent->TurretStates[CTI].CurrentTurretPitch
+				);
+			}
+
 			break;
 	}
 }
@@ -299,22 +306,16 @@ void ACharacter_Base::UpdateCharacterMeshVisibility(bool ShowMesh)
 
 void ACharacter_Base::UpdateRangefinder_WindowedVehicle()
 {
-	if (CharacterState.CharacterVehicleState.inVehicle && !CharacterState.CharacterVehicleState.isFreeLooking)
+	//free looking? (make sure its correctly managed this time)
+	if (CharacterState.CharacterVehicleState.inVehicle)
 	{
-		const FSeatData& OccupiedSeatData = CharacterState.CharacterVehicleState.CurrentVehicle->VehicleData->Seats[CharacterState.CharacterVehicleState.CSI];
+		const FSeatData& OccupiedSeatData = GetCurrentVehicle()->VehicleData->Seats[GetCSI()];
 		if (OccupiedSeatData.ViewMethod == E_ViewMethod::Windowed)
 		{
-			if (OccupiedSeatData.SeatRole == E_SeatRole::DriverGunner || OccupiedSeatData.SeatRole == E_SeatRole::Gunner)
-			{
-				UVehicleWeaponLogicComponent* VWLC = CharacterState.CharacterVehicleState.CurrentVehicle->VehicleWeaponLogicComponent;
-				FVehicleWeaponSystem_Runtime* SeatWeaponSystem = VWLC->VehicleWeaponSystem.Find(CharacterState.CharacterVehicleState.CSI);
-				if (!SeatWeaponSystem->Weapons[SeatWeaponSystem->VehicleWeaponSystemState.EquippedWeaponState.CurrentWeaponIndex].VehicleWeaponInstanceData.bHasSpecialCam)
-				{
-					TArray<AActor*> Actors;
-					Actors.Add(CharacterState.CharacterVehicleState.CurrentVehicle);
-					VWLC->UpdateSeatRangefinder(CharacterState.CharacterVehicleState.CSI, Camera, Actors);
-				}
-			}
+			TArray<AActor*> Actors;
+			Actors.Add(GetCurrentVehicle());
+			UVehicleWeaponLogicComponent* VWLC = GetCurrentVehicle()->VehicleWeaponLogicComponent;
+			VWLC->UpdateSeatRangefinder(GetCSI(), Camera, Actors);
 		}
 	}
 }

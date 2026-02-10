@@ -27,6 +27,8 @@ struct FSeatState
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
 	UCameraComponent* ActiveCamera = nullptr;
 
+	//occupant name string?
+
 	//optic on/off?
 	//current POV mode?
 

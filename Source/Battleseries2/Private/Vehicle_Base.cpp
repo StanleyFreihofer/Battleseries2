@@ -619,7 +619,7 @@ void AVehicle_Base::SetupDriver(ACharacter_Base* Character)
 	UGameplayStatics::PlaySoundAtLocation(this, Cast<USoundBase>(VehicleData->GenericVehicleAudio.EngineStartupAudio), GetActorLocation(), FRotator::ZeroRotator, 1.0f, 1.0f, 0.0f);
 	if (!VehicleCurrentState.GenericVehicleState.EngineAudioComponent)
 	{
-		//setup engine audio
+		//setup engine audio (do in factory instead?)
 		VehicleCurrentState.GenericVehicleState.EngineAudioComponent = NewObject<UAudioComponent>(this, UAudioComponent::StaticClass());
 		VehicleCurrentState.GenericVehicleState.EngineAudioComponent->RegisterComponent();
 		VehicleCurrentState.GenericVehicleState.EngineAudioComponent->AttachToComponent(GetRootComponent(), FAttachmentTransformRules::KeepRelativeTransform);
@@ -738,7 +738,10 @@ void AVehicle_Base::ApplySteering_GV(float SteeringValue, int32 SeatIndex)
 	{
 		ChaosVehicleMovement->SetSteeringInput(SteeringValue);
 	}
-	GetHUDSystem()->UpdateCompassHUD_Vehicle(VehicleCurrentState.SeatStates[SeatIndex].ActiveCamera->GetComponentRotation().Yaw);
+	if (VehicleCurrentState.SeatStates[SeatIndex].ActiveCamera)
+	{
+		GetHUDSystem()->UpdateCompassHUD_Vehicle(VehicleCurrentState.SeatStates[SeatIndex].ActiveCamera->GetComponentRotation().Yaw);
+	}
 }
 
 void AVehicle_Base::HandleThrottle(float ThrottleValue, int32 SeatIndex)

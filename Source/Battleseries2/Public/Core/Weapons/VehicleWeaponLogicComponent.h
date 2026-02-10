@@ -20,6 +20,7 @@ class UDataManagerSubsystem;
 class UHUDSubsystem;
 struct FWeapon_Runtime;							//WeaponTypes.h
 struct FEquippedWeaponState;					//WeaponTypes.h
+struct FProjectileData;
 
 //class for handling all of the weapons equipped on a vehicle
 //much logic and some data is used from base weapon logic comp
@@ -202,6 +203,8 @@ public:
 	void StartWeaponFireAudio(int32 SeatIndex);
 	UFUNCTION(BlueprintCallable)
 	void FireVehicleWeapon(int32 SeatIndex);
+	UFUNCTION(BlueprintCallable)
+	void HandleShootSimProjectile(FVehicleWeaponState& VehicleWeaponState, const FBaseWeaponData& StaticWeaponData, FVehicleWeaponSystem_Runtime& SeatWeaponSystem, const FProjectileData& ProjectileData);
 	UFUNCTION(BlueprintCallable)
 	void HandleAmmoDepletion(const FBaseWeaponData& StaticWeaponData, FWeapon_Runtime& CurrentWeapon, int32 SeatIndex);
 	UFUNCTION(BlueprintCallable)

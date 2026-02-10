@@ -71,7 +71,7 @@ int32 UWeaponFunctions::UpdateWeaponIndex(TArray<FWeapon_Runtime> Weapons, int32
 	return NewWeaponIndex;
 }
 
-FProjectile_Runtime UWeaponFunctions::CreateSimProjectile(FName ProjectileID, FVector MuzzleLocation, float MuzzleSpeed, float GravityScale, FVector AimDirection, UProjectilePoolSubsystem* ProjectileSubsystem)
+FProjectile_Runtime UWeaponFunctions::CreateSimProjectile(FName ProjectileID, class APlayerState* InstigatorPlayerState, FVector MuzzleLocation, float MuzzleSpeed, float GravityScale, FVector AimDirection, float BaseDamage, UCurveFloat* DamageDropoffCurve, UProjectilePoolSubsystem* ProjectileSubsystem)
 {
 	FProjectile_Runtime NewSimulatedProjectile = FProjectile_Runtime();
 	NewSimulatedProjectile.ProjectileID = ProjectileID;
@@ -79,6 +79,8 @@ FProjectile_Runtime UWeaponFunctions::CreateSimProjectile(FName ProjectileID, FV
 	NewSimulatedProjectile.CurrentLocation = MuzzleLocation;
 	NewSimulatedProjectile.CurrentVelocity = AimDirection * MuzzleSpeed;
 	NewSimulatedProjectile.GravityScale = GravityScale;
+	NewSimulatedProjectile.BaseDamage = BaseDamage;
+	NewSimulatedProjectile.DamageCurve = DamageDropoffCurve;
 	ProjectileSubsystem->AddNewSimProjectile(NewSimulatedProjectile);
 	return NewSimulatedProjectile;
 }

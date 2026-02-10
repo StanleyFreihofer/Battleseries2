@@ -26,7 +26,10 @@ struct FProjectile_Runtime
 	FName ProjectileID = NAME_None;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	AStaticMeshActor* ProjectileMesh = nullptr;
+	TWeakObjectPtr<class APlayerState> InstigatorPlayerState;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TWeakObjectPtr<AStaticMeshActor> ProjectileMesh = nullptr;
 
 	//movement state (updated everytick)
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)     //the initial location of the projectile
@@ -37,6 +40,12 @@ struct FProjectile_Runtime
 	FVector CurrentVelocity = FVector();
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float GravityScale = 0.0f;
+
+	//damage
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float BaseDamage = 0.0f;						//copied from weapon?
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)		//copied from weapon?
+	UCurveFloat* DamageCurve = nullptr;		//multiply by base damage
 
 	//Flight Plan State
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
