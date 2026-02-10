@@ -29,8 +29,10 @@ struct FWeaponLockOnData
 {
 	GENERATED_BODY()
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	ELockOnRequirement LockOnRequirement;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ToolTip = "whether or not weapon requires a lockon in order to fire"))
+	bool RequiresLockOn = false;			
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ToolTip = "the parameters that dictate when weapon can lock on to a target"))
+	ELockOnCapability LockOnCapability = ELockOnCapability::NoLockOn;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	TArray<ETargetingCategory> CanTarget;
 };

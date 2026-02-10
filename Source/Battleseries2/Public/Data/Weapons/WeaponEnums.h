@@ -37,8 +37,8 @@ enum class EFireMode : uint8
 	Single		UMETA(DisplayName = "Single")
 };
 
-UENUM(BlueprintType)		//The different behaviors of a weapon that dictates if it can lock on & if it needs a lock on to fire
-enum class ELockOnRequirement : uint8
+UENUM(BlueprintType)		//The different behaviors of a weapon that dictates under what parameters can it lock on to sometin
+enum class ELockOnCapability : uint8
 {
 	NoLockOn			UMETA(DisplayName = "No Lock On"),			//Cannot lock on to a target
 
@@ -47,6 +47,7 @@ enum class ELockOnRequirement : uint8
 	CanHardLockOn		UMETA(DisplayName = "Hard Lock On"),		//Can only lock on if target is lazed
 	RequiresLockOn		UMETA(DisplayName = "Requires Lock On")		//Requires lockon to fire
 };
+
 
 UENUM(BlueprintType)		//what the weapon can target/lock on to
 enum class ETargetingCategory : uint8

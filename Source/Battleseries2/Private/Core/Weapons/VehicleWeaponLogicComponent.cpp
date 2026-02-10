@@ -623,11 +623,6 @@ void UVehicleWeaponLogicComponent::UpdateSeatRangefinder(int32 SeatIndex, UCamer
 	bHit = UWeaponFunctions::PerformWeaponLineTrace(this, Camera->GetComponentTransform(), HitResult, ActorsToIgnore);
 	SystemPtr->VehicleWeaponSystemState.EquippedWeaponState.RaycastData.RangefinderData = HitResult;		//cache trace data
 
-	UE_LOG(LogTemp, Warning, TEXT("[VWLC::UpdateSeatRangefinder] Seat %d Address: %p | Impact: %s"),
-		SeatIndex,
-		&SystemPtr->VehicleWeaponSystemState.EquippedWeaponState.RaycastData.RangefinderData,
-		*HitResult.ImpactPoint.ToString());
-
 	if (OwnerDataAccessor->GetVehicleState().SeatStates[SeatIndex].UpdateHUD)
 	{
 		GetHUDSystem()->UpdateRangefinderHUD_Vehicle(HitResult.Distance / 100);	//distance in meter
@@ -855,9 +850,6 @@ void UVehicleWeaponLogicComponent::HandleShootSimProjectile(FVehicleWeaponState&
 		MuzzleLocation = UWeaponFunctions::GetMuzzleTransform(VehicleWeaponState.MuzzleSockets[0], OwnerDataAccessor->GetVehicleMesh()).GetLocation();
 	}
 
-	UE_LOG(LogTemp, Error, TEXT("[VWLC::HandleShootSimProjectile] Fire Address: %p | Impact: %s"),
-		&SeatWeaponSystem.VehicleWeaponSystemState.EquippedWeaponState.RaycastData.RangefinderData,
-		*SeatWeaponSystem.VehicleWeaponSystemState.EquippedWeaponState.RaycastData.RangefinderData.ImpactPoint.ToString());
 	UWeaponFunctions::CreateSimProjectile
 	(
 		StaticWeaponData.WeaponFireData.ProjectileID,
@@ -1038,14 +1030,17 @@ void UVehicleWeaponLogicComponent::SwitchWeapon(int32 SeatIndex)
 	bool bWasFiring = SeatWeaponSystem.Weapons[PreviousCWI].VehicleWeaponState.BaseWeaponRuntimeData.WeaponState.isFiring;
 	CWI = (CWI + 1) % SeatWeaponSystem.Weapons.Num();
 
-	if (PreviousCWI != CWI && bWasFiring)
+	if (PreviousCWI != CWI)
 	{
-		StopWeaponSlotFire(SeatIndex, PreviousCWI);
+		if (bWasFiring)
+		{
+			StopWeaponSlotFire(SeatIndex, PreviousCWI);
+		}
+		//Unequip Weapon Function?
+		//camera/view method
+		SeatWeaponSystem.Weapons[PreviousCWI].VehicleWeaponState.BaseWeaponRuntimeData.WeaponState.isEquipped = false;
+		SelectWeapon(SeatIndex, CWI);
 	}
-	//Unequip Weapon Function?
-	//camera/view method
-	SeatWeaponSystem.Weapons[PreviousCWI].VehicleWeaponState.BaseWeaponRuntimeData.WeaponState.isEquipped = false;
-	SelectWeapon(SeatIndex, CWI);
 }
 
 void UVehicleWeaponLogicComponent::SelectWeapon(int32 SeatIndex, int32 WeaponIndex)
@@ -1078,6 +1073,7 @@ void UVehicleWeaponLogicComponent::SelectWeapon(int32 SeatIndex, int32 WeaponInd
 	SeatWeaponSystem.Weapons[WeaponIndex].VehicleWeaponState.BaseWeaponRuntimeData.WeaponState.isEquipped = true;
 
 	//camera/view method
+	//set equipped weapon data (muzzle aim direction num)
 	//equip weapon audio
 	//equip weapon animation
 }
