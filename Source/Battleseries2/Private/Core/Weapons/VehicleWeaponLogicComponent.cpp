@@ -616,11 +616,20 @@ void UVehicleWeaponLogicComponent::UpdateSeatRangefinder(int32 SeatIndex, UCamer
 	const FSeatState& CurrentSeatState = OwnerDataAccessor->GetVehicleState().SeatStates[SeatIndex];
 	const FSeatData& SeatData = OwnerDataAccessor->GetVehicleData().Seats[SeatIndex];
 	FVehicleWeaponSystem_Runtime* SystemPtr = VehicleWeaponSystem.Find(SeatIndex);
+	const FBaseWeaponData& StaticWeaponData = GetBaseWeaponDataInSlot(SeatIndex, GetCWIForSeat(SeatIndex));
 	FHitResult HitResult;
 	bool bHit;
 
 	//need to grab current weapon to see if it's a lock on (decide whether to do a sphere or line trace)?
-	bHit = UWeaponFunctions::PerformWeaponLineTrace(this, Camera->GetComponentTransform(), HitResult, ActorsToIgnore);
+	if (StaticWeaponData.WeaponFunctionality.LockOnFunctionality.LockOnCapability != ELockOnCapability::NoLockOn)
+	{
+		bHit = UWeaponFunctions::PerformWeaponSphereTrace(this, Camera->GetComponentTransform(), HitResult, ActorsToIgnore, 20.0f);
+	}
+	else
+	{
+		bHit = UWeaponFunctions::PerformWeaponLineTrace(this, Camera->GetComponentTransform(), HitResult, ActorsToIgnore);
+	}
+
 	SystemPtr->VehicleWeaponSystemState.EquippedWeaponState.RaycastData.RangefinderData = HitResult;		//cache trace data
 
 	if (OwnerDataAccessor->GetVehicleState().SeatStates[SeatIndex].UpdateHUD)
@@ -1049,7 +1058,7 @@ void UVehicleWeaponLogicComponent::SelectWeapon(int32 SeatIndex, int32 WeaponInd
 	//assumes weapon index in array is valid
 	FVehicleWeaponSystem_Runtime& SeatWeaponSystem = *VehicleWeaponSystem.Find(SeatIndex);
 	SeatWeaponSystem.VehicleWeaponSystemState.EquippedWeaponState.CurrentWeaponIndex = WeaponIndex;
-
+	const FBaseWeaponData& StaticWeaponData = GetBaseWeaponDataInSlot(SeatIndex, WeaponIndex);
 	UpdateWeaponAudioCompData(SeatIndex, WeaponIndex);
 
 	GetWorld()->GetTimerManager().SetTimerForNextTick([this, SeatIndex, WeaponIndex]()
@@ -1071,6 +1080,13 @@ void UVehicleWeaponLogicComponent::SelectWeapon(int32 SeatIndex, int32 WeaponInd
 		}
 	});
 	SeatWeaponSystem.Weapons[WeaponIndex].VehicleWeaponState.BaseWeaponRuntimeData.WeaponState.isEquipped = true;
+
+	if (StaticWeaponData.WeaponFunctionality.LockOnFunctionality.RequiresLockOn)
+	{
+		//cant fire unless theres a lock on
+		GetEquippedWeaponInSeat(SeatIndex).VehicleWeaponState.BaseWeaponRuntimeData.WeaponState.canFire = false;
+		//make update canfire function?
+	}
 
 	//camera/view method
 	//set equipped weapon data (muzzle aim direction num)

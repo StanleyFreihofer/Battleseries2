@@ -38,6 +38,22 @@ bool UWeaponFunctions::PerformWeaponLineTrace(const UObject* WorldContextObject,
 	return bDidHit;
 }
 
+bool UWeaponFunctions::PerformWeaponSphereTrace(const UObject* WorldContextObject, const FTransform& StartTransform, FHitResult& OutHit, TArray<AActor*> ActorsToIgnore, float Radius)
+{
+	//if calling from any actor, WorldContextObject = this/self
+	UWorld* World = GEngine->GetWorldFromContextObject(WorldContextObject, EGetWorldErrorMode::LogAndReturnNull);
+	FVector Startpoint = StartTransform.GetLocation();
+	FVector GetRotationXVector = StartTransform.GetRotation().Rotator().Vector();
+	FVector Endpoint = GetRotationXVector * 50000.0f + Startpoint;
+
+	FCollisionQueryParams Params;
+	FCollisionShape SphereShape = FCollisionShape::MakeSphere(Radius);
+	Params.AddIgnoredActors(ActorsToIgnore);
+	bool bDidHit = World->SweepSingleByChannel(OutHit, Startpoint, Endpoint, FQuat::Identity, ECC_Visibility, SphereShape, Params);
+
+	return bDidHit;
+}
+
 int32 UWeaponFunctions::UpdateCurrentAmmoInMag(FWeapon_Runtime& CurrentWeapon, int32 AmmoDelta, int32 MagSize)
 {
 	//can be used for firing or resupplying logic

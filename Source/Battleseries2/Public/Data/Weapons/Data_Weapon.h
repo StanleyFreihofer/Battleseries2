@@ -35,6 +35,10 @@ struct FWeaponLockOnData
 	ELockOnCapability LockOnCapability = ELockOnCapability::NoLockOn;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	TArray<ETargetingCategory> CanTarget;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	TSoftObjectPtr<USoundWave> LockOnAudio = nullptr;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	TSoftObjectPtr<USoundWave> LockedOnAudio = nullptr;
 };
 
 USTRUCT(BlueprintType)

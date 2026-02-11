@@ -46,6 +46,8 @@ struct FWeaponState
 	int32 CurrentAmmoinMag = 0;
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
 	int32 CurrentReserveAmmo = 0;
+
+	//in flight projectiles? (actors mainly?)
 };
 
 //1 weapon's runtime data

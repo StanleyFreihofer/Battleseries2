@@ -45,7 +45,6 @@ enum class ELockOnCapability : uint8
 	//IF ANY OF THE FOLLOWING ARE SELECTED, WEAPON SHOULD HAVE FUNCTIONALITY TO AUTOLOCK/FIRE OUT A SPHERE TRACE BY DEFAULT
 	CanSoftLockOn		UMETA(DisplayName = "Soft Lock On"),		//Can lock on without target being lazed
 	CanHardLockOn		UMETA(DisplayName = "Hard Lock On"),		//Can only lock on if target is lazed
-	RequiresLockOn		UMETA(DisplayName = "Requires Lock On")		//Requires lockon to fire
 };
 
 

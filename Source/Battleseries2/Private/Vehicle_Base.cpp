@@ -643,13 +643,13 @@ void AVehicle_Base::DropDriver()
 void AVehicle_Base::SetupGunner(ACharacter_Base* Character)
 {
 	//called once on enter of a gunner seat, seat hud should already be on viewport
-	const FSeatData& SeatData = VehicleData->Seats[Character->CharacterState.CharacterVehicleState.CSI];
+	const FSeatData& SeatData = VehicleData->Seats[Character->GetCSI()];
 	if (SeatData.ViewMethod == E_ViewMethod::Windowed)
 	{
 		VehicleWeaponLogicComponent->WindowedRangefinder.AddDynamic(Character, &ACharacter_Base::UpdateRangefinder_WindowedVehicle);
 	}
 
-	VehicleWeaponLogicComponent->SelectWeapon(Character->CharacterState.CharacterVehicleState.CSI, 0);
+	VehicleWeaponLogicComponent->SelectWeapon(Character->GetCSI(), 0);
 }
 
 void AVehicle_Base::DropGunner(TWeakObjectPtr<ACharacter_Base> Character, int32& SeatIndex)
