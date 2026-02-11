@@ -38,13 +38,16 @@ enum class EFireMode : uint8
 };
 
 UENUM(BlueprintType)		//The different behaviors of a weapon that dictates under what parameters can it lock on to sometin
-enum class ELockOnCapability : uint8
+enum class EHomingCapability : uint8
 {
-	NoLockOn			UMETA(DisplayName = "No Lock On"),			//Cannot lock on to a target
+	NoHoming			UMETA(DisplayName = "No Lock On"),			//Cannot lock on to a target
+	WireGuided			UMETA(DisplayName = "Wire Guided"),			//TOW Missle, etc
 
 	//IF ANY OF THE FOLLOWING ARE SELECTED, WEAPON SHOULD HAVE FUNCTIONALITY TO AUTOLOCK/FIRE OUT A SPHERE TRACE BY DEFAULT
-	CanSoftLockOn		UMETA(DisplayName = "Soft Lock On"),		//Can lock on without target being lazed
-	CanHardLockOn		UMETA(DisplayName = "Hard Lock On"),		//Can only lock on if target is lazed
+	CanLockOn			UMETA(DisplayName = "Lock On"),		//Can lock on without target being lazed
+	RequireLockOn		UMETA(DisplayName = "Require Lock On")
+	//soft lockon
+	//CanHardLockOn		UMETA(DisplayName = "Hard Lock On"),		//Can only lock on if target is lazed (this can be covered by category)
 };
 
 
@@ -55,7 +58,8 @@ enum class ETargetingCategory : uint8
 	Aircraft			UMETA(DisplayName = "Aircraft"),
 	AnyVehicle			UMETA(DisplayName = "Any Vehicle"),
 	LazedTarget			UMETA(DisplayName = "Lazed Target"),
-	Location			UMETA(DisplayName = "Location")
+	Location			UMETA(DisplayName = "Location"),
+	MAX					UMETA(Hidden)
 };
 
 UENUM(BlueprintType)
@@ -67,7 +71,7 @@ enum class EAmmoDepletionMethod : uint8
 };
 
 UENUM(BlueprintType)					//the different states of a lockon weapon
-enum class ELockOnState : uint8
+enum class ELockOnState : uint8									
 {
 	NotLockingOn		UMETA(DisplayName = "Not Locking On"),			//is not locked on and is not locking on to anything. not doing anything
 	IsLockingOn			UMETA(DisplayName = "Is Locking On"),			//is currently locking on to something but hasn't acquired it yet

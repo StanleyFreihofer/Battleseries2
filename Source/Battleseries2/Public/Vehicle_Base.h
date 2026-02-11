@@ -12,6 +12,7 @@
 #include "Utilities/DataManagerSubsystem.h"
 #include "Engine/DataTable.h"
 #include "Utilities/I_VehicleDataAccessor.h"
+#include "Core/Weapons/I_LockOnTarget.h"
 #include "Data/Runtime/VehicleTypes.h"
 
 #include "Vehicle_Base.generated.h"
@@ -61,7 +62,7 @@ struct FVehicleStartingData
 };
 
 UCLASS()
-class BATTLESERIES2_API AVehicle_Base : public APawn, public IVehicleDataAccessor
+class BATTLESERIES2_API AVehicle_Base : public APawn, public IVehicleDataAccessor, public ILockOnTarget
 {
 	GENERATED_BODY()
 
@@ -246,6 +247,8 @@ public:
 	virtual const FVehicleData& GetVehicleData() const override;
 	virtual const FVehicleCurrentState& GetVehicleState() const override;
 	virtual AVehicle_Base& GetVehicle() override;
+
+	virtual bool GetIfCanLockOn_Implementation(const TArray<ETargetingCategory>& TargetingCategories, EHomingCapability HomingCapability) override;
 
 	//Getters
 

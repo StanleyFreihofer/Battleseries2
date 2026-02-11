@@ -201,8 +201,8 @@ void UVehicleWeaponLogicComponent::MountProjectiles(int32 SeatIndex, int32 Weapo
 	FVehicleWeapon_Runtime& SeatWeaponToFill = VehicleWeaponSystem.Find(SeatIndex)->Weapons[WeaponIndex];
 	FWeapon_Runtime& WeaponDataToFill = SeatWeaponToFill.VehicleWeaponState.BaseWeaponRuntimeData;
 	const FVehicleWeaponData* VehicleWeaponRow = DataSubsystem->GetVehicleWeaponDataRow(WeaponDataToFill.WeaponID);
-	int32 MagSize = VehicleWeaponRow->WeaponData.AmmoData.MagSize;
-	FName ProjectileID = VehicleWeaponRow->WeaponData.WeaponFireData.ProjectileID;
+	const int32& MagSize = VehicleWeaponRow->WeaponData.AmmoData.MagSize;
+	const FName& ProjectileID = VehicleWeaponRow->WeaponData.WeaponFireData.ProjectileID;
 	if (!VehicleWeaponRow || ProjectileID.IsNone())
 	{
 		return;
@@ -593,7 +593,7 @@ void UVehicleWeaponLogicComponent::HandleSeatRangefinders()
 			WindowedRangefinder.Broadcast();
 		}
 
-		FHitResult HitResult = SeatWeaponSystem.Value.VehicleWeaponSystemState.EquippedWeaponState.RaycastData.RangefinderData;
+		FHitResult& HitResult = SeatWeaponSystem.Value.VehicleWeaponSystemState.EquippedWeaponState.RaycastData.RangefinderData;
 		if (!SeatWeaponSystem.Value.Weapons[WeaponIndex].VehicleWeaponInstanceData.bAreProjectilesMounted)
 		{
 			//GET MUZZLE SOCKET LOCATION, CALCULATE AIM DIRECTION (line from muzzle to whatever HitResult data)
@@ -617,24 +617,115 @@ void UVehicleWeaponLogicComponent::UpdateSeatRangefinder(int32 SeatIndex, UCamer
 	const FSeatData& SeatData = OwnerDataAccessor->GetVehicleData().Seats[SeatIndex];
 	FVehicleWeaponSystem_Runtime* SystemPtr = VehicleWeaponSystem.Find(SeatIndex);
 	const FBaseWeaponData& StaticWeaponData = GetBaseWeaponDataInSlot(SeatIndex, GetCWIForSeat(SeatIndex));
-	FHitResult HitResult;
+	FVehicleWeapon_Runtime& CurrentWeapon = GetEquippedWeaponInSeat(SeatIndex);
+	FHitResult& HitResult = SystemPtr->VehicleWeaponSystemState.EquippedWeaponState.RaycastData.RangefinderData;
 	bool bHit;
 
-	//need to grab current weapon to see if it's a lock on (decide whether to do a sphere or line trace)?
-	if (StaticWeaponData.WeaponFunctionality.LockOnFunctionality.LockOnCapability != ELockOnCapability::NoLockOn)
+	//SystemPtr->VehicleWeaponSystemState.EquippedWeaponState.RaycastData.RangefinderData = HitResult;		//cache trace data
+
+	if (StaticWeaponData.WeaponFunctionality.HomingFunctionality.HomingCapability != EHomingCapability::NoHoming)
 	{
+		// handle lock on
 		bHit = UWeaponFunctions::PerformWeaponSphereTrace(this, Camera->GetComponentTransform(), HitResult, ActorsToIgnore, 20.0f);
+		FLockOnState& LockOnState = CurrentWeapon.VehicleWeaponState.BaseWeaponRuntimeData.WeaponState.LockOnState;
+
+		if (HitResult.GetActor() && HitResult.GetActor()->GetClass()->ImplementsInterface(ULockOnTarget::StaticClass()))
+		{
+			bool canLockOn = ILockOnTarget::Execute_GetIfCanLockOn(HitResult.GetActor(), StaticWeaponData.WeaponFunctionality.HomingFunctionality.CanTarget, StaticWeaponData.WeaponFunctionality.HomingFunctionality.HomingCapability);
+			if (canLockOn)
+			{
+				//anything from here on can be seen as a "promotion" of lock status 
+				switch (LockOnState.CurrentLockStatus)
+				{
+					case ELockOnState::NotLockingOn:
+						StartLockingOn(CurrentWeapon, StaticWeaponData.WeaponFunctionality.HomingFunctionality, HitResult);
+						break;
+					case ELockOnState::IsLockingOn:
+						//now locking on to a target we can lock on to but not the same one we were locking on to
+						if (HitResult.GetActor() != CurrentWeapon.VehicleWeaponState.BaseWeaponRuntimeData.WeaponState.LockOnState.AcquiredTarget)
+						{
+							UE_LOG(LogTemp, Warning, TEXT("[VWLC::UpdateSeatRangefinder] DifferentTarget"));
+						}
+						break;
+					case ELockOnState::IsLockedOn:
+					case ELockOnState::IsLosingLock:
+						break;
+				}
+			}
+			else
+			{
+				//actor that can be locked on to... but not by this weapon
+				//anything from here on can be seen as a "demotion" of lock status
+				switch (LockOnState.CurrentLockStatus)
+				{
+					case ELockOnState::IsLockingOn:
+					case ELockOnState::IsLockedOn:
+						//cancel lockon
+
+						GetWorld()->GetTimerManager().ClearTimer(LockOnState.LockOnTimer);
+						LockOnState.CurrentLockStatus = ELockOnState::IsLosingLock;
+						UE_LOG(LogTemp, Warning, TEXT("[VWLC::IsLosingLock]"));
+						//interface to target
+						//do something to incrementally lose lock, not outright cancel it
+						//when completely lost lock, null target, set lock state to notlockingon
+						break;
+				}
+			}
+		}
+		else
+		{
+			//null actor or an actor that cant be locked on to
+			//anything from here on can be seen as a "demotion" of lock status
+			switch (LockOnState.CurrentLockStatus)
+			{
+				case ELockOnState::IsLockingOn:
+				case ELockOnState::IsLockedOn:
+					//cancel lockon
+
+					GetWorld()->GetTimerManager().ClearTimer(LockOnState.LockOnTimer);
+					LockOnState.CurrentLockStatus = ELockOnState::IsLosingLock;
+					UE_LOG(LogTemp, Warning, TEXT("[VWLC::IsLosingLock]"));
+					//interface to target
+					//do something to incrementally lose lock, not outright cancel it
+					//when completely lost lock, null target, set lock state to notlockingon
+					break;
+			}
+		}
 	}
 	else
 	{
 		bHit = UWeaponFunctions::PerformWeaponLineTrace(this, Camera->GetComponentTransform(), HitResult, ActorsToIgnore);
 	}
 
-	SystemPtr->VehicleWeaponSystemState.EquippedWeaponState.RaycastData.RangefinderData = HitResult;		//cache trace data
-
 	if (OwnerDataAccessor->GetVehicleState().SeatStates[SeatIndex].UpdateHUD)
 	{
 		GetHUDSystem()->UpdateRangefinderHUD_Vehicle(HitResult.Distance / 100);	//distance in meter
+	}
+}
+
+void UVehicleWeaponLogicComponent::StartLockingOn(FVehicleWeapon_Runtime& CurrentWeapon, const FWeaponHomingData& HomingData, const FHitResult& HitResult)
+{
+	UE_LOG(LogTemp, Warning, TEXT("[VWLC::StartLockingOn]"));
+	FLockOnState& LockOnState = CurrentWeapon.VehicleWeaponState.BaseWeaponRuntimeData.WeaponState.LockOnState;
+	FTimerDelegate LockOnDelegate;
+	LockOnDelegate.BindUObject(this, &UVehicleWeaponLogicComponent::LockOn, CurrentWeapon, HomingData, HitResult);
+	GetWorld()->GetTimerManager().SetTimer(LockOnState.LockOnTimer, LockOnDelegate, HomingData.AcquireTime, false);	
+	LockOnState.AcquiredTarget = HitResult.GetActor();
+	LockOnState.CurrentLockStatus = ELockOnState::IsLockingOn;
+	//interface to acquired target (locking on)
+	//UI
+	//audio
+}
+
+void UVehicleWeaponLogicComponent::LockOn(FVehicleWeapon_Runtime CurrentWeapon, FWeaponHomingData HomingData, FHitResult HitResult)
+{
+	UE_LOG(LogTemp, Warning, TEXT("[VWLC::LockOn]"));
+	FWeaponState& WeaponState = CurrentWeapon.VehicleWeaponState.BaseWeaponRuntimeData.WeaponState;
+	WeaponState.LockOnState.CurrentLockStatus = ELockOnState::IsLockedOn;
+	//interface to acquired target (locked on)?... do only when fire
+	if (!WeaponState.canFire && WeaponState.CurrentAmmoinMag > 0 && HomingData.HomingCapability == EHomingCapability::RequireLockOn)
+	{
+		WeaponState.canFire = true;		
 	}
 }
 
@@ -802,6 +893,7 @@ void UVehicleWeaponLogicComponent::FireVehicleWeapon(int32 SeatIndex)
 	FWeapon_Runtime& CurrentWeapon = VehicleWeaponState.BaseWeaponRuntimeData;
 	switch (StaticWeaponData.WeaponFireData.WeaponFireType)
 	{
+		//handle shoot projectile
 		case EWeaponFireType::Projectile:
 			const FProjectileData& ProjectileData = *DataSubsystem->GetProjectileDataRow(StaticWeaponData.WeaponFireData.ProjectileID);
 			switch (ProjectileData.ProjectileClassificationData.ProjectileType)
@@ -1081,7 +1173,7 @@ void UVehicleWeaponLogicComponent::SelectWeapon(int32 SeatIndex, int32 WeaponInd
 	});
 	SeatWeaponSystem.Weapons[WeaponIndex].VehicleWeaponState.BaseWeaponRuntimeData.WeaponState.isEquipped = true;
 
-	if (StaticWeaponData.WeaponFunctionality.LockOnFunctionality.RequiresLockOn)
+	if (StaticWeaponData.WeaponFunctionality.HomingFunctionality.HomingCapability == EHomingCapability::RequireLockOn)
 	{
 		//cant fire unless theres a lock on
 		GetEquippedWeaponInSeat(SeatIndex).VehicleWeaponState.BaseWeaponRuntimeData.WeaponState.canFire = false;

@@ -21,6 +21,7 @@ class UHUDSubsystem;
 struct FWeapon_Runtime;							//WeaponTypes.h
 struct FEquippedWeaponState;					//WeaponTypes.h
 struct FProjectileData;
+struct FWeaponHomingData;
 
 //class for handling all of the weapons equipped on a vehicle
 //much logic and some data is used from base weapon logic comp
@@ -187,6 +188,10 @@ public:
 	void HandleSeatRangefinders();
 	UFUNCTION(BlueprintCallable)
 	void UpdateSeatRangefinder(int32 SeatIndex, UCameraComponent* Camera, TArray<AActor*> ActorsToIgnore);
+	UFUNCTION(BlueprintCallable)
+	void StartLockingOn(FVehicleWeapon_Runtime& CurrentWeapon, const FWeaponHomingData& HomingData, const FHitResult& HitResult);
+	UFUNCTION(BlueprintCallable)
+	void LockOn(FVehicleWeapon_Runtime CurrentWeapon, FWeaponHomingData HomingData, FHitResult HitResult);
 	UFUNCTION(BlueprintCallable)
 	FName BuildMuzzleName(FName SeatName, int32 WeaponIndex, EMuzzleType MuzzleType, int32 MuzzleIndex);
 	UFUNCTION()

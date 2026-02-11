@@ -100,3 +100,11 @@ enum class EVehicleHUDType : uint8
 	Countermeasure,
 	Movement
 };
+
+UENUM(BlueprintType)
+enum class ETargetedStatus : uint8
+{
+	NotLockedOn,
+	GettingLockedOn,
+	MissileIncoming
+};

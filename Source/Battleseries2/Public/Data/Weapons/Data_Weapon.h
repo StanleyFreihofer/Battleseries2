@@ -25,16 +25,18 @@ struct FBaseClassificationData
 };
 
 USTRUCT(BlueprintType)
-struct FWeaponLockOnData
+struct FWeaponHomingData
 {
 	GENERATED_BODY()
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ToolTip = "whether or not weapon requires a lockon in order to fire"))
-	bool RequiresLockOn = false;			
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ToolTip = "the parameters that dictate when weapon can lock on to a target"))
-	ELockOnCapability LockOnCapability = ELockOnCapability::NoLockOn;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	//UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ToolTip = "whether or not weapon requires a lockon in order to fire"))
+	//bool RequiresLockOn = false;			
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ToolTip = "the parameters that dictate if/HOW a weapon can guide to a target"))
+	EHomingCapability HomingCapability = EHomingCapability::NoHoming;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ToolTip = "the parameters that dictate what a weapon can target/lock on to"))
 	TArray<ETargetingCategory> CanTarget;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ToolTip = "time it takes to lockon/acquire a target"))
+	float AcquireTime = 0.0f;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	TSoftObjectPtr<USoundWave> LockOnAudio = nullptr;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
@@ -60,7 +62,7 @@ struct FWeaponFunctionalityData
 	int32 BurstSize = 0;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	FWeaponLockOnData LockOnFunctionality = FWeaponLockOnData();
+	FWeaponHomingData HomingFunctionality = FWeaponHomingData();
 };
 
 //weaponfirehandlingdata (accuracy, recoil, spread, etc)

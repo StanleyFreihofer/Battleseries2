@@ -802,6 +802,45 @@ AVehicle_Base& AVehicle_Base::GetVehicle()
 	return *this;
 }
 
+bool AVehicle_Base::GetIfCanLockOn_Implementation(const TArray<ETargetingCategory>& TargetingCategories, EHomingCapability HomingCapability)
+{
+	switch (HomingCapability)
+	{
+		case EHomingCapability::NoHoming:
+			return false;
+		case EHomingCapability::WireGuided:
+			//if this vehicle is lazed
+			break;
+		case EHomingCapability::CanLockOn:
+		case EHomingCapability::RequireLockOn:
+			for (ETargetingCategory TargetingCategory : TargetingCategories)
+			{
+				switch (TargetingCategory)
+				{
+					case ETargetingCategory::GroundVehicle:
+						if (VehicleData->Movement_Type == E_MovementType::GroundVehicle || VehicleData->Movement_Type == E_MovementType::Boat)
+						{
+							return true;
+						}
+						break;
+					case ETargetingCategory::Aircraft:
+						if (VehicleData->Movement_Type == E_MovementType::Helicopter || VehicleData->Movement_Type == E_MovementType::Jet)
+						{
+							return true;
+						}
+						break;
+					case ETargetingCategory::AnyVehicle:
+						return true;
+					case ETargetingCategory::LazedTarget:
+						//if this vehicle is currently lazed
+						break;
+					}
+			}
+			return false;
+	}
+	return false;
+}
+
 
 
 

@@ -9,17 +9,19 @@ struct FBaseWeaponData;
 USTRUCT(BlueprintType)
 struct FLockOnState
 {
-
 	GENERATED_BODY()
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	ELockOnState LockOnState = ELockOnState::NotLockingOn;
+	ELockOnState CurrentLockStatus = ELockOnState::NotLockingOn;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	TWeakObjectPtr<AActor> AcquiredTarget;
+	TWeakObjectPtr<AActor> AcquiredTarget = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)		//for laser-guided targets (JDAM's)
 	FVector DesignatedPoint = FVector::ZeroVector;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FTimerHandle LockOnTimer;
 
 	//potential lock on target? A thing acquired that can be locked on but hasn't actually been locked onto yet (should be a local var in whatever function)
 };
@@ -48,6 +50,8 @@ struct FWeaponState
 	int32 CurrentReserveAmmo = 0;
 
 	//in flight projectiles? (actors mainly?)
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	FLockOnState LockOnState = FLockOnState();
 };
 
 //1 weapon's runtime data
