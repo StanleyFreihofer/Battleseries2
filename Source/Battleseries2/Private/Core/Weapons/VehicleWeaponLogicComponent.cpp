@@ -638,7 +638,7 @@ void UVehicleWeaponLogicComponent::UpdateSeatRangefinder(int32 SeatIndex, UCamer
 				switch (LockOnState.CurrentLockStatus)
 				{
 					case ELockOnState::NotLockingOn:
-						StartLockingOn(CurrentWeapon, StaticWeaponData.WeaponFunctionality.HomingFunctionality, HitResult);
+						StartLockingOn(SeatIndex, CurrentWeapon, StaticWeaponData.WeaponFunctionality.HomingFunctionality, HitResult);
 						break;
 					case ELockOnState::IsLockingOn:
 						//now locking on to a target we can lock on to but not the same one we were locking on to
@@ -703,12 +703,12 @@ void UVehicleWeaponLogicComponent::UpdateSeatRangefinder(int32 SeatIndex, UCamer
 	}
 }
 
-void UVehicleWeaponLogicComponent::StartLockingOn(FVehicleWeapon_Runtime& CurrentWeapon, const FWeaponHomingData& HomingData, const FHitResult& HitResult)
+void UVehicleWeaponLogicComponent::StartLockingOn(int32& SeatIndex, FVehicleWeapon_Runtime& CurrentWeapon, const FWeaponHomingData& HomingData, const FHitResult& HitResult)
 {
 	UE_LOG(LogTemp, Warning, TEXT("[VWLC::StartLockingOn]"));
 	FLockOnState& LockOnState = CurrentWeapon.VehicleWeaponState.BaseWeaponRuntimeData.WeaponState.LockOnState;
 	FTimerDelegate LockOnDelegate;
-	LockOnDelegate.BindUObject(this, &UVehicleWeaponLogicComponent::LockOn, CurrentWeapon, HomingData, HitResult);
+	LockOnDelegate.BindUFunction(this, FName("LockOn"), SeatIndex, HomingData, HitResult);
 	GetWorld()->GetTimerManager().SetTimer(LockOnState.LockOnTimer, LockOnDelegate, HomingData.AcquireTime, false);	
 	LockOnState.AcquiredTarget = HitResult.GetActor();
 	LockOnState.CurrentLockStatus = ELockOnState::IsLockingOn;
@@ -717,9 +717,10 @@ void UVehicleWeaponLogicComponent::StartLockingOn(FVehicleWeapon_Runtime& Curren
 	//audio
 }
 
-void UVehicleWeaponLogicComponent::LockOn(FVehicleWeapon_Runtime CurrentWeapon, FWeaponHomingData HomingData, FHitResult HitResult)
+void UVehicleWeaponLogicComponent::LockOn(int32 SeatIndex, const FWeaponHomingData HomingData, const FHitResult HitResult)
 {
 	UE_LOG(LogTemp, Warning, TEXT("[VWLC::LockOn]"));
+	FVehicleWeapon_Runtime& CurrentWeapon = GetEquippedWeaponInSeat(SeatIndex);
 	FWeaponState& WeaponState = CurrentWeapon.VehicleWeaponState.BaseWeaponRuntimeData.WeaponState;
 	WeaponState.LockOnState.CurrentLockStatus = ELockOnState::IsLockedOn;
 	//interface to acquired target (locked on)?... do only when fire
@@ -1049,6 +1050,7 @@ void UVehicleWeaponLogicComponent::AutoloadNewMag(int32 SeatIndex, int32 WeaponI
 	}
 
 	CurrentWeapon.WeaponState.canFire = true;
+	CurrentWeapon.WeaponState.isReloading = false;
 
 	if (OwnerDataAccessor->GetVehicleState().SeatStates[SeatIndex].UpdateHUD && CurrentWeapon.WeaponState.isEquipped)
 	{

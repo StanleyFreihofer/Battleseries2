@@ -189,9 +189,9 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void UpdateSeatRangefinder(int32 SeatIndex, UCameraComponent* Camera, TArray<AActor*> ActorsToIgnore);
 	UFUNCTION(BlueprintCallable)
-	void StartLockingOn(FVehicleWeapon_Runtime& CurrentWeapon, const FWeaponHomingData& HomingData, const FHitResult& HitResult);
+	void StartLockingOn(int32& SeatIndex, FVehicleWeapon_Runtime& CurrentWeapon, const FWeaponHomingData& HomingData, const FHitResult& HitResult);
 	UFUNCTION(BlueprintCallable)
-	void LockOn(FVehicleWeapon_Runtime CurrentWeapon, FWeaponHomingData HomingData, FHitResult HitResult);
+	void LockOn(int32 SeatIndex, const FWeaponHomingData HomingData, const FHitResult HitResult);
 	UFUNCTION(BlueprintCallable)
 	FName BuildMuzzleName(FName SeatName, int32 WeaponIndex, EMuzzleType MuzzleType, int32 MuzzleIndex);
 	UFUNCTION()
