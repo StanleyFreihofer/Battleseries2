@@ -16,7 +16,13 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (BindWidget))
 	class UImage* Diamond = nullptr;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (BindWidget))
+	class UOverlay* IndicatorGroup; 
+
 	UFUNCTION(BlueprintCallable)
 	void UpdateIndicatorPosition(FVector Location);
+
+	UFUNCTION(BlueprintCallable)
+	void UpdateLockIndicatorStatus(ELockOnState LockOnState);
 };
 

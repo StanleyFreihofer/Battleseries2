@@ -12,6 +12,7 @@
 #include "Core/UI/VehicleHUDs/UW_VehicleHUDComp_TurretPitchMeter.h"
 #include "Core/UI/VehicleHUDs/UW_VehicleHUDComp_Speedometer.h"
 #include "Data/Weapons/VehicleWeapons/Data_VehicleWeapon.h"
+#include "Data/Weapons/WeaponEnums.h"
 #include "Character_Base.h"
 #include "Vehicle_Base.h"
 #include "Core/Weapons/VehicleWeaponLogicComponent.h"
@@ -46,6 +47,14 @@ void UHUDSubsystem::UpdateLockOnIndicatorPosition(FVector Location)
 	if (LockOnIndicator)
 	{
 		LockOnIndicator->UpdateIndicatorPosition(Location);
+	}
+}
+
+void UHUDSubsystem::UpdateLockOnIndicatorStatus(ELockOnState LockOnState)
+{
+	if (LockOnIndicator)
+	{
+		LockOnIndicator->UpdateLockIndicatorStatus(LockOnState);
 	}
 }
 

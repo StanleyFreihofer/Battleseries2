@@ -248,6 +248,8 @@ public:
 	FVehicleWeapon_Runtime& GetEquippedWeaponInSeat(int32 SeatIndex);
 	UFUNCTION()
 	TWeakObjectPtr<UHUDSubsystem> GetHUDSystem();
+	UFUNCTION()
+	TWeakObjectPtr<UAudioComponent> GetWAC(int32& SeatIndex);
 
 protected:
 	//(SeatIndex, [WeaponIndex] BaseWeaponData)

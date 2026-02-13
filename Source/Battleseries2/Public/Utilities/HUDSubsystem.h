@@ -38,6 +38,8 @@ public:
     UFUNCTION(BlueprintCallable)
     void UpdateLockOnIndicatorPosition(FVector Location);
     UFUNCTION(BlueprintCallable)
+    void UpdateLockOnIndicatorStatus(ELockOnState LockOnState);
+    UFUNCTION(BlueprintCallable)
     void UpdateStatusHUD_CAMCount(int32 CAM);
     UFUNCTION(BlueprintCallable)
     void UpdateStatusHUD_CRACount(int32 CRA);
