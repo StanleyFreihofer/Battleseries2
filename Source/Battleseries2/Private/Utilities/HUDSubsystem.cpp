@@ -1,6 +1,7 @@
 #include "Utilities/HUDSubsystem.h"
 #include "Blueprint/UserWidget.h"
 #include "Core/UI/GameplayHUDs/UW_HUD_Status_Base.h"
+#include "Core/UI/GameplayHUDs/UUW_HUD_LockOnIndicator_Base.h"
 #include "Core/UI/VehicleHUDs/UW_HUD_Vehicle_Base.h"
 #include "Core/UI/VehicleHUDs/UW_VehicleHUDComp_Reticle.h"
 #include "Core/UI/VehicleHUDs/UW_VehicleHUDComp_Rangefinder.h"
@@ -33,7 +34,22 @@ void UHUDSubsystem::SpawnVehicleSeatHUD(TSubclassOf<UUserWidget> HUDClass)
 	//do everything at least once maybe?
 }
 
-void UHUDSubsystem::UpdateStatusHUD_CAMCount_Vehicle(int32 CAM)
+void UHUDSubsystem::SpawnLockOnIndicator(TSubclassOf<UUserWidget> HUDClass)
+{
+	APlayerController* PC = GetLocalPlayer()->GetPlayerController(GetWorld());
+	LockOnIndicator = CreateWidget<UUW_HUD_LockOnIndicator_Base>(PC, HUDClass);
+	LockOnIndicator->AddToViewport();
+}
+
+void UHUDSubsystem::UpdateLockOnIndicatorPosition(FVector Location)
+{
+	if (LockOnIndicator)
+	{
+		LockOnIndicator->UpdateIndicatorPosition(Location);
+	}
+}
+
+void UHUDSubsystem::UpdateStatusHUD_CAMCount(int32 CAM)
 {
 	StatusHUD->UpdateCAMCount(CAM);
 }
@@ -170,4 +186,10 @@ void UHUDSubsystem::HandleTurretRotationUpdate(float Yaw)
 void UHUDSubsystem::HandleTurretPitchUpdate(float MinPitch, float MaxPitch, float CurrentPitch)
 {
 	UpdateTurretElevationHUD_Vehicle(MinPitch, MaxPitch, CurrentPitch);
+}
+
+void UHUDSubsystem::RemoveWidget(UUW_HUD_LockOnIndicator_Base* UserWidget)
+{
+	UserWidget->RemoveFromParent();
+	LockOnIndicator = nullptr; //HARDCODED FOR NOW, CHANGE THIS
 }

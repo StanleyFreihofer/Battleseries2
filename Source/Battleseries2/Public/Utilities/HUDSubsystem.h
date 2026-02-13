@@ -6,6 +6,7 @@
 
 class UUW_HUD_Status_Base;
 class UUW_HUD_Vehicle_Base;
+class UUW_HUD_LockOnIndicator_Base;
 class AVehicle_Base;
 
 UCLASS(Blueprintable, BlueprintType)
@@ -20,6 +21,9 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
     UUW_HUD_Vehicle_Base* CurrentVehicleHUD;
 
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    UUW_HUD_LockOnIndicator_Base* LockOnIndicator;
+
     //killfeed
     //onfootreticle
     //minimap
@@ -30,7 +34,11 @@ public:
     UFUNCTION(BlueprintCallable)
     void SpawnVehicleSeatHUD(TSubclassOf<UUserWidget> HUDClass);
     UFUNCTION(BlueprintCallable)
-    void UpdateStatusHUD_CAMCount_Vehicle(int32 CAM);
+    void SpawnLockOnIndicator(TSubclassOf<UUserWidget> HUDClass);
+    UFUNCTION(BlueprintCallable)
+    void UpdateLockOnIndicatorPosition(FVector Location);
+    UFUNCTION(BlueprintCallable)
+    void UpdateStatusHUD_CAMCount(int32 CAM);
     UFUNCTION(BlueprintCallable)
     void UpdateStatusHUD_CRACount(int32 CRA);
     UFUNCTION(BlueprintCallable)
@@ -57,4 +65,7 @@ public:
     void HandleTurretRotationUpdate(float Yaw);
     UFUNCTION(BlueprintCallable)
     void HandleTurretPitchUpdate(float MinPitch, float MaxPitch, float CurrentPitch);
+
+    UFUNCTION(BlueprintCallable)
+    void RemoveWidget(UUW_HUD_LockOnIndicator_Base* UserWidget);
 };

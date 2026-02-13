@@ -193,6 +193,10 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void LockOn(int32 SeatIndex, const FWeaponHomingData HomingData, const FHitResult HitResult);
 	UFUNCTION(BlueprintCallable)
+	void StartCancelLockOn(int32& SeatIndex, FLockOnState& LockOnState);
+	UFUNCTION(BlueprintCallable)
+	void CancelLockOn(int32 SeatIndex);
+	UFUNCTION(BlueprintCallable)
 	FName BuildMuzzleName(FName SeatName, int32 WeaponIndex, EMuzzleType MuzzleType, int32 MuzzleIndex);
 	UFUNCTION()
 	void SetupMuzzleSockets(TWeakObjectPtr<USkeletalMeshComponent> Mesh, int32 SeatIndex, int32 WeaponIndex, FName SeatName);

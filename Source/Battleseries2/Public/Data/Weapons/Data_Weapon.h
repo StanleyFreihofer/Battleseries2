@@ -41,6 +41,8 @@ struct FWeaponHomingData
 	TSoftObjectPtr<USoundWave> LockOnAudio = nullptr;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	TSoftObjectPtr<USoundWave> LockedOnAudio = nullptr;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	TSubclassOf<UUserWidget> IndicatorReticle = nullptr;
 };
 
 USTRUCT(BlueprintType)
