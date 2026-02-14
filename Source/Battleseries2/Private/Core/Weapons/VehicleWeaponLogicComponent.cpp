@@ -625,7 +625,7 @@ void UVehicleWeaponLogicComponent::UpdateSeatRangefinder(int32 SeatIndex, UCamer
 	if (StaticWeaponData.WeaponFunctionality.HomingFunctionality.HomingCapability != EHomingCapability::NoHoming)
 	{
 		// handle lock on
-		bHit = UWeaponFunctions::PerformWeaponSphereTrace(this, Camera->GetComponentTransform(), HitResult, ActorsToIgnore, 20.0f);
+		bHit = UWeaponFunctions::PerformWeaponSphereTrace(this, Camera->GetComponentTransform(), HitResult, ActorsToIgnore, 35.0f);
 		FLockOnState& LockOnState = CurrentWeapon.VehicleWeaponState.BaseWeaponRuntimeData.WeaponState.LockOnState;
 
 		if (HitResult.GetActor() && HitResult.GetActor()->GetClass()->ImplementsInterface(ULockOnTarget::StaticClass()))
@@ -647,7 +647,7 @@ void UVehicleWeaponLogicComponent::UpdateSeatRangefinder(int32 SeatIndex, UCamer
 						}
 						if (OwnerDataAccessor->GetVehicleState().SeatStates[SeatIndex].UpdateHUD)
 						{
-							GetHUDSystem()->UpdateLockOnIndicatorPosition(HitResult.GetActor()->GetActorLocation());
+							GetHUDSystem()->UpdateLockOnIndicatorPosition(HitResult.GetActor()->GetRootComponent()->GetSocketLocation(FName("LockOn")));
 						}
 						break;
 					case ELockOnState::IsLockedOn:
@@ -657,7 +657,7 @@ void UVehicleWeaponLogicComponent::UpdateSeatRangefinder(int32 SeatIndex, UCamer
 						//Update LockOn Indicator
 						if (OwnerDataAccessor->GetVehicleState().SeatStates[SeatIndex].UpdateHUD)
 						{
-							GetHUDSystem()->UpdateLockOnIndicatorPosition(HitResult.GetActor()->GetActorLocation());
+							GetHUDSystem()->UpdateLockOnIndicatorPosition(HitResult.GetActor()->GetRootComponent()->GetSocketLocation(FName("LockOn")));
 						}
 						break;
 					case ELockOnState::IsLosingLock:
