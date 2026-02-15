@@ -749,7 +749,7 @@ void UVehicleWeaponLogicComponent::StartCancelLockOn(int32& SeatIndex, FLockOnSt
 		ElapsedTime = GetWorld()->GetTimerManager().GetTimerElapsed(LockOnState.LockOnTimer);
 	}
 	FTimerDelegate LockOnDelegate;
-	LockOnDelegate.BindUFunction(this, FName("CancelLockOn"), SeatIndex);
+	LockOnDelegate.BindUFunction(this, FName("CancelLockOn"), SeatIndex, GetCWIForSeat(SeatIndex));
 	GetWorld()->GetTimerManager().SetTimer(LockOnState.LockOnTimer, LockOnDelegate, ElapsedTime, false);
 	LockOnState.CurrentLockStatus = ELockOnState::IsLosingLock;
 	GetWAC(SeatIndex)->SetTriggerParameter(FName("Event_StopLockOn"));
@@ -757,10 +757,10 @@ void UVehicleWeaponLogicComponent::StartCancelLockOn(int32& SeatIndex, FLockOnSt
 	UE_LOG(LogTemp, Warning, TEXT("[VWLC::IsLosingLock]"));
 }
 
-void UVehicleWeaponLogicComponent::CancelLockOn(int32 SeatIndex)
+void UVehicleWeaponLogicComponent::CancelLockOn(int32 SeatIndex, int32 WeaponIndex)
 {
-	FWeaponState& WeaponState = GetEquippedWeaponInSeat(SeatIndex).VehicleWeaponState.BaseWeaponRuntimeData.WeaponState;
-	const FWeaponHomingData& HomingData = GetBaseWeaponDataInSlot(SeatIndex, GetCWIForSeat(SeatIndex)).WeaponFunctionality.HomingFunctionality;
+	FWeaponState& WeaponState = VehicleWeaponSystem.Find(SeatIndex)->Weapons[WeaponIndex].VehicleWeaponState.BaseWeaponRuntimeData.WeaponState;
+	const FWeaponHomingData& HomingData = GetBaseWeaponDataInSlot(SeatIndex, WeaponIndex).WeaponFunctionality.HomingFunctionality;
 	WeaponState.LockOnState.CurrentLockStatus = ELockOnState::NotLockingOn;
 	GetHUDSystem()->UpdateLockOnIndicatorStatus(WeaponState.LockOnState.CurrentLockStatus);
 	WeaponState.LockOnState.AcquiredTarget = nullptr;
@@ -1180,13 +1180,7 @@ void UVehicleWeaponLogicComponent::SwitchWeapon(int32 SeatIndex)
 
 	if (PreviousCWI != CWI)
 	{
-		if (bWasFiring)
-		{
-			StopWeaponSlotFire(SeatIndex, PreviousCWI);
-		}
-		//Unequip Weapon Function?
-		//camera/view method
-		SeatWeaponSystem.Weapons[PreviousCWI].VehicleWeaponState.BaseWeaponRuntimeData.WeaponState.isEquipped = false;
+		UnequipWeapon(SeatIndex, PreviousCWI, bWasFiring);
 		SelectWeapon(SeatIndex, CWI);
 	}
 }
@@ -1231,6 +1225,21 @@ void UVehicleWeaponLogicComponent::SelectWeapon(int32 SeatIndex, int32 WeaponInd
 	//set equipped weapon data (muzzle aim direction num)
 	//equip weapon audio
 	//equip weapon animation
+}
+
+void UVehicleWeaponLogicComponent::UnequipWeapon(int32& SeatIndex, int32& WeaponIndex, bool& bWasFiring)
+{
+	FVehicleWeaponSystem_Runtime& SeatWeaponSystem = *VehicleWeaponSystem.Find(SeatIndex);
+	FWeaponState& WeaponState = SeatWeaponSystem.Weapons[WeaponIndex].VehicleWeaponState.BaseWeaponRuntimeData.WeaponState;
+	if (bWasFiring)
+	{
+		StopWeaponSlotFire(SeatIndex, WeaponIndex);
+	}
+	SeatWeaponSystem.Weapons[WeaponIndex].VehicleWeaponState.BaseWeaponRuntimeData.WeaponState.isEquipped = false;
+	if (SeatWeaponSystem.Weapons[WeaponIndex].VehicleWeaponState.BaseWeaponRuntimeData.WeaponState.LockOnState.CurrentLockStatus != ELockOnState::NotLockingOn)
+	{
+		CancelLockOn(SeatIndex, WeaponIndex);
+	}
 }
 
 void UVehicleWeaponLogicComponent::UpdateWeaponAudioCompData(int32 SeatIndex, int32 WeaponIndex)

@@ -195,7 +195,7 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void StartCancelLockOn(int32& SeatIndex, FLockOnState& LockOnState);
 	UFUNCTION(BlueprintCallable)
-	void CancelLockOn(int32 SeatIndex);
+	void CancelLockOn(int32 SeatIndex, int32 WeaponIndex);
 	UFUNCTION(BlueprintCallable)
 	FName BuildMuzzleName(FName SeatName, int32 WeaponIndex, EMuzzleType MuzzleType, int32 MuzzleIndex);
 	UFUNCTION()
@@ -232,6 +232,8 @@ public:
 	void SwitchWeapon(int32 SeatIndex);
 	UFUNCTION(BlueprintCallable)
 	void SelectWeapon(int32 SeatIndex, int32 WeaponIndex);
+	UFUNCTION(BlueprintCallable)
+	void UnequipWeapon(int32& SeatIndex, int32& WeaponIndex, bool& bWasFiring);
 	UFUNCTION(BlueprintCallable)
 	void UpdateWeaponAudioCompData(int32 SeatIndex, int32 WeaponIndex);
 

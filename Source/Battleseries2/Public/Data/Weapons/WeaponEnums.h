@@ -37,15 +37,13 @@ enum class EFireMode : uint8
 	Single		UMETA(DisplayName = "Single")
 };
 
-UENUM(BlueprintType)		//The different behaviors of a weapon that dictates under what parameters can it lock on to sometin
+UENUM(BlueprintType)		//The different behaviors of a weapon that dictates under what parameters can it lock on to someting
 enum class EHomingCapability : uint8
 {
-	NoHoming			UMETA(DisplayName = "No Lock On"),			//Cannot lock on to a target
-	WireGuided			UMETA(DisplayName = "Wire Guided"),			//TOW Missle, etc
-
-	//IF ANY OF THE FOLLOWING ARE SELECTED, WEAPON SHOULD HAVE FUNCTIONALITY TO AUTOLOCK/FIRE OUT A SPHERE TRACE BY DEFAULT
-	CanLockOn			UMETA(DisplayName = "Lock On"),		//Can lock on without target being lazed
-	RequireLockOn		UMETA(DisplayName = "Require Lock On")
+	NoHoming			UMETA(DisplayName = "No Lock On", ToolTip = "Cannot lock on to a target"),		
+	WireGuided			UMETA(DisplayName = "Wire Guided", ToolTip = "TOW Missile, etc"),			
+	CanLockOn			UMETA(DisplayName = "Lock On", ToolTip = "Can lock on without target being lazed"),		
+	RequireLockOn		UMETA(DisplayName = "Require Lock On", ToolTip = "Requires lock on to fire")
 	//soft lockon
 	//CanHardLockOn		UMETA(DisplayName = "Hard Lock On"),		//Can only lock on if target is lazed (this can be covered by category)
 };

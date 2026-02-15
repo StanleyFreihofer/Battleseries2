@@ -199,6 +199,7 @@ void UHUDSubsystem::HandleTurretPitchUpdate(float MinPitch, float MaxPitch, floa
 
 void UHUDSubsystem::RemoveWidget(UUW_HUD_LockOnIndicator_Base* UserWidget)
 {
+	if (!UserWidget) return;
 	UserWidget->RemoveFromParent();
 	LockOnIndicator = nullptr; //HARDCODED FOR NOW, CHANGE THIS
 }
