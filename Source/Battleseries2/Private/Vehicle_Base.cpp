@@ -189,6 +189,20 @@ void AVehicle_Base::Init_Seats()
 				break;
 		}
 		Init_SeatCamera(i);		//<---mainly for windowed/remote cameras right now (weapon defaults?)
+
+		//seat hud comp
+		if (SeatInfo.DefaultCharacterContext.SeatHUD)
+		{
+			UWidgetComponent* CockpitHUDComponent = NewObject<UWidgetComponent>(this);
+			CockpitHUDComponent->RegisterComponent();
+			CockpitHUDComponent->AttachToComponent(GetRootComponent(), FAttachmentTransformRules::KeepRelativeTransform);
+			CockpitHUDComponent->SetRelativeTransform(SeatInfo.DefaultCharacterContext.SeatHUDTransform);
+			CockpitHUDComponent->SetWidgetClass(SeatInfo.DefaultCharacterContext.SeatHUD);
+			CockpitHUDComponent->SetDrawSize(SeatInfo.DefaultCharacterContext.SeatHUDDrawSize);
+			CockpitHUDComponent->SetOwnerNoSee(false);
+			//CockpitHUDComponent->SetOnlyOwnerSee(true);
+			VehicleCurrentState.SeatStates[i].SeatHUDComponent = CockpitHUDComponent;
+		}
 	}
 
 	OnSeatsInitialized.Broadcast();		//here so we can guarantee ALL NEW SEATS ARE SETUP (race conditions suck)

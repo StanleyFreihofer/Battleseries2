@@ -181,14 +181,23 @@ struct FCharacterSeatContext
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	bool bIsCharacterVisible = true;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (tooltip = "standard seat HUD/HMD (non-worldspace, added to player screen"))
+	TSubclassOf<UUserWidget> SeatHMD = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (tooltip = "actual in-word HUD (worldspace widget), leave this blank if none"))
 	TSubclassOf<UUserWidget> SeatHUD = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (tooltip = "relative transform within the vehicle of the widget component", EditCondition = "SeatHUD != nullptr", EditConditionHides = true))
+	FTransform SeatHUDTransform = FTransform();
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (EditCondition = "SeatHUD != nullptr", EditConditionHides = true))
+	FVector2D SeatHUDDrawSize = FVector2D();
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	class UInputMappingContext* InputMappingContext = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	FTransform SeatTransform = FTransform::Identity;
+	FTransform SeatTransform = FTransform();
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	ECharacterCurrentStance SeatStance = ECharacterCurrentStance::Sitting;

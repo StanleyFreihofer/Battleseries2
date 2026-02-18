@@ -137,9 +137,13 @@ void ACharacter_Base::CharacterEnterSeat(const FCharacterSeatContext& SeatContex
 	UpdateCharacterStance(SeatContext.SeatStance);
 	ManageIMC(nullptr, SeatContext.InputMappingContext, 1);
 	UpdateCharacterMeshVisibility(SeatContext.bIsCharacterVisible);
-	if (SeatContext.SeatHUD)
+	if (SeatContext.SeatHMD)
 	{
-		UpdateVehicleHUD(SeatContext.SeatHUD);
+		UpdateVehicleHUD(SeatContext.SeatHMD);
+	}
+	if (SeatContext.SeatHUD && GetCurrentVehicle()->VehicleCurrentState.SeatStates[GetCSI()].SeatHUDComponent->GetUserWidgetObject())
+	{
+		GetLocalPlayerHUDSystem()->CurrentVehicleHUD = Cast<UUW_HUD_Vehicle_Base>(GetCurrentVehicle()->VehicleCurrentState.SeatStates[GetCSI()].SeatHUDComponent->GetUserWidgetObject());
 	}
 
 	//sync vehicle states for hud
@@ -180,6 +184,10 @@ void ACharacter_Base::CharacterExitSeat(const FCharacterSeatContext& SeatContext
 {
 	UpdateVehicleHUD(nullptr);
 	ManageIMC(SeatContext.InputMappingContext, nullptr, 0);
+	if (GetLocalPlayerHUDSystem()->CurrentVehicleHUD)
+	{
+		GetLocalPlayerHUDSystem()->CurrentVehicleHUD = nullptr;
+	}
 }
 
 FVector ACharacter_Base::CalculateSafeExitLocation(AActor* Vehicle)
@@ -357,14 +365,14 @@ void ACharacter_Base::UpdateVehicleHUD(TSubclassOf<UUserWidget> HUDClass)
 {
 	if (UHUDSubsystem* HUDSub = GetLocalPlayerHUDSystem())
 	{
-		if (!HUDSub->CurrentVehicleHUD && HUDClass)
+		if (!HUDSub->CurrentVehicleHMD && HUDClass)
 		{
 			HUDSub->SpawnVehicleSeatHUD(HUDClass);
 		}
-		else if (!HUDClass && HUDSub->CurrentVehicleHUD)
+		else if (!HUDClass && HUDSub->CurrentVehicleHMD)
 		{
-			HUDSub->CurrentVehicleHUD->RemoveFromParent();
-			HUDSub->CurrentVehicleHUD = nullptr;
+			HUDSub->CurrentVehicleHMD->RemoveFromParent();
+			HUDSub->CurrentVehicleHMD = nullptr;
 		}
 	}
 }

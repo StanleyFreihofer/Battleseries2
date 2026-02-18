@@ -29,8 +29,8 @@ void UHUDSubsystem::SpawnVehicleSeatHUD(TSubclassOf<UUserWidget> HUDClass)
 	//called on enter seat
 	APlayerController* PC = GetLocalPlayer()->GetPlayerController(GetWorld());
 
-	CurrentVehicleHUD = CreateWidget<UUW_HUD_Vehicle_Base>(PC, HUDClass);
-	CurrentVehicleHUD->AddToViewport();
+	CurrentVehicleHMD = CreateWidget<UUW_HUD_Vehicle_Base>(PC, HUDClass);
+	CurrentVehicleHMD->AddToViewport();
 
 	//do everything at least once maybe?
 }
@@ -70,12 +70,12 @@ void UHUDSubsystem::UpdateStatusHUD_CRACount(int32 CRA)
 
 void UHUDSubsystem::UpdateSpeedHUD_Vehicle(float Speed)
 {
-	if (CurrentVehicleHUD && CurrentVehicleHUD->Speedometer)
+	if (CurrentVehicleHMD && CurrentVehicleHMD->Speedometer)
 	{
 		//float RawSpeed = Character->CharacterState.CharacterVehicleState.CurrentVehicle->GetVelocity().Size();
 		//use chaos speed?
 		float DisplaySpeed = Speed * 0.036f;		// Unreal Units to KPH
-		CurrentVehicleHUD->Speedometer->UpdateSpeedometer(DisplaySpeed);
+		CurrentVehicleHMD->Speedometer->UpdateSpeedometer(DisplaySpeed);
 	}
 }
 
@@ -95,6 +95,12 @@ void UHUDSubsystem::UpdateEquippedWeaponHUD_Vehicle(FText WeaponName, UTexture2D
 
 void UHUDSubsystem::UpdateWeaponReticleHUD_Vehicle(UTexture2D* ImageBrush)
 {
+	if (CurrentVehicleHMD && CurrentVehicleHMD->VehicleWeaponReticle)
+	{
+		CurrentVehicleHMD->VehicleWeaponReticle->UpdateReticleImage(ImageBrush);
+	}
+
+	//widget component
 	if (CurrentVehicleHUD && CurrentVehicleHUD->VehicleWeaponReticle)
 	{
 		CurrentVehicleHUD->VehicleWeaponReticle->UpdateReticleImage(ImageBrush);
@@ -104,31 +110,31 @@ void UHUDSubsystem::UpdateWeaponReticleHUD_Vehicle(UTexture2D* ImageBrush)
 void UHUDSubsystem::UpdateWeaponReticleSize_Vehicle(float NewScale)
 {
 	//for zoom optic and initial size
-	if (CurrentVehicleHUD && CurrentVehicleHUD->VehicleWeaponReticle)
+	if (CurrentVehicleHMD && CurrentVehicleHMD->VehicleWeaponReticle)
 	{
-		CurrentVehicleHUD->VehicleWeaponReticle->UpdateReticleScale(NewScale);
+		CurrentVehicleHMD->VehicleWeaponReticle->UpdateReticleScale(NewScale);
 	}
 }
 
 void UHUDSubsystem::UpdateRangefinderHUD_Vehicle(float NewRange)
 {
-	if (CurrentVehicleHUD && CurrentVehicleHUD->Rangefinder)
+	if (CurrentVehicleHMD && CurrentVehicleHMD->Rangefinder)
 	{
-		CurrentVehicleHUD->Rangefinder->UpdateRangefinder(NewRange);
+		CurrentVehicleHMD->Rangefinder->UpdateRangefinder(NewRange);
 	}
 }
 
 void UHUDSubsystem::UpdateWeaponNameHUD_Vehicle(FText WeaponDisplayName)
 {
-	if (CurrentVehicleHUD && CurrentVehicleHUD->VehicleWeaponStatus)
+	if (CurrentVehicleHMD && CurrentVehicleHMD->VehicleWeaponStatus)
 	{
-		CurrentVehicleHUD->VehicleWeaponStatus->UpdateWeaponName(WeaponDisplayName);
+		CurrentVehicleHMD->VehicleWeaponStatus->UpdateWeaponName(WeaponDisplayName);
 	}
 }
 
 void UHUDSubsystem::UpdateWeaponStatusHUD_Vehicle(bool canFire)
 {
-	if (CurrentVehicleHUD && CurrentVehicleHUD->VehicleWeaponStatus)
+	if (CurrentVehicleHMD && CurrentVehicleHMD->VehicleWeaponStatus)
 	{
 		FText WeaponStatus;
 		if (!canFire)
@@ -139,7 +145,7 @@ void UHUDSubsystem::UpdateWeaponStatusHUD_Vehicle(bool canFire)
 		{
 			WeaponStatus = FText::FromString("READY");
 		}
-		CurrentVehicleHUD->VehicleWeaponStatus->UpdateWeaponStatus(WeaponStatus);
+		CurrentVehicleHMD->VehicleWeaponStatus->UpdateWeaponStatus(WeaponStatus);
 	}
 }
 
@@ -147,9 +153,9 @@ void UHUDSubsystem::UpdateCompassHUD_Vehicle(float Yaw)
 {
 	//should be bound to BOTH vehicle steer and control turret events as thats what determines a players compass in a vehicle
 	//get seat state, active camera component rotation
-	if (CurrentVehicleHUD && CurrentVehicleHUD->Compass)
+	if (CurrentVehicleHMD && CurrentVehicleHMD->Compass)
 	{
-		CurrentVehicleHUD->Compass->UpdateCompassPosition(Yaw);
+		CurrentVehicleHMD->Compass->UpdateCompassPosition(Yaw);
 	}
 }
 
@@ -158,25 +164,25 @@ void UHUDSubsystem::UpdateTurretLinesHUD_Vehicle()
 	APlayerController* PC = GetLocalPlayer()->GetPlayerController(GetWorld());
 	ACharacter_Base* Character = (PC) ? Cast<ACharacter_Base>(PC->GetPawn()) : nullptr;
 	AVehicle_Base* Vehicle = Character->GetCurrentVehicle();
-	if (CurrentVehicleHUD && CurrentVehicleHUD->TurretLines)
+	if (CurrentVehicleHMD && CurrentVehicleHMD->TurretLines)
 	{
 		for (int32 i = 0; i < Vehicle->VehicleWeaponLogicComponent->TurretStates.Num(); i++)
 		{
 			float RelativeYaw = Vehicle->VehicleWeaponLogicComponent->GetTurretWorldYaw(i);
-			CurrentVehicleHUD->TurretLines->UpdateTurretLinePosition(i, RelativeYaw);
+			CurrentVehicleHMD->TurretLines->UpdateTurretLinePosition(i, RelativeYaw);
 		}
 	}
 }
 
 void UHUDSubsystem::UpdateTurretElevationHUD_Vehicle(float MinPitch, float MaxPitch, float CurrentPitch)
 {
-	if (CurrentVehicleHUD && CurrentVehicleHUD->TurretElvGauge)
+	if (CurrentVehicleHMD && CurrentVehicleHMD->TurretElvGauge)
 	{
-		CurrentVehicleHUD->TurretElvGauge->UpdateElevationGauge(CurrentPitch, MinPitch, MaxPitch);
+		CurrentVehicleHMD->TurretElvGauge->UpdateElevationGauge(CurrentPitch, MinPitch, MaxPitch);
 	}
-	if (CurrentVehicleHUD && CurrentVehicleHUD->TurretPitchMeter)
+	if (CurrentVehicleHMD && CurrentVehicleHMD->TurretPitchMeter)
 	{
-		CurrentVehicleHUD->TurretPitchMeter->UpdatePitchMeter(CurrentPitch);
+		CurrentVehicleHMD->TurretPitchMeter->UpdatePitchMeter(CurrentPitch);
 	}
 }
 
@@ -184,7 +190,7 @@ void UHUDSubsystem::HandleTurretRotationUpdate(float Yaw)
 {
 	//should be bound ONLY to turret rotation
 
-	if (CurrentVehicleHUD && CurrentVehicleHUD->Compass)
+	if (CurrentVehicleHMD && CurrentVehicleHMD->Compass)
 	{
 		UpdateCompassHUD_Vehicle(Yaw);
 	}

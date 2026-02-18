@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "Camera/CameraComponent.h"
 #include "GameFramework/SpringArmComponent.h"
+#include "Components/WidgetComponent.h"
 #include "VehicleTypes.generated.h"
 
 
@@ -17,6 +18,8 @@ struct FSeatState
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	bool UpdateHUD = false;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UWidgetComponent* SeatHUDComponent = nullptr;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
 	USpringArmComponent* DefaultSpringArm = nullptr;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
@@ -78,7 +81,7 @@ struct FVehicleCurrentState
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TArray<FSeatState> SeatStates;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	FGenericVehicleState GenericVehicleState;
+	FGenericVehicleState GenericVehicleState = FGenericVehicleState();
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FGroundVehicleState GroundVehicleState = FGroundVehicleState();
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)

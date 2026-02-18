@@ -19,7 +19,9 @@ public:
     UUW_HUD_Status_Base* StatusHUD;         //ammo, health
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
-    UUW_HUD_Vehicle_Base* CurrentVehicleHUD;
+    UUW_HUD_Vehicle_Base* CurrentVehicleHMD;        //standard HUD
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    UUW_HUD_Vehicle_Base* CurrentVehicleHUD;        //worldspace widget component mounted in vehicle        
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
     UUW_HUD_LockOnIndicator_Base* LockOnIndicator;

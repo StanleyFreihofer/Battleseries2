@@ -201,7 +201,7 @@ void UVehicleWeaponLogicComponent::MountProjectiles(int32 SeatIndex, int32 Weapo
 	FVehicleWeapon_Runtime& SeatWeaponToFill = VehicleWeaponSystem.Find(SeatIndex)->Weapons[WeaponIndex];
 	FWeapon_Runtime& WeaponDataToFill = SeatWeaponToFill.VehicleWeaponState.BaseWeaponRuntimeData;
 	const FVehicleWeaponData* VehicleWeaponRow = DataSubsystem->GetVehicleWeaponDataRow(WeaponDataToFill.WeaponID);
-	const int32& MagSize = VehicleWeaponRow->WeaponData.AmmoData.MagSize;
+	const int32& MagSize = FMath::Min(VehicleWeaponRow->WeaponData.AmmoData.MagSize, WeaponDataToFill.WeaponState.CurrentAmmoinMag);
 	const FName& ProjectileID = VehicleWeaponRow->WeaponData.WeaponFireData.ProjectileID;
 	if (!VehicleWeaponRow || ProjectileID.IsNone())
 	{

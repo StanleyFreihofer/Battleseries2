@@ -38,7 +38,8 @@ public:
 	//optic info
 	//countermeasure status
 	//warning (health, mobility, lockon)
-	//altimeter
+	//altimeter/altimeter gauge
+	//speed gauge
 
 	virtual void NativeConstruct() override;
 
