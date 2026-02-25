@@ -77,6 +77,14 @@ enum class EVehicleWeaponCamActivationMethod : uint8
 	Aim					UMETA(DisplayName = "Activate on aim")
 };
 
+UENUM(BlueprintType)
+enum class EWindowedAimAnchor : uint8
+{
+	FreeAim				UMETA(DisplayName = "Free Aim", ToolTip = "Follows head direction (head rotation based)"),
+	Turret				UMETA(DisplayName = "Gimballed", ToolTip = "Follows turret (turret rotation based)"),
+	Hull				UMETA(DisplayName = "Fixed", ToolTip = "Aim direction fixed to Hull (direction vehicle is facing), uses a socket's forward vector")
+};
+
 UENUM(BlueprintType)						//denotes what specific mesh on a vehicle a camo MI/texture can be applied to
 enum class EVehicleCamoMeshOptions : uint8
 {

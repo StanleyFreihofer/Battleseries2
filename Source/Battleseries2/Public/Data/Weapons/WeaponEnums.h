@@ -54,7 +54,6 @@ enum class ETargetingCategory : uint8
 {
 	GroundVehicle		UMETA(DisplayName = "Ground Vehicle"),
 	Aircraft			UMETA(DisplayName = "Aircraft"),
-	AnyVehicle			UMETA(DisplayName = "Any Vehicle"),
 	LazedTarget			UMETA(DisplayName = "Lazed Target"),
 	Location			UMETA(DisplayName = "Location"),
 	MAX					UMETA(Hidden)

@@ -322,7 +322,7 @@ void ACharacter_Base::UpdateRangefinder_WindowedVehicle()
 		{
 			TArray<AActor*> Actors;
 			Actors.Add(GetCurrentVehicle());
-			UVehicleWeaponLogicComponent* VWLC = GetCurrentVehicle()->VehicleWeaponLogicComponent;
+			TWeakObjectPtr<UVehicleWeaponLogicComponent> VWLC = GetCurrentVehicle()->VehicleWeaponLogicComponent;
 			VWLC->UpdateSeatRangefinder(GetCSI(), Camera, Actors);
 		}
 	}

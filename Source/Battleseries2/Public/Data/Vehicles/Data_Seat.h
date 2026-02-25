@@ -51,6 +51,9 @@ struct FVehicleWeaponInstanceData
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	EMuzzleType MuzzleType = EMuzzleType::Gun;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ToolTip = "determines what part of the vehicle's hierarchy determines the forward direction for this weapon, only matters for windowed seats"))
+	EWindowedAimAnchor WindowedAimAnchor = EWindowedAimAnchor::Hull;
+
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	bool bHasSeparateMesh = false;
 

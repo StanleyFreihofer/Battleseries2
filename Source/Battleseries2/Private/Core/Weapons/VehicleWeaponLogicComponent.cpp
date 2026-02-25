@@ -621,11 +621,31 @@ void UVehicleWeaponLogicComponent::UpdateSeatRangefinder(int32 SeatIndex, UCamer
 	FVehicleWeapon_Runtime& CurrentWeapon = GetEquippedWeaponInSeat(SeatIndex);
 	FHitResult& HitResult = SystemPtr->VehicleWeaponSystemState.EquippedWeaponState.RaycastData.RangefinderData;
 	bool bHit;
+	FTransform TraceTransform;
+
+	if (SeatData.ViewMethod == E_ViewMethod::Windowed)
+	{
+		switch (CurrentWeapon.VehicleWeaponInstanceData.WindowedAimAnchor)
+		{
+			case EWindowedAimAnchor::Hull:
+				//use character head instead?
+				TraceTransform = OwnerDataAccessor->GetVehicleMesh()->GetSocketTransform(FName("Test"));
+				break;
+			case EWindowedAimAnchor::Turret:
+			case EWindowedAimAnchor::FreeAim:
+				TraceTransform = Camera->GetComponentTransform();
+				break;
+		}
+	}
+	else
+	{
+		TraceTransform = Camera->GetComponentTransform();
+	}
 
 	if (StaticWeaponData.WeaponFunctionality.HomingFunctionality.HomingCapability != EHomingCapability::NoHoming)
 	{
 		// handle lock on
-		bHit = UWeaponFunctions::PerformWeaponSphereTrace(this, Camera->GetComponentTransform(), HitResult, ActorsToIgnore, 35.0f);
+		bHit = UWeaponFunctions::PerformWeaponSphereTrace(this, TraceTransform, HitResult, ActorsToIgnore, 35.0f);
 		FLockOnState& LockOnState = CurrentWeapon.VehicleWeaponState.BaseWeaponRuntimeData.WeaponState.LockOnState;
 
 		if (HitResult.GetActor() && HitResult.GetActor()->GetClass()->ImplementsInterface(ULockOnTarget::StaticClass()))
@@ -696,9 +716,10 @@ void UVehicleWeaponLogicComponent::UpdateSeatRangefinder(int32 SeatIndex, UCamer
 			}
 		}
 	}
+
 	else
 	{
-		bHit = UWeaponFunctions::PerformWeaponLineTrace(this, Camera->GetComponentTransform(), HitResult, ActorsToIgnore);
+		bHit = UWeaponFunctions::PerformWeaponLineTrace(this, TraceTransform, HitResult, ActorsToIgnore);
 	}
 
 	if (OwnerDataAccessor->GetVehicleState().SeatStates[SeatIndex].UpdateHUD)

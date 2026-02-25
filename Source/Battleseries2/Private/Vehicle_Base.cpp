@@ -508,7 +508,7 @@ void AVehicle_Base::HandleViewMethod(ACharacter_Base* Character, const FSeatData
 				case EVehicleWeaponCamMountMethod::VehicleMesh:
 				case EVehicleWeaponCamMountMethod::WeaponMesh:
 				case EVehicleWeaponCamMountMethod::MountedProjectile:
-					ViewTarget = VehicleWeaponLogicComponent->GetCurrentViewTargetAtSeatIndex(Character->CharacterState.CharacterVehicleState.CSI);
+					ViewTarget = VehicleWeaponLogicComponent->GetCurrentViewTargetAtSeatIndex(Character->GetCSI());
 					Character->UpdateViewTarget(ViewTarget, Cam);
 					break;
 			}
@@ -840,8 +840,6 @@ bool AVehicle_Base::GetIfCanLockOn_Implementation(const TArray<ETargetingCategor
 							return true;
 						}
 						break;
-					case ETargetingCategory::AnyVehicle:
-						return true;
 					case ETargetingCategory::LazedTarget:
 						//if this vehicle is currently lazed
 						break;
