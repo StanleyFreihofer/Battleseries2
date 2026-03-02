@@ -54,6 +54,8 @@ public:
     UFUNCTION(BlueprintCallable)
     void UpdateWeaponReticleSize_Vehicle(float NewScale);
     UFUNCTION(BlueprintCallable)
+    void UpdateWeaponReticlePositon_Vehicle(FVector2D NewPosition);
+    UFUNCTION(BlueprintCallable)
     void UpdateRangefinderHUD_Vehicle(float NewRange);
     UFUNCTION(BlueprintCallable)
     void UpdateWeaponNameHUD_Vehicle(FText WeaponDisplayName);

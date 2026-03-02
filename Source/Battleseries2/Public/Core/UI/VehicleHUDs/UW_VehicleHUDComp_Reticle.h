@@ -21,5 +21,7 @@ public:
 	void UpdateReticleImage(UTexture2D* ImageBrush);
 	UFUNCTION(BlueprintCallable)
 	void UpdateReticleScale(float NewScale);
+	UFUNCTION(BlueprintCallable)
+	void UpdateReticlePosition(FVector2D NewPosition);
 
 };

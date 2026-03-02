@@ -177,13 +177,10 @@ void UVehicleWeaponLogicComponent::ApplyWeaponAtIndexToSeat(int32 SeatIndex, int
 	//APPLY STATIC WEAPON DATA
 	DefaultWeaponDataToFill.WeaponID = WeaponID;
 	TArray<const FBaseWeaponData*>& BaseWeaponDataArray = CurrentVehicleBaseWeaponData.FindOrAdd(SeatIndex);
-
-	// 2. Ensure array is large enough for the index
 	if (!BaseWeaponDataArray.IsValidIndex(WeaponIndex))
 	{
 		BaseWeaponDataArray.SetNum(WeaponIndex + 1);
 	}
-
 	BaseWeaponDataArray[WeaponIndex] = BaseWeaponData;
 
 	//initialize state on weapon side
@@ -580,14 +577,14 @@ void UVehicleWeaponLogicComponent::HandleSeatRangefinders()
 			continue;
 		}
 
-		UCameraComponent* Camera = CurrentSeatState.ActiveCamera;
 		int32& WeaponIndex = SeatWeaponSystem.Value.VehicleWeaponSystemState.EquippedWeaponState.CurrentWeaponIndex;
 
 		//UPDATE LINE TRACE DATA (hit result)
 		const FSeatData& SeatData = VehicleData.Seats[SeatIndex];
 		if (SeatData.ViewMethod == E_ViewMethod::Remote || SeatWeaponSystem.Value.Weapons[WeaponIndex].VehicleWeaponInstanceData.bHasSpecialCam)		//if remote or specialweapon cam, do rangefinder
 		{
-			UpdateSeatRangefinder(SeatIndex, Camera, {});
+			FTransform CamTransform = CurrentSeatState.ActiveCamera->GetComponentTransform();
+			UpdateSeatRangefinder(SeatIndex, CamTransform, {});
 		}
 		else
 		{
@@ -612,7 +609,7 @@ void UVehicleWeaponLogicComponent::HandleSeatRangefinders()
 	}
 }
 
-void UVehicleWeaponLogicComponent::UpdateSeatRangefinder(int32 SeatIndex, UCameraComponent* Camera, TArray<AActor*> ActorsToIgnore)
+void UVehicleWeaponLogicComponent::UpdateSeatRangefinder(int32 SeatIndex, FTransform TraceTransform, TArray<AActor*> ActorsToIgnore)
 {
 	const FSeatState& CurrentSeatState = OwnerDataAccessor->GetVehicleState().SeatStates[SeatIndex];
 	const FSeatData& SeatData = OwnerDataAccessor->GetVehicleData().Seats[SeatIndex];
@@ -621,26 +618,6 @@ void UVehicleWeaponLogicComponent::UpdateSeatRangefinder(int32 SeatIndex, UCamer
 	FVehicleWeapon_Runtime& CurrentWeapon = GetEquippedWeaponInSeat(SeatIndex);
 	FHitResult& HitResult = SystemPtr->VehicleWeaponSystemState.EquippedWeaponState.RaycastData.RangefinderData;
 	bool bHit;
-	FTransform TraceTransform;
-
-	if (SeatData.ViewMethod == E_ViewMethod::Windowed)
-	{
-		switch (CurrentWeapon.VehicleWeaponInstanceData.WindowedAimAnchor)
-		{
-			case EWindowedAimAnchor::Hull:
-				//use character head instead?
-				TraceTransform = OwnerDataAccessor->GetVehicleMesh()->GetSocketTransform(FName("Test"));
-				break;
-			case EWindowedAimAnchor::Turret:
-			case EWindowedAimAnchor::FreeAim:
-				TraceTransform = Camera->GetComponentTransform();
-				break;
-		}
-	}
-	else
-	{
-		TraceTransform = Camera->GetComponentTransform();
-	}
 
 	if (StaticWeaponData.WeaponFunctionality.HomingFunctionality.HomingCapability != EHomingCapability::NoHoming)
 	{
@@ -661,24 +638,9 @@ void UVehicleWeaponLogicComponent::UpdateSeatRangefinder(int32 SeatIndex, UCamer
 						break;
 					case ELockOnState::IsLockingOn:
 						//Update LockOn Indicator
-						if (HitResult.GetActor() != LockOnState.AcquiredTarget)
-						{
-							UE_LOG(LogTemp, Warning, TEXT("[VWLC::UpdateSeatRangefinder] DifferentTarget"));
-						}
-						if (OwnerDataAccessor->GetVehicleState().SeatStates[SeatIndex].UpdateHUD)
-						{
-							GetHUDSystem()->UpdateLockOnIndicatorPosition(HitResult.GetActor()->GetRootComponent()->GetSocketLocation(FName("LockOn")));
-						}
-						break;
+						UpdateLockOnIndicator(OwnerDataAccessor->GetVehicleState().SeatStates[SeatIndex].UpdateHUD, HitResult, LockOnState);
 					case ELockOnState::IsLockedOn:
-						if (HitResult.GetActor() != LockOnState.AcquiredTarget)
-						{
-						}
-						//Update LockOn Indicator
-						if (OwnerDataAccessor->GetVehicleState().SeatStates[SeatIndex].UpdateHUD)
-						{
-							GetHUDSystem()->UpdateLockOnIndicatorPosition(HitResult.GetActor()->GetRootComponent()->GetSocketLocation(FName("LockOn")));
-						}
+						UpdateLockOnIndicator(OwnerDataAccessor->GetVehicleState().SeatStates[SeatIndex].UpdateHUD, HitResult, LockOnState);
 						break;
 					case ELockOnState::IsLosingLock:
 						break;
@@ -797,6 +759,18 @@ void UVehicleWeaponLogicComponent::CancelLockOn(int32 SeatIndex, int32 WeaponInd
 	}
 }
 
+void UVehicleWeaponLogicComponent::UpdateLockOnIndicator(bool UpdateHUD, FHitResult& HitResult, FLockOnState& LockOnState)
+{
+	if (HitResult.GetActor() != LockOnState.AcquiredTarget)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[VWLC::UpdateSeatRangefinder] DifferentTarget"));
+	}
+	if (UpdateHUD)
+	{
+		GetHUDSystem()->UpdateLockOnIndicatorPosition(HitResult.GetActor()->GetRootComponent()->GetSocketLocation(FName("LockOn")));
+	}
+}
+
 FName UVehicleWeaponLogicComponent::BuildMuzzleName(FName SeatName, int32 WeaponIndex, EMuzzleType MuzzleType, int32 MuzzleIndex)
 {
 	//MS_SeatName_WIName_MuzzleType_MuzzleIndex
@@ -886,7 +860,7 @@ void UVehicleWeaponLogicComponent::CalculateAimDirection(TWeakObjectPtr<USkeleta
 		SeatWeaponSystem.VehicleWeaponSystemState.EquippedWeaponState.RaycastData.MuzzleAimDirections[MI] = UWeaponFunctions::CalculateAimDirection(HitResult, MuzzleLocation);
 
 		// DEBUG: Draw the convergence line
-		UWeaponFunctions::Debug_ProjectilePath(GetWorld(), MuzzleLocation, HitResult);
+		//UWeaponFunctions::Debug_ProjectilePath(GetWorld(), MuzzleLocation, HitResult);
 	}
 }
 
@@ -1219,6 +1193,7 @@ void UVehicleWeaponLogicComponent::SelectWeapon(int32 SeatIndex, int32 WeaponInd
 	{
 		FVehicleWeaponSystem_Runtime& SWS = *VehicleWeaponSystem.Find(SeatIndex);
 		FWeapon_Runtime& NewWeapon = SWS.Weapons[WeaponIndex].VehicleWeaponState.BaseWeaponRuntimeData;
+		const FBaseWeaponData& StaticWeaponData = GetBaseWeaponDataInSlot(SeatIndex, WeaponIndex);
 
 		if (OwnerDataAccessor->GetVehicleState().SeatStates[SeatIndex].UpdateHUD)
 		{
@@ -1231,6 +1206,17 @@ void UVehicleWeaponLogicComponent::SelectWeapon(int32 SeatIndex, int32 WeaponInd
 				GetEquippedWeaponInSeat(SeatIndex).VehicleWeaponInstanceData.ReticleScale,
 				GetEquippedWeaponInSeat(SeatIndex).VehicleWeaponState.BaseWeaponRuntimeData.WeaponState.canFire
 			);
+
+			TWeakObjectPtr<UStaticMeshComponent> Quad = SWS.VehicleWeaponSystemState.ReticleQuad;
+			if (Quad.Get())
+			{
+				UMaterialInterface* CurrentMat = Quad->GetMaterial(0);
+				UMaterialInstanceDynamic* DynMat = Cast<UMaterialInstanceDynamic>(CurrentMat);
+				DynMat->SetTextureParameterValue(FName("ReticleTexture"), GetEquippedWeaponInSeat(SeatIndex).VehicleWeaponInstanceData.WeaponReticle);
+				Quad->SetRelativeScale3D(FVector::OneVector);
+				FVector NewScale = Quad->GetRelativeScale3D() * GetEquippedWeaponInSeat(SeatIndex).VehicleWeaponInstanceData.ReticleScale;
+				Quad->SetRelativeScale3D(NewScale);
+			}
 		}
 	});
 	SeatWeaponSystem.Weapons[WeaponIndex].VehicleWeaponState.BaseWeaponRuntimeData.WeaponState.isEquipped = true;

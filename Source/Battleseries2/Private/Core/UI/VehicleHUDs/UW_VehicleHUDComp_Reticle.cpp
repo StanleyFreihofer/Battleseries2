@@ -17,4 +17,9 @@ void UUW_VehicleHUDComp_Reticle::UpdateReticleScale(float NewScale)
 	ScaleBox_Reticle->SetUserSpecifiedScale(NewScale);
 }
 
+void UUW_VehicleHUDComp_Reticle::UpdateReticlePosition(FVector2D NewPosition)
+{
+	Reticle->SetRenderTranslation(NewPosition);
+}
+
 

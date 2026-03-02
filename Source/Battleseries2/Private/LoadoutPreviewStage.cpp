@@ -39,6 +39,7 @@ void ALoadoutPreviewStage::SetupNewPreviewVehicle(FTransform PreviewTransformOff
 	FTransform AnchorTransform = VehicleAnchor->GetComponentTransform();
 	FTransform OffsetTransform = PreviewTransformOffset;
 	FTransform FinalTransform = OffsetTransform * AnchorTransform;
+	UE_LOG(LogTemp, Warning, TEXT("location: %s"), *FinalTransform.GetLocation().ToString());
 
 	if (CurrentVehicle)
 	{
@@ -49,7 +50,16 @@ void ALoadoutPreviewStage::SetupNewPreviewVehicle(FTransform PreviewTransformOff
 	else
 	{
 		CurrentVehicle = GetWorld()->SpawnActor<AVehicle_Base>(VehicleClass, FinalTransform);
-		CurrentVehicle->SetVehicleAndInit(InputVehicleStartingData);
+		if (CurrentVehicle)
+		{
+			CurrentVehicle->SetVehicleAndInit(InputVehicleStartingData);
+		}
+		else
+		{
+			FString ClassName = VehicleClass ? VehicleClass->GetName() : TEXT("NULL CLASS");
+			UE_LOG(LogTemp, Error, TEXT("[SaveSubsystem] Failed to spawn VehicleClass: %s"), *VehicleClass->GetName());
+		}
+		//CurrentVehicle->SetVehicleAndInit(InputVehicleStartingData);
 	}
 	CurrentObject = CurrentVehicle;
 	CurrentVehicle->OnMeshReady.RemoveDynamic(this, &ALoadoutPreviewStage::CenterCameraOnVehicle);

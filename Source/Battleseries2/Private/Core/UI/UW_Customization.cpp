@@ -23,7 +23,7 @@
 #include "Core/Weapons/VehicleWeaponLogicComponent.h"
 #include "Data/Weapons/VehicleWeapons/Data_VehicleWeapon.h"
 #include "Data/Data_Camo.h"
-#include "Data/Vehicles/VehicleTypeDefinitions.h"
+#include "Data/Vehicles/VehicleDefaults.h"
 
 void UUW_Customization::NativeConstruct()
 {
@@ -358,6 +358,7 @@ void UUW_Customization::UpdateVehiclePreview(int32 TypeEnumIndex)
 	NewVehicleStartingData.VehicleID = AllVehicleIDsOfType[0];
 
 	FTransform PreviewTransform = DataSubsystem->GetVehicleDataRow(NewVehicleStartingData.VehicleID)->CustomizationPosition;
+	UE_LOG(LogTemp, Warning, TEXT("location: %s"), *PreviewTransform.GetLocation().ToString());
 
 	//CustomizationUIState.PreviewStageActor->CurrentVehicle->VehicleWeaponLogicComponent->OnVWSCleared.AddDynamic(this, &UUW_Customization::UpdateVehiclePreview);
 	CustomizationUIState.PreviewStageActor->SetupNewPreviewVehicle(PreviewTransform, NewVehicleStartingData);		//<--default selection

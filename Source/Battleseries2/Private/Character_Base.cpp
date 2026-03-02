@@ -12,6 +12,7 @@
 #include "Core/UI/VehicleHUDs/UW_HUD_Vehicle_Base.h"
 #include "Core/PlayerController_Base.h"
 #include "Utilities/HUDSubsystem.h"
+#include "Kismet/KismetMathLibrary.h"
 
 // Sets default values
 ACharacter_Base::ACharacter_Base()
@@ -32,12 +33,6 @@ void ACharacter_Base::BeginPlay()
 void ACharacter_Base::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	if (CharacterState.CharacterVehicleState.inVehicle)
-	{
-		//UpdateRangefinder_WindowedVehicle();
-		//GetLocalPlayerHUDSystem()->UpdateCompassHUD_Vehicle();		//this or on steer and control turret 
-		//GetLocalPlayerHUDSystem()->UpdateTurretLinesHUD_Vehicle();		//control turret
-	}
 }
 
 // Called to bind functionality to input
@@ -323,7 +318,80 @@ void ACharacter_Base::UpdateRangefinder_WindowedVehicle()
 			TArray<AActor*> Actors;
 			Actors.Add(GetCurrentVehicle());
 			TWeakObjectPtr<UVehicleWeaponLogicComponent> VWLC = GetCurrentVehicle()->VehicleWeaponLogicComponent;
-			VWLC->UpdateSeatRangefinder(GetCSI(), Camera, Actors);
+			const FBaseWeaponData& StaticWeaponData = VWLC->GetBaseWeaponDataInSlot(GetCSI(), VWLC->GetCWIForSeat(GetCSI()));
+			FVehicleWeapon_Runtime& CurrentWeapon = VWLC->GetEquippedWeaponInSeat(GetCSI());
+			FTransform TraceTransform;
+			switch (CurrentWeapon.VehicleWeaponInstanceData.WindowedAimAnchor)
+			{
+				case EWindowedAimAnchor::Hull:
+					FVector StartLocation = GetMesh()->GetSocketLocation(FName("FixedCamera"));
+					FQuat FixedRotation = GetActorQuat();
+					TraceTransform = FTransform(FixedRotation, StartLocation);
+					break;
+				case EWindowedAimAnchor::Turret:
+				case EWindowedAimAnchor::FreeAim:
+					TraceTransform = Camera->GetComponentTransform();
+					break;
+			}
+			VWLC->UpdateSeatRangefinder(GetCSI(), TraceTransform, Actors);
+			if (IsLocallyControlled())
+			{
+				FHitResult& HitResult = VWLC->VehicleWeaponSystem.Find(GetCSI())->VehicleWeaponSystemState.EquippedWeaponState.RaycastData.RangefinderData;
+				UWidgetComponent* SeatHUDComp = GetCurrentVehicle()->VehicleCurrentState.SeatStates[GetCSI()].SeatHUDComponent;
+				if (SeatHUDComp)
+				{
+					UStaticMeshComponent* Quad = VWLC->VehicleWeaponSystem.Find(GetCSI())->VehicleWeaponSystemState.ReticleQuad.Get();
+					USceneComponent* HUDGlass = Quad->GetAttachParent();
+					// 1. Get the Intersection Point on the glass (World Space)
+					FVector EyePos = Camera->GetComponentLocation();
+					FVector TargetPos = HitResult.bBlockingHit ? HitResult.ImpactPoint : TraceTransform.GetLocation() + (TraceTransform.GetUnitAxis(EAxis::X) * 100000.0f);
+
+					FVector IntersectionPoint = FMath::LinePlaneIntersection(EyePos, TargetPos, SeatHUDComp->GetComponentLocation(), SeatHUDComp->GetForwardVector());
+
+					Quad->SetWorldLocation(IntersectionPoint);
+					//FRotator LookAtRot = UKismetMathLibrary::FindLookAtRotation(Quad->GetComponentLocation(), EyePos);
+					//Quad->SetWorldRotation(LookAtRot);
+
+					/**
+					FVector LookDir = (TargetPos - EyePos).GetSafeNormal();
+					FVector GlassLocation = HUDGlass->GetComponentLocation();
+					FVector GlassNormal = HUDGlass->GetForwardVector();
+					float Dot = FVector::DotProduct(GlassNormal, LookDir);
+					if (FMath::Abs(Dot) < 0.0001f) return;
+
+					float Distance = FVector::DotProduct(GlassNormal, (GlassLocation - EyePos)) / Dot;
+					FVector WorldIntersection = EyePos + (LookDir * Distance);
+
+					FVector LocalPos = HUDGlass->GetComponentTransform().InverseTransformPosition(WorldIntersection);
+
+					LocalPos.X = 0.1f;
+
+					Quad->SetRelativeLocation(LocalPos);
+
+					FRotator LookAtRot = UKismetMathLibrary::FindLookAtRotation(Quad->GetComponentLocation(), EyePos);
+					**
+					/**
+
+
+					// 2. Convert to Local Space (Relative to the center of the component)
+					FVector LocalPoint = SeatHUDComp->GetComponentTransform().InverseTransformPosition(IntersectionPoint);
+					DrawDebugSphere(GetWorld(), LocalPoint, 5.f, 8, FColor::Green);
+					float ComponentWidthCM = SeatHUDComp->GetRelativeScale3D().Y * 100.0f;
+					float ComponentHeightCM = SeatHUDComp->GetRelativeScale3D().Z * 100.0f;
+					FVector2D DrawSize = OccupiedSeatData.DefaultCharacterContext.SeatHUDDrawSize; // e.g., 1024x1024
+					FVector2D PixelPos;
+					PixelPos.X = -(LocalPoint.Y / ComponentWidthCM) * DrawSize.X;
+					PixelPos.Y = -(LocalPoint.Z / ComponentHeightCM) * DrawSize.Y; // Negate Z because UI Y is down
+					float HalfX = DrawSize.X * 0.5f;
+					float HalfY = DrawSize.Y * 0.5f;
+					//PixelPos.X = FMath::Clamp(PixelPos.X, -DrawSize.X, DrawSize.X);
+					//PixelPos.Y = FMath::Clamp(PixelPos.Y, -DrawSize.Y, DrawSize.Y);
+
+					GetLocalPlayerHUDSystem()->UpdateWeaponReticlePositon_Vehicle(PixelPos);
+					**/
+
+				}
+			}
 		}
 	}
 }

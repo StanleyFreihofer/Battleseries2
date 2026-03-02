@@ -51,6 +51,7 @@ struct FVehicleWeaponState
 	USpringArmComponent* WeaponTurretSpringArm = nullptr;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	ACameraActor* WeaponTurretCamera = nullptr;
+
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
 	TArray<FDecorative_Runtime> VehicleWeaponDecoratives;
 };
@@ -91,6 +92,9 @@ struct FVehicleWeaponSystemState
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TWeakObjectPtr<UAudioComponent> WeaponAudioComponent = nullptr; // Persistent audio slot per seat
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TWeakObjectPtr<UStaticMeshComponent> ReticleQuad = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FName WSAttachmentID = NAME_None;
@@ -187,7 +191,7 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void HandleSeatRangefinders();
 	UFUNCTION(BlueprintCallable)
-	void UpdateSeatRangefinder(int32 SeatIndex, UCameraComponent* Camera, TArray<AActor*> ActorsToIgnore);
+	void UpdateSeatRangefinder(int32 SeatIndex, FTransform TraceTransform, TArray<AActor*> ActorsToIgnore);
 	UFUNCTION(BlueprintCallable)
 	void StartLockingOn(int32& SeatIndex, FVehicleWeapon_Runtime& CurrentWeapon, const FWeaponHomingData& HomingData, const FHitResult& HitResult);
 	UFUNCTION(BlueprintCallable)
@@ -196,6 +200,10 @@ public:
 	void StartCancelLockOn(int32& SeatIndex, FLockOnState& LockOnState);
 	UFUNCTION(BlueprintCallable)
 	void CancelLockOn(int32 SeatIndex, int32 WeaponIndex);
+
+	UFUNCTION(BlueprintCallable)
+	void UpdateLockOnIndicator(bool UpdateHUD, FHitResult& HitResult, FLockOnState& LockOnState);
+
 	UFUNCTION(BlueprintCallable)
 	FName BuildMuzzleName(FName SeatName, int32 WeaponIndex, EMuzzleType MuzzleType, int32 MuzzleIndex);
 	UFUNCTION()

@@ -2,7 +2,7 @@
 
 #include "Core/UI/UW_VehicleTypeButton.h"
 #include "Utilities/DataManagerSubsystem.h"
-#include "Data/Vehicles/VehicleTypeDefinitions.h"
+#include "Data/Vehicles/VehicleDefaults.h"
 
 void UUW_VehicleTypeButton::NativeConstruct()
 {
@@ -20,8 +20,7 @@ void UUW_VehicleTypeButton::SetVehicleType(int32 NewType)
 {
 	TypeEnumIndex = NewType;
     DataSubsystem = GetGameInstance()->GetSubsystem<UDataManagerSubsystem>();
-	UDA_VehicleTypeDefintion* Archetype = DataSubsystem->GetVehicleArchetypeDefinition(static_cast<E_VehicleType>(TypeEnumIndex));
-    FText DisplayNameText = Archetype->VehicleTypeDefintion.DisplayName;
+	FText DisplayNameText = DataSubsystem->GetVehicleDefaults()->VehicleTypeDefintions.Find(static_cast<E_VehicleType>(NewType))->DisplayName;
     T_VehicleTypeName->SetText(DisplayNameText);
 }
 

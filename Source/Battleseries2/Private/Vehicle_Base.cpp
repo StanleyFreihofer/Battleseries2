@@ -6,6 +6,7 @@
 #include "Data/Vehicles/Data_Vehicle.h"				//need to access members
 #include "Data/Vehicles/Data_Seat.h"				//need to access members
 #include "Data/Data_Attachments.h"
+#include "Data/Vehicles/VehicleDefaults.h"
 #include "Utilities/ProjectilePoolSubsystem.h"
 #include "Utilities/HelperFunctions_Vehicle.h"
 #include "Core/Weapons/Projectiles/Projectile_Base.h"
@@ -30,12 +31,12 @@ AVehicle_Base::AVehicle_Base()
  	// Set this pawn to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 	VehicleMeshComponent = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("VehicleMeshComponent"));
+	SetRootComponent(VehicleMeshComponent); 
 	ChaosVehicleMovement = CreateDefaultSubobject<UChaosWheeledVehicleMovementComponent>(TEXT("ChaosWheeledVehicleMovementComponent"));
 	ChaosVehicleMovement->bAutoRegister = false;
 	ChaosVehicleMovement->bAutoActivate = false;
 	InteractionWidgetComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("Interaction Widget"));
 	VehicleWeaponLogicComponent = CreateDefaultSubobject<UVehicleWeaponLogicComponent>(TEXT("Vehicle Weapon Logic Component"));
-	RootComponent = VehicleMeshComponent;
 	InteractionWidgetComponent->SetupAttachment(VehicleMeshComponent, "InteractIcon");
 }
 
@@ -171,6 +172,38 @@ void AVehicle_Base::Init_SeatCamera(int32 SeatIndex)
 	}
 }
 
+void AVehicle_Base::Init_SeatHUDComp(int32& SeatIndex)
+{
+	UWidgetComponent* CockpitHUDComponent = NewObject<UWidgetComponent>(this);
+	CockpitHUDComponent->RegisterComponent();
+	CockpitHUDComponent->AttachToComponent(GetRootComponent(), FAttachmentTransformRules::KeepRelativeTransform);
+	CockpitHUDComponent->SetRelativeTransform(VehicleData->Seats[SeatIndex].DefaultCharacterContext.SeatHUDTransform);
+	CockpitHUDComponent->SetWidgetClass(VehicleData->Seats[SeatIndex].DefaultCharacterContext.SeatHUD);
+	CockpitHUDComponent->SetDrawSize(VehicleData->Seats[SeatIndex].DefaultCharacterContext.SeatHUDDrawSize);
+	CockpitHUDComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	CockpitHUDComponent->SetPivot(FVector2D(0.5f, 0.5f));
+	CockpitHUDComponent->SetOwnerNoSee(false);
+	//CockpitHUDComponent->SetOnlyOwnerSee(true);
+	VehicleCurrentState.SeatStates[SeatIndex].SeatHUDComponent = CockpitHUDComponent;
+
+	//reticle quad
+	UStaticMesh* DefaultPlane = LoadObject<UStaticMesh>(nullptr, TEXT("/Engine/BasicShapes/Plane.Plane"));
+	TWeakObjectPtr<UStaticMeshComponent> NewQuad = NewObject<UStaticMeshComponent>(this);
+	NewQuad->RegisterComponent();
+	NewQuad->AttachToComponent(CockpitHUDComponent, FAttachmentTransformRules::SnapToTargetIncludingScale);
+	NewQuad->SetStaticMesh(DefaultPlane);
+	NewQuad->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	NewQuad->SetCastShadow(false);
+	NewQuad->SetReceivesDecals(false);
+	NewQuad->SetRelativeRotation(FRotator(0.f, -90.f, 90.f));
+	NewQuad->SetRelativeLocation(FVector(0.1f, 0.f, 0.f));
+
+	UMaterialInterface* MasterMat = DataManager->GetVehicleDefaults()->HUDMasterMaterial.Get();
+	UMaterialInstanceDynamic* DynMat = NewQuad->CreateDynamicMaterialInstance(0, MasterMat);		//both creates and assigns
+
+	VehicleWeaponLogicComponent->VehicleWeaponSystem.Find(SeatIndex)->VehicleWeaponSystemState.ReticleQuad = NewQuad;
+}
+
 void AVehicle_Base::Init_Seats()
 {
 	VehicleCurrentState.SeatStates.SetNum(VehicleData->Seats.Num());
@@ -193,15 +226,7 @@ void AVehicle_Base::Init_Seats()
 		//seat hud comp
 		if (SeatInfo.DefaultCharacterContext.SeatHUD)
 		{
-			UWidgetComponent* CockpitHUDComponent = NewObject<UWidgetComponent>(this);
-			CockpitHUDComponent->RegisterComponent();
-			CockpitHUDComponent->AttachToComponent(GetRootComponent(), FAttachmentTransformRules::KeepRelativeTransform);
-			CockpitHUDComponent->SetRelativeTransform(SeatInfo.DefaultCharacterContext.SeatHUDTransform);
-			CockpitHUDComponent->SetWidgetClass(SeatInfo.DefaultCharacterContext.SeatHUD);
-			CockpitHUDComponent->SetDrawSize(SeatInfo.DefaultCharacterContext.SeatHUDDrawSize);
-			CockpitHUDComponent->SetOwnerNoSee(false);
-			//CockpitHUDComponent->SetOnlyOwnerSee(true);
-			VehicleCurrentState.SeatStates[i].SeatHUDComponent = CockpitHUDComponent;
+			Init_SeatHUDComp(i);
 		}
 	}
 
@@ -274,8 +299,8 @@ void AVehicle_Base::Init_Vehicle()
 {
 	Init_VehicleMesh(VehicleData->Vehicle_Mesh.Get());
 	Init_VehicleAnim(VehicleData->Anim_Class.Get());
-	Init_Seats();
 	VehicleWeaponLogicComponent->Init_VehicleWeaponSystem(VehicleStartingData.StartingVehicleLoadout.SeatLoadout);		//weapons and turrets
+	Init_Seats();
 	switch (VehicleData->Movement_Type)
 	{
 		case E_MovementType::GroundVehicle:

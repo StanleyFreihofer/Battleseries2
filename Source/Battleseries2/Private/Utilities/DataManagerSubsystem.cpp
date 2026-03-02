@@ -12,7 +12,7 @@
 #include "Data/Data_Attachments.h"
 #include "Data/Data_Camo.h"
 #include "Data/Weapons/WeaponDefaults.h"
-#include "Data/Vehicles/VehicleTypeDefinitions.h"
+#include "Data/Vehicles/VehicleDefaults.h"
 #include "Utilities/GameInstance_Base.h"
 
 //1 BP parent of this
@@ -57,17 +57,9 @@ void UDataManagerSubsystem::LoadDataTables()
     AttachmentDataTable = AttachmentDataTableAsset.LoadSynchronous();
     CamoDataTable = CamoDataTableAsset.LoadSynchronous();
 
-    for (auto& Pair : VehicleArchetypeMap)
-    {
-        E_VehicleType Type = Pair.Key;
-        TSoftObjectPtr<UDA_VehicleTypeDefintion> SoftPtr = Pair.Value;
-        UDA_VehicleTypeDefintion* LoadedAsset = SoftPtr.LoadSynchronous();
-        LoadedVehicleArchetypes.Add(Type, LoadedAsset);
-    }
-    UE_LOG(LogTemp, Warning, TEXT("DataManager: Total Archetypes Loaded: %d"), LoadedVehicleArchetypes.Num());
-
     CoreTypeDefinitionsDataAsset = CoreTypeDefinitionsDAAsset.LoadSynchronous();
     WeaponDefaultsDataAsset = WeaponDefaultsDAAsset.LoadSynchronous();
+    VehicleDefaultsDataAsset = VehicleDefaultsDAAsset.LoadSynchronous();
 
     check(VehicleDataTable && VehicleWeaponDataTable && ProjectileDataTable);
 
@@ -165,12 +157,6 @@ FText UDataManagerSubsystem::GetWeaponSlotName(int32 WeaponSlotIndex)
 {
     FText WeaponSlotName = WeaponDefaultsDataAsset->WeaponDefaults.WeaponSlotNames[WeaponSlotIndex];
     return WeaponSlotName;
-}
-
-UDA_VehicleTypeDefintion* UDataManagerSubsystem::GetVehicleArchetypeDefinition(E_VehicleType VehicleType)
-{
-    UDA_VehicleTypeDefintion* const* FoundAssetPtr = LoadedVehicleArchetypes.Find(VehicleType);
-    return *FoundAssetPtr;
 }
 
 void UDataManagerSubsystem::PreloadCoreAssets()

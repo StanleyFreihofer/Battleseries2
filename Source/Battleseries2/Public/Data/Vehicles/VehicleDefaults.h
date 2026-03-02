@@ -2,7 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "Engine/DataAsset.h"
-#include "VehicleTypeDefinitions.generated.h"
+#include "VehicleDefaults.generated.h"
 
 enum class E_VehicleType : uint8;
 
@@ -30,12 +30,14 @@ struct FVehicleTypeDefintion
 };
 
 UCLASS(BlueprintType)
-class BATTLESERIES2_API UDA_VehicleTypeDefintion : public UDataAsset
+class BATTLESERIES2_API UDA_VehicleDefaults : public UDataAsset
 {
     GENERATED_BODY()
 
 public:
-    //change da to a map (key = vehicle type)? (make it all 1 da in other words)
     UPROPERTY(EditAnywhere, BlueprintReadOnly)
-    FVehicleTypeDefintion VehicleTypeDefintion;
+    TSoftObjectPtr<UMaterialInterface> HUDMasterMaterial = nullptr;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly)
+    TMap<E_VehicleType, FVehicleTypeDefintion> VehicleTypeDefintions;
 };

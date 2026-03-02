@@ -7,12 +7,13 @@
 #include "DataManagerSubsystem.generated.h"
 
 struct FVehicleData;
+struct FVehicleTypeDefintion;
 struct FVehicleWeaponData;
 struct FAttachmentData;
 struct FProjectileData;
 struct FCamoData;
 enum class E_VehicleType : uint8;
-class UDA_VehicleTypeDefintion;
+class UDA_VehicleDefaults;
 class UDA_WeaponDefaults;
 class UDA_CoreTypes;
 
@@ -44,10 +45,12 @@ public:
     TSoftObjectPtr<UDA_WeaponDefaults> WeaponDefaultsDAAsset;
 
     UPROPERTY(EditAnywhere, Category = "Data Assets")
-    TSoftObjectPtr<UDA_CoreTypes> CoreTypeDefinitionsDAAsset;
+    TSoftObjectPtr<UDA_VehicleDefaults> VehicleDefaultsDAAsset;
 
     UPROPERTY(EditAnywhere, Category = "Data Assets")
-    TMap<E_VehicleType, TSoftObjectPtr<UDA_VehicleTypeDefintion>> VehicleArchetypeMap;
+    TSoftObjectPtr<UDA_CoreTypes> CoreTypeDefinitionsDAAsset;
+
+
 
 
     UPROPERTY(BlueprintAssignable)
@@ -86,7 +89,8 @@ public:
     UDA_WeaponDefaults* GetWeaponDefaults() const { return WeaponDefaultsDataAsset; }
 
     UFUNCTION(BlueprintCallable, Category = "Data")
-    UDA_VehicleTypeDefintion* GetVehicleArchetypeDefinition(E_VehicleType VehicleType);
+    UDA_VehicleDefaults* GetVehicleDefaults() const { return VehicleDefaultsDataAsset; }
+
 
     //USTRUCTs are value types, not objects like UCLASS.
     //UFUNCTIONs exposed to Blueprints cannot return raw pointers or references to USTRUCTs.
@@ -150,7 +154,7 @@ private:
     UDA_WeaponDefaults* WeaponDefaultsDataAsset;
 
     UPROPERTY()
-    TMap<E_VehicleType, UDA_VehicleTypeDefintion*> LoadedVehicleArchetypes;
+    UDA_VehicleDefaults* VehicleDefaultsDataAsset;
 
 
     bool bDataReady = false;

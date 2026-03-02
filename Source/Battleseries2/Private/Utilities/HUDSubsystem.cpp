@@ -114,6 +114,18 @@ void UHUDSubsystem::UpdateWeaponReticleSize_Vehicle(float NewScale)
 	{
 		CurrentVehicleHMD->VehicleWeaponReticle->UpdateReticleScale(NewScale);
 	}
+	else if (CurrentVehicleHUD && CurrentVehicleHUD->VehicleWeaponReticle)
+	{
+		CurrentVehicleHUD->VehicleWeaponReticle->UpdateReticleScale(NewScale);
+	}
+}
+
+void UHUDSubsystem::UpdateWeaponReticlePositon_Vehicle(FVector2D NewPosition)
+{
+	if (CurrentVehicleHUD && CurrentVehicleHUD->VehicleWeaponReticle)
+	{
+		CurrentVehicleHUD->VehicleWeaponReticle->UpdateReticlePosition(NewPosition);
+	}
 }
 
 void UHUDSubsystem::UpdateRangefinderHUD_Vehicle(float NewRange)

@@ -127,6 +127,8 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void Init_SeatCamera(int32 SeatIndex);
 	UFUNCTION(BlueprintCallable)
+	void Init_SeatHUDComp(int32& SeatIndex);
+	UFUNCTION(BlueprintCallable)
 	void Init_Seats();
 
 	UFUNCTION(BlueprintCallable)
