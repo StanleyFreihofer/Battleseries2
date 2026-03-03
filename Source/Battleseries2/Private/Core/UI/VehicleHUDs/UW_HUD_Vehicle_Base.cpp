@@ -57,4 +57,81 @@ void UUW_HUD_Vehicle_Base::BindComponents()
 	});
 }
 
+void UUW_HUD_Vehicle_Base::UpdateSpeedometer(float Speed)
+{
+	if (Speedometer)
+	{
+		float DisplaySpeed = Speed * 0.036f;		// Unreal Units to KPH
+		Speedometer->UpdateSpeedometer(DisplaySpeed);
+	}
+}
+
+void UUW_HUD_Vehicle_Base::UpdateCompassHUD(float Yaw)
+{
+	if (Compass)
+	{
+		Compass->UpdateCompassPosition(Yaw);
+	}
+}
+
+void UUW_HUD_Vehicle_Base::UpdateRangefinderHUD(float NewRange)
+{
+	if (Rangefinder)
+	{
+		Rangefinder->UpdateRangefinder(NewRange);
+	}
+}
+
+void UUW_HUD_Vehicle_Base::UpdateWeaponNameHUD(FText WeaponDisplayName)
+{
+	if (VehicleWeaponStatus)
+	{
+		VehicleWeaponStatus->UpdateWeaponName(WeaponDisplayName);
+	}
+}
+
+void UUW_HUD_Vehicle_Base::UpdateWeaponStatusHUD(bool canFire)
+{
+	if (VehicleWeaponStatus)
+	{
+		FText WeaponStatus;
+		if (!canFire)
+		{
+			WeaponStatus = FText::FromString("WAIT");
+		}
+		else
+		{
+			WeaponStatus = FText::FromString("READY");
+		}
+		VehicleWeaponStatus->UpdateWeaponStatus(WeaponStatus);
+	}
+}
+
+void UUW_HUD_Vehicle_Base::UpdateWeaponReticleHUD(UTexture2D* ImageBrush)
+{
+	if (VehicleWeaponReticle)
+	{
+		VehicleWeaponReticle->UpdateReticleImage(ImageBrush);
+	}
+}
+
+void UUW_HUD_Vehicle_Base::UpdateWeaponReticleSize(float NewScale)
+{
+	if (VehicleWeaponReticle)
+	{
+		VehicleWeaponReticle->UpdateReticleScale(NewScale);
+	}
+}
+
+void UUW_HUD_Vehicle_Base::UpdateEquippedWeaponHUD(FText WeaponName, UTexture2D* Reticle, float ReticleScale, bool canFire)
+{
+	//combine name and hud into 1 var?
+	UpdateWeaponNameHUD(WeaponName);
+	UpdateWeaponStatusHUD(canFire);
+
+	UpdateWeaponReticleHUD(Reticle);
+	UpdateWeaponReticleSize(ReticleScale);
+
+}
+
 

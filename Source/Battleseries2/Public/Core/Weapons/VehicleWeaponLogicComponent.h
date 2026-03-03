@@ -244,6 +244,8 @@ public:
 	void UnequipWeapon(int32& SeatIndex, int32& WeaponIndex, bool& bWasFiring);
 	UFUNCTION(BlueprintCallable)
 	void UpdateWeaponAudioCompData(int32 SeatIndex, int32 WeaponIndex);
+	UFUNCTION(BlueprintCallable)
+	void UpdateWeaponStatusUI(int32& SeatIndex, bool& canFire);
 
 	//GETTERS
 	UFUNCTION(BlueprintCallable, BlueprintPure)

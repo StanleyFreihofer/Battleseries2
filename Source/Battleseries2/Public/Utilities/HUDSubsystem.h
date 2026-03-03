@@ -9,6 +9,10 @@ class UUW_HUD_Vehicle_Base;
 class UUW_HUD_LockOnIndicator_Base;
 class AVehicle_Base;
 
+//management of all player screen widgets done here... HMD in practice
+//component/worldspace widget done elsewhere
+//****alot of stuff here needs to reflect the idea that we're now separating the idea of HMD and HUD****
+
 UCLASS(Blueprintable, BlueprintType)
 class BATTLESERIES2_API UHUDSubsystem : public ULocalPlayerSubsystem
 {
@@ -16,15 +20,15 @@ class BATTLESERIES2_API UHUDSubsystem : public ULocalPlayerSubsystem
 
 public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
-    UUW_HUD_Status_Base* StatusHUD;         //ammo, health
+    UUW_HUD_Status_Base* StatusHUD = nullptr;         //ammo, health
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
     UUW_HUD_Vehicle_Base* CurrentVehicleHMD;        //standard HUD
-    UPROPERTY(EditAnywhere, BlueprintReadWrite)
-    UUW_HUD_Vehicle_Base* CurrentVehicleHUD;        //worldspace widget component mounted in vehicle        
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)                 //GET RID OF THIS (HUD System no longer updates worldspace HUD comps)
+    UUW_HUD_Vehicle_Base* CurrentVehicleHUD = nullptr;        //worldspace widget component mounted in vehicle        
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
-    UUW_HUD_LockOnIndicator_Base* LockOnIndicator;
+    UUW_HUD_LockOnIndicator_Base* LockOnIndicator = nullptr;
 
     //killfeed
     //onfootreticle
@@ -53,8 +57,6 @@ public:
     void UpdateWeaponReticleHUD_Vehicle(UTexture2D* ImageBrush);
     UFUNCTION(BlueprintCallable)
     void UpdateWeaponReticleSize_Vehicle(float NewScale);
-    UFUNCTION(BlueprintCallable)
-    void UpdateWeaponReticlePositon_Vehicle(FVector2D NewPosition);
     UFUNCTION(BlueprintCallable)
     void UpdateRangefinderHUD_Vehicle(float NewRange);
     UFUNCTION(BlueprintCallable)

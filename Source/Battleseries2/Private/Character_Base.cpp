@@ -136,10 +136,12 @@ void ACharacter_Base::CharacterEnterSeat(const FCharacterSeatContext& SeatContex
 	{
 		UpdateVehicleHUD(SeatContext.SeatHMD);
 	}
+	/**
 	if (SeatContext.SeatHUD && GetCurrentVehicle()->VehicleCurrentState.SeatStates[GetCSI()].SeatHUDComponent->GetUserWidgetObject())
 	{
 		GetLocalPlayerHUDSystem()->CurrentVehicleHUD = Cast<UUW_HUD_Vehicle_Base>(GetCurrentVehicle()->VehicleCurrentState.SeatStates[GetCSI()].SeatHUDComponent->GetUserWidgetObject());
 	}
+	**/
 
 	//sync vehicle states for hud
 	switch (GetCurrentVehicle()->VehicleData->Seats[GetCSI()].SeatRole)
@@ -179,10 +181,12 @@ void ACharacter_Base::CharacterExitSeat(const FCharacterSeatContext& SeatContext
 {
 	UpdateVehicleHUD(nullptr);
 	ManageIMC(SeatContext.InputMappingContext, nullptr, 0);
+	/**
 	if (GetLocalPlayerHUDSystem()->CurrentVehicleHUD)
 	{
 		GetLocalPlayerHUDSystem()->CurrentVehicleHUD = nullptr;
 	}
+	**/
 }
 
 FVector ACharacter_Base::CalculateSafeExitLocation(AActor* Vehicle)
@@ -342,54 +346,10 @@ void ACharacter_Base::UpdateRangefinder_WindowedVehicle()
 				{
 					UStaticMeshComponent* Quad = VWLC->VehicleWeaponSystem.Find(GetCSI())->VehicleWeaponSystemState.ReticleQuad.Get();
 					USceneComponent* HUDGlass = Quad->GetAttachParent();
-					// 1. Get the Intersection Point on the glass (World Space)
 					FVector EyePos = Camera->GetComponentLocation();
 					FVector TargetPos = HitResult.bBlockingHit ? HitResult.ImpactPoint : TraceTransform.GetLocation() + (TraceTransform.GetUnitAxis(EAxis::X) * 100000.0f);
-
 					FVector IntersectionPoint = FMath::LinePlaneIntersection(EyePos, TargetPos, SeatHUDComp->GetComponentLocation(), SeatHUDComp->GetForwardVector());
-
 					Quad->SetWorldLocation(IntersectionPoint);
-					//FRotator LookAtRot = UKismetMathLibrary::FindLookAtRotation(Quad->GetComponentLocation(), EyePos);
-					//Quad->SetWorldRotation(LookAtRot);
-
-					/**
-					FVector LookDir = (TargetPos - EyePos).GetSafeNormal();
-					FVector GlassLocation = HUDGlass->GetComponentLocation();
-					FVector GlassNormal = HUDGlass->GetForwardVector();
-					float Dot = FVector::DotProduct(GlassNormal, LookDir);
-					if (FMath::Abs(Dot) < 0.0001f) return;
-
-					float Distance = FVector::DotProduct(GlassNormal, (GlassLocation - EyePos)) / Dot;
-					FVector WorldIntersection = EyePos + (LookDir * Distance);
-
-					FVector LocalPos = HUDGlass->GetComponentTransform().InverseTransformPosition(WorldIntersection);
-
-					LocalPos.X = 0.1f;
-
-					Quad->SetRelativeLocation(LocalPos);
-
-					FRotator LookAtRot = UKismetMathLibrary::FindLookAtRotation(Quad->GetComponentLocation(), EyePos);
-					**
-					/**
-
-
-					// 2. Convert to Local Space (Relative to the center of the component)
-					FVector LocalPoint = SeatHUDComp->GetComponentTransform().InverseTransformPosition(IntersectionPoint);
-					DrawDebugSphere(GetWorld(), LocalPoint, 5.f, 8, FColor::Green);
-					float ComponentWidthCM = SeatHUDComp->GetRelativeScale3D().Y * 100.0f;
-					float ComponentHeightCM = SeatHUDComp->GetRelativeScale3D().Z * 100.0f;
-					FVector2D DrawSize = OccupiedSeatData.DefaultCharacterContext.SeatHUDDrawSize; // e.g., 1024x1024
-					FVector2D PixelPos;
-					PixelPos.X = -(LocalPoint.Y / ComponentWidthCM) * DrawSize.X;
-					PixelPos.Y = -(LocalPoint.Z / ComponentHeightCM) * DrawSize.Y; // Negate Z because UI Y is down
-					float HalfX = DrawSize.X * 0.5f;
-					float HalfY = DrawSize.Y * 0.5f;
-					//PixelPos.X = FMath::Clamp(PixelPos.X, -DrawSize.X, DrawSize.X);
-					//PixelPos.Y = FMath::Clamp(PixelPos.Y, -DrawSize.Y, DrawSize.Y);
-
-					GetLocalPlayerHUDSystem()->UpdateWeaponReticlePositon_Vehicle(PixelPos);
-					**/
-
 				}
 			}
 		}

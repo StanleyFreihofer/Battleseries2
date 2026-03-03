@@ -70,12 +70,9 @@ void UHUDSubsystem::UpdateStatusHUD_CRACount(int32 CRA)
 
 void UHUDSubsystem::UpdateSpeedHUD_Vehicle(float Speed)
 {
-	if (CurrentVehicleHMD && CurrentVehicleHMD->Speedometer)
+	if (CurrentVehicleHMD)
 	{
-		//float RawSpeed = Character->CharacterState.CharacterVehicleState.CurrentVehicle->GetVelocity().Size();
-		//use chaos speed?
-		float DisplaySpeed = Speed * 0.036f;		// Unreal Units to KPH
-		CurrentVehicleHMD->Speedometer->UpdateSpeedometer(DisplaySpeed);
+		CurrentVehicleHMD->UpdateSpeedometer(Speed);
 	}
 }
 
@@ -95,69 +92,56 @@ void UHUDSubsystem::UpdateEquippedWeaponHUD_Vehicle(FText WeaponName, UTexture2D
 
 void UHUDSubsystem::UpdateWeaponReticleHUD_Vehicle(UTexture2D* ImageBrush)
 {
-	if (CurrentVehicleHMD && CurrentVehicleHMD->VehicleWeaponReticle)
+	if (CurrentVehicleHMD)
 	{
-		CurrentVehicleHMD->VehicleWeaponReticle->UpdateReticleImage(ImageBrush);
+		CurrentVehicleHMD->UpdateWeaponReticleHUD(ImageBrush);
 	}
 
-	//widget component
-	if (CurrentVehicleHUD && CurrentVehicleHUD->VehicleWeaponReticle)
+	//get rid of this (worldspace widgets no longer being updated by local hud system)
+	/**
+	if (CurrentVehicleHUD)
 	{
 		CurrentVehicleHUD->VehicleWeaponReticle->UpdateReticleImage(ImageBrush);
 	}
+	**/
 }
 
 void UHUDSubsystem::UpdateWeaponReticleSize_Vehicle(float NewScale)
 {
 	//for zoom optic and initial size
-	if (CurrentVehicleHMD && CurrentVehicleHMD->VehicleWeaponReticle)
+	if (CurrentVehicleHMD)
 	{
-		CurrentVehicleHMD->VehicleWeaponReticle->UpdateReticleScale(NewScale);
+		CurrentVehicleHMD->UpdateWeaponReticleSize(NewScale);
 	}
-	else if (CurrentVehicleHUD && CurrentVehicleHUD->VehicleWeaponReticle)
-	{
-		CurrentVehicleHUD->VehicleWeaponReticle->UpdateReticleScale(NewScale);
-	}
-}
 
-void UHUDSubsystem::UpdateWeaponReticlePositon_Vehicle(FVector2D NewPosition)
-{
-	if (CurrentVehicleHUD && CurrentVehicleHUD->VehicleWeaponReticle)
+	//get rid of this (worldspace widgets no longer being updated by local hud system)
+	else if (CurrentVehicleHUD)
 	{
-		CurrentVehicleHUD->VehicleWeaponReticle->UpdateReticlePosition(NewPosition);
+		CurrentVehicleHUD->UpdateWeaponReticleSize(NewScale);
 	}
 }
 
 void UHUDSubsystem::UpdateRangefinderHUD_Vehicle(float NewRange)
 {
-	if (CurrentVehicleHMD && CurrentVehicleHMD->Rangefinder)
+	if (CurrentVehicleHMD)
 	{
-		CurrentVehicleHMD->Rangefinder->UpdateRangefinder(NewRange);
+		CurrentVehicleHMD->UpdateRangefinderHUD(NewRange);
 	}
 }
 
 void UHUDSubsystem::UpdateWeaponNameHUD_Vehicle(FText WeaponDisplayName)
 {
-	if (CurrentVehicleHMD && CurrentVehicleHMD->VehicleWeaponStatus)
+	if (CurrentVehicleHMD)
 	{
-		CurrentVehicleHMD->VehicleWeaponStatus->UpdateWeaponName(WeaponDisplayName);
+		CurrentVehicleHMD->UpdateWeaponNameHUD(WeaponDisplayName);
 	}
 }
 
 void UHUDSubsystem::UpdateWeaponStatusHUD_Vehicle(bool canFire)
 {
-	if (CurrentVehicleHMD && CurrentVehicleHMD->VehicleWeaponStatus)
+	if (CurrentVehicleHMD)
 	{
-		FText WeaponStatus;
-		if (!canFire)
-		{
-			WeaponStatus = FText::FromString("WAIT");
-		}
-		else
-		{
-			WeaponStatus = FText::FromString("READY");
-		}
-		CurrentVehicleHMD->VehicleWeaponStatus->UpdateWeaponStatus(WeaponStatus);
+		CurrentVehicleHMD->UpdateWeaponStatusHUD(canFire);
 	}
 }
 
@@ -165,9 +149,9 @@ void UHUDSubsystem::UpdateCompassHUD_Vehicle(float Yaw)
 {
 	//should be bound to BOTH vehicle steer and control turret events as thats what determines a players compass in a vehicle
 	//get seat state, active camera component rotation
-	if (CurrentVehicleHMD && CurrentVehicleHMD->Compass)
+	if (CurrentVehicleHMD)
 	{
-		CurrentVehicleHMD->Compass->UpdateCompassPosition(Yaw);
+		CurrentVehicleHMD->UpdateCompassHUD(Yaw);
 	}
 }
 

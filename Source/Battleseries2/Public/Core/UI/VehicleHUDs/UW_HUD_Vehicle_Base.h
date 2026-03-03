@@ -13,6 +13,8 @@ class UUW_VehicleHUDComp_TurretElvGauge;
 class UUW_VehicleHUDComp_TurretPitchMeter;
 class UUW_VehicleHUDComp_Speedometer;
 
+//can either be a vehicle HMD (player screen) or HUD (worldspace widget component)
+
 UCLASS()
 class BATTLESERIES2_API UUW_HUD_Vehicle_Base : public UUserWidget
 {
@@ -45,4 +47,25 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void BindComponents();
+
+	UFUNCTION(BlueprintCallable)
+	void UpdateSpeedometer(float Speed);
+
+	UFUNCTION(BlueprintCallable)
+	void UpdateCompassHUD(float Yaw);
+
+	UFUNCTION(BlueprintCallable)
+	void UpdateRangefinderHUD(float NewRange);
+
+	UFUNCTION(BlueprintCallable)
+	void UpdateWeaponNameHUD(FText WeaponDisplayName);
+	UFUNCTION(BlueprintCallable)
+	void UpdateWeaponStatusHUD(bool canFire);
+	UFUNCTION(BlueprintCallable)
+	void UpdateWeaponReticleHUD(UTexture2D* ImageBrush);
+	UFUNCTION(BlueprintCallable)
+	void UpdateWeaponReticleSize(float NewScale);
+	UFUNCTION(BlueprintCallable)
+	void UpdateEquippedWeaponHUD(FText WeaponName, UTexture2D* Reticle, float ReticleScale, bool canFire);
+	
 };

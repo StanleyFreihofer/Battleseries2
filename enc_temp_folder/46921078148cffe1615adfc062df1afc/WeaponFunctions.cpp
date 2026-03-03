@@ -31,12 +31,12 @@ bool UWeaponFunctions::PerformWeaponLineTrace(const UObject* WorldContextObject,
 	UWorld* World = GEngine->GetWorldFromContextObject(WorldContextObject, EGetWorldErrorMode::LogAndReturnNull);
 	FVector Startpoint = StartTransform.GetLocation();
 	FVector GetRotationXVector = StartTransform.GetRotation().Rotator().Vector();
-	FVector Endpoint = GetRotationXVector * 50000.0f + Startpoint; 
+	FVector Endpoint = GetRotationXVector * 50000.0f + Startpoint;
 
 	FCollisionQueryParams Params;
 	Params.AddIgnoredActors(ActorsToIgnore);
 	bool bDidHit = World->LineTraceSingleByChannel(OutHit, Startpoint, Endpoint, ECC_Visibility, Params);
-	//DrawDebugLine(World, Startpoint, Endpoint, bDidHit ? FColor::Green : FColor::Red, false, 1.f, 0, 1.f);
+	DrawDebugLine(World, Startpoint, Endpoint, bDidHit ? FColor::Green : FColor::Red, false, 1.f, 0, 1.f);
 	return bDidHit;
 }
 
@@ -53,7 +53,7 @@ bool UWeaponFunctions::PerformWeaponSphereTrace(const UObject* WorldContextObjec
 	Params.AddIgnoredActors(ActorsToIgnore);
 	//bool bDidHit = World->SweepSingleByChannel(OutHit, Startpoint, Endpoint, FQuat::Identity, ECC_Visibility, SphereShape, Params);
 
-	
+
 	return UKismetSystemLibrary::SphereTraceSingle(
 		WorldContextObject,
 		Startpoint,
@@ -62,12 +62,12 @@ bool UWeaponFunctions::PerformWeaponSphereTrace(const UObject* WorldContextObjec
 		UEngineTypes::ConvertToTraceType(ECC_Visibility),
 		false,              // bTraceComplex
 		ActorsToIgnore,
-		EDrawDebugTrace::None,
+		EDrawDebugTrace::ForDuration,
 		OutHit,
 		true,               // bIgnoreSelf
 		FLinearColor::Red,  // Trace Color
 		FLinearColor::Green,// Hit Color
-		0.0f                // Draw Time
+		2.0f                // Draw Time
 	);
 	
 	//return bDidHit;

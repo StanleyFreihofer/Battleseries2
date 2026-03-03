@@ -184,7 +184,7 @@ struct FCharacterSeatContext
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	bool bIsCharacterVisible = true;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (tooltip = "standard seat HUD/HMD (non-worldspace, added to player screen"))
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (tooltip = "standard seat HUD/HMD (non-worldspace, added to player screen)"))
 	TSubclassOf<UUserWidget> SeatHMD = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (tooltip = "actual in-word HUD (worldspace widget), leave this blank if none"))

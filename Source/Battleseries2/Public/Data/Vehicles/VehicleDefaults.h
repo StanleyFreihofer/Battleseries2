@@ -13,7 +13,7 @@ struct FVehicleTypeDefintion
 {
 	GENERATED_BODY()
 
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)      //need this?
     E_VehicleType VehicleType;
 
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
