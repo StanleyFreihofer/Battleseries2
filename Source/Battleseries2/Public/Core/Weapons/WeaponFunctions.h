@@ -6,7 +6,7 @@
 class UProjectilePoolSubsystem;
 struct FBaseWeaponData;
 struct FWeapon_Runtime;
-struct FProjectile_Runtime;
+struct FSimProjectile_Runtime;
 
 UCLASS()
 class BATTLESERIES2_API UWeaponFunctions : public UObject
@@ -31,7 +31,7 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	static int32 UpdateWeaponIndex(TArray<FWeapon_Runtime> Weapons, int32 WeaponIndex);
 	UFUNCTION(BlueprintCallable)
-	static FProjectile_Runtime CreateSimProjectile(FName ProjectileID, class APlayerState* InstigatorPlayerState, FVector MuzzleLocation, float MuzzleSpeed, float GravityScale, FVector AimDirection, float BaseDamage, UCurveFloat* DamageDropoffCurve, UProjectilePoolSubsystem* ProjectileSubsystem);
+	static FSimProjectile_Runtime CreateSimProjectile(FName ProjectileID, class APlayerState* InstigatorPlayerState, FVector MuzzleLocation, float MuzzleSpeed, float GravityScale, FVector AimDirection, float BaseDamage, UCurveFloat* DamageDropoffCurve, UProjectilePoolSubsystem* ProjectileSubsystem);
 	UFUNCTION(BlueprintCallable)
 	static void Debug_ProjectilePath(const UObject* WorldContextObject, FVector MuzzleLocation, FHitResult HitResult);
 };

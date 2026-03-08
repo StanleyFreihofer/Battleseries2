@@ -3,10 +3,16 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Pawn.h"
 #include "GameFramework/ProjectileMovementComponent.h"
+#include "NiagaraComponent.h"
+#include "Components/PointLightComponent.h"
+#include "Utilities/DataManagerSubsystem.h"
+#include "Utilities/ProjectilePoolSubsystem.h"
 #include "Data/Runtime/ProjectileTypes.h"
 #include "Projectile_Base.generated.h"
+
+class UProjectilePoolSubsystem;
 struct FProjectileData;
-struct FProjectile_Runtime;
+struct FActorProjectile_Runtime;
 
 UCLASS()
 class BATTLESERIES2_API AProjectile_Base : public APawn
@@ -15,17 +21,25 @@ class BATTLESERIES2_API AProjectile_Base : public APawn
 
 public:
 	AProjectile_Base();
+	virtual void BeginPlay() override;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
 	UStaticMeshComponent* ProjectileMeshComponent;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
+	UPointLightComponent* PointLightComponent;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
+	UNiagaraComponent* NiagaraComponent;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
 	UProjectileMovementComponent* ProjectileMovementComponent;
+
 
 	const FProjectileData* ProjectileData;
 
 	//STATE
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	FProjectile_Runtime ProjectileState;
+	FActorProjectile_Runtime ProjectileState;
+
+
 
 	UFUNCTION(BlueprintCallable)
 	void SetProjectileAndInit(FName InputProjectileID, bool ActivateImmediately);
@@ -38,6 +52,8 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void Init_ProjectileMesh(UStaticMesh* LoadedProjectileMesh);
+	UFUNCTION(BlueprintCallable)
+	void Init_RocketExhaustVFX();
 
 	UFUNCTION(BlueprintCallable)
 	void Init_ProjectileFlightData();
@@ -48,7 +64,30 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void FireProjectile();
 	UFUNCTION(BlueprintCallable)
+	void StartFlightPlan();
+	UFUNCTION(BlueprintCallable)
+	void UpdateFlightPlan(int32 FlightStageIndex);
+	UFUNCTION(BlueprintCallable)
+	void HandleFlightStageTransition(const FProjectileFlightStage& FlightStage);
+	UFUNCTION(BlueprintCallable)
+	void AdvanceFlightStage();
+	UFUNCTION(BlueprintCallable)
+	void HandleTransition_LimitedRange();
+	UFUNCTION(BlueprintCallable)
+	void HandleTransition_RangeToTarget();
+	UFUNCTION(BlueprintCallable)
+	void HandleTransition_Proximity2D();
+	UFUNCTION()
+	void OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
+	UFUNCTION(BlueprintCallable)
 	void OnImpact();
+	UFUNCTION()
+	UDataManagerSubsystem* GetDataManager();
+	UFUNCTION()
+	UProjectilePoolSubsystem* GetProjectileSystem();
+
+protected:
+	FTimerHandle StageTimerHandle;
 
 };
 

@@ -813,6 +813,11 @@ TWeakObjectPtr<UHUDSubsystem> AVehicle_Base::GetHUDSystem()
 	return nullptr;
 }
 
+UDataManagerSubsystem* AVehicle_Base::GetDataManager()
+{
+	return GetGameInstance()->GetSubsystem<UDataManagerSubsystem>();
+}
+
 USkeletalMeshComponent* AVehicle_Base::GetVehicleMesh() const
 {
 	return VehicleMeshComponent;

@@ -954,6 +954,7 @@ void UVehicleWeaponLogicComponent::FireVehicleWeapon(int32 SeatIndex)
 					//handle SHOOT projectileactor
 					if (VehicleWeapon.VehicleWeaponInstanceData.bAreProjectilesMounted && VehicleWeaponState.CurrentMountedProjectiles.Num() > 0)
 					{
+						VehicleWeaponState.CurrentMountedProjectiles[0]->ProjectileMovementComponent->HomingTargetComponent = VehicleWeaponState.BaseWeaponRuntimeData.WeaponState.LockOnState.AcquiredTarget.Get()->GetRootComponent();
 						VehicleWeaponState.CurrentMountedProjectiles[0]->FireProjectile();
 						//call some sort of "drop from rack" function on projectile?
 						if (VehicleWeaponState.CurrentMountedProjectiles[0].IsValid())
@@ -1035,12 +1036,6 @@ void UVehicleWeaponLogicComponent::HandleAmmoDepletion(const FBaseWeaponData& St
 				StopFire(SeatIndex);
 				HandleStartAutoload(SeatIndex);
 				UpdateWeaponStatusUI(SeatIndex, CurrentWeapon.WeaponState.canFire);
-				/**
-				if (OwnerDataAccessor->GetVehicleState().SeatStates[SeatIndex].UpdateHUD)
-				{
-					GetHUDSystem()->UpdateWeaponStatusHUD_Vehicle(CurrentWeapon.WeaponState.canFire);
-				}
-				**/
 			}
 			break;
 		case EAmmoDepletionMethod::Heat:
@@ -1084,6 +1079,7 @@ void UVehicleWeaponLogicComponent::AutoloadNewMag(int32 SeatIndex, int32 WeaponI
 {
 	FVehicleWeaponSystem_Runtime& SeatWeaponSystem = *VehicleWeaponSystem.Find(SeatIndex);
 	FWeapon_Runtime& CurrentWeapon = SeatWeaponSystem.Weapons[WeaponIndex].VehicleWeaponState.BaseWeaponRuntimeData;
+	const FBaseWeaponData& StaticWeaponData = GetBaseWeaponDataInSlot(SeatIndex, WeaponIndex);
 	int32 NewCAM, NewCRA;
 	UWeaponFunctions::CalculateReload(MagSize, CurrentWeapon.WeaponState.CurrentAmmoinMag, CurrentWeapon.WeaponState.CurrentReserveAmmo, NewCAM, NewCRA);
 
@@ -1103,6 +1099,11 @@ void UVehicleWeaponLogicComponent::AutoloadNewMag(int32 SeatIndex, int32 WeaponI
 		GetHUDSystem()->UpdateStatusHUD_CAMCount(NewCAM);
 		GetHUDSystem()->UpdateStatusHUD_CRACount(NewCRA);
 		GetHUDSystem()->UpdateWeaponStatusHUD_Vehicle(CurrentWeapon.WeaponState.canFire);
+	}
+
+	if (CurrentWeapon.WeaponState.CurrentReserveAmmo < StaticWeaponData.AmmoData.MaxReserveAmmo && StaticWeaponData.AmmoData.AutoRefillReserve)
+	{
+		//refill reserve
 	}
 }
 

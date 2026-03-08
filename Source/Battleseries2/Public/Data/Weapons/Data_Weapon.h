@@ -162,6 +162,9 @@ struct FAmmoData
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ToolTip = "Time it takes to reload"))
 	float ReloadSpeed = 0.0f;		//is this gonna work with anim-based reloads?
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	bool AutoRefillReserve = false;
+
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ToolTip = "Time it takes between 1 mag size reserve replenish"))
 	float RefillReserveSpeed = 0.0f;
 };

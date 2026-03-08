@@ -6,7 +6,7 @@
 
 class UDataManagerSubsystem;
 class AProjectile_Base;
-struct FProjectile_Runtime;
+struct FSimProjectile_Runtime;
 
 /**
 * ROLES:
@@ -40,7 +40,7 @@ public:
     int32 DefaultPoolSize = 20;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
-    TArray<FProjectile_Runtime> SimulatedProjectiles;
+    TArray<FSimProjectile_Runtime> SimulatedProjectiles;
 
     virtual void Initialize(FSubsystemCollectionBase& Collection) override;
 
@@ -59,7 +59,7 @@ public:
     void ReturnProjectileToPool(TWeakObjectPtr<AProjectile_Base> Projectile);
 
     UFUNCTION(BlueprintCallable)
-    void AddNewSimProjectile(const FProjectile_Runtime& NewProjectileSim);
+    void AddNewSimProjectile(const FSimProjectile_Runtime& NewProjectileSim);
 
     UFUNCTION(BlueprintCallable)
     void UpdateSimulatedProjectiles(float DeltaSeconds);

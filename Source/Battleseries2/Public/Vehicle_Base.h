@@ -242,6 +242,8 @@ public:
 
 	UFUNCTION()
 	TWeakObjectPtr<UHUDSubsystem> GetHUDSystem();
+	UFUNCTION()
+	UDataManagerSubsystem* GetDataManager();
 
 	//Interfaces
 	virtual USkeletalMeshComponent* GetVehicleMesh() const override;

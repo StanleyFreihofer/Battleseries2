@@ -96,7 +96,7 @@ void UProjectilePoolSubsystem::ReturnProjectileToPool(TWeakObjectPtr<AProjectile
 	Projectile->SetActorLocation(FVector::ZeroVector);
 }
 
-void UProjectilePoolSubsystem::AddNewSimProjectile(const FProjectile_Runtime& NewProjectileSim)
+void UProjectilePoolSubsystem::AddNewSimProjectile(const FSimProjectile_Runtime& NewProjectileSim)
 {
 	SimulatedProjectiles.Add(NewProjectileSim);
 }
@@ -111,7 +111,7 @@ void UProjectilePoolSubsystem::UpdateSimulatedProjectiles(float DeltaSeconds)
 
 	for (int32 i = 0; i < SimulatedProjectiles.Num(); i++)
 	{
-		FProjectile_Runtime& SimulatedProjectile = SimulatedProjectiles[i];
+		FSimProjectile_Runtime& SimulatedProjectile = SimulatedProjectiles[i];
 		NewVelocity = CalculateDrop(SimulatedProjectile.CurrentVelocity, SimulatedProjectile.GravityScale, DeltaSeconds);
 		NewLocation = SimulatedProjectile.CurrentLocation + NewVelocity * DeltaSeconds;
 

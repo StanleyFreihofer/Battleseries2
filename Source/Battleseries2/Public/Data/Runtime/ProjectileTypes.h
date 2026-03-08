@@ -18,7 +18,7 @@ struct FProjectile_PreFlightContext
 };
 
 USTRUCT(BlueprintType)
-struct FProjectile_Runtime
+struct FSimProjectile_Runtime
 {
 	GENERATED_BODY()
 
@@ -46,10 +46,35 @@ struct FProjectile_Runtime
 	float BaseDamage = 0.0f;						//copied from weapon?
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)		//copied from weapon?
 	UCurveFloat* DamageCurve = nullptr;		//multiply by base damage
+};
+
+USTRUCT(BlueprintType)
+struct FActorProjectile_Runtime
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FName ProjectileID = NAME_None;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TWeakObjectPtr<class APlayerState> InstigatorPlayerState;
+
+	//movement state (updated everytick)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)     //the initial location of the projectile
+	FVector OriginLocation = FVector();
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float GravityScale = 0.0f;
+
+	//damage
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float BaseDamage = 0.0f;						//copied from weapon?
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)		//copied from weapon?
+	UCurveFloat* DamageCurve = nullptr;		//multiply by base damage
 
 	//Flight Plan State
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	int32 CurrentStageIndex = 0;
+	int32 FlightStageIndex = 0;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float CurrentStageTimer = 0.0f;
 

@@ -33,6 +33,12 @@ struct FProjectileVisualData
 	TSoftObjectPtr<UStaticMesh> ProjectileMesh = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TSoftObjectPtr<UNiagaraSystem> RocketExhaust = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FVector ExhaustLocationOffset = FVector();
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TSoftObjectPtr<UNiagaraSystem> ImpactVFX = nullptr;
 
 	//vfx
@@ -74,12 +80,13 @@ struct FFlightParameters
 	float MaxSpeed = 0.0f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	float Acceleration = 0.0f; // Essential?
+	float Acceleration = 0.0f; 
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	float GravityScale = 0.0f;
 
-	//turn rate?
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	float PitchForce = 0.0f;
 };
 
 USTRUCT(BlueprintType)

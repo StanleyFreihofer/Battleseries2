@@ -37,8 +37,9 @@ enum class ETransitionCondition : uint8
 {
 	OnImpact					UMETA(DisplayName = "On Impact"),
 	LimitedTime					UMETA(DisplayName = "Limited Time"),
-	LimitedRange				UMETA(DisplayName = "Limited Range"),
-	RangeToTarget				UMETA(DisplayName = "Range To Target"),
+	LimitedRange				UMETA(DisplayName = "Limited Range", ToolTip = "Range FROM an initial location"),
+	RangeToTarget				UMETA(DisplayName = "Range To Target", ToolTip = "Range TO TARGET from current location"),
+	Proximity2D					UMETA(DisplayName = "Proximity 2D", ToolTip = "if directly above target"),
 	TargetAcquired				UMETA(DisplayName = "Target Acquired")
 };
 
@@ -54,19 +55,12 @@ enum class EContingencyType : uint8
 UENUM(BlueprintType)							//what the munition does
 enum class EProjectileGuidanceMethod : uint8
 {
-	// Simple/Uncontrolled
 	BallisticTrajectory         UMETA(DisplayName = "Default/Ballistic"),			//embedded actor data i guess
-
-	//GUIDANCE METHOD
-	// Simple Guidance (Passive / Fire & Forget)
-	BoostThrust                 UMETA(DisplayName = "Thrust/Initial Acceleration"),			//good 
-	TopAttack                   UMETA(DisplayName = "Top Attack Profile"),
-	LockOn_FireForget           UMETA(DisplayName = "LockOn: Fire & Forget"),
-
-	// Complex Guidance (Active Player Input/Control)
-	LockOn_MaintainLock         UMETA(DisplayName = "LockOn: Maintain Lock"),
+	GuideToTarget				UMETA(DisplayName = "Guide To Target/Homing/Lock On"),
+	PitchToAltitude				UMETA(DisplayName = "Pitch To Altitude"),
 	WireGuided                  UMETA(DisplayName = "Player Controlled: Wire Guided"),
 	FullControl					UMETA(DisplayName = "Player Controlled: Full Control"),
+	//drop
 
 	// Terminal Behavior
 	SelfDestruct                UMETA(DisplayName = "Self-Destruct")
