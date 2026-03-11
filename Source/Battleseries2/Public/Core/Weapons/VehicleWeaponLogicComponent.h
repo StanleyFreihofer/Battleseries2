@@ -184,7 +184,7 @@ public:
 	void ClearWeaponSlotFromSeat(int32 SeatIndex, int32 WeaponIndex);
 
 	UFUNCTION(BlueprintCallable)
-	void ClearWeaponSystemFromSeat(int32 SeatIndex);
+	void ClearWeaponSystemFromSeat(int32 SeatIndex, bool RemoveFromMap);
 	UFUNCTION(BlueprintCallable)
 	void ClearEntireWeaponSystemFromVehicle();
 

@@ -38,7 +38,7 @@ void ALoadoutPreviewStage::SetupNewPreviewVehicle(FTransform PreviewTransformOff
 {
 	FTransform AnchorTransform = VehicleAnchor->GetComponentTransform();
 	FTransform OffsetTransform = PreviewTransformOffset;
-	FTransform FinalTransform = OffsetTransform * AnchorTransform;
+	const FTransform FinalTransform = OffsetTransform * AnchorTransform;
 	UE_LOG(LogTemp, Warning, TEXT("location: %s"), *FinalTransform.GetLocation().ToString());
 
 	if (CurrentVehicle)
@@ -49,7 +49,9 @@ void ALoadoutPreviewStage::SetupNewPreviewVehicle(FTransform PreviewTransformOff
 	}
 	else
 	{
-		CurrentVehicle = GetWorld()->SpawnActor<AVehicle_Base>(VehicleClass, FinalTransform);
+		FActorSpawnParameters SpawnParams;
+		SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+		CurrentVehicle = GetWorld()->SpawnActor<AVehicle_Base>(VehicleClass, FinalTransform, SpawnParams);
 		if (CurrentVehicle)
 		{
 			CurrentVehicle->SetVehicleAndInit(InputVehicleStartingData);

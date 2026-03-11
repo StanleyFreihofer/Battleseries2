@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "Camera/CameraComponent.h"
+#include "GameFramework/SpringArmComponent.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "InputMappingContext.h"
@@ -27,6 +28,8 @@ public:
 	//COMPONENTS
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
 	UCameraComponent* Camera = nullptr;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
+	USpringArmComponent* CameraBoom = nullptr;
 
 	UPROPERTY(BlueprintAssignable, BlueprintCallable)
 	FOnWeaponInputReleased_Vehicle OnFireReleased_Vehicle;

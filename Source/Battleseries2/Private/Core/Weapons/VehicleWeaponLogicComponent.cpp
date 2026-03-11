@@ -397,7 +397,7 @@ void UVehicleWeaponLogicComponent::ClearWeaponSlotFromSeat(int32 SeatIndex, int3
 	WeaponSlotToClear = FVehicleWeapon_Runtime();
 }
 
-void UVehicleWeaponLogicComponent::ClearWeaponSystemFromSeat(int32 SeatIndex)
+void UVehicleWeaponLogicComponent::ClearWeaponSystemFromSeat(int32 SeatIndex, bool RemoveFromMap)
 {
 	FVehicleWeaponSystem_Runtime* WeaponSystemToClear = VehicleWeaponSystem.Find(SeatIndex);
 	if (!WeaponSystemToClear || WeaponSystemToClear->Weapons.Num() == 0)
@@ -415,7 +415,11 @@ void UVehicleWeaponLogicComponent::ClearWeaponSystemFromSeat(int32 SeatIndex)
 	}
 
 	WeaponSystemToClear->Weapons.Empty();
-	VehicleWeaponSystem.Remove(SeatIndex);
+
+	if (RemoveFromMap)
+	{
+		VehicleWeaponSystem.Remove(SeatIndex);		//CAUSED CUSTOMIZATION SWITCH VEHICLE TYPE BUG SINCE WEN REMOVED IT MAKES THE MAP GARBAGE MEMORY
+	}				
 }
 
 void UVehicleWeaponLogicComponent::ClearEntireWeaponSystemFromVehicle()
@@ -424,8 +428,11 @@ void UVehicleWeaponLogicComponent::ClearEntireWeaponSystemFromVehicle()
 	for (auto& SeatWeaponSystem : VehicleWeaponSystem)	//for each weapon system in the vehicle
 	{
 		int32 SeatIndex = SeatWeaponSystem.Key;
-		ClearWeaponSystemFromSeat(SeatIndex);
+		ClearWeaponSystemFromSeat(SeatIndex, false);
 	}
+
+	VehicleWeaponSystem.Empty();
+
 	if (VehicleWeaponSystem.Num() == 0)
 	{
 		UE_LOG(LogTemp, Error, TEXT("[VehicleWeaponLogicComponent::ClearEntireWeaponSytemFromVehicle] weapon system cleared"));
@@ -539,7 +546,10 @@ void UVehicleWeaponLogicComponent::ControlTurret(FVector2D InputValue, int32 Sea
 	{
 		if (OwnerDataAccessor->GetVehicleState().SeatStates[SeatIndex].UpdateHUD)
 		{
-			GetHUDSystem()->HandleTurretRotationUpdate(OwnerDataAccessor->GetVehicleState().SeatStates[SeatIndex].ActiveCamera->GetComponentRotation().Yaw);
+			if (OwnerDataAccessor->GetVehicleState().SeatStates[SeatIndex].ActiveCamera)
+			{
+				GetHUDSystem()->HandleTurretRotationUpdate(OwnerDataAccessor->GetVehicleState().SeatStates[SeatIndex].ActiveCamera->GetComponentRotation().Yaw);
+			}
 		}
 	}
 	if (PreviousTurretPitch != NewTurretPitch)
@@ -1347,11 +1357,14 @@ int32 UVehicleWeaponLogicComponent::GetSeatIndexForTurret(int32 TurretIndex)
 	int32 SI = -1;
 	for (int32 i = 0; i < OwnerDataAccessor->GetVehicleData().Seats.Num(); i++)
 	{
-		CTI = OwnerDataAccessor->GetVehicleData().Seats[i].AvailableItems.ControlledTurretIndexes[0];
-		if (CTI == TurretIndex)
+		if (OwnerDataAccessor->GetVehicleData().Seats[i].AvailableItems.ControlledTurretIndexes.Num() > 0)
 		{
-			SI = i;
-			return SI;
+			CTI = OwnerDataAccessor->GetVehicleData().Seats[i].AvailableItems.ControlledTurretIndexes[0];
+			if (CTI == TurretIndex)
+			{
+				SI = i;
+				return SI;
+			}
 		}
 	}
 	return SI;

@@ -201,7 +201,12 @@ void AVehicle_Base::Init_SeatHUDComp(int32& SeatIndex)
 	UMaterialInterface* MasterMat = DataManager->GetVehicleDefaults()->HUDMasterMaterial.Get();
 	UMaterialInstanceDynamic* DynMat = NewQuad->CreateDynamicMaterialInstance(0, MasterMat);		//both creates and assigns
 
-	VehicleWeaponLogicComponent->VehicleWeaponSystem.Find(SeatIndex)->VehicleWeaponSystemState.ReticleQuad = NewQuad;
+	//VehicleWeaponLogicComponent->VehicleWeaponSystem.Find(SeatIndex)->VehicleWeaponSystemState.ReticleQuad = NewQuad;
+	FVehicleWeaponSystem_Runtime* VWS = VehicleWeaponLogicComponent->VehicleWeaponSystem.Find(SeatIndex);
+	if (VWS)
+	{
+		VWS->VehicleWeaponSystemState.ReticleQuad = NewQuad;
+	}
 }
 
 void AVehicle_Base::Init_Seats()
@@ -478,7 +483,7 @@ void AVehicle_Base::ApplyCamoToAttachment(TWeakObjectPtr<UMeshComponent> Mesh, F
 
 void AVehicle_Base::ClearLoadoutFromSeat(int32 SeatIndex)
 {
-	VehicleWeaponLogicComponent->ClearWeaponSystemFromSeat(SeatIndex);
+	VehicleWeaponLogicComponent->ClearWeaponSystemFromSeat(SeatIndex, true);
 	//countermeasures
 	//optics
 	//upgrades

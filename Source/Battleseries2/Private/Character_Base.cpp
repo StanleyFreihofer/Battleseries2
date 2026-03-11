@@ -20,7 +20,9 @@ ACharacter_Base::ACharacter_Base()
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("CameraComponent"));
-	Camera->SetupAttachment(GetMesh(), FName("Camera"));
+	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
+	CameraBoom->SetupAttachment(GetMesh(), FName("Camera"));
+	Camera->SetupAttachment(CameraBoom, FName("SpringEndpoint"));
 }
 
 // Called when the game starts or when spawned
