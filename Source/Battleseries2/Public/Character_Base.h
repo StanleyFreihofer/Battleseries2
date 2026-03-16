@@ -100,6 +100,11 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	int32& GetCSI();
 
+	TMap<TObjectPtr<const UInputMappingContext>, int32> DebugCurrentIMC();
+
+	UFUNCTION(BlueprintCallable, Category = "Input|Debug")
+	TArray<FString> DebugCurrentIMCNames();
+
 
 protected:
 	// Called when the game starts or when spawned

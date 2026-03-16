@@ -7,12 +7,14 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
+#include "EnhancedPlayerInput.h"
 #include "Data/Weapons/Data_Weapon.h"
 #include "Core/Weapons/VehicleWeaponLogicComponent.h"
 #include "Core/UI/VehicleHUDs/UW_HUD_Vehicle_Base.h"
 #include "Core/PlayerController_Base.h"
 #include "Utilities/HUDSubsystem.h"
 #include "Kismet/KismetMathLibrary.h"
+
 
 // Sets default values
 ACharacter_Base::ACharacter_Base()
@@ -104,6 +106,28 @@ void ACharacter_Base::CharacterEnterVehicle()
 	Camera->bUsePawnControlRotation = false;
 	Camera->SetRelativeRotation(FRotator());
 	bUseControllerRotationYaw = false;
+
+	APlayerController* PC = GetController<APlayerController>();
+	static FProperty* ContextsProp = UEnhancedPlayerInput::StaticClass()->FindPropertyByName(FName("AppliedInputContexts"));
+	void* ValuePtr = ContextsProp->ContainerPtrToValuePtr<void>(PC->PlayerInput);
+	auto* MapPtr = static_cast<TMap<TObjectPtr<const UInputMappingContext>, int32>*>(ValuePtr);
+
+	TArray<UInputMappingContext*> ContextsToModify;
+
+	// 2. Iterate over the Map and fill the snapshot array
+	for (auto& Pair : *MapPtr)
+	{
+		if (Pair.Value == 1)
+		{
+			ContextsToModify.Add(const_cast<UInputMappingContext*>(Pair.Key.Get()));
+		}
+	}
+
+	// 3. Now iterate over the copy to safely perform your logic
+	for (UInputMappingContext* IMC : ContextsToModify)
+	{
+		ManageIMC(IMC, nullptr, -1);
+	}
 }
 
 void ACharacter_Base::CharacterExitVehicle()
@@ -405,4 +429,57 @@ void ACharacter_Base::UpdateVehicleHUD(TSubclassOf<UUserWidget> HUDClass)
 			HUDSub->CurrentVehicleHMD = nullptr;
 		}
 	}
+}
+
+TMap<TObjectPtr<const UInputMappingContext>, int32> ACharacter_Base::DebugCurrentIMC()
+{
+	APlayerController* PC = GetController<APlayerController>();
+	if (!PC || !PC->PlayerInput) return TMap<TObjectPtr<const UInputMappingContext>, int32>();
+
+	static FProperty* ContextsProp = UEnhancedPlayerInput::StaticClass()->FindPropertyByName(FName("AppliedInputContexts"));
+
+	if (ContextsProp)
+	{
+		void* ValuePtr = ContextsProp->ContainerPtrToValuePtr<void>(PC->PlayerInput);
+
+		auto* MapPtr = static_cast<TMap<TObjectPtr<const UInputMappingContext>, int32>*>(ValuePtr);
+
+		if (MapPtr)
+		{
+			return *MapPtr;
+		}
+	}
+
+	return TMap<TObjectPtr<const UInputMappingContext>, int32>();
+}
+
+TArray<FString> ACharacter_Base::DebugCurrentIMCNames()
+{
+	TArray<FString> IMCNames;
+
+	APlayerController* PC = GetController<APlayerController>();
+	if (!PC || !PC->PlayerInput) return IMCNames;
+
+	// Cache the property lookup for efficiency
+	static FProperty* ContextsProp = UEnhancedPlayerInput::StaticClass()->FindPropertyByName(FName("AppliedInputContexts"));
+
+	if (ContextsProp)
+	{
+		void* ValuePtr = ContextsProp->ContainerPtrToValuePtr<void>(PC->PlayerInput);
+		auto* MapPtr = static_cast<TMap<TObjectPtr<const UInputMappingContext>, int32>*>(ValuePtr);
+
+		if (MapPtr)
+		{
+			for (auto& Pair : *MapPtr)
+			{
+				if (Pair.Key.Get())
+				{
+					// Add the name of the IMC to our array
+					IMCNames.Add(Pair.Key.Get()->GetName());
+				}
+			}
+		}
+	}
+
+	return IMCNames;
 }

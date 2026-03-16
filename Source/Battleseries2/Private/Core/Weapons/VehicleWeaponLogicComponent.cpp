@@ -87,40 +87,7 @@ void UVehicleWeaponLogicComponent::ApplyWeaponInstanceDataAtIndexToSeat(int32 Se
 	FVehicleWeapon_Runtime& VehicleWeaponToFill = WeaponSystem->Weapons[WeaponIndex];
 	VehicleWeaponToFill.VehicleWeaponInstanceData = GetWeaponInstanceDataAtSlotInSeat(SeatIndex, WeaponIndex, WeaponID);
 
-	//handle apply weapon/turret mesh
-	if (VehicleWeaponToFill.VehicleWeaponInstanceData.bHasSeparateMesh && WeaponIndex == OwnerDataAccessor->GetVehicleData().Seats[SeatIndex].AvailableItems.WeaponMeshDriverSlotIndex)
-	{
-		const FAttachmentData& AttachmentData = *DataSubsystem->GetAttachmentDataRow(VehicleWeaponToFill.VehicleWeaponInstanceData.AttachmentID);
-		TWeakObjectPtr<USkeletalMesh> LoadedMesh = AttachmentData.Attachment_SKM.LoadSynchronous();
-		TWeakObjectPtr<UClass> LoadedAnimClass = AttachmentData.Attachment_AnimClass.LoadSynchronous();
-		if (!WeaponSystem->VehicleWeaponSystemState.WeaponSystemMesh.IsValid())
-		{
-			// Create it for the first time
-			WeaponSystem->VehicleWeaponSystemState.WeaponSystemMesh = ApplyWeaponMeshToVehicle(AttachmentData.Attachment_SKM.Get(), SeatIndex, VehicleWeaponToFill.VehicleWeaponInstanceData.AttachmentTransform);
-			WeaponSystem->VehicleWeaponSystemState.WeaponSystemMesh->SetAnimInstanceClass(LoadedAnimClass.Get());
-			WeaponSystem->VehicleWeaponSystemState.WSAttachmentID = VehicleWeaponToFill.VehicleWeaponInstanceData.AttachmentID;
-		}
-		else
-		{
-			// Just SWAP the mesh asset. Do NOT destroy the component.
-			WeaponSystem->VehicleWeaponSystemState.WeaponSystemMesh->SetSkeletalMesh(LoadedMesh.Get());
-			WeaponSystem->VehicleWeaponSystemState.WeaponSystemMesh->SetAnimInstanceClass(LoadedAnimClass.Get());
-			WeaponSystem->VehicleWeaponSystemState.WeaponSystemMesh->SetRelativeTransform(VehicleWeaponToFill.VehicleWeaponInstanceData.AttachmentTransform);
-			WeaponSystem->VehicleWeaponSystemState.WSAttachmentID = VehicleWeaponToFill.VehicleWeaponInstanceData.AttachmentID;
-		}
-		//apply camo
-		FName CurrentVehicleCamo = OwnerDataAccessor->GetVehicleState().GenericVehicleState.CurrentCamo;
-		if (CurrentVehicleCamo != NAME_None)
-		{
-			OwnerDataAccessor->GetVehicle().ApplyCamoToAttachment(WeaponSystem->VehicleWeaponSystemState.WeaponSystemMesh, WeaponSystem->VehicleWeaponSystemState.WSAttachmentID, CurrentVehicleCamo);
-		}
-	}
-	else if (WeaponSystem->VehicleWeaponSystemState.WeaponSystemMesh.IsValid())
-	{
-		// If the driving slot is changed to a weapon with NO mesh, null the existing mesh
-		WeaponSystem->VehicleWeaponSystemState.WeaponSystemMesh->SetSkeletalMesh(nullptr);
-		WeaponSystem->VehicleWeaponSystemState.WSAttachmentID = NAME_None;
-	}
+	HandleApplyWeaponMesh(SeatIndex, WeaponIndex);
 
 	//now that we have the mesh... do either mount projectile OR cache muzzle sockets
 	//mount projectiles
@@ -150,33 +117,39 @@ void UVehicleWeaponLogicComponent::ApplyWeaponInstanceDataAtIndexToSeat(int32 Se
 	}
 
 	//lastly, apply the non-functionally necessary decorative stuff
-	ApplyWeaponDecoratives(VehicleWeaponToFill.VehicleWeaponInstanceData.WeaponDecoratives, VehicleWeaponToFill);
+	HandleApplyWeaponDecoratives(SeatIndex, WeaponIndex, WeaponID);
 }
 
 void UVehicleWeaponLogicComponent::ApplyWeaponAtIndexToSeat(int32 SeatIndex, int32 WeaponIndex, FName WeaponID)
 {
 	FVehicleWeaponSystem_Runtime* WeaponSystem = VehicleWeaponSystem.Find(SeatIndex);
 	FVehicleWeapon_Runtime& VehicleWeaponToFill = WeaponSystem->Weapons[WeaponIndex];
-	if (WeaponID.IsNone())
-	{
-		VehicleWeaponToFill.VehicleWeaponInstanceData = GetWeaponInstanceDataAtSlotInSeat(SeatIndex, WeaponIndex, WeaponID);
-		ApplyWeaponDecoratives(VehicleWeaponToFill.VehicleWeaponInstanceData.WeaponDecoratives, VehicleWeaponToFill);
-		return;		
-	}
-
+	VehicleWeaponToFill.VehicleWeaponInstanceData = GetWeaponInstanceDataAtSlotInSeat(SeatIndex, WeaponIndex, WeaponID);
 	FWeapon_Runtime& DefaultWeaponDataToFill = VehicleWeaponToFill.VehicleWeaponState.BaseWeaponRuntimeData;
-	const FVehicleWeaponData& VehicleWeaponDataToUse = *DataSubsystem->GetVehicleWeaponDataRow(WeaponID);
-	const FBaseWeaponData* BaseWeaponData = &VehicleWeaponDataToUse.WeaponData;
 
-	//safety check, if theres already a weapon on this slot, clear it first
-	if (!DefaultWeaponDataToFill.WeaponID.IsNone())
+	if (DefaultWeaponDataToFill.WeaponID.IsNone())
 	{
-		//if (DefaultWeaponDataToFill.WeaponID)			//if weapon already in slot is the same as weapon we're trying to apply?
+		//"none" can still have decoratives so do this regardless of anything if there's any weapon
+		if (VehicleWeaponToFill.VehicleWeaponInstanceData.WeaponDecoratives.Num() > 0)
+		{
+			ClearWeaponDecorativesFromSlot(SeatIndex, WeaponIndex);
+		}
+	}
+	else
+	{
+		//if theres already a weapon on this slot, clear it first (previous player's or starting/default loadout for example)
 		ClearWeaponSlotFromSeat(SeatIndex, WeaponIndex);
 	}
 
-	//APPLY STATIC WEAPON DATA
 	DefaultWeaponDataToFill.WeaponID = WeaponID;
+	if (WeaponID.IsNone())
+	{
+		return;
+	}
+
+	//ApplyStaticWeaponData
+	const FVehicleWeaponData& VehicleWeaponDataToUse = *DataSubsystem->GetVehicleWeaponDataRow(WeaponID);
+	const FBaseWeaponData* BaseWeaponData = &VehicleWeaponDataToUse.WeaponData;
 	TArray<const FBaseWeaponData*>& BaseWeaponDataArray = CurrentVehicleBaseWeaponData.FindOrAdd(SeatIndex);
 	if (!BaseWeaponDataArray.IsValidIndex(WeaponIndex))
 	{
@@ -191,6 +164,41 @@ void UVehicleWeaponLogicComponent::ApplyWeaponAtIndexToSeat(int32 SeatIndex, int
 	DefaultWeaponDataToFill.WeaponState.CurrentReserveAmmo = VehicleWeaponDataToUse.WeaponData.AmmoData.MaxReserveAmmo;
 
 	ApplyWeaponInstanceDataAtIndexToSeat(SeatIndex, WeaponIndex, WeaponID);
+}
+
+void UVehicleWeaponLogicComponent::HandleApplyWeaponMesh(int32 SeatIndex, int32 WeaponIndex)
+{
+	FVehicleWeaponSystem_Runtime* WeaponSystem = VehicleWeaponSystem.Find(SeatIndex);
+	FVehicleWeapon_Runtime& VehicleWeaponToFill = WeaponSystem->Weapons[WeaponIndex];
+	if (VehicleWeaponToFill.VehicleWeaponInstanceData.bHasSeparateMesh && WeaponIndex == OwnerDataAccessor->GetVehicleData().Seats[SeatIndex].AvailableItems.WeaponMeshDriverSlotIndex)
+	{
+		const FAttachmentData& AttachmentData = *DataSubsystem->GetAttachmentDataRow(VehicleWeaponToFill.VehicleWeaponInstanceData.AttachmentID);
+		TWeakObjectPtr<USkeletalMesh> LoadedMesh = AttachmentData.Attachment_SKM.LoadSynchronous();
+		UClass* LoadedAnimClass = AttachmentData.Attachment_AnimClass.LoadSynchronous();
+		if (!WeaponSystem->VehicleWeaponSystemState.WeaponSystemMesh.IsValid())
+		{
+			// Create it for the first time
+			WeaponSystem->VehicleWeaponSystemState.WeaponSystemMesh = ApplyWeaponMeshToVehicle(AttachmentData.Attachment_SKM.Get(), SeatIndex, VehicleWeaponToFill.VehicleWeaponInstanceData.AttachmentTransform);
+			UpdateWeaponAttachment(*WeaponSystem, LoadedMesh, LoadedAnimClass, VehicleWeaponToFill.VehicleWeaponInstanceData.AttachmentTransform, VehicleWeaponToFill.VehicleWeaponInstanceData.AttachmentID);
+		}
+		else
+		{
+			// Just SWAP the mesh asset. Do NOT destroy the component.
+			UpdateWeaponAttachment(*WeaponSystem, LoadedMesh, LoadedAnimClass, VehicleWeaponToFill.VehicleWeaponInstanceData.AttachmentTransform, VehicleWeaponToFill.VehicleWeaponInstanceData.AttachmentID);
+		}
+		//apply camo
+		FName CurrentVehicleCamo = OwnerDataAccessor->GetVehicleState().GenericVehicleState.CurrentCamo;
+		if (CurrentVehicleCamo != NAME_None)
+		{
+			OwnerDataAccessor->GetVehicle().ApplyCamoToAttachment(WeaponSystem->VehicleWeaponSystemState.WeaponSystemMesh, WeaponSystem->VehicleWeaponSystemState.WSAttachmentID, CurrentVehicleCamo);
+		}
+	}
+	else if (WeaponSystem->VehicleWeaponSystemState.WeaponSystemMesh.IsValid())
+	{
+		// If the driving slot is changed to a weapon with NO mesh, null the existing mesh
+		WeaponSystem->VehicleWeaponSystemState.WeaponSystemMesh->SetSkeletalMesh(nullptr);
+		WeaponSystem->VehicleWeaponSystemState.WSAttachmentID = NAME_None;
+	}
 }
 
 void UVehicleWeaponLogicComponent::MountProjectiles(int32 SeatIndex, int32 WeaponIndex)
@@ -287,11 +295,31 @@ USkeletalMeshComponent* UVehicleWeaponLogicComponent::ApplyWeaponMeshToVehicle(U
 
 	USkeletalMeshComponent* WeaponComp = NewObject<USkeletalMeshComponent>(GetOwner());
 	WeaponComp->SetupAttachment(OwnerDataAccessor->GetVehicleMesh(), SocketName);
-	WeaponComp->SetRelativeScale3D(FVector(1.0f, 1.0f, 1.0f));
-	WeaponComp->SetRelativeTransform(MeshTransform);
-	WeaponComp->SetSkeletalMesh(Mesh);
 	WeaponComp->RegisterComponent(); // important for runtime components
+
 	return WeaponComp;
+}
+
+void UVehicleWeaponLogicComponent::UpdateWeaponAttachment(FVehicleWeaponSystem_Runtime& WeaponSystem, TWeakObjectPtr<USkeletalMesh> LoadedMesh, UClass* LoadedAnimClass, FTransform Transform, FName AttachmentID)
+{
+	WeaponSystem.VehicleWeaponSystemState.WeaponSystemMesh->SetSkeletalMesh(LoadedMesh.Get());
+	WeaponSystem.VehicleWeaponSystemState.WeaponSystemMesh->SetAnimInstanceClass(LoadedAnimClass);
+	WeaponSystem.VehicleWeaponSystemState.WeaponSystemMesh->SetRelativeTransform(Transform);
+	WeaponSystem.VehicleWeaponSystemState.WSAttachmentID = AttachmentID;
+}
+
+void UVehicleWeaponLogicComponent::HandleApplyWeaponDecoratives(int32 SeatIndex, int32 WeaponIndex, FName WeaponID)
+{
+	FVehicleWeaponSystem_Runtime* WeaponSystem = VehicleWeaponSystem.Find(SeatIndex);
+	FVehicleWeapon_Runtime& VehicleWeaponToFill = WeaponSystem->Weapons[WeaponIndex];
+	FVehicleWeapon_Runtime& SeatWeaponToFill = VehicleWeaponSystem.Find(SeatIndex)->Weapons[WeaponIndex];
+	if (VehicleWeaponToFill.VehicleWeaponInstanceData.WeaponDecoratives.Num() > 0)
+	{
+		//clear any that might be there already
+		ClearWeaponDecorativesFromSlot(SeatIndex, WeaponIndex);
+	}
+
+	ApplyWeaponDecoratives(VehicleWeaponToFill.VehicleWeaponInstanceData.WeaponDecoratives, VehicleWeaponToFill);
 }
 
 void UVehicleWeaponLogicComponent::ConfigureWeaponCam(int32 SeatIndex, int32 WeaponIndex, FVehicleWeaponSystem_Runtime& WeaponSystem)
@@ -337,6 +365,28 @@ void UVehicleWeaponLogicComponent::ConfigureWeaponCam(int32 SeatIndex, int32 Wea
 	}
 }
 
+void UVehicleWeaponLogicComponent::ClearWeaponDecorativesFromSlot(int32 SeatIndex, int32 WeaponIndex)
+{
+	FVehicleWeaponSystem_Runtime* VWS = VehicleWeaponSystem.Find(SeatIndex);
+	FVehicleWeapon_Runtime& WeaponSlotToClear = VWS->Weapons[WeaponIndex];
+	for (int32 i = 0; i < WeaponSlotToClear.VehicleWeaponState.VehicleWeaponDecoratives.Num(); i++)
+	{
+		auto& Decorative = WeaponSlotToClear.VehicleWeaponState.VehicleWeaponDecoratives[i];
+
+		// Check if the component pointer is a "wild" value (non-null but garbage)
+		TWeakObjectPtr<UStaticMeshComponent> MeshPtr = Decorative.DecorativeMesh;
+
+		if (MeshPtr.IsValid())
+		{
+			MeshPtr->SetStaticMesh(nullptr);
+			MeshPtr->DestroyComponent();
+		}
+		WeaponSlotToClear.VehicleWeaponState.VehicleWeaponDecoratives[i].DecorativeMesh = nullptr;
+		WeaponSlotToClear.VehicleWeaponState.VehicleWeaponDecoratives[i].DecorativeAttachmentID = NAME_None;
+	}
+	WeaponSlotToClear.VehicleWeaponState.VehicleWeaponDecoratives.Empty();
+}
+
 void UVehicleWeaponLogicComponent::ClearWeaponSlotFromSeat(int32 SeatIndex, int32 WeaponIndex)
 {
 	if (!VehicleWeaponSystem.Find(SeatIndex)->Weapons.IsValidIndex(WeaponIndex))
@@ -362,7 +412,7 @@ void UVehicleWeaponLogicComponent::ClearWeaponSlotFromSeat(int32 SeatIndex, int3
 		VWS->VehicleWeaponSystemState.WeaponSystemMesh->SetSkeletalMesh(nullptr);
 	}
 
-	//get rid of the current mounted projectiles
+	//ClearMountedProjectiles
 	if (WeaponSlotToClear.VehicleWeaponState.CurrentMountedProjectiles.Num() > 0)
 	{
 		for (int32 i = 0; i < WeaponSlotToClear.VehicleWeaponState.CurrentMountedProjectiles.Num(); i++)
@@ -375,25 +425,8 @@ void UVehicleWeaponLogicComponent::ClearWeaponSlotFromSeat(int32 SeatIndex, int3
 		WeaponSlotToClear.VehicleWeaponState.CurrentMountedProjectiles.Empty();
 	}
 
-	//get rid of the current weapon decoratives
-	for (int32 i = 0; i < WeaponSlotToClear.VehicleWeaponState.VehicleWeaponDecoratives.Num(); i++)
-	{
-		auto& Decorative = WeaponSlotToClear.VehicleWeaponState.VehicleWeaponDecoratives[i];
+	ClearWeaponDecorativesFromSlot(SeatIndex, WeaponIndex);
 
-		// Check if the component pointer is a "wild" value (non-null but garbage)
-		TWeakObjectPtr<UStaticMeshComponent> MeshPtr = Decorative.DecorativeMesh;
-
-		if (MeshPtr.IsValid()) 
-		{
-			MeshPtr->SetStaticMesh(nullptr);
-			MeshPtr->DestroyComponent();
-		}
-		WeaponSlotToClear.VehicleWeaponState.VehicleWeaponDecoratives[i].DecorativeMesh = nullptr;
-		WeaponSlotToClear.VehicleWeaponState.VehicleWeaponDecoratives[i].DecorativeAttachmentID = NAME_None;
-	}
-	WeaponSlotToClear.VehicleWeaponState.VehicleWeaponDecoratives.Empty();
-
-	//reset runtime data to default
 	WeaponSlotToClear = FVehicleWeapon_Runtime();
 }
 

@@ -138,55 +138,52 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void Init_VehicleWeaponSystem(TMap<int32, FSavedSeatLoadout> SeatLoadouts);
-
 	UFUNCTION(BlueprintCallable)
 	void Init_Turrets(int32 NumOfTurrets);
 
 	UFUNCTION(BlueprintCallable)
 	void ApplyWeaponInstanceDataAtIndexToSeat(int32 SeatIndex, int32 WeaponIndex, FName WeaponID);
-
-	UFUNCTION(BlueprintCallable, BlueprintPure)
-	float CalculateTurret(float InputValue, float TurretSpeed, float CurrentTurretValue);
-
-	UFUNCTION(BlueprintCallable)
-	void ControlTurret(FVector2D InputValue, int32 SeatIndex);
-
-	UFUNCTION(BlueprintCallable)
-	void UpdateTurretMesh(int32 SeatIndex, float TurretRotation, float TurretPitch);
-
 	UFUNCTION(BlueprintCallable)
 	void HandleApplyWeaponsToSeat(int32 SeatIndex);
-
 	UFUNCTION(BlueprintCallable)
 	void ApplyWeaponsToSeat(int32 SeatIndex, TArray<FName> WeaponIDs);
-
 	UFUNCTION(BlueprintCallable)
 	void ApplyWeaponAtIndexToSeat(int32 SeatIndex, int32 WeaponIndex, FName WeaponID);
-
 	UFUNCTION(BlueprintCallable)
-	void MountProjectiles(int32 SeatIndex, int32 WeaponIndex);
-	UFUNCTION(BlueprintCallable)
-	void ApplyWeaponDecoratives(const TArray<FDecorative>& WeaponDecoratives, FVehicleWeapon_Runtime& RuntimeWeaponData);
-
-	UFUNCTION(BlueprintCallable)
-	const FVehicleWeaponInstanceData& GetWeaponInstanceDataAtSlotInSeat(int32 SeatIndex, int32 WeaponIndex, FName WeaponID);
-
-	UFUNCTION()
-	TWeakObjectPtr<AActor> GetCurrentViewTargetAtSeatIndex(int32 SeatIndex);
-
+	void HandleApplyWeaponMesh(int32 SeatIndex, int32 WeaponIndex);
 	UFUNCTION(BlueprintCallable)
 	USkeletalMeshComponent* ApplyWeaponMeshToVehicle(USkeletalMesh* Mesh, int32 SeatIndex, FTransform MeshTransform);
-
+	UFUNCTION()
+	void UpdateWeaponAttachment(FVehicleWeaponSystem_Runtime& WeaponSystem, TWeakObjectPtr<USkeletalMesh> LoadedMesh, UClass* LoadedAnimClass, FTransform Transform, FName AttachmentID);
+	UFUNCTION(BlueprintCallable)
+	void HandleApplyWeaponDecoratives(int32 SeatIndex, int32 WeaponIndex, FName WeaponID);
+	UFUNCTION(BlueprintCallable)
+	void ApplyWeaponDecoratives(const TArray<FDecorative>& WeaponDecoratives, FVehicleWeapon_Runtime& RuntimeWeaponData);
 	UFUNCTION(BlueprintCallable)
 	void ConfigureWeaponCam(int32 SeatIndex, int32 WeaponIndex, FVehicleWeaponSystem_Runtime& WeaponSystem);
+	UFUNCTION(BlueprintCallable)
+	void MountProjectiles(int32 SeatIndex, int32 WeaponIndex);
 
 	UFUNCTION(BlueprintCallable)
+	void ClearWeaponDecorativesFromSlot(int32 SeatIndex, int32 WeaponIndex);
+	UFUNCTION(BlueprintCallable)
 	void ClearWeaponSlotFromSeat(int32 SeatIndex, int32 WeaponIndex);
-
 	UFUNCTION(BlueprintCallable)
 	void ClearWeaponSystemFromSeat(int32 SeatIndex, bool RemoveFromMap);
 	UFUNCTION(BlueprintCallable)
 	void ClearEntireWeaponSystemFromVehicle();
+
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	float CalculateTurret(float InputValue, float TurretSpeed, float CurrentTurretValue);
+	UFUNCTION(BlueprintCallable)
+	void ControlTurret(FVector2D InputValue, int32 SeatIndex);
+	UFUNCTION(BlueprintCallable)
+	void UpdateTurretMesh(int32 SeatIndex, float TurretRotation, float TurretPitch);
+
+	UFUNCTION(BlueprintCallable)
+	const FVehicleWeaponInstanceData& GetWeaponInstanceDataAtSlotInSeat(int32 SeatIndex, int32 WeaponIndex, FName WeaponID);
+	UFUNCTION()
+	TWeakObjectPtr<AActor> GetCurrentViewTargetAtSeatIndex(int32 SeatIndex);
 
 	UFUNCTION(BlueprintCallable)
 	void HandleSeatRangefinders();

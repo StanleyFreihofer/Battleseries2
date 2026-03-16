@@ -198,7 +198,7 @@ void AVehicle_Base::Init_SeatHUDComp(int32& SeatIndex)
 	NewQuad->SetRelativeRotation(FRotator(0.f, -90.f, 90.f));
 	NewQuad->SetRelativeLocation(FVector(0.1f, 0.f, 0.f));
 
-	UMaterialInterface* MasterMat = DataManager->GetVehicleDefaults()->HUDMasterMaterial.Get();
+	UMaterialInterface* MasterMat = DataManager->GetVehicleDefaults()->HUDMasterMaterial.LoadSynchronous();
 	UMaterialInstanceDynamic* DynMat = NewQuad->CreateDynamicMaterialInstance(0, MasterMat);		//both creates and assigns
 
 	//VehicleWeaponLogicComponent->VehicleWeaponSystem.Find(SeatIndex)->VehicleWeaponSystemState.ReticleQuad = NewQuad;
