@@ -66,6 +66,12 @@ struct FVehicleWeaponInstanceData
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (EditCondition = "bHasSeparateMesh", EditConditionHides = true))
 	FTransform AttachmentTransform = FTransform::Identity;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (Tooltip = "whether or not to attach the character to a socket on this mesh, would allow the character to move with mesh, like a turret for example", EditCondition = "bHasSeparateMesh", EditConditionHides = true))
+	bool bAttachCharacter = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (Tooltip = "relative transform of character on this mesh if attached", EditCondition = "bAttachCharacter", EditConditionHides = true))
+	FTransform CharacterTransform = FTransform::Identity;
+
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	bool bHasSpecialCam = false;
 
@@ -211,7 +217,7 @@ struct FSeatData
 {
 	GENERATED_BODY()
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (tooltip = "also used for the attaching of player character to socket on vehicle mesh"))
 	FText SeatName = FText::GetEmpty();
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)

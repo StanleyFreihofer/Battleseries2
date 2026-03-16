@@ -102,7 +102,7 @@ void ACharacter_Base::CharacterEnterVehicle()
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Vehicle, ECR_Ignore);
 	GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Vehicle, ECollisionResponse::ECR_Ignore);
 	GetCharacterMovement()->SetMovementMode(MOVE_None);
-	AttachToActor(CharacterState.CharacterVehicleState.CurrentVehicle, FAttachmentTransformRules::KeepRelativeTransform);
+	AttachToActor(GetCurrentVehicle(), FAttachmentTransformRules::KeepRelativeTransform);
 	Camera->bUsePawnControlRotation = false;
 	Camera->SetRelativeRotation(FRotator());
 	bUseControllerRotationYaw = false;
@@ -154,7 +154,30 @@ void ACharacter_Base::CharacterExitVehicle()
 
 void ACharacter_Base::CharacterEnterSeat(const FCharacterSeatContext& SeatContext)
 {
-	SetActorRelativeTransform(SeatContext.SeatTransform);
+	switch (GetCurrentVehicle()->GetVehicleData().Seats[GetCSI()].SeatRole)
+	{
+		case E_SeatRole::Driver:
+		case E_SeatRole::Passenger:
+			SetActorRelativeTransform(SeatContext.SeatTransform);
+			break;
+		case E_SeatRole::DriverGunner:
+		case E_SeatRole::Gunner:
+			UVehicleWeaponLogicComponent* VWLC = GetCurrentVehicle()->VehicleWeaponLogicComponent;
+			const FVehicleWeaponInstanceData& VWID = VWLC->GetWeaponInstanceDataAtSlotInSeat(GetCSI(), VWLC->GetCWIForSeat(GetCSI()), VWLC->GetEquippedWeaponInSeat(GetCSI()).VehicleWeaponState.BaseWeaponRuntimeData.WeaponID);
+			if (VWID.bAttachCharacter)
+			{
+				TWeakObjectPtr<USkeletalMeshComponent> WeaponMesh = VWLC->VehicleWeaponSystem.Find(GetCSI())->VehicleWeaponSystemState.WeaponSystemMesh;
+				FAttachmentTransformRules AttachmentRules(EAttachmentRule::KeepRelative, false);
+				GetRootComponent()->AttachToComponent(WeaponMesh.Get(), AttachmentRules);
+				SetActorRelativeTransform(VWID.CharacterTransform);
+			}
+			else
+			{
+				SetActorRelativeTransform(SeatContext.SeatTransform);
+			}
+			break;
+	}
+
 	UpdateCharacterStance(SeatContext.SeatStance);
 	ManageIMC(nullptr, SeatContext.InputMappingContext, 1);
 	UpdateCharacterMeshVisibility(SeatContext.bIsCharacterVisible);
@@ -162,12 +185,6 @@ void ACharacter_Base::CharacterEnterSeat(const FCharacterSeatContext& SeatContex
 	{
 		UpdateVehicleHUD(SeatContext.SeatHMD);
 	}
-	/**
-	if (SeatContext.SeatHUD && GetCurrentVehicle()->VehicleCurrentState.SeatStates[GetCSI()].SeatHUDComponent->GetUserWidgetObject())
-	{
-		GetLocalPlayerHUDSystem()->CurrentVehicleHUD = Cast<UUW_HUD_Vehicle_Base>(GetCurrentVehicle()->VehicleCurrentState.SeatStates[GetCSI()].SeatHUDComponent->GetUserWidgetObject());
-	}
-	**/
 
 	//sync vehicle states for hud
 	switch (GetCurrentVehicle()->VehicleData->Seats[GetCSI()].SeatRole)
@@ -205,14 +222,13 @@ void ACharacter_Base::CharacterEnterSeat(const FCharacterSeatContext& SeatContex
 
 void ACharacter_Base::CharacterExitSeat(const FCharacterSeatContext& SeatContext)
 {
+	if (GetAttachParentActor()->GetRootComponent() != GetRootComponent()->GetAttachParent())
+	{
+		GetRootComponent()->DetachFromComponent(FDetachmentTransformRules::KeepRelativeTransform);
+		AttachToActor(GetCurrentVehicle(), FAttachmentTransformRules::KeepRelativeTransform);
+	}
 	UpdateVehicleHUD(nullptr);
 	ManageIMC(SeatContext.InputMappingContext, nullptr, 0);
-	/**
-	if (GetLocalPlayerHUDSystem()->CurrentVehicleHUD)
-	{
-		GetLocalPlayerHUDSystem()->CurrentVehicleHUD = nullptr;
-	}
-	**/
 }
 
 FVector ACharacter_Base::CalculateSafeExitLocation(AActor* Vehicle)

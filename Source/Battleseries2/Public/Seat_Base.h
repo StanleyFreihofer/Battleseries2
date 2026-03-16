@@ -9,7 +9,6 @@
 #include "Animation/SkeletalMeshActor.h"
 #include "Camera/CameraActor.h"
 #include "Data/Weapons/VehicleWeapons/Data_VehicleWeapon.h"
-#include "Data/Vehicles/Data_VehicleCustomization.h"
 #include "Core/Weapons/Projectiles/Projectile_Base.h"
 #include "Core/Weapons/WeaponLogicComponent.h"
 #include "Seat_Base.generated.h"

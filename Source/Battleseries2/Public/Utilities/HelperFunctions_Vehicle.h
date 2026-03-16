@@ -4,7 +4,6 @@
 #include "UObject/NoExportTypes.h"
 #include "Engine/DataTable.h"
 #include "Data/Vehicles/Data_Vehicle.h"
-#include "Data/Vehicles/Data_VehicleCustomization.h"
 #include "HelperFunctions_Vehicle.generated.h"
 
 UCLASS()
