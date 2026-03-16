@@ -1,18 +1,10 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Data/Characters/CharacterEnums.h"
 #include "CharacterTypes.generated.h"
 class AVehicle_Base;		
 class UUW_HUD_Vehicle_Base;
-
-UENUM(BlueprintType)
-enum class ECharacterCurrentStance : uint8
-{
-	Standing			UMETA(DisplayName = "Standing"),
-	Crouching			UMETA(DisplayName = "Crouching"),
-	Proning				UMETA(DisplayName = "Proning"),
-	Sitting				UMETA(DisplayName = "Sitting")
-};
 
 USTRUCT(BlueprintType)
 struct FCharacterVehicleState

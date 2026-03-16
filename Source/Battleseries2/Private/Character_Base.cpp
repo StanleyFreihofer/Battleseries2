@@ -67,6 +67,20 @@ void ACharacter_Base::SetupPlayerInputComponent(UInputComponent* PlayerInputComp
 	}
 }
 
+void ACharacter_Base::Input_Look(FVector2D InputAxisValue)
+{
+	if (!CharacterState.CharacterVehicleState.inVehicle)
+	{
+		AddControllerYawInput(InputAxisValue.X);
+		AddControllerPitchInput(InputAxisValue.Y);
+	}
+	else
+	{
+		//GetCurrentVehicle()->
+	}
+
+}
+
 void ACharacter_Base::ManageinVehicleStatus(AVehicle_Base* Vehicle, bool In_Vehicle)
 {
 	CharacterState.CharacterVehicleState.inVehicle = In_Vehicle;
@@ -167,8 +181,8 @@ void ACharacter_Base::CharacterEnterSeat(const FCharacterSeatContext& SeatContex
 			if (VWID.bAttachCharacter)
 			{
 				TWeakObjectPtr<USkeletalMeshComponent> WeaponMesh = VWLC->VehicleWeaponSystem.Find(GetCSI())->VehicleWeaponSystemState.WeaponSystemMesh;
-				FAttachmentTransformRules AttachmentRules(EAttachmentRule::KeepRelative, false);
-				GetRootComponent()->AttachToComponent(WeaponMesh.Get(), AttachmentRules);
+				FAttachmentTransformRules AttachmentRules(EAttachmentRule::SnapToTarget, false);
+				GetRootComponent()->AttachToComponent(WeaponMesh.Get(), AttachmentRules, FName("Test"));
 				SetActorRelativeTransform(VWID.CharacterTransform);
 			}
 			else

@@ -50,6 +50,8 @@ public:
 
 	//FUNCTIONS
 	UFUNCTION(BlueprintCallable)
+	void Input_Look(FVector2D InputAxisValue);
+	UFUNCTION(BlueprintCallable)
 	void ManageinVehicleStatus(AVehicle_Base* Vehicle, bool In_Vehicle);
 	UFUNCTION(BlueprintCallable)
 	void UpdateSeatList(TArray<ACharacter_Base*> Characters);

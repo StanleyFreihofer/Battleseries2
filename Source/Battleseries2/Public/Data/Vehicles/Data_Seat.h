@@ -5,7 +5,7 @@
 #include "CoreMinimal.h"
 #include "InputMappingContext.h"
 #include "Components/SpotLightComponent.h"
-#include "Data/Runtime/CharacterTypes.h"
+#include "Data/Characters/CharacterEnums.h"
 #include "Data/Weapons/WeaponEnums.h"
 #include "Data/Vehicles/VehicleEnums.h"
 #include "Data_Seat.generated.h"
@@ -71,6 +71,9 @@ struct FVehicleWeaponInstanceData
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (Tooltip = "relative transform of character on this mesh if attached", EditCondition = "bAttachCharacter", EditConditionHides = true))
 	FTransform CharacterTransform = FTransform::Identity;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	EControlRotationMethod CharacterRotationMethod = EControlRotationMethod::None;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	bool bHasSpecialCam = false;
