@@ -190,6 +190,8 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void UpdateSeatRangefinder(int32 SeatIndex, FTransform TraceTransform, TArray<AActor*> ActorsToIgnore);
 	UFUNCTION(BlueprintCallable)
+	void HandleLockOn(int32 SeatIndex, FTransform TraceTransform, TArray<AActor*> ActorsToIgnore);
+	UFUNCTION(BlueprintCallable)
 	void StartLockingOn(int32& SeatIndex, FVehicleWeapon_Runtime& CurrentWeapon, const FWeaponHomingData& HomingData, const FHitResult& HitResult);
 	UFUNCTION(BlueprintCallable)
 	void LockOn(int32 SeatIndex, const FWeaponHomingData HomingData, const FHitResult HitResult);
@@ -234,7 +236,7 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void StopWeaponSlotFire(int32 SeatIndex, int32 WeaponIndex);
 	UFUNCTION(BlueprintCallable)
-	void SwitchWeapon(int32 SeatIndex);
+	bool SwitchWeapon(int32 SeatIndex);
 	UFUNCTION(BlueprintCallable)
 	void SelectWeapon(int32 SeatIndex, int32 WeaponIndex);
 	UFUNCTION(BlueprintCallable)

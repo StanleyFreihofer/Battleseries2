@@ -37,4 +37,7 @@ struct FCharacterState
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "State")
 	FCharacterVehicleState CharacterVehicleState = FCharacterVehicleState();
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "State")
+	FVector2D CurrentHeadDelta = FVector2D();
 };

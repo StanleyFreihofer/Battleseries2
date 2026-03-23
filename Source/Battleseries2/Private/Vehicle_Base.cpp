@@ -392,6 +392,11 @@ void AVehicle_Base::UpdateSeatList_AllOccupants()
 	}
 }
 
+int32 AVehicle_Base::GetControlledTurret(int32 SeatIndex)
+{
+	return VehicleData->Seats[SeatIndex].AvailableItems.ControlledTurretIndexes[0];
+}
+
 void AVehicle_Base::ApplyLoadoutToSeat(int32 SeatIndex)		//this functions applies everything in the loadout (weapons, optics, upgrades, camos (if applicable), etc)
 {
 	//now only called by ApplyLoadoutToVehicle when enter main seat (driver/drivergunner) and is then applied TO EVERY SEAT
@@ -525,6 +530,7 @@ bool AVehicle_Base::CycleThroughSeats(ACharacter_Base* Character)
 
 void AVehicle_Base::HandleViewMethod(ACharacter_Base* Character, const FSeatData& SeatData)
 {
+	//move this to character?
 	if (SeatData.SeatRole == E_SeatRole::DriverGunner || SeatData.SeatRole == E_SeatRole::Gunner)
 	{
 		const FVehicleWeaponSystem_Runtime& VWS = *VehicleWeaponLogicComponent->VehicleWeaponSystem.Find(Character->CharacterState.CharacterVehicleState.CSI);
@@ -556,20 +562,21 @@ void AVehicle_Base::HandleViewMethod(ACharacter_Base* Character, const FSeatData
 
 void AVehicle_Base::HandleViewMethod_Default(ACharacter_Base* Character, const FSeatData& SeatData)
 {
+	//move to character?
 	switch (SeatData.ViewMethod)
 	{
 		case E_ViewMethod::Windowed:
 			Character->UpdateViewTarget(Character, Character->Camera);
 			break;
 		case E_ViewMethod::Remote:
-			if (VehicleCurrentState.SeatStates[Character->CharacterState.CharacterVehicleState.CSI].ActiveCamera)
+			if (VehicleCurrentState.SeatStates[Character->GetCSI()].ActiveCamera)
 			{
 
-				Character->UpdateViewTarget(this, VehicleCurrentState.SeatStates[Character->CharacterState.CharacterVehicleState.CSI].ActiveCamera);
+				Character->UpdateViewTarget(this, VehicleCurrentState.SeatStates[Character->GetCSI()].ActiveCamera);
 			}
 			else
 			{
-				Character->UpdateViewTarget(this, VehicleCurrentState.SeatStates[Character->CharacterState.CharacterVehicleState.CSI].DefaultCamera);
+				Character->UpdateViewTarget(this, VehicleCurrentState.SeatStates[Character->GetCSI()].DefaultCamera);
 			}
 			break;
 	}

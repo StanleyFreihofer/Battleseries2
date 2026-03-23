@@ -38,27 +38,10 @@ struct FDecorative
 	FName AttachmentID = FName();
 };
 
-
-//move to weapon data/somewhere else?
 USTRUCT(BlueprintType)
-struct FVehicleWeaponInstanceData
+struct FAttachmentInstanceData
 {
 	GENERATED_BODY()
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	EFireMethod FireMethod = EFireMethod::Default;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	EMuzzleType MuzzleType = EMuzzleType::Gun;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ToolTip = "determines what part of the vehicle's hierarchy determines the forward direction for this weapon, only matters for windowed seats"))
-	EWindowedAimAnchor WindowedAimAnchor = EWindowedAimAnchor::Hull;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	bool bHasSeparateMesh = false;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ToolTip = "Recoil multiplier that gets multiplied to angular impulse"))
-	float RecoilMultiplier = 0.0f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (Tooltip = "The mesh for this weapon if not just part of the vehicle mesh", EditCondition = "bHasSeparateMesh", EditConditionHides = true))
 	FName AttachmentID = FName();
@@ -71,9 +54,47 @@ struct FVehicleWeaponInstanceData
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (Tooltip = "relative transform of character on this mesh if attached", EditCondition = "bAttachCharacter", EditConditionHides = true))
 	FTransform CharacterTransform = FTransform::Identity;
+};
+
+USTRUCT(BlueprintType)
+struct FWeaponUIInstanceData
+{
+	GENERATED_BODY()
+
+	//reticle data
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	UTexture2D* WeaponReticle = nullptr;		//russian reticle for tank shell in t72/t90, etc
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	float ReticleScale = 1.0f;
+};
+
+
+//move to weapon data/somewhere else?
+USTRUCT(BlueprintType)
+struct FVehicleWeaponInstanceData
+{
+	GENERATED_BODY()
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	EControlRotationMethod CharacterRotationMethod = EControlRotationMethod::None;
+	EFireMethod FireMethod = EFireMethod::Default;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	bool bAreProjectilesMounted = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	EMuzzleType MuzzleType = EMuzzleType::Gun;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ToolTip = "determines what part of the vehicle's hierarchy determines the forward direction for this weapon, only matters for windowed seats"))
+	EWindowedAimAnchor WindowedAimAnchor = EWindowedAimAnchor::Hull;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ToolTip = "Recoil multiplier that gets multiplied to angular impulse"))
+	float RecoilMultiplier = 0.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	bool bHasSeparateMesh = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (EditCondition = "bHasSeparateMesh", EditConditionHides = true))
+	FAttachmentInstanceData AttachmentInstanceData = FAttachmentInstanceData();
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	bool bHasSpecialCam = false;
@@ -82,13 +103,7 @@ struct FVehicleWeaponInstanceData
 	FWeaponCamBehavior WeaponCamBehavior = FWeaponCamBehavior();
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	bool bAreProjectilesMounted = false;
-
-	//reticle data
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	UTexture2D* WeaponReticle = nullptr;		//russian reticle for tank shell in t72/t90, etc
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	float ReticleScale = 1.0f;
+	FWeaponUIInstanceData WeaponUIInstanceData = FWeaponUIInstanceData();
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	TArray<FDecorative> WeaponDecoratives;
@@ -213,6 +228,9 @@ struct FCharacterSeatContext
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	ECharacterCurrentStance SeatStance = ECharacterCurrentStance::Sitting;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	EControlRotationMethod CharacterRotationMethod = EControlRotationMethod::None;
 };
 
 USTRUCT(BlueprintType)

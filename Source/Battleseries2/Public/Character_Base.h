@@ -9,6 +9,7 @@
 #include "InputMappingContext.h"
 #include "InputAction.h"
 #include "Data/Runtime/CharacterTypes.h"
+#include "Utilities/I_Anims.h"
 #include "Character_Base.generated.h"
 
 class AVehicle_Base;
@@ -52,6 +53,14 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void Input_Look(FVector2D InputAxisValue);
 	UFUNCTION(BlueprintCallable)
+	void Input_Move(FVector2D InputAxisValue);
+	UFUNCTION(BlueprintCallable)
+	void Input_SwitchWeapon_Vehicle();
+	UFUNCTION(BlueprintCallable)
+	void Freelook(FVector2D InputAxisValue);
+	UFUNCTION(BlueprintCallable)
+	void UpdateHeadRotation(FRotator HeadRotation);
+	UFUNCTION(BlueprintCallable)
 	void ManageinVehicleStatus(AVehicle_Base* Vehicle, bool In_Vehicle);
 	UFUNCTION(BlueprintCallable)
 	void UpdateSeatList(TArray<ACharacter_Base*> Characters);
@@ -67,6 +76,8 @@ public:
 	FVector CalculateSafeExitLocation(AActor* Vehicle);
 	UFUNCTION(BlueprintCallable)
 	void UpdateSeatIndexes(int32 NewLSI, int32 NewCSI, int32 NewNSI);
+	UFUNCTION(BlueprintCallable)
+	void UpdateUI_EnterSeat();
 
 	UFUNCTION(BlueprintCallable)
 	void UpdateCharacterStance(ECharacterCurrentStance NewStance);

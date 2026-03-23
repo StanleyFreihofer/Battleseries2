@@ -6,6 +6,7 @@
 #include "Components/CapsuleComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "EnhancedInputComponent.h"
+#include "Camera/CameraActor.h"
 #include "EnhancedInputSubsystems.h"
 #include "EnhancedPlayerInput.h"
 #include "Data/Weapons/Data_Weapon.h"
@@ -76,9 +77,53 @@ void ACharacter_Base::Input_Look(FVector2D InputAxisValue)
 	}
 	else
 	{
-		//GetCurrentVehicle()->
+		switch (GetCurrentVehicle()->VehicleData->Seats[GetCSI()].DefaultCharacterContext.CharacterRotationMethod)
+		{
+			case EControlRotationMethod::Freelook:
+				Freelook(InputAxisValue);
+				break;
+		}
 	}
 
+}
+
+void ACharacter_Base::Input_Move(FVector2D InputAxisValue)
+{
+	if (!CharacterState.CharacterVehicleState.inVehicle)
+	{
+		AddMovementInput(FVector(GetActorForwardVector()), InputAxisValue.Y);
+		AddMovementInput(FVector(GetActorRightVector()), InputAxisValue.X);
+	}
+}
+
+void ACharacter_Base::Input_SwitchWeapon_Vehicle()
+{
+	bool bSwitched = GetCurrentVehicle()->VehicleWeaponLogicComponent->SwitchWeapon(GetCSI());
+	if (!bSwitched)
+	{
+		return;
+	}
+	const FSeatData& SeatData = GetCurrentVehicle()->VehicleData->Seats[GetCSI()];
+	GetCurrentVehicle()->HandleViewMethod(this, SeatData);
+}
+
+void ACharacter_Base::Freelook(FVector2D InputAxisValue)
+{
+	float NewYaw = CharacterState.CurrentHeadDelta.X + InputAxisValue.X;
+	float NewPitch = CharacterState.CurrentHeadDelta.Y + InputAxisValue.Y;
+	NewPitch = FMath::Clamp(NewPitch, -80.0f, 80.0f);
+	CharacterState.CurrentHeadDelta = FVector2D(NewYaw, NewPitch);
+	FRotator NewRotation = FRotator(0.0f, CharacterState.CurrentHeadDelta.Y, CharacterState.CurrentHeadDelta.X);
+	UpdateHeadRotation(NewRotation);
+}
+
+void ACharacter_Base::UpdateHeadRotation(FRotator HeadRotation)
+{
+	UAnimInstance* AnimInst = GetMesh() ? GetMesh()->GetAnimInstance() : nullptr;
+	if (AnimInst && AnimInst->GetClass()->ImplementsInterface(UAnims::StaticClass()))
+	{
+		IAnims::Execute_OnUpdateHeadRotation(AnimInst, HeadRotation);
+	}
 }
 
 void ACharacter_Base::ManageinVehicleStatus(AVehicle_Base* Vehicle, bool In_Vehicle)
@@ -178,12 +223,12 @@ void ACharacter_Base::CharacterEnterSeat(const FCharacterSeatContext& SeatContex
 		case E_SeatRole::Gunner:
 			UVehicleWeaponLogicComponent* VWLC = GetCurrentVehicle()->VehicleWeaponLogicComponent;
 			const FVehicleWeaponInstanceData& VWID = VWLC->GetWeaponInstanceDataAtSlotInSeat(GetCSI(), VWLC->GetCWIForSeat(GetCSI()), VWLC->GetEquippedWeaponInSeat(GetCSI()).VehicleWeaponState.BaseWeaponRuntimeData.WeaponID);
-			if (VWID.bAttachCharacter)
+			if (VWID.AttachmentInstanceData.bAttachCharacter)
 			{
 				TWeakObjectPtr<USkeletalMeshComponent> WeaponMesh = VWLC->VehicleWeaponSystem.Find(GetCSI())->VehicleWeaponSystemState.WeaponSystemMesh;
 				FAttachmentTransformRules AttachmentRules(EAttachmentRule::SnapToTarget, false);
 				GetRootComponent()->AttachToComponent(WeaponMesh.Get(), AttachmentRules, FName("Test"));
-				SetActorRelativeTransform(VWID.CharacterTransform);
+				SetActorRelativeTransform(VWID.AttachmentInstanceData.CharacterTransform);
 			}
 			else
 			{
@@ -200,38 +245,8 @@ void ACharacter_Base::CharacterEnterSeat(const FCharacterSeatContext& SeatContex
 		UpdateVehicleHUD(SeatContext.SeatHMD);
 	}
 
-	//sync vehicle states for hud
-	switch (GetCurrentVehicle()->VehicleData->Seats[GetCSI()].SeatRole)
-	{
-		case E_SeatRole::Driver:
-			GetLocalPlayerHUDSystem()->UpdateSpeedHUD_Vehicle(GetCurrentVehicle()->GetVelocity().Size());
-			break;
-		case E_SeatRole::Gunner:
-			break;
-		case E_SeatRole::DriverGunner:
-			//HUD
-			GetLocalPlayerHUDSystem()->UpdateSpeedHUD_Vehicle(GetCurrentVehicle()->GetVelocity().Size());
+	UpdateUI_EnterSeat();
 
-			//turrets/heading
-			if (GetCurrentVehicle()->VehicleCurrentState.SeatStates[GetCSI()].ActiveCamera)
-			{
-				GetLocalPlayerHUDSystem()->UpdateCompassHUD_Vehicle(GetCurrentVehicle()->VehicleCurrentState.SeatStates[GetCSI()].ActiveCamera->GetComponentRotation().Yaw);
-				GetLocalPlayerHUDSystem()->HandleTurretRotationUpdate(GetCurrentVehicle()->VehicleCurrentState.SeatStates[GetCSI()].ActiveCamera->GetComponentRotation().Yaw);
-			}
-			if (GetCurrentVehicle()->VehicleData->Seats[GetCSI()].AvailableItems.ControlledTurretIndexes.Num())
-			{
-				const int32& CTI = GetCurrentVehicle()->VehicleData->Seats[GetCSI()].AvailableItems.ControlledTurretIndexes[0];
-
-				GetLocalPlayerHUDSystem()->HandleTurretPitchUpdate
-				(
-					GetCurrentVehicle()->VehicleData->Turrets[CTI].TurretPitch.TurretMinMax.GetLowerBoundValue(),
-					GetCurrentVehicle()->VehicleData->Turrets[CTI].TurretPitch.TurretMinMax.GetUpperBoundValue(),
-					GetCurrentVehicle()->VehicleWeaponLogicComponent->TurretStates[CTI].CurrentTurretPitch
-				);
-			}
-
-			break;
-	}
 }
 
 void ACharacter_Base::CharacterExitSeat(const FCharacterSeatContext& SeatContext)
@@ -287,6 +302,42 @@ void ACharacter_Base::UpdateSeatIndexes(int32 NewLSI, int32 NewCSI, int32 NewNSI
 	CharacterState.CharacterVehicleState.LSI = NewLSI;
 	CharacterState.CharacterVehicleState.CSI = NewCSI;
 	CharacterState.CharacterVehicleState.NSI = NewNSI;
+}
+
+void ACharacter_Base::UpdateUI_EnterSeat()
+{
+	//sync vehicle states for hud
+	switch (GetCurrentVehicle()->VehicleData->Seats[GetCSI()].SeatRole)
+	{
+		case E_SeatRole::Driver:
+			GetLocalPlayerHUDSystem()->UpdateSpeedHUD_Vehicle(GetCurrentVehicle()->GetVelocity().Size());
+			break;
+		case E_SeatRole::Gunner:
+			break;
+		case E_SeatRole::DriverGunner:
+			//HUD
+			GetLocalPlayerHUDSystem()->UpdateSpeedHUD_Vehicle(GetCurrentVehicle()->GetVelocity().Size());
+
+			//turrets/heading
+			if (GetCurrentVehicle()->VehicleCurrentState.SeatStates[GetCSI()].ActiveCamera)
+			{
+				GetLocalPlayerHUDSystem()->UpdateCompassHUD_Vehicle(GetCurrentVehicle()->VehicleCurrentState.SeatStates[GetCSI()].ActiveCamera->GetComponentRotation().Yaw);
+				GetLocalPlayerHUDSystem()->HandleTurretRotationUpdate(GetCurrentVehicle()->VehicleCurrentState.SeatStates[GetCSI()].ActiveCamera->GetComponentRotation().Yaw);
+			}
+			if (GetCurrentVehicle()->VehicleData->Seats[GetCSI()].AvailableItems.ControlledTurretIndexes.Num())
+			{
+				const int32& CTI = GetCurrentVehicle()->GetControlledTurret(GetCSI());
+
+				GetLocalPlayerHUDSystem()->HandleTurretPitchUpdate
+				(
+					GetCurrentVehicle()->VehicleData->Turrets[CTI].TurretPitch.TurretMinMax.GetLowerBoundValue(),
+					GetCurrentVehicle()->VehicleData->Turrets[CTI].TurretPitch.TurretMinMax.GetUpperBoundValue(),
+					GetCurrentVehicle()->VehicleWeaponLogicComponent->TurretStates[CTI].CurrentTurretPitch
+				);
+			}
+
+			break;
+	}
 }
 
 void ACharacter_Base::UpdateCharacterStance(ECharacterCurrentStance NewStance)
@@ -396,6 +447,7 @@ void ACharacter_Base::UpdateRangefinder_WindowedVehicle()
 			VWLC->UpdateSeatRangefinder(GetCSI(), TraceTransform, Actors);
 			if (IsLocallyControlled())
 			{
+				//update HMD reticle
 				FHitResult& HitResult = VWLC->VehicleWeaponSystem.Find(GetCSI())->VehicleWeaponSystemState.EquippedWeaponState.RaycastData.RangefinderData;
 				UWidgetComponent* SeatHUDComp = GetCurrentVehicle()->VehicleCurrentState.SeatStates[GetCSI()].SeatHUDComponent;
 				if (SeatHUDComp)

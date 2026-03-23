@@ -240,6 +240,9 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void UpdateSeatList_AllOccupants();
 
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	int32 GetControlledTurret(int32 SeatIndex);
+
 	UFUNCTION()
 	TWeakObjectPtr<UHUDSubsystem> GetHUDSystem();
 	UFUNCTION()
