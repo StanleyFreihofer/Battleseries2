@@ -3,6 +3,7 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
+#include "Components/Button.h"
 #include "Data/Vehicles/Data_Vehicle.h"
 #include "UW_Customization.generated.h"
 
@@ -54,6 +55,9 @@ public:
 	class USizeBox* SizeBox_ScrollBox = nullptr;
 	UPROPERTY(meta = (BindWidget))
 	class UVerticalBox* VerticalBox_LoadoutPanel = nullptr;
+	UPROPERTY(meta = (BindWidget))
+	UButton* Btn_ExitCustomization = nullptr;
+
 	//details panel
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta = (BindWidget))
 	class UBorder* Border_DetailsPanel = nullptr;
@@ -136,6 +140,9 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void HandleSlotSelectionChanged(int32 SeatIndex, FCustomizationSlotConfig SlotConfig, FName SelectedItemID);
+
+	UFUNCTION(BlueprintCallable)
+	void ExitCustomization();
 
 protected:
 	virtual FReply NativeOnMouseWheel(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;

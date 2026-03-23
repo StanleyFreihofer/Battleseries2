@@ -9,8 +9,10 @@
 #include "PlayerController_Base.generated.h"
 
 /**
- * 
+ *	things that are done outside of gameplay (think main menus, customization, etc) should be done here
+ * longer lifetime than character
  */
+
 UCLASS()
 class BATTLESERIES2_API APlayerController_Base : public APlayerController
 {
@@ -19,22 +21,20 @@ class BATTLESERIES2_API APlayerController_Base : public APlayerController
 public:
 	UFUNCTION(BlueprintCallable, Category = "HUD | Customization")
 	void Init_CustomizationScreen();
+	UFUNCTION(BlueprintCallable)
+	void EnterCustomizationScreen();
+	UFUNCTION(BlueprintCallable)
+	void ExitCustomizationScreen();
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "HUD | Customization")
-	TSubclassOf<UUW_Customization> CustomizationWidgetClass;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
-	TSubclassOf<ALoadoutPreviewStage> PreviewStageClass;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	FTransform PreviewSpawnTransform;
+	UFUNCTION(BlueprintCallable)
+	UHUDSubsystem* GetHUDSystem();
+	UFUNCTION(BlueprintCallable)
+	UDataManagerSubsystem* GetDataSystem();
 protected:
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "HUD | Customization")
-	UUW_Customization* CustomizationWidget;
-	
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
-	ALoadoutPreviewStage* PreviewStageActor;
+	ALoadoutPreviewStage* PreviewStageActor = nullptr;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TWeakObjectPtr<AActor> LastViewTarget = nullptr;
 
-
-
-
-	
+	virtual void BeginPlay() override;
 };

@@ -21,6 +21,7 @@
 #include "Utilities/HelperFunctions_Vehicle.h"
 #include "Data/Runtime/CoreTypes.h"
 #include "Core/Weapons/VehicleWeaponLogicComponent.h"
+#include "Core/PlayerController_Base.h"
 #include "Data/Weapons/VehicleWeapons/Data_VehicleWeapon.h"
 #include "Data/Data_Camo.h"
 #include "Data/Vehicles/VehicleDefaults.h"
@@ -405,6 +406,12 @@ void UUW_Customization::HandleSlotSelectionChanged(int32 SeatIndex, FCustomizati
 			CustomizationUIState.PreviewStageActor->CurrentVehicle->ApplyCamoToVehicle(SelectedItemID);
 			break;
 	}
+}
+
+void UUW_Customization::ExitCustomization()
+{
+	APlayerController_Base* PC = Cast<APlayerController_Base>(GetOwningPlayer());
+	PC->ExitCustomizationScreen();
 }
 
 FReply UUW_Customization::NativeOnMouseWheel(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)

@@ -15,6 +15,7 @@ struct FCamoData;
 enum class E_VehicleType : uint8;
 class UDA_VehicleDefaults;
 class UDA_WeaponDefaults;
+class UDA_CustomizationDefaults;
 class UDA_CoreTypes;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnDataReady);
@@ -46,6 +47,9 @@ public:
 
     UPROPERTY(EditAnywhere, Category = "Data Assets")
     TSoftObjectPtr<UDA_VehicleDefaults> VehicleDefaultsDAAsset;
+
+    UPROPERTY(EditAnywhere, Category = "Data Assets")
+    TSoftObjectPtr<UDA_CustomizationDefaults> CustomizationDefaultsDAAsset;
 
     UPROPERTY(EditAnywhere, Category = "Data Assets")
     TSoftObjectPtr<UDA_CoreTypes> CoreTypeDefinitionsDAAsset;
@@ -90,6 +94,9 @@ public:
 
     UFUNCTION(BlueprintCallable, Category = "Data")
     UDA_VehicleDefaults* GetVehicleDefaults() const { return VehicleDefaultsDataAsset; }
+
+    UFUNCTION(BlueprintCallable, Category = "Data")
+    UDA_CustomizationDefaults* GetCustomizationDefaults() const { return CustomizationDefaultsDataAsset; }
 
 
     //USTRUCTs are value types, not objects like UCLASS.
@@ -155,6 +162,9 @@ private:
 
     UPROPERTY()
     UDA_VehicleDefaults* VehicleDefaultsDataAsset;
+
+    UPROPERTY()
+    UDA_CustomizationDefaults* CustomizationDefaultsDataAsset;
 
 
     bool bDataReady = false;

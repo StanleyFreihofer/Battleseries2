@@ -8,6 +8,7 @@ class UUW_HUD_Status_Base;
 class UUW_HUD_Vehicle_Base;
 class UUW_HUD_LockOnIndicator_Base;
 class AVehicle_Base;
+class UUW_Customization;
 
 //management of all player screen widgets done here... HMD in practice
 //component/worldspace widget done elsewhere
@@ -23,12 +24,13 @@ public:
     UUW_HUD_Status_Base* StatusHUD = nullptr;         //ammo, health
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
-    UUW_HUD_Vehicle_Base* CurrentVehicleHMD;        //standard HUD
-    UPROPERTY(EditAnywhere, BlueprintReadWrite)                 //GET RID OF THIS (HUD System no longer updates worldspace HUD comps)
-    UUW_HUD_Vehicle_Base* CurrentVehicleHUD = nullptr;        //worldspace widget component mounted in vehicle        
+    UUW_HUD_Vehicle_Base* CurrentVehicleHMD = nullptr;        //standard HUD
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
     UUW_HUD_LockOnIndicator_Base* LockOnIndicator = nullptr;
+
+    UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "HUD | Customization")
+    UUW_Customization* CustomizationWidget = nullptr;
 
     //killfeed
     //onfootreticle
@@ -41,6 +43,8 @@ public:
     void SpawnVehicleSeatHUD(TSubclassOf<UUserWidget> HUDClass);
     UFUNCTION(BlueprintCallable)
     void SpawnLockOnIndicator(TSubclassOf<UUserWidget> HUDClass);
+    UFUNCTION(BlueprintCallable)
+    void SpawnCustomizationUI(TSubclassOf<UUserWidget> HUDClass);
     UFUNCTION(BlueprintCallable)
     void UpdateLockOnIndicatorPosition(FVector Location);
     UFUNCTION(BlueprintCallable)
@@ -76,4 +80,7 @@ public:
 
     UFUNCTION(BlueprintCallable)
     void RemoveWidget(UUW_HUD_LockOnIndicator_Base* UserWidget);
+
+    UFUNCTION(BlueprintCallable)
+    void RemoveCustomizationWidget();
 };

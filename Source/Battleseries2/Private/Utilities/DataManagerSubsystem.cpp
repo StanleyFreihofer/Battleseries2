@@ -13,6 +13,7 @@
 #include "Data/Data_Camo.h"
 #include "Data/Weapons/WeaponDefaults.h"
 #include "Data/Vehicles/VehicleDefaults.h"
+#include "Data/Data_Customization.h"
 #include "Utilities/GameInstance_Base.h"
 
 //1 BP parent of this
@@ -58,6 +59,7 @@ void UDataManagerSubsystem::LoadDataTables()
     CamoDataTable = CamoDataTableAsset.LoadSynchronous();
 
     CoreTypeDefinitionsDataAsset = CoreTypeDefinitionsDAAsset.LoadSynchronous();
+    CustomizationDefaultsDataAsset = CustomizationDefaultsDAAsset.LoadSynchronous();
     WeaponDefaultsDataAsset = WeaponDefaultsDAAsset.LoadSynchronous();
     VehicleDefaultsDataAsset = VehicleDefaultsDAAsset.LoadSynchronous();
 

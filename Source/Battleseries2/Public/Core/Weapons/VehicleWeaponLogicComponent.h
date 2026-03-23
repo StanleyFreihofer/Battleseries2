@@ -199,6 +199,8 @@ public:
 	void StartCancelLockOn(int32& SeatIndex, FLockOnState& LockOnState);
 	UFUNCTION(BlueprintCallable)
 	void CancelLockOn(int32 SeatIndex, int32 WeaponIndex);
+	UFUNCTION(BlueprintCallable)
+	void DemoteLockOnStatus(int32 SeatIndex, FLockOnState& LockOnState);
 
 	UFUNCTION(BlueprintCallable)
 	void UpdateLockOnIndicator(bool UpdateHUD, FHitResult& HitResult, FLockOnState& LockOnState);

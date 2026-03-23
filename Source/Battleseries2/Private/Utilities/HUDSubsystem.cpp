@@ -1,5 +1,6 @@
 #include "Utilities/HUDSubsystem.h"
 #include "Blueprint/UserWidget.h"
+#include "Core/UI/UW_Customization.h"
 #include "Core/UI/GameplayHUDs/UW_HUD_Status_Base.h"
 #include "Core/UI/GameplayHUDs/UUW_HUD_LockOnIndicator_Base.h"
 #include "Core/UI/VehicleHUDs/UW_HUD_Vehicle_Base.h"
@@ -40,6 +41,13 @@ void UHUDSubsystem::SpawnLockOnIndicator(TSubclassOf<UUserWidget> HUDClass)
 	APlayerController* PC = GetLocalPlayer()->GetPlayerController(GetWorld());
 	LockOnIndicator = CreateWidget<UUW_HUD_LockOnIndicator_Base>(PC, HUDClass);
 	LockOnIndicator->AddToViewport();
+}
+
+void UHUDSubsystem::SpawnCustomizationUI(TSubclassOf<UUserWidget> HUDClass)
+{
+	APlayerController* PC = GetLocalPlayer()->GetPlayerController(GetWorld());
+	CustomizationWidget = CreateWidget< UUW_Customization>(PC, HUDClass);
+	CustomizationWidget->AddToViewport();
 }
 
 void UHUDSubsystem::UpdateLockOnIndicatorPosition(FVector Location)
@@ -96,14 +104,6 @@ void UHUDSubsystem::UpdateWeaponReticleHUD_Vehicle(UTexture2D* ImageBrush)
 	{
 		CurrentVehicleHMD->UpdateWeaponReticleHUD(ImageBrush);
 	}
-
-	//get rid of this (worldspace widgets no longer being updated by local hud system)
-	/**
-	if (CurrentVehicleHUD)
-	{
-		CurrentVehicleHUD->VehicleWeaponReticle->UpdateReticleImage(ImageBrush);
-	}
-	**/
 }
 
 void UHUDSubsystem::UpdateWeaponReticleSize_Vehicle(float NewScale)
@@ -112,12 +112,6 @@ void UHUDSubsystem::UpdateWeaponReticleSize_Vehicle(float NewScale)
 	if (CurrentVehicleHMD)
 	{
 		CurrentVehicleHMD->UpdateWeaponReticleSize(NewScale);
-	}
-
-	//get rid of this (worldspace widgets no longer being updated by local hud system)
-	else if (CurrentVehicleHUD)
-	{
-		CurrentVehicleHUD->UpdateWeaponReticleSize(NewScale);
 	}
 }
 
@@ -204,4 +198,10 @@ void UHUDSubsystem::RemoveWidget(UUW_HUD_LockOnIndicator_Base* UserWidget)
 	if (!UserWidget) return;
 	UserWidget->RemoveFromParent();
 	LockOnIndicator = nullptr; //HARDCODED FOR NOW, CHANGE THIS
+}
+
+void UHUDSubsystem::RemoveCustomizationWidget()
+{
+	CustomizationWidget->RemoveFromParent();
+	CustomizationWidget = nullptr;
 }

@@ -658,7 +658,6 @@ void UVehicleWeaponLogicComponent::UpdateSeatRangefinder(int32 SeatIndex, FTrans
 	FVehicleWeapon_Runtime& CurrentWeapon = GetEquippedWeaponInSeat(SeatIndex);
 	FHitResult& HitResult = SystemPtr->VehicleWeaponSystemState.EquippedWeaponState.RaycastData.RangefinderData;
 
-
 	if (StaticWeaponData.WeaponFunctionality.HomingFunctionality.HomingCapability != EHomingCapability::NoHoming)
 	{
 		HandleLockOn(SeatIndex, TraceTransform, ActorsToIgnore);
@@ -710,34 +709,12 @@ void UVehicleWeaponLogicComponent::HandleLockOn(int32 SeatIndex, FTransform Trac
 		}
 		else
 		{
-			//actor that can be locked on to... but not by this weapon
-			//anything from here on can be seen as a "demotion" of lock status
-			switch (LockOnState.CurrentLockStatus)
-			{
-				case ELockOnState::IsLockingOn:
-				case ELockOnState::IsLockedOn:
-					StartCancelLockOn(SeatIndex, LockOnState);
-					//interface to target
-					//do something to incrementally lose lock, not outright cancel it
-					//when completely lost lock, null target, set lock state to notlockingon
-					break;
-			}
+			DemoteLockOnStatus(SeatIndex, LockOnState);
 		}
 	}
 	else
 	{
-		//null actor or an actor that cant be locked on to
-		//anything from here on can be seen as a "demotion" of lock status
-		switch (LockOnState.CurrentLockStatus)
-		{
-			case ELockOnState::IsLockingOn:
-			case ELockOnState::IsLockedOn:
-				StartCancelLockOn(SeatIndex, LockOnState);
-				//interface to target
-				//do something to incrementally lose lock, not outright cancel it
-				//when completely lost lock, null target, set lock state to notlockingon
-				break;
-		}
+		DemoteLockOnStatus(SeatIndex, LockOnState);
 	}
 }
 
@@ -808,6 +785,22 @@ void UVehicleWeaponLogicComponent::CancelLockOn(int32 SeatIndex, int32 WeaponInd
 	{
 		WeaponState.canFire = false;
 		UpdateWeaponStatusUI(SeatIndex, WeaponState.canFire);
+	}
+}
+
+void UVehicleWeaponLogicComponent::DemoteLockOnStatus(int32 SeatIndex, FLockOnState& LockOnState)
+{
+	//null actor or an actor that cant be locked on to
+	//anything from here on can be seen as a "demotion" of lock status
+	switch (LockOnState.CurrentLockStatus)
+	{
+		case ELockOnState::IsLockingOn:
+		case ELockOnState::IsLockedOn:
+			StartCancelLockOn(SeatIndex, LockOnState);
+			//interface to target
+			//do something to incrementally lose lock, not outright cancel it
+			//when completely lost lock, null target, set lock state to notlockingon
+			break;
 	}
 }
 
