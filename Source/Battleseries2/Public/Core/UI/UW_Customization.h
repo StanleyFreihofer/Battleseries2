@@ -144,6 +144,9 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void ExitCustomization();
 
+	UFUNCTION()
+	UDataManagerSubsystem* GetData_UUWCustomization();
+
 protected:
 	virtual FReply NativeOnMouseWheel(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
 

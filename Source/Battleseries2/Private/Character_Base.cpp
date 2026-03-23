@@ -9,6 +9,7 @@
 #include "Camera/CameraActor.h"
 #include "EnhancedInputSubsystems.h"
 #include "EnhancedPlayerInput.h"
+#include "Data/Characters/CharacterDefaults.h"
 #include "Data/Weapons/Data_Weapon.h"
 #include "Core/Weapons/VehicleWeaponLogicComponent.h"
 #include "Core/UI/VehicleHUDs/UW_HUD_Vehicle_Base.h"
@@ -32,6 +33,7 @@ ACharacter_Base::ACharacter_Base()
 void ACharacter_Base::BeginPlay()
 {
 	Super::BeginPlay();
+	Init_Character();
 }
 
 // Called every frame
@@ -43,29 +45,20 @@ void ACharacter_Base::Tick(float DeltaTime)
 // Called to bind functionality to input
 void ACharacter_Base::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
-	InputComponent_Player = PlayerInputComponent;
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
+}
 
-	if (DefaultIMCSoft.IsValid())
-	{
-		DefaultIMC = DefaultIMCSoft.Get();
-	}
-	else
-	{
-		DefaultIMC = DefaultIMCSoft.LoadSynchronous(); // Force-load if not already in memory
-	}
+void ACharacter_Base::Init_Character()
+{
+	//called on spawn into game I imagine.
+	//how to handle different spawn contexts (spawn in vehicle for example)
 
-	if (UEnhancedInputComponent* EnhancedInput = Cast<UEnhancedInputComponent>(PlayerInputComponent))
-	{
-		// Add mapping context
-		if (APlayerController* PC = Cast<APlayerController>(GetController()))
-		{
-			if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PC->GetLocalPlayer()))
-			{
-				Subsystem->AddMappingContext(DefaultIMC, 0);
-			}
-		}
-	}
+	//IMC
+	ManageIMC(nullptr, GetDataSystem_Character()->GetCharacterDefaults()->DefaultIMC.Get(), 0);
+	ManageIMC(nullptr, GetDataSystem_Character()->GetCharacterDefaults()->DefaultGameplayIMC.Get(), 1);
+
+	//HUD
+	GetLocalPlayerHUDSystem()->SpawnStatusHUD(GetDataSystem_Character()->GetCharacterDefaults()->StatusHUDClass.Get());
 }
 
 void ACharacter_Base::Input_Look(FVector2D InputAxisValue)
@@ -93,6 +86,17 @@ void ACharacter_Base::Input_Move(FVector2D InputAxisValue)
 	{
 		AddMovementInput(FVector(GetActorForwardVector()), InputAxisValue.Y);
 		AddMovementInput(FVector(GetActorRightVector()), InputAxisValue.X);
+	}
+}
+
+void ACharacter_Base::Input_ShootWeapon_Vehicle()
+{
+	switch (GetCurrentVehicle()->VehicleData->Seats[GetCSI()].SeatRole)
+	{
+		case E_SeatRole::DriverGunner:
+		case E_SeatRole::Gunner:
+			GetCurrentVehicle()->VehicleWeaponLogicComponent->HandleStartFire(GetCSI());
+			break;
 	}
 }
 
@@ -203,11 +207,13 @@ void ACharacter_Base::CharacterExitVehicle()
 		UpdateCharacterStance(ECharacterCurrentStance::Standing);
 		GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Vehicle, ECR_Block);
 		GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Vehicle, ECollisionResponse::ECR_Block);
-		GetCharacterMovement()->SetMovementMode(MOVE_Walking);
+		GetCharacterMovement()->SetMovementMode(MOVE_Walking);		//make this more dynamic (are we falling out of ejecting from a jet for example)
 		Camera->bUsePawnControlRotation = true;
 		bUseControllerRotationYaw = true;
 		UpdateViewTarget(this, Camera);
 		CharacterState.CharacterVehicleState = FCharacterVehicleState();
+
+		ManageIMC(nullptr, GetDataSystem_Character()->GetCharacterDefaults()->DefaultGameplayIMC.Get(), 1);
 	}
 }
 
@@ -478,6 +484,11 @@ UHUDSubsystem* ACharacter_Base::GetLocalPlayerHUDSystem()
 		}
 	}
 	return nullptr;
+}
+
+UDataManagerSubsystem* ACharacter_Base::GetDataSystem_Character()
+{
+	return GetGameInstance()->GetSubsystem<UDataManagerSubsystem>();
 }
 
 AVehicle_Base* ACharacter_Base::GetCurrentVehicle()

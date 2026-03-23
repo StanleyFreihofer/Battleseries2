@@ -13,6 +13,7 @@
 #include "Character_Base.generated.h"
 
 class AVehicle_Base;
+class UDataManagerSubsystem;
 struct FCharacterSeatContext;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnWeaponInputReleased_Vehicle, int32, SeatIndex);
@@ -40,20 +41,18 @@ public:
 	FCharacterState CharacterState = FCharacterState();
 
 	//Inputs
-	// Soft reference to the mapping context set in the Content Browser
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Input")
 	UInputComponent* InputComponent_Player = nullptr;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
-	TSoftObjectPtr<UInputMappingContext> DefaultIMCSoft = nullptr;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
-	UInputAction* IA_Fire;
-	UInputMappingContext* DefaultIMC = nullptr;
 
 	//FUNCTIONS
+	UFUNCTION(BlueprintCallable)
+	void Init_Character();
 	UFUNCTION(BlueprintCallable)
 	void Input_Look(FVector2D InputAxisValue);
 	UFUNCTION(BlueprintCallable)
 	void Input_Move(FVector2D InputAxisValue);
+	UFUNCTION(BlueprintCallable)
+	void Input_ShootWeapon_Vehicle();
 	UFUNCTION(BlueprintCallable)
 	void Input_SwitchWeapon_Vehicle();
 	UFUNCTION(BlueprintCallable)
@@ -108,6 +107,8 @@ public:
 
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	UHUDSubsystem* GetLocalPlayerHUDSystem();
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	UDataManagerSubsystem* GetDataSystem_Character();
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	AVehicle_Base* GetCurrentVehicle();
 	UFUNCTION(BlueprintCallable, BlueprintPure)

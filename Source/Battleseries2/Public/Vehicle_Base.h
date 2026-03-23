@@ -279,7 +279,7 @@ public:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 private:
-	UDataManagerSubsystem* DataManager;
+	//UDataManagerSubsystem* DataManager;
 	USaveSubsystem* SaveSubsystem;
 	struct FTimerHandle TimerHandle_AudioUpdate_Engine;
 	FTimerHandle SpeedTimer;

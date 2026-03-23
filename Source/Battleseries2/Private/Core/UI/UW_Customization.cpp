@@ -3,6 +3,7 @@
 #include "Save/PlayerSave_Loadout.h"
 #include "Vehicle_Base.h"
 #include "Utilities/DataManagerSubsystem.h"
+#include "Utilities/GameInstance_Base.h"
 #include "Engine/DataTable.h"
 #include "UObject/EnumProperty.h"
 #include "Misc/EnumRange.h"
@@ -29,8 +30,10 @@
 void UUW_Customization::NativeConstruct()
 {
 	Super::NativeConstruct();
-	DataSubsystem = GetGameInstance()->GetSubsystem<UDataManagerSubsystem>();
+	DataSubsystem = GetData_UUWCustomization();
 	CustomizationUIState.CurrentCustomizationMode = ECoreType::Vehicle;
+
+	Btn_ExitCustomization->OnClicked.AddDynamic(this, &UUW_Customization::ExitCustomization);
 
 	//Init_Customization();			//dont autostart?
 }
@@ -412,6 +415,11 @@ void UUW_Customization::ExitCustomization()
 {
 	APlayerController_Base* PC = Cast<APlayerController_Base>(GetOwningPlayer());
 	PC->ExitCustomizationScreen();
+}
+
+UDataManagerSubsystem* UUW_Customization::GetData_UUWCustomization()
+{
+	return GetGameInstance()->GetSubsystem<UDataManagerSubsystem>();;
 }
 
 FReply UUW_Customization::NativeOnMouseWheel(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)

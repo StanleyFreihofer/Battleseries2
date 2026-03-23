@@ -44,18 +44,18 @@ AVehicle_Base::AVehicle_Base()
 void AVehicle_Base::BeginPlay()
 {
 	Super::BeginPlay();
-	DataManager = GetWorld()->GetGameInstance()->GetSubsystem<UDataManagerSubsystem>();
+	//DataManager = GetWorld()->GetGameInstance()->GetSubsystem<UDataManagerSubsystem>();
 	SaveSubsystem = GetWorld()->GetGameInstance()->GetSubsystem<USaveSubsystem>();
 
 	if (!VehicleStartingData.VehicleID.IsNone())
 	{
-		if (DataManager->IsDataReady())
+		if (GetDataManager()->IsDataReady())
 		{
 			Init_VehicleData();
 		}
 		else
 		{
-			DataManager->OnDataReady.AddDynamic(this, &AVehicle_Base::Init_VehicleData);
+			GetDataManager()->OnDataReady.AddDynamic(this, &AVehicle_Base::Init_VehicleData);
 		}
 	}
 }
@@ -198,7 +198,7 @@ void AVehicle_Base::Init_SeatHUDComp(int32& SeatIndex)
 	NewQuad->SetRelativeRotation(FRotator(0.f, -90.f, 90.f));
 	NewQuad->SetRelativeLocation(FVector(0.1f, 0.f, 0.f));
 
-	UMaterialInterface* MasterMat = DataManager->GetVehicleDefaults()->HUDMasterMaterial.LoadSynchronous();
+	UMaterialInterface* MasterMat = GetDataManager()->GetVehicleDefaults()->HUDMasterMaterial.LoadSynchronous();
 	UMaterialInstanceDynamic* DynMat = NewQuad->CreateDynamicMaterialInstance(0, MasterMat);		//both creates and assigns
 
 	//VehicleWeaponLogicComponent->VehicleWeaponSystem.Find(SeatIndex)->VehicleWeaponSystemState.ReticleQuad = NewQuad;
@@ -277,7 +277,7 @@ void AVehicle_Base::Init_VehicleAnim(TSubclassOf<UAnimInstance> Anim_Class)
 void AVehicle_Base::Init_VehicleData()			//(load vehicle data)
 {
 	//1. load base vehicle data row
-	VehicleData = DataManager->GetVehicleDataRow(VehicleStartingData.VehicleID);
+	VehicleData = GetDataManager()->GetVehicleDataRow(VehicleStartingData.VehicleID);
 
 	//2. Asynchronously load assets (mesh, anim class)
 	TArray<FSoftObjectPath> AssetsToLoad;
@@ -473,7 +473,7 @@ void AVehicle_Base::ApplyCamoToAttachment(TWeakObjectPtr<UMeshComponent> Mesh, F
 {
 	if (!Mesh.IsValid() || AttachmentID == NAME_None || CamoID == NAME_None) return;
 
-	const FAttachmentData& AttachmentData = *DataManager->GetAttachmentDataRow(AttachmentID);
+	const FAttachmentData& AttachmentData = *GetDataManager()->GetAttachmentDataRow(AttachmentID);
 	const FAttachmentCamoData* CamoData = AttachmentData.AvailableCamos.Find(CamoID);
 	if (!CamoData)
 	{

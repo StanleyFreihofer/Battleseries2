@@ -28,7 +28,7 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	UHUDSubsystem* GetHUDSystem();
-	UFUNCTION(BlueprintCallable)
+	UFUNCTION(BlueprintCallable, BlueprintPure)
 	UDataManagerSubsystem* GetDataSystem();
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)

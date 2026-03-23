@@ -11,6 +11,7 @@
 #include "Data/Weapons/Data_Projectile.h"
 #include "Data/Data_Attachments.h"
 #include "Data/Data_Camo.h"
+#include "Data/Characters/CharacterDefaults.h"
 #include "Data/Weapons/WeaponDefaults.h"
 #include "Data/Vehicles/VehicleDefaults.h"
 #include "Data/Data_Customization.h"
@@ -60,6 +61,7 @@ void UDataManagerSubsystem::LoadDataTables()
 
     CoreTypeDefinitionsDataAsset = CoreTypeDefinitionsDAAsset.LoadSynchronous();
     CustomizationDefaultsDataAsset = CustomizationDefaultsDAAsset.LoadSynchronous();
+    CharacterDefaultsDataAsset = CharacterDefaultsDAAsset.LoadSynchronous();
     WeaponDefaultsDataAsset = WeaponDefaultsDAAsset.LoadSynchronous();
     VehicleDefaultsDataAsset = VehicleDefaultsDAAsset.LoadSynchronous();
 

@@ -13,6 +13,7 @@ struct FAttachmentData;
 struct FProjectileData;
 struct FCamoData;
 enum class E_VehicleType : uint8;
+class UDA_CharacterDefaults;
 class UDA_VehicleDefaults;
 class UDA_WeaponDefaults;
 class UDA_CustomizationDefaults;
@@ -41,6 +42,9 @@ public:
 
     UPROPERTY(EditAnywhere, Category = "Data Tables")
     TSoftObjectPtr<UDataTable> CamoDataTableAsset;
+
+    UPROPERTY(EditAnywhere, Category = "Data Assets")
+    TSoftObjectPtr<UDA_CharacterDefaults> CharacterDefaultsDAAsset;
 
     UPROPERTY(EditAnywhere, Category = "Data Assets")
     TSoftObjectPtr<UDA_WeaponDefaults> WeaponDefaultsDAAsset;
@@ -88,6 +92,9 @@ public:
 
     UFUNCTION(BlueprintCallable, Category = "Data")
     UDA_CoreTypes* GetCoreTypeDefinitions() const { return CoreTypeDefinitionsDataAsset;  }
+
+    UFUNCTION(BlueprintCallable, Category = "Data")
+    UDA_CharacterDefaults* GetCharacterDefaults() const { return CharacterDefaultsDataAsset; }
 
     UFUNCTION(BlueprintCallable, Category = "Data")
     UDA_WeaponDefaults* GetWeaponDefaults() const { return WeaponDefaultsDataAsset; }
@@ -156,6 +163,9 @@ private:
 
     UPROPERTY()
     UDA_CoreTypes* CoreTypeDefinitionsDataAsset;
+
+    UPROPERTY()
+    UDA_CharacterDefaults* CharacterDefaultsDataAsset;
 
     UPROPERTY()
     UDA_WeaponDefaults* WeaponDefaultsDataAsset;
