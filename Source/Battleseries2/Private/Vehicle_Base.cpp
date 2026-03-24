@@ -37,6 +37,8 @@ AVehicle_Base::AVehicle_Base()
 	ChaosVehicleMovement->bAutoActivate = false;
 	InteractionWidgetComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("Interaction Widget"));
 	VehicleWeaponLogicComponent = CreateDefaultSubobject<UVehicleWeaponLogicComponent>(TEXT("Vehicle Weapon Logic Component"));
+	SpawnComponent = CreateDefaultSubobject<USpawnComponent>(TEXT("Spawn Component"));
+	SpawnComponent->SetupAttachment(GetRootComponent());
 	InteractionWidgetComponent->SetupAttachment(VehicleMeshComponent, "InteractIcon");
 }
 
@@ -325,6 +327,16 @@ void AVehicle_Base::Init_Vehicle()
 			break;
 	}
 	ApplyCamoToVehicle(VehicleStartingData.StartingVehicleLoadout.VehicleCamo);
+
+	//spawn component
+	/*/
+	FSpawnData_Runtime NewSpawnData;
+	NewSpawnData.SpawnDisplayName = FText::FromName(VehicleData->Vehicle_DisplayName);
+	NewSpawnData.SpawnIcon = VehicleData->VehicleIcon;
+	NewSpawnData.SpawnType = ESpawnType::Vehicle;
+	SpawnComponent->Init_SpawnData(NewSpawnData);
+	**/
+	//spawn icon, name, (type: vehicle)
 }
 
 void AVehicle_Base::Init_Horn(USoundBase* HornAudio)
@@ -709,12 +721,14 @@ void AVehicle_Base::DropGunner(TWeakObjectPtr<ACharacter_Base> Character, int32&
 	VehicleWeaponLogicComponent->UnequipWeapon(SeatIndex, VehicleWeaponLogicComponent->GetCWIForSeat(SeatIndex), VehicleWeaponLogicComponent->GetEquippedWeaponInSeat(SeatIndex).VehicleWeaponState.BaseWeaponRuntimeData.WeaponState.isFiring);
 }
 
-void AVehicle_Base::EnterVehicle(ACharacter_Base* Character)
+void AVehicle_Base::AttemptEnterVehicle(ACharacter_Base* Character)
 {
+	//Attempt Enter Vehicle
 	UE_LOG(LogTemp, Log, TEXT("ENTER VEHICLE"));
 	bool bFoundSeat = CycleThroughSeats(Character);
 	if (bFoundSeat)
 	{
+		//Enter Vehicle
 		Character->ManageinVehicleStatus(this, true);
 		SetupNewSeat(Character);
 		//do any "enter vehicle" specific stuff (open/close door/ "entering" animation, etc?

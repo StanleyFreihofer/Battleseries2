@@ -13,6 +13,7 @@
 #include "Data/Weapons/Data_Weapon.h"
 #include "Core/Weapons/VehicleWeaponLogicComponent.h"
 #include "Core/UI/VehicleHUDs/UW_HUD_Vehicle_Base.h"
+#include "Core/UI/GameplayHUDs/UW_HUD_Status_Base.h"
 #include "Core/PlayerController_Base.h"
 #include "Utilities/HUDSubsystem.h"
 #include "Kismet/KismetMathLibrary.h"
@@ -36,6 +37,18 @@ void ACharacter_Base::BeginPlay()
 	Init_Character();
 }
 
+void ACharacter_Base::PossessedBy(AController* NewController)
+{
+	Super::PossessedBy(NewController);
+	if (APlayerController* PC = Cast<APlayerController>(NewController))
+	{
+		GetWorld()->GetTimerManager().SetTimerForNextTick([this]()
+		{
+			Init_PlayerCharacter();
+		});
+	}
+}
+
 // Called every frame
 void ACharacter_Base::Tick(float DeltaTime)
 {
@@ -53,9 +66,23 @@ void ACharacter_Base::Init_Character()
 	//called on spawn into game I imagine.
 	//how to handle different spawn contexts (spawn in vehicle for example)
 
+	if (IsLocallyControlled())
+	{
+		Init_PlayerCharacter();
+	}
+
+}
+
+void ACharacter_Base::Init_PlayerCharacter()
+{
+	APlayerController* PC = Cast<APlayerController>(GetController());
 	//IMC
 	ManageIMC(nullptr, GetDataSystem_Character()->GetCharacterDefaults()->DefaultIMC.Get(), 0);
 	ManageIMC(nullptr, GetDataSystem_Character()->GetCharacterDefaults()->DefaultGameplayIMC.Get(), 1);
+
+	FInputModeGameOnly GameMode;
+	PC->SetInputMode(GameMode);
+	PC->bShowMouseCursor = false;
 
 	//HUD
 	GetLocalPlayerHUDSystem()->SpawnStatusHUD(GetDataSystem_Character()->GetCharacterDefaults()->StatusHUDClass.Get());
@@ -475,12 +502,10 @@ UHUDSubsystem* ACharacter_Base::GetLocalPlayerHUDSystem()
 	APlayerController_Base* PC = Cast<APlayerController_Base>(GetController());
 	if (IsLocallyControlled())
 	{
-		if (ULocalPlayer* LP = PC->GetLocalPlayer())
+		ULocalPlayer* LP = PC->GetLocalPlayer();
+		if (LP)
 		{
-			if (UHUDSubsystem* HUDSub = LP->GetSubsystem<UHUDSubsystem>())
-			{
-				return HUDSub;
-			}
+			return LP->GetSubsystem<UHUDSubsystem>();
 		}
 	}
 	return nullptr;

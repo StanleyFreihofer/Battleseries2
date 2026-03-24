@@ -13,6 +13,7 @@
 #include "Engine/DataTable.h"
 #include "Utilities/I_VehicleDataAccessor.h"
 #include "Core/Weapons/I_LockOnTarget.h"
+#include "Core/SpawnComponent.h"
 #include "Data/Runtime/VehicleTypes.h"
 
 #include "Vehicle_Base.generated.h"
@@ -79,6 +80,8 @@ public:
 	UChaosWheeledVehicleMovementComponent* ChaosVehicleMovement;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
 	UVehicleWeaponLogicComponent* VehicleWeaponLogicComponent;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
+	USpawnComponent* SpawnComponent;
 
 
 
@@ -204,7 +207,7 @@ public:
 	void DropGunner(TWeakObjectPtr<ACharacter_Base> Character, int32& SeatIndex);
 
 	UFUNCTION(BlueprintCallable)
-	void EnterVehicle(ACharacter_Base* Character);
+	void AttemptEnterVehicle(ACharacter_Base* Character);
 
 	UFUNCTION(BlueprintCallable)
 	void ChangeSeat(ACharacter_Base* Character);
