@@ -150,6 +150,8 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void ApplyWeaponAtIndexToSeat(int32 SeatIndex, int32 WeaponIndex, FName WeaponID);
 	UFUNCTION(BlueprintCallable)
+	void ApplyStaticWeaponData(int32 SeatIndex, int32 WeaponIndex, FName WeaponID);
+	UFUNCTION(BlueprintCallable)
 	void HandleApplyWeaponMesh(int32 SeatIndex, int32 WeaponIndex);
 	UFUNCTION(BlueprintCallable)
 	USkeletalMeshComponent* ApplyWeaponMeshToVehicle(USkeletalMesh* Mesh, int32 SeatIndex, FTransform MeshTransform);

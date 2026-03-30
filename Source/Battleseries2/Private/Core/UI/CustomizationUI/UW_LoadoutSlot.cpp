@@ -7,6 +7,7 @@
 #include "Components/TextBlock.h"       // For UTextBlock
 #include "Data/Runtime/CoreTypes.h"
 #include "Data/Weapons/VehicleWeapons/Data_VehicleWeapon.h"
+#include "Data/Data_Optics.h"
 #include "Data/Data_Camo.h"
 #include "Utilities/DataManagerSubsystem.h"
 
@@ -62,6 +63,13 @@ void UUW_LoadoutSlot::AddDropdownOption(FName NewOptionID, int32 OptionIndex)
 				}
 				break;
 			case ECoreItemType::VehicleOptic:
+				{
+					const FOpticData* OpticData = DataManager->GetOpticDataRow(NewOptionID);
+					if (OpticData)
+					{
+						DisplayName = OpticData->OpticDisplayName;
+					}
+				}
 				break;
 			case ECoreItemType::Camo:
 				const FCamoData* CamoData = DataManager->GetCamoDataRow(NewOptionID);

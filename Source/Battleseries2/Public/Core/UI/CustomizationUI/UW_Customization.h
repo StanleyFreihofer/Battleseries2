@@ -111,11 +111,15 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void Build_VehicleLoadoutData_Weapon(const FSeatData& SeatData, int32 TypeEnumIndex, int32 SeatIndex);
 	UFUNCTION(BlueprintCallable)
+	void Build_VehicleLoadoutData_Optic(const FSeatData& SeatData, int32 TypeEnumIndex, int32 SeatIndex);
+	UFUNCTION(BlueprintCallable)
 	void Build_VehicleLoadoutData_Camo(const FVehicleData& VehicleData, int32 TypeEnumIndex);
 	UFUNCTION(BlueprintCallable)
 	UUW_LoadoutSlot* CreateNewLoadoutSlot();
 	UFUNCTION(BlueprintCallable)
 	void LoadCurrentSave_VehicleWeaponSlot(UUW_LoadoutSlot* NewSlotWidget, int32 SeatIndex, int32 WeaponIndex, int32 TypeEnumIndex);
+	UFUNCTION(BlueprintCallable)
+	void LoadCurrentSave_VehicleOptic(UUW_LoadoutSlot* NewSlotWidget, int32 SeatIndex, int32 TypeEnumIndex);
 	UFUNCTION(BlueprintCallable)
 	void LoadCurrentSave_VehicleCamo(UUW_LoadoutSlot* NewSlotWidget, int32 TypeEnumIndex);
 

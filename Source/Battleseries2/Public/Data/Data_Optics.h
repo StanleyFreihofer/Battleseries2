@@ -10,7 +10,10 @@ struct FOpticData : public FTableRowBase
 	GENERATED_BODY()
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	FText OpticDisplayName = FText::FromString("60hz");
+	FText OpticDisplayName = FText();
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)		
+	FText WeaponDisplayNameAbrev = FText::FromString("60hz");
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	FPostProcessSettings OpticPPSettings = FPostProcessSettings();

@@ -181,6 +181,8 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void ApplyLoadoutToSeat(int32 SeatIndex);
 	UFUNCTION(BlueprintCallable)
+	void ApplyOpticToSeat(int32 SeatIndex);
+	UFUNCTION(BlueprintCallable)
 	void ApplyLoadoutToVehicle();
 	UFUNCTION(BlueprintCallable)
 	void ApplyCamoToVehicle(FName CamoID);
@@ -233,6 +235,14 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void ApplySteering_GV(float SteeringValue, int32 SeatIndex);
 
+
+	UFUNCTION(BlueprintCallable)
+	void ToggleOptic(int32 SeatIndex);
+	UFUNCTION(BlueprintCallable)
+	void TurnOnOptic_PPSettings(int32 SeatIndex);
+	UFUNCTION(BlueprintCallable)
+	void TurnOffOptic_PPSettings(int32 SeatIndex);
+
 	//Applying
 	UFUNCTION(BlueprintCallable)
 	UCameraComponent* SpawnAndAttachCamera(FName SocketToAttach, USkeletalMeshComponent* MeshToAttachTo);
@@ -245,6 +255,8 @@ public:
 
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	int32 GetControlledTurret(int32 SeatIndex);
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	UCameraComponent* GetRemoteActiveCam(int32 SeatIndex);
 
 	UFUNCTION()
 	TWeakObjectPtr<UHUDSubsystem> GetHUDSystem();

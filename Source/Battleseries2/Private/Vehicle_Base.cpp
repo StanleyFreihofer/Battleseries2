@@ -6,6 +6,7 @@
 #include "Data/Vehicles/Data_Vehicle.h"				//need to access members
 #include "Data/Vehicles/Data_Seat.h"				//need to access members
 #include "Data/Data_Attachments.h"
+#include "Data/Data_Optics.h"
 #include "Data/Vehicles/VehicleDefaults.h"
 #include "Utilities/ProjectilePoolSubsystem.h"
 #include "Utilities/HelperFunctions_Vehicle.h"
@@ -394,11 +395,6 @@ void AVehicle_Base::UpdateSeatList_AllOccupants()
 	}
 }
 
-int32 AVehicle_Base::GetControlledTurret(int32 SeatIndex)
-{
-	return VehicleData->Seats[SeatIndex].AvailableItems.ControlledTurretIndexes[0];
-}
-
 void AVehicle_Base::ApplyLoadoutToSeat(int32 SeatIndex)		//this functions applies everything in the loadout (weapons, optics, upgrades, camos (if applicable), etc)
 {
 	//now only called by ApplyLoadoutToVehicle when enter main seat (driver/drivergunner) and is then applied TO EVERY SEAT
@@ -407,8 +403,17 @@ void AVehicle_Base::ApplyLoadoutToSeat(int32 SeatIndex)		//this functions applie
 		case E_SeatRole::DriverGunner:
 		case E_SeatRole::Gunner:
 			VehicleWeaponLogicComponent->HandleApplyWeaponsToSeat(SeatIndex);
+			ApplyOpticToSeat(SeatIndex);
 			break;
 	}
+}
+
+void AVehicle_Base::ApplyOpticToSeat(int32 SeatIndex)
+{
+	USaveSubsystem* SaveSys = GetWorld()->GetGameInstance()->GetSubsystem<USaveSubsystem>();
+	const FSavedSeatLoadout& SeatLoadoutSave = SaveSys->GetSeatLoadout(VehicleData->Vehicle_Type, SeatIndex);
+
+	VehicleCurrentState.SeatStates[SeatIndex].OpticState.CurrentAvailableOptics.Add(SeatLoadoutSave.Optic);
 }
 
 void AVehicle_Base::ApplyLoadoutToVehicle()
@@ -796,6 +801,74 @@ void AVehicle_Base::ApplySteering_GV(float SteeringValue, int32 SeatIndex)
 	}
 }
 
+void AVehicle_Base::ToggleOptic(int32 SeatIndex)
+{
+	FOpticState& OpticState = VehicleCurrentState.SeatStates[SeatIndex].OpticState;
+	int32 PreviousOpticIndex = OpticState.CurrentOpticIndex;
+	OpticState.CurrentOpticIndex = (OpticState.CurrentOpticIndex + 1) % OpticState.CurrentAvailableOptics.Num();
+	if (PreviousOpticIndex != OpticState.CurrentOpticIndex)
+	{
+		if (OpticState.CurrentAvailableOptics[OpticState.CurrentOpticIndex].IsNone())
+		{
+			TurnOffOptic_PPSettings(SeatIndex);
+			//"turn off" audio"
+			//if GetActiveCam(SeatIndex)->
+		}
+		else
+		{
+			//turn on
+			const FOpticData& OpticData = *GetDataManager()->GetOpticDataRow(OpticState.CurrentAvailableOptics[OpticState.CurrentOpticIndex]);
+			if (OpticData.OpticPPSettings.WeightedBlendables.Array.Num() > 0)
+			{
+				//post process optic
+				TurnOnOptic_PPSettings(SeatIndex);
+				//post process turn on audio
+				//update optic name UI
+			}
+			else
+			{
+				TurnOffOptic_PPSettings(SeatIndex);
+			}
+			//magnification optic
+			//when change 90 to default data, put it behind an if to see if cam's current fov = default fov
+			float& CurrentFOV = GetRemoteActiveCam(SeatIndex)->FieldOfView;
+			float NewFOV = 90.0f / OpticData.ZoomMagnification;			//CHANGE TO DEFAULT DATA 	
+			CurrentFOV = NewFOV;
+			//zoom turn on audio
+			//update optic magnification UI
+		}
+	}
+}
+
+void AVehicle_Base::TurnOnOptic_PPSettings(int32 SeatIndex)
+{
+	FOpticState& OpticState = VehicleCurrentState.SeatStates[SeatIndex].OpticState;
+	switch (VehicleData->Seats[SeatIndex].ViewMethod)
+	{
+		case E_ViewMethod::Windowed:
+			//do on character
+			break;
+		case E_ViewMethod::Remote:
+			GetRemoteActiveCam(SeatIndex)->PostProcessSettings = GetDataManager()->GetOpticDataRow(OpticState.CurrentAvailableOptics[OpticState.CurrentOpticIndex])->OpticPPSettings;
+			GetRemoteActiveCam(SeatIndex)->PostProcessBlendWeight = 1.0f;
+			break;
+	}
+}
+
+void AVehicle_Base::TurnOffOptic_PPSettings(int32 SeatIndex)
+{
+	switch (VehicleData->Seats[SeatIndex].ViewMethod)
+	{
+		case E_ViewMethod::Windowed:
+			//do on character
+			break;
+		case E_ViewMethod::Remote:
+			GetRemoteActiveCam(SeatIndex)->PostProcessSettings = FPostProcessSettings();
+			GetRemoteActiveCam(SeatIndex)->PostProcessBlendWeight = 0.0f;
+			break;
+	}
+}
+
 void AVehicle_Base::HandleThrottle(float ThrottleValue, int32 SeatIndex)
 {
 	E_MovementType VehicleType = VehicleData->Movement_Type;
@@ -816,6 +889,16 @@ void AVehicle_Base::ReleaseThrottle(int32 SeatIndex)
 			ApplyThrottle_GV(0, SeatIndex);
 			break;
 	}
+}
+
+int32 AVehicle_Base::GetControlledTurret(int32 SeatIndex)
+{
+	return VehicleData->Seats[SeatIndex].AvailableItems.ControlledTurretIndexes[0];
+}
+
+UCameraComponent* AVehicle_Base::GetRemoteActiveCam(int32 SeatIndex)
+{
+	return VehicleCurrentState.SeatStates[SeatIndex].ActiveCamera;
 }
 
 TWeakObjectPtr<UHUDSubsystem> AVehicle_Base::GetHUDSystem()

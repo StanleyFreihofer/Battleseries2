@@ -10,6 +10,7 @@
 #include "Data/Weapons/VehicleWeapons/Data_VehicleWeapon.h"
 #include "Data/Weapons/Data_Projectile.h"
 #include "Data/Data_Attachments.h"
+#include "Data/Data_Optics.h"
 #include "Data/Data_Camo.h"
 #include "Data/Characters/CharacterDefaults.h"
 #include "Data/Weapons/WeaponDefaults.h"
@@ -56,6 +57,7 @@ void UDataManagerSubsystem::LoadDataTables()
     VehicleDataTable = VehicleDataTableAsset.LoadSynchronous();
     VehicleWeaponDataTable = VehicleWeaponDataTableAsset.LoadSynchronous();
     ProjectileDataTable = ProjectileDataTableAsset.LoadSynchronous();
+    OpticDataTable = OpticDataTableAsset.LoadSynchronous();
     AttachmentDataTable = AttachmentDataTableAsset.LoadSynchronous();
     CamoDataTable = CamoDataTableAsset.LoadSynchronous();
 
@@ -113,6 +115,12 @@ const FAttachmentData* UDataManagerSubsystem::GetAttachmentDataRow(FName RowName
 {
     const FAttachmentData* AttachmentDataPtr = AttachmentDataTable->FindRow<FAttachmentData>(RowName, TEXT("AttachmentDataLookup"));
     return AttachmentDataPtr;
+}
+
+const FOpticData* UDataManagerSubsystem::GetOpticDataRow(FName RowName) const
+{
+    const FOpticData* OpticDataPtr = OpticDataTable->FindRow<FOpticData>(RowName, TEXT("OpticDataLookup"));
+    return OpticDataPtr;
 }
 
 const FProjectileData* UDataManagerSubsystem::GetProjectileDataRow(FName RowName) const

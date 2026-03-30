@@ -6,13 +6,24 @@
 #include "Components/WidgetComponent.h"
 #include "VehicleTypes.generated.h"
 
+USTRUCT(BlueprintType)
+struct FOpticState
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)		//the optics available to cycle through (first option is default) (OpticIDs)
+	TArray<FName> CurrentAvailableOptics;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	int32 CurrentOpticIndex = 0;
+};
 
 USTRUCT(BlueprintType)
 struct FSeatState
 {
 	GENERATED_BODY()
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)			//occupant name string instead?
 	bool isOccupied = false;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
@@ -30,9 +41,9 @@ struct FSeatState
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
 	UCameraComponent* ActiveCamera = nullptr;
 
-	//occupant name string?
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FOpticState OpticState = FOpticState();
 
-	//optic on/off?
 	//current POV mode?
 
 };

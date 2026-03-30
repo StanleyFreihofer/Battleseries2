@@ -30,6 +30,7 @@ public:
     UUW_HUD_LockOnIndicator_Base* LockOnIndicator = nullptr;
 
     //UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    //spawn UI
 
     UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "HUD | Customization")
     UUW_Customization* CustomizationWidget = nullptr;

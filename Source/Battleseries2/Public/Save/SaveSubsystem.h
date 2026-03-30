@@ -33,6 +33,8 @@ class BATTLESERIES2_API USaveSubsystem : public UGameInstanceSubsystem
 		UFUNCTION(BlueprintCallable)
 		void SetLoadoutWeaponChoice_Vehicle(E_VehicleType VehicleType, int32 SeatIndex, int32 WeaponIndex, FName WeaponID);
 		UFUNCTION(BlueprintCallable)
+		void SetLoadoutOpticChoice_Vehicle(E_VehicleType VehicleType, int32 SeatIndex, FName OpticID);
+		UFUNCTION(BlueprintCallable)
 		void SetLoadoutCamoChoice_Vehicle(E_VehicleType VehicleType, FName CamoID);
 
 		UFUNCTION(BlueprintCallable)

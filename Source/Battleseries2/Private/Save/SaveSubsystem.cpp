@@ -93,6 +93,14 @@ void USaveSubsystem::SetLoadoutWeaponChoice_Vehicle(E_VehicleType VehicleType, i
 	UE_LOG(LogTemp, Warning, TEXT("[SaveSubsystem::SetLoadoutWeaponChoice_Vehicle] Saved Vehicle %d Seat %d Slot %d = %s"), (int32)VehicleType, SeatIndex, WeaponIndex, *WeaponID.ToString());
 }
 
+void USaveSubsystem::SetLoadoutOpticChoice_Vehicle(E_VehicleType VehicleType, int32 SeatIndex, FName OpticID)
+{
+	FPlayerLoadoutConfig_Vehicle& VehicleConfig = LoadoutSave->VehicleConfigs.FindOrAdd(VehicleType);
+	FSavedSeatLoadout& SeatConfig = VehicleConfig.SeatLoadout.FindOrAdd(SeatIndex);
+	SeatConfig.Optic = OpticID;
+	UGameplayStatics::SaveGameToSlot(LoadoutSave, "PlayerLoadouts", 0);
+}
+
 void USaveSubsystem::SetLoadoutCamoChoice_Vehicle(E_VehicleType VehicleType, FName CamoID)
 {
 	FPlayerLoadoutConfig_Vehicle& VehicleConfig = LoadoutSave->VehicleConfigs.FindOrAdd(VehicleType);

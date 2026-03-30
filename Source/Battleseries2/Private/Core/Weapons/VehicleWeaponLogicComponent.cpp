@@ -147,7 +147,20 @@ void UVehicleWeaponLogicComponent::ApplyWeaponAtIndexToSeat(int32 SeatIndex, int
 		return;
 	}
 
-	//ApplyStaticWeaponData
+	ApplyStaticWeaponData(SeatIndex, WeaponIndex, WeaponID);
+
+	//initialize state on weapon side
+	//make apply WeaponStateToSeat function?
+	const FVehicleWeaponData& VehicleWeaponDataToUse = *DataSubsystem->GetVehicleWeaponDataRow(WeaponID);
+	DefaultWeaponDataToFill.WeaponState.CurrentFireMode = VehicleWeaponDataToUse.WeaponData.WeaponFunctionality.DefaultFireMode;
+	DefaultWeaponDataToFill.WeaponState.CurrentAmmoinMag = VehicleWeaponDataToUse.WeaponData.AmmoData.MagSize;
+	DefaultWeaponDataToFill.WeaponState.CurrentReserveAmmo = VehicleWeaponDataToUse.WeaponData.AmmoData.MaxReserveAmmo;
+
+	ApplyWeaponInstanceDataAtIndexToSeat(SeatIndex, WeaponIndex, WeaponID);
+}
+
+void UVehicleWeaponLogicComponent::ApplyStaticWeaponData(int32 SeatIndex, int32 WeaponIndex, FName WeaponID)
+{
 	const FVehicleWeaponData& VehicleWeaponDataToUse = *DataSubsystem->GetVehicleWeaponDataRow(WeaponID);
 	const FBaseWeaponData* BaseWeaponData = &VehicleWeaponDataToUse.WeaponData;
 	TArray<const FBaseWeaponData*>& BaseWeaponDataArray = CurrentVehicleBaseWeaponData.FindOrAdd(SeatIndex);
@@ -156,14 +169,6 @@ void UVehicleWeaponLogicComponent::ApplyWeaponAtIndexToSeat(int32 SeatIndex, int
 		BaseWeaponDataArray.SetNum(WeaponIndex + 1);
 	}
 	BaseWeaponDataArray[WeaponIndex] = BaseWeaponData;
-
-	//initialize state on weapon side
-	//make apply WeaponStateToSeat function?
-	DefaultWeaponDataToFill.WeaponState.CurrentFireMode = VehicleWeaponDataToUse.WeaponData.WeaponFunctionality.DefaultFireMode;
-	DefaultWeaponDataToFill.WeaponState.CurrentAmmoinMag = VehicleWeaponDataToUse.WeaponData.AmmoData.MagSize;
-	DefaultWeaponDataToFill.WeaponState.CurrentReserveAmmo = VehicleWeaponDataToUse.WeaponData.AmmoData.MaxReserveAmmo;
-
-	ApplyWeaponInstanceDataAtIndexToSeat(SeatIndex, WeaponIndex, WeaponID);
 }
 
 void UVehicleWeaponLogicComponent::HandleApplyWeaponMesh(int32 SeatIndex, int32 WeaponIndex)

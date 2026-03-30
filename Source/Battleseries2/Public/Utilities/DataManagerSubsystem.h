@@ -10,6 +10,7 @@ struct FVehicleData;
 struct FVehicleTypeDefintion;
 struct FVehicleWeaponData;
 struct FAttachmentData;
+struct FOpticData;
 struct FProjectileData;
 struct FCamoData;
 enum class E_VehicleType : uint8;
@@ -39,6 +40,9 @@ public:
 
     UPROPERTY(EditAnywhere, Category = "Data Tables")
     TSoftObjectPtr<UDataTable> AttachmentDataTableAsset;
+
+    UPROPERTY(EditAnywhere, Category = "Data Tables")
+    TSoftObjectPtr<UDataTable> OpticDataTableAsset;
 
     UPROPERTY(EditAnywhere, Category = "Data Tables")
     TSoftObjectPtr<UDataTable> CamoDataTableAsset;
@@ -86,6 +90,9 @@ public:
 
     UFUNCTION(BlueprintCallable, Category = "Data")
     UDataTable* GetAttachmentDataTable() const { return AttachmentDataTable; }
+
+    UFUNCTION(BlueprintCallable, Category = "Data")
+    UDataTable* GetOpticDataTable() const { return OpticDataTable; }
 
     UFUNCTION(BlueprintCallable, Category = "Data")
     UDataTable* GetWeaponDataTable() const { return WeaponDataTable; }
@@ -138,6 +145,7 @@ public:
     const FVehicleData* GetVehicleDataRow(FName RowName) const;
     const FVehicleWeaponData* GetVehicleWeaponDataRow(FName RowName) const;
     const FAttachmentData* GetAttachmentDataRow(FName RowName) const;
+    const FOpticData* GetOpticDataRow(FName RowName) const;
     const FProjectileData* GetProjectileDataRow(FName RowName) const;
     const FCamoData* GetCamoDataRow(FName RowName) const;
 
@@ -157,6 +165,9 @@ private:
 
     UPROPERTY()
     UDataTable* AttachmentDataTable;
+
+    UPROPERTY()
+    UDataTable* OpticDataTable;
 
     UPROPERTY()
     UDataTable* CamoDataTable;

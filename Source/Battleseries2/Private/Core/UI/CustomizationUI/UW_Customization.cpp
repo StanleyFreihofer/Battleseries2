@@ -145,7 +145,7 @@ void UUW_Customization::Build_VehicleLoadoutPanel(int32 TypeEnumIndex)
 		if (SeatData.SeatRole == E_SeatRole::DriverGunner || SeatData.SeatRole == E_SeatRole::Gunner)
 		{
 			Build_VehicleLoadoutData_Weapon(SeatData, TypeEnumIndex, SI);
-			//optic
+			Build_VehicleLoadoutData_Optic(SeatData, TypeEnumIndex, SI);
 			//countermeasure
 			//upgrade
 		}
@@ -179,6 +179,22 @@ void UUW_Customization::Build_VehicleLoadoutData_Weapon(const FSeatData& SeatDat
 			NewSlotWidget->Init_LoadoutSlot_Vehicle(NewSlotData, SeatIndex);
 			LoadCurrentSave_VehicleWeaponSlot(NewSlotWidget, SeatIndex, i, TypeEnumIndex);
 		}
+	}
+}
+
+void UUW_Customization::Build_VehicleLoadoutData_Optic(const FSeatData& SeatData, int32 TypeEnumIndex, int32 SeatIndex)
+{
+	if (SeatData.AvailableItems.AvailableOptics.Num() > 1)
+	{
+		TArray<FName> Optics;
+		for (const FName& Optic : SeatData.AvailableItems.AvailableOptics)
+		{
+			Optics.Add(Optic);
+		}
+		FCustomizationSlotConfig NewSlotData = Build_LoadoutSlotData(Optics, ECoreItemType::VehicleOptic, -1, SeatData.SeatName);
+		UUW_LoadoutSlot* NewSlotWidget = CreateNewLoadoutSlot();
+		NewSlotWidget->Init_LoadoutSlot_Vehicle(NewSlotData, SeatIndex);
+		LoadCurrentSave_VehicleOptic(NewSlotWidget, SeatIndex, TypeEnumIndex);
 	}
 }
 
@@ -221,6 +237,25 @@ void UUW_Customization::LoadCurrentSave_VehicleWeaponSlot(UUW_LoadoutSlot* NewSl
 	else            //no save for this weapon slot on this seat of this vehicle type
 	{
 		UE_LOG(LogTemp, Error, TEXT("[UW_Customization::LoadCurrentSavesForWeaponSlot] Load default options into loadout slot"));
+		NewSlotWidget->UpdateSlotSelection(0);
+	}
+}
+
+void UUW_Customization::LoadCurrentSave_VehicleOptic(UUW_LoadoutSlot* NewSlotWidget, int32 SeatIndex, int32 TypeEnumIndex)
+{
+	E_VehicleType VehicleType = static_cast<E_VehicleType>(TypeEnumIndex);
+	USaveSubsystem* SaveSubsystem = GetGameInstance()->GetSubsystem<USaveSubsystem>();
+	FName SavedSelection = NAME_None;
+	int32 OptionIndex = 0;
+	const FSavedSeatLoadout& SavedSeat = SaveSubsystem->GetSeatLoadout(VehicleType, SeatIndex);
+	if (!SavedSeat.Optic.IsNone())
+	{
+		SavedSelection = SavedSeat.Optic;
+		OptionIndex = NewSlotWidget->GetOptionIndexFromItemID(SavedSelection);
+		NewSlotWidget->UpdateSlotSelection(OptionIndex);
+	}
+	else
+	{
 		NewSlotWidget->UpdateSlotSelection(0);
 	}
 }
@@ -402,6 +437,9 @@ void UUW_Customization::HandleSlotSelectionChanged(int32 SeatIndex, FCustomizati
 			CustomizationUIState.PreviewStageActor->CurrentVehicle->VehicleWeaponLogicComponent->ClearWeaponSlotFromSeat(SeatIndex, SlotConfig.ItemSlot);
 			UE_LOG(LogTemp, Error, TEXT("[UW_Customization::HandleSlotSelectionChanged] ApplyLoadoutToSeat will be fired here"));
 			CustomizationUIState.PreviewStageActor->CurrentVehicle->VehicleWeaponLogicComponent->ApplyWeaponAtIndexToSeat(SeatIndex, SlotConfig.ItemSlot, SelectedItemID);
+			break;
+		case ECoreItemType::VehicleOptic:
+			SaveSubsystem->SetLoadoutOpticChoice_Vehicle(CurrentVehicleType, SeatIndex, SelectedItemID);
 			break;
 		case ECoreItemType::Camo:
 			//need vehicle/weapon/character mode state

@@ -21,6 +21,9 @@ struct FWeaponCamBehavior
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	EVehicleWeaponCamActivationMethod WeaponCamActivationMethod = EVehicleWeaponCamActivationMethod::Equip;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	FName DefaultWeaponCamOptic = FName("O_60hz");
 };
 
 USTRUCT(BlueprintType)
@@ -174,7 +177,7 @@ struct FAvailableItems
 	TArray<FCountermeasureDefinition> AvailableCountermeasures;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	TArray<FOpticDefinition> AvailableOptics;
+	TArray<FName> AvailableOptics;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	TArray<FUpgradeDefinition> AvailableUpgrades;
@@ -248,7 +251,10 @@ struct FSeatData
 	E_ViewMethod ViewMethod = E_ViewMethod::Windowed;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	FCharacterSeatContext DefaultCharacterContext;
+	FCharacterSeatContext DefaultCharacterContext = FCharacterSeatContext();
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	FName DefaultOptic = FName("O_60hz");
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (EditCondition = "SeatRole == E_SeatRole::DriverGunner || SeatRole == E_SeatRole::Gunner", EditConditionHides))
 	FAvailableItems AvailableItems;
