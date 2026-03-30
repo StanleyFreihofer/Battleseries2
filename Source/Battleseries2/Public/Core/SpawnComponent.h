@@ -43,5 +43,5 @@ public:
 	FSpawnData_Runtime SpawnData = FSpawnData_Runtime();
 
 	UFUNCTION(BlueprintCallable)
-	void Init_SpawnData(FSpawnData_Runtime InputData);
+	void Init_SpawnData(FText SpawnDisplayName, UTexture2D* SpawnIcon, ESpawnType SpawnType);
 };

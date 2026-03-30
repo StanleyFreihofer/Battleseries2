@@ -15,7 +15,9 @@ void USpawnComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActor
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 }
 
-void USpawnComponent::Init_SpawnData(FSpawnData_Runtime InputData)
+void USpawnComponent::Init_SpawnData(FText SpawnDisplayName, UTexture2D* SpawnIcon, ESpawnType SpawnType)
 {
-	SpawnData = InputData;
+	SpawnData.SpawnDisplayName = SpawnDisplayName;
+	SpawnData.SpawnIcon = SpawnIcon;
+	SpawnData.SpawnType = SpawnType;
 }

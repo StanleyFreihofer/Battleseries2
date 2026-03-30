@@ -1,13 +1,13 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
-#include "Core/UI/UW_LoadoutSlot.h"
+#include "Core/UI/CustomizationUI/UW_LoadoutSlot.h"
+#include "Core/UI/CustomizationUI/UW_DropdownOption.h"
 #include "Components/VerticalBox.h"     // For UVerticalBox
 #include "Components/Button.h"          // For UButton
 #include "Components/TextBlock.h"       // For UTextBlock
 #include "Data/Runtime/CoreTypes.h"
 #include "Data/Weapons/VehicleWeapons/Data_VehicleWeapon.h"
 #include "Data/Data_Camo.h"
-#include "Core/UI/UW_DropdownOption.h"
 #include "Utilities/DataManagerSubsystem.h"
 
 

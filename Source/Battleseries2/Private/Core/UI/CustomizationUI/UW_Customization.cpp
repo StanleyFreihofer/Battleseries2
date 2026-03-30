@@ -1,4 +1,4 @@
-#include "Core/UI/UW_Customization.h"
+#include "Core/UI/CustomizationUI/UW_Customization.h"
 #include "Save/SaveSubsystem.h"
 #include "Save/PlayerSave_Loadout.h"
 #include "Vehicle_Base.h"
@@ -13,8 +13,8 @@
 #include "Components/TextBlock.h"       // For UTextBlock
 #include "Components/PanelWidget.h"     // Base class for panels
 #include "Components/Border.h"
-#include "Core/UI/UW_LoadoutSlot.h"
-#include "Core/UI/UW_VehicleTypeButton.h"
+#include "Core/UI/CustomizationUI/UW_LoadoutSlot.h"
+#include "Core/UI/CustomizationUI/UW_VehicleTypeButton.h"
 #include "LoadoutPreviewStage.h"
 #include "TimerManager.h"
 #include "Engine/World.h"

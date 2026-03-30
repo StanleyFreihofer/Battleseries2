@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerController.h"
-#include "Core/UI/UW_Customization.h"
+#include "Core/UI/CustomizationUI/UW_Customization.h"
 #include "LoadoutPreviewStage.h"
 #include "PlayerController_Base.generated.h"
 
@@ -25,6 +25,8 @@ public:
 	void EnterCustomizationScreen();
 	UFUNCTION(BlueprintCallable)
 	void ExitCustomizationScreen();
+	UFUNCTION(BlueprintCallable)
+	void EnterSpawnScreen();
 
 	UFUNCTION(BlueprintCallable)
 	UHUDSubsystem* GetHUDSystem();

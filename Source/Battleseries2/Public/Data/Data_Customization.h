@@ -24,4 +24,6 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FTransform PreviewSpawnTransform = FTransform::Identity;
+
+	//what vehicle types can be customized?
 };

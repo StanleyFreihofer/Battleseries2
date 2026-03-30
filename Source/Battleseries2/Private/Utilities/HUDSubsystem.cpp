@@ -1,6 +1,6 @@
 #include "Utilities/HUDSubsystem.h"
 #include "Blueprint/UserWidget.h"
-#include "Core/UI/UW_Customization.h"
+#include "Core/UI/CustomizationUI/UW_Customization.h"
 #include "Core/UI/GameplayHUDs/UW_HUD_Status_Base.h"
 #include "Core/UI/GameplayHUDs/UUW_HUD_LockOnIndicator_Base.h"
 #include "Core/UI/VehicleHUDs/UW_HUD_Vehicle_Base.h"

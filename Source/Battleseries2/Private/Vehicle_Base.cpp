@@ -185,7 +185,6 @@ void AVehicle_Base::Init_SeatHUDComp(int32& SeatIndex)
 	CockpitHUDComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	CockpitHUDComponent->SetPivot(FVector2D(0.5f, 0.5f));
 	CockpitHUDComponent->SetOwnerNoSee(false);
-	//CockpitHUDComponent->SetOnlyOwnerSee(true);
 	VehicleCurrentState.SeatStates[SeatIndex].SeatHUDComponent = CockpitHUDComponent;
 
 	//reticle quad
@@ -203,7 +202,6 @@ void AVehicle_Base::Init_SeatHUDComp(int32& SeatIndex)
 	UMaterialInterface* MasterMat = GetDataManager()->GetVehicleDefaults()->HUDMasterMaterial.LoadSynchronous();
 	UMaterialInstanceDynamic* DynMat = NewQuad->CreateDynamicMaterialInstance(0, MasterMat);		//both creates and assigns
 
-	//VehicleWeaponLogicComponent->VehicleWeaponSystem.Find(SeatIndex)->VehicleWeaponSystemState.ReticleQuad = NewQuad;
 	FVehicleWeaponSystem_Runtime* VWS = VehicleWeaponLogicComponent->VehicleWeaponSystem.Find(SeatIndex);
 	if (VWS)
 	{
@@ -328,15 +326,7 @@ void AVehicle_Base::Init_Vehicle()
 	}
 	ApplyCamoToVehicle(VehicleStartingData.StartingVehicleLoadout.VehicleCamo);
 
-	//spawn component
-	/*/
-	FSpawnData_Runtime NewSpawnData;
-	NewSpawnData.SpawnDisplayName = FText::FromName(VehicleData->Vehicle_DisplayName);
-	NewSpawnData.SpawnIcon = VehicleData->VehicleIcon;
-	NewSpawnData.SpawnType = ESpawnType::Vehicle;
-	SpawnComponent->Init_SpawnData(NewSpawnData);
-	**/
-	//spawn icon, name, (type: vehicle)
+	SpawnComponent->Init_SpawnData(FText::FromName(VehicleData->Vehicle_DisplayName), VehicleData->VehicleIcon.Get(), ESpawnType::Vehicle);
 }
 
 void AVehicle_Base::Init_Horn(USoundBase* HornAudio)

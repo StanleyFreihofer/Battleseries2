@@ -41,6 +41,10 @@ void APlayerController_Base::ExitCustomizationScreen()
 	bShowMouseCursor = false;
 }
 
+void APlayerController_Base::EnterSpawnScreen()
+{
+}
+
 UHUDSubsystem* APlayerController_Base::GetHUDSystem()
 {
 	return GetLocalPlayer()->GetSubsystem<UHUDSubsystem>();
