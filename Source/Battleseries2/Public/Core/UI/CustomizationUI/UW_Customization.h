@@ -28,7 +28,7 @@ struct FCustomizationUIState
 	TWeakObjectPtr<ALoadoutPreviewStage> PreviewStageActor = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)		//the mode/generic category of thing we are customizing
-	ECoreType CurrentCustomizationMode;
+	ECoreType CurrentCustomizationMode = ECoreType::Vehicle;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)		//in the type scrollbox, designates the index within that enum of thing we are currenlty customizing
 	int32 TypeEnumIndex = -1;

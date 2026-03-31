@@ -196,7 +196,7 @@ void UHUDSubsystem::HandleTurretPitchUpdate(float MinPitch, float MaxPitch, floa
 
 void UHUDSubsystem::UpdaticOpticNameHUD_Vehicle(FText OpticDisplayName)
 {
-	if (CurrentVehicleHMD && CurrentVehicleHMD->OpticStatus)
+	if (CurrentVehicleHMD)
 	{
 		CurrentVehicleHMD->UpdateOpticNameHUD(OpticDisplayName);
 	}
@@ -204,7 +204,7 @@ void UHUDSubsystem::UpdaticOpticNameHUD_Vehicle(FText OpticDisplayName)
 
 void UHUDSubsystem::UpdateOpticMagnificationHUD_Vehicle(float OpticMagnification)
 {
-	if (CurrentVehicleHMD && CurrentVehicleHMD->OpticStatus)
+	if (CurrentVehicleHMD)
 	{
 		CurrentVehicleHMD->UpdateOpticMagnificationHUD(OpticMagnification);
 	}
@@ -215,6 +215,14 @@ void UHUDSubsystem::RemoveWidget(UUW_HUD_LockOnIndicator_Base* UserWidget)
 	if (!UserWidget) return;
 	UserWidget->RemoveFromParent();
 	LockOnIndicator = nullptr; //HARDCODED FOR NOW, CHANGE THIS
+}
+
+void UHUDSubsystem::UpdateVehicleHUD_Color(FLinearColor NewColor)
+{
+	if (CurrentVehicleHMD)
+	{
+		CurrentVehicleHMD->UpdateVehicleHUDGlobal_Color(NewColor);
+	}
 }
 
 void UHUDSubsystem::RemoveCustomizationWidget()

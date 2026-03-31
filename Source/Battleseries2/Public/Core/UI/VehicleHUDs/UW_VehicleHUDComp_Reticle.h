@@ -23,5 +23,4 @@ public:
 	void UpdateReticleScale(float NewScale);
 	UFUNCTION(BlueprintCallable)
 	void UpdateReticlePosition(FVector2D NewPosition);
-
 };

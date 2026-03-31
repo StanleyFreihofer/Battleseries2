@@ -22,6 +22,10 @@ class BATTLESERIES2_API UUW_HUD_Vehicle_Base : public UUserWidget
 	GENERATED_BODY()
 
 public:
+
+	//OptionalWidget = true ????
+
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Vehicle HUD")
 	UUW_VehicleHUDComp_Reticle* VehicleWeaponReticle = nullptr;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Vehicle HUD")
@@ -50,15 +54,14 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void BindComponents();
 
+
+	//update single components
 	UFUNCTION(BlueprintCallable)
 	void UpdateSpeedometer(float Speed);
-
 	UFUNCTION(BlueprintCallable)
 	void UpdateCompassHUD(float Yaw);
-
 	UFUNCTION(BlueprintCallable)
 	void UpdateRangefinderHUD(float NewRange);
-
 	UFUNCTION(BlueprintCallable)
 	void UpdateWeaponNameHUD(FText WeaponDisplayName);
 	UFUNCTION(BlueprintCallable)
@@ -69,10 +72,13 @@ public:
 	void UpdateWeaponReticleSize(float NewScale);
 	UFUNCTION(BlueprintCallable)
 	void UpdateEquippedWeaponHUD(FText WeaponName, UTexture2D* Reticle, float ReticleScale, bool canFire);
-
 	UFUNCTION(BlueprintCallable)
 	void UpdateOpticNameHUD(FText OpticName);
 	UFUNCTION(BlueprintCallable)
 	void UpdateOpticMagnificationHUD(float OpticMagnification);
+
+	//global component updates
+	UFUNCTION(BlueprintCallable)
+	void UpdateVehicleHUDGlobal_Color(FLinearColor GlobalColor);
 	
 };

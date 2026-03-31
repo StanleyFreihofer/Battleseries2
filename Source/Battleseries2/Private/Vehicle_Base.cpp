@@ -823,8 +823,12 @@ void AVehicle_Base::ToggleOptic(int32 SeatIndex)
 				if (VehicleCurrentState.SeatStates[SeatIndex].UpdateHUD)
 				{
 					GetHUDSystem()->UpdaticOpticNameHUD_Vehicle(OpticData.OpticDisplayNameAbrev);
+					if (OpticData.InverseUIColor.A > 0)
+					{
+						GetHUDSystem()->UpdateVehicleHUD_Color(OpticData.InverseUIColor);
+					}
 				}
-				//inverse optic UI color
+				
 			}
 		}
 		else
@@ -837,8 +841,15 @@ void AVehicle_Base::ToggleOptic(int32 SeatIndex)
 				if (VehicleCurrentState.SeatStates[SeatIndex].UpdateHUD)
 				{
 					GetHUDSystem()->UpdaticOpticNameHUD_Vehicle(OpticData.OpticDisplayNameAbrev);
+					if (GetDataManager()->GetOpticDataRow(OpticState.CurrentAvailableOptics[PreviousOpticIndex])->InverseUIColor.A > 0)
+					{
+
+					}
+					if (OpticData.InverseUIColor.A == 0)
+					{
+						GetHUDSystem()->UpdateVehicleHUD_Color(FLinearColor(0.0f, 1.0f, 0.036889f, 1.0f));		//HARD CODED FOR NOW, CHANGE TO BE TAKEN FROM HUD/UI SETTINGS
+					}
 				}
-				//inverse optic UI color
 			}
 		}
 

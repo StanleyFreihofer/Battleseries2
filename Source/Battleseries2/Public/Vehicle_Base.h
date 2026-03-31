@@ -58,7 +58,7 @@ struct FVehicleStartingData
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Instance")
 	bool LockLoadout = false;														//lock loadout to whatever it starts with (default or custom defined here) so nobody entering updates/changes it for its entire lifetime
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Instance")		//<--move this to eventual health comp?
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Instance")		
 	float StartingHealth = 100.0f;
 };
 

@@ -89,5 +89,8 @@ public:
     void RemoveWidget(UUW_HUD_LockOnIndicator_Base* UserWidget);
 
     UFUNCTION(BlueprintCallable)
+    void UpdateVehicleHUD_Color(FLinearColor NewColor);
+
+    UFUNCTION(BlueprintCallable)
     void RemoveCustomizationWidget();
 };

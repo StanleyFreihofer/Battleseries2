@@ -22,4 +22,3 @@ void UUW_VehicleHUDComp_Reticle::UpdateReticlePosition(FVector2D NewPosition)
 	Reticle->SetRenderTranslation(NewPosition);
 }
 
-

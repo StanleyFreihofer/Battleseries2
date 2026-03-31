@@ -15,13 +15,17 @@ struct FOpticData : public FTableRowBase
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)		
 	FText OpticDisplayNameAbrev = FText::FromString("60hz");
 
-	//optic position (on, off, magnified, unmagnified)?
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	FText OpticDescription = FText();
 
-	//inverse UI color?
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (tooltip = "what color to turn UI when optic is on"))
+	FLinearColor InverseUIColor = FLinearColor();
+
+	//optic position (on, off, magnified, unmagnified)?
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	FPostProcessSettings OpticPPSettings = FPostProcessSettings();
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly) //the number to divide current/default zoom by (by itself represents magnification value)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (tooltip = "the number to divide by (by itself represents the magnification value)")) //the number to divide current/default zoom by (by itself represents magnification value)
 	float ZoomMagnification = 1.0f;
 };

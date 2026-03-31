@@ -29,10 +29,9 @@ struct FLockOnState
 	//potential lock on target? A thing acquired that can be locked on but hasn't actually been locked onto yet (should be a local var in whatever function)
 };
 
-USTRUCT(BlueprintType)		//Defines the structure of the runtime state
+USTRUCT(BlueprintType)		
 struct FWeaponState
 {
-	//this is the weapon's state, meaning every property here can change at runtime (unlike instance data which SHOULD NOT change @runtime)
 	GENERATED_BODY()
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)

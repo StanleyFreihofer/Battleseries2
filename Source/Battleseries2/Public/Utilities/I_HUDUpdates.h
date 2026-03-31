@@ -16,13 +16,5 @@ class BATTLESERIES2_API IHUDUpdates
 
 public:
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "HUD Interface")
-	void OnUpdateFloat(float Value);
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "HUD Interface")
-	void OnUpdateBool(bool Value);
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "HUD Interface")
-	void OnUpdateInt(int Value);
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "HUD Interface")
-	void OnUpdateText(const FText& Value);
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "HUD Interface")
-	void OnUpdateImage(UTexture2D* ImageBrush);
+	void UpdateHUDColor(FLinearColor NewColor);
 };

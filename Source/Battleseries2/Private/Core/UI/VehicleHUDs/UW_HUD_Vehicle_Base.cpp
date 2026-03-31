@@ -10,7 +10,6 @@
 #include "Core/UI/VehicleHUDs/UW_VehicleHUDComp_Optic.h"
 #include "Core/UI/VehicleHUDs/UW_VehicleHUDComp_Speedometer.h"
 #include "Utilities/I_HUDUpdates.h"
-#include "Core/UI/VehicleHUDs/UW_HUD_Vehicle_Base.h"
 #include "Blueprint/WidgetTree.h"
 
 void UUW_HUD_Vehicle_Base::NativeConstruct()
@@ -153,5 +152,16 @@ void UUW_HUD_Vehicle_Base::UpdateOpticMagnificationHUD(float OpticMagnification)
 	{
 		OpticStatus->UpdateOpticMagnification(OpticMagnification);
 	}
+}
+
+void UUW_HUD_Vehicle_Base::UpdateVehicleHUDGlobal_Color(FLinearColor GlobalColor)
+{
+	WidgetTree->ForEachWidget([&](UWidget* Widget)
+	{
+		if (Widget->Implements<UHUDUpdates>())
+		{
+			IHUDUpdates::Execute_UpdateHUDColor(Widget, GlobalColor);
+		}
+	});
 }
 
