@@ -154,7 +154,7 @@ void AVehicle_Base::Init_Helicopter()
 }
 
 //SEAT FUNCTIONS
-void AVehicle_Base::Init_SeatCamera(int32 SeatIndex)
+void AVehicle_Base::Init_DefaultSeatRemoteCamera(int32 SeatIndex)
 {
 	//init default seat camera
 	//every seat that is remote should do this
@@ -165,12 +165,13 @@ void AVehicle_Base::Init_SeatCamera(int32 SeatIndex)
 	UCameraComponent* NewCamera;
 	switch (ViewMethod)
 	{
-		case E_ViewMethod::Windowed:
-			break;
 		case E_ViewMethod::Remote:
 			NewCamera = SpawnAndAttachCamera(CameraSocketName, VehicleMeshComponent);
 			VehicleCurrentState.SeatStates[SeatIndex].DefaultCamera = NewCamera;
 			UpdateSeatActiveCamera(SeatIndex, NewCamera);
+			//optic
+			VehicleCurrentState.SeatStates[SeatIndex].OpticState.CurrentAvailableOptics[0] = VehicleData->Seats[SeatIndex].DefaultOptic;
+			UpdateRemoteCamPP(SeatIndex, GetDataManager()->GetOpticDataRow(VehicleCurrentState.SeatStates[SeatIndex].OpticState.CurrentAvailableOptics[VehicleCurrentState.SeatStates[SeatIndex].OpticState.CurrentOpticIndex])->OpticPPSettings, 1.0f);
 			break;
 	}
 }
@@ -217,19 +218,8 @@ void AVehicle_Base::Init_Seats()
 	{
 		const FSeatData& SeatInfo = VehicleData->Seats[i];
 
-		//do Seat Role specific stuff TO THE SEAT (init default weapon system here?)
-		switch (SeatInfo.SeatRole)
-		{
-			case E_SeatRole::Driver:
-				break;
-			case E_SeatRole::Gunner:
-			case E_SeatRole::DriverGunner:
-			case E_SeatRole::Passenger:
-				break;
-		}
-		Init_SeatCamera(i);		//<---mainly for windowed/remote cameras right now (weapon defaults?)
+		Init_DefaultSeatRemoteCamera(i);	
 
-		//seat hud comp
 		if (SeatInfo.DefaultCharacterContext.SeatHUD)
 		{
 			Init_SeatHUDComp(i);
@@ -745,6 +735,12 @@ void AVehicle_Base::UpdateSeatActiveCamera(int32 SeatIndex, UCameraComponent* Ne
 	VehicleCurrentState.SeatStates[SeatIndex].ActiveCamera = NewActiveCamera;
 }
 
+void AVehicle_Base::UpdateRemoteCamPP(int32 SeatIndex, FPostProcessSettings PPSettings, float BlendWeight)
+{
+	GetRemoteActiveCam(SeatIndex)->PostProcessSettings = PPSettings;
+	GetRemoteActiveCam(SeatIndex)->PostProcessBlendWeight = BlendWeight;
+}
+
 void AVehicle_Base::UpdateEngineAudio()
 {
 	switch (VehicleData->Movement_Type)
@@ -808,64 +804,82 @@ void AVehicle_Base::ToggleOptic(int32 SeatIndex)
 	OpticState.CurrentOpticIndex = (OpticState.CurrentOpticIndex + 1) % OpticState.CurrentAvailableOptics.Num();
 	if (PreviousOpticIndex != OpticState.CurrentOpticIndex)
 	{
-		if (OpticState.CurrentAvailableOptics[OpticState.CurrentOpticIndex].IsNone())
+		const FOpticData& OpticData = *GetDataManager()->GetOpticDataRow(OpticState.CurrentAvailableOptics[OpticState.CurrentOpticIndex]);
+
+		//HandleTogglePPOptic
+		if (OpticData.OpticPPSettings.WeightedBlendables.Array.Num() > 0)
 		{
-			TurnOffOptic_PPSettings(SeatIndex);
-			//"turn off" audio"
-			//if GetActiveCam(SeatIndex)->
-		}
-		else
-		{
-			//turn on
-			const FOpticData& OpticData = *GetDataManager()->GetOpticDataRow(OpticState.CurrentAvailableOptics[OpticState.CurrentOpticIndex]);
-			if (OpticData.OpticPPSettings.WeightedBlendables.Array.Num() > 0)
+
+			UpdateRemoteCamPP(SeatIndex, GetDataManager()->GetOpticDataRow(OpticState.CurrentAvailableOptics[OpticState.CurrentOpticIndex])->OpticPPSettings, 1.0f);
+			if (OpticState.isOn)
 			{
-				//post process optic
-				TurnOnOptic_PPSettings(SeatIndex);
-				//post process turn on audio
-				//update optic name UI
+				//what to do if optic was already on
 			}
 			else
 			{
-				TurnOffOptic_PPSettings(SeatIndex);
+				//turn on PP optic
+				OpticState.isOn = true;
+				//post process turn on audio
+				if (VehicleCurrentState.SeatStates[SeatIndex].UpdateHUD)
+				{
+					GetHUDSystem()->UpdaticOpticNameHUD_Vehicle(OpticData.OpticDisplayNameAbrev);
+				}
+				//inverse optic UI color
 			}
-			//magnification optic
-			//when change 90 to default data, put it behind an if to see if cam's current fov = default fov
-			float& CurrentFOV = GetRemoteActiveCam(SeatIndex)->FieldOfView;
-			float NewFOV = 90.0f / OpticData.ZoomMagnification;			//CHANGE TO DEFAULT DATA 	
+		}
+		else
+		{
+			if (OpticState.isOn)
+			{
+				//turn off PP optic
+				UpdateRemoteCamPP(SeatIndex, FPostProcessSettings(), 0.0f);
+				OpticState.isOn = false;
+				if (VehicleCurrentState.SeatStates[SeatIndex].UpdateHUD)
+				{
+					GetHUDSystem()->UpdaticOpticNameHUD_Vehicle(OpticData.OpticDisplayNameAbrev);
+				}
+				//inverse optic UI color
+			}
+		}
+
+		ToggleMagnificationOptic(SeatIndex, OpticData.ZoomMagnification);
+	}
+}
+
+void AVehicle_Base::ToggleMagnificationOptic(int32 SeatIndex, float ZoomMagnification)
+{
+	//when change 90 to default data, put it behind an if to see if cam's current fov = default fov
+	FOpticState& OpticState = VehicleCurrentState.SeatStates[SeatIndex].OpticState;
+	float& CurrentFOV = GetRemoteActiveCam(SeatIndex)->FieldOfView;
+	if (ZoomMagnification != 1.0f)
+	{
+		//zoom optic
+		float NewFOV = CurrentFOV / ZoomMagnification;			//CHANGE TO DEFAULT DATA 	
+		if (!OpticState.isMagnified)
+		{
 			CurrentFOV = NewFOV;
-			//zoom turn on audio
-			//update optic magnification UI
+			OpticState.isMagnified = true;
+			//zoom in audio
+			if (VehicleCurrentState.SeatStates[SeatIndex].UpdateHUD)
+			{
+				GetHUDSystem()->UpdateOpticMagnificationHUD_Vehicle(ZoomMagnification);
+			}
 		}
 	}
-}
-
-void AVehicle_Base::TurnOnOptic_PPSettings(int32 SeatIndex)
-{
-	FOpticState& OpticState = VehicleCurrentState.SeatStates[SeatIndex].OpticState;
-	switch (VehicleData->Seats[SeatIndex].ViewMethod)
+	//unzoom optic
+	else if (OpticState.isMagnified)
 	{
-		case E_ViewMethod::Windowed:
-			//do on character
-			break;
-		case E_ViewMethod::Remote:
-			GetRemoteActiveCam(SeatIndex)->PostProcessSettings = GetDataManager()->GetOpticDataRow(OpticState.CurrentAvailableOptics[OpticState.CurrentOpticIndex])->OpticPPSettings;
-			GetRemoteActiveCam(SeatIndex)->PostProcessBlendWeight = 1.0f;
-			break;
-	}
-}
+		//WORK ON THIS
+		if (!OpticState.isOn)
+		{
+			CurrentFOV = 90.0f;
+			OpticState.isMagnified = false;
 
-void AVehicle_Base::TurnOffOptic_PPSettings(int32 SeatIndex)
-{
-	switch (VehicleData->Seats[SeatIndex].ViewMethod)
-	{
-		case E_ViewMethod::Windowed:
-			//do on character
-			break;
-		case E_ViewMethod::Remote:
-			GetRemoteActiveCam(SeatIndex)->PostProcessSettings = FPostProcessSettings();
-			GetRemoteActiveCam(SeatIndex)->PostProcessBlendWeight = 0.0f;
-			break;
+			if (VehicleCurrentState.SeatStates[SeatIndex].UpdateHUD)
+			{
+				GetHUDSystem()->UpdateOpticMagnificationHUD_Vehicle(ZoomMagnification);
+			}
+		}
 	}
 }
 

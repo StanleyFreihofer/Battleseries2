@@ -128,7 +128,7 @@ public:
 	//Generic Vehicle INIT functions
 	//Seats INITIALIZATION
 	UFUNCTION(BlueprintCallable)
-	void Init_SeatCamera(int32 SeatIndex);
+	void Init_DefaultSeatRemoteCamera(int32 SeatIndex);
 	UFUNCTION(BlueprintCallable)
 	void Init_SeatHUDComp(int32& SeatIndex);
 	UFUNCTION(BlueprintCallable)
@@ -216,7 +216,8 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void UpdateSeatActiveCamera(int32 SeatIndex, UCameraComponent* NewActiveCamera);
-
+	UFUNCTION(BlueprintCallable)
+	void UpdateRemoteCamPP(int32 SeatIndex, FPostProcessSettings PPSettings, float BlendWeight);
 	UFUNCTION(BlueprintCallable)
 	void UpdateEngineAudio();
 
@@ -239,9 +240,7 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void ToggleOptic(int32 SeatIndex);
 	UFUNCTION(BlueprintCallable)
-	void TurnOnOptic_PPSettings(int32 SeatIndex);
-	UFUNCTION(BlueprintCallable)
-	void TurnOffOptic_PPSettings(int32 SeatIndex);
+	void ToggleMagnificationOptic(int32 SeatIndex, float ZoomMagnification);
 
 	//Applying
 	UFUNCTION(BlueprintCallable)

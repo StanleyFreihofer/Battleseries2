@@ -76,6 +76,9 @@ void ACharacter_Base::Init_Character()
 void ACharacter_Base::Init_PlayerCharacter()
 {
 	APlayerController* PC = Cast<APlayerController>(GetController());
+
+	GetDataSystem_Character()->GetCharacterDefaults()->DefaultIMC.LoadSynchronous();
+	GetDataSystem_Character()->GetCharacterDefaults()->DefaultGameplayIMC.LoadSynchronous();
 	//IMC
 	ManageIMC(nullptr, GetDataSystem_Character()->GetCharacterDefaults()->DefaultIMC.Get(), 0);
 	ManageIMC(nullptr, GetDataSystem_Character()->GetCharacterDefaults()->DefaultGameplayIMC.Get(), 1);

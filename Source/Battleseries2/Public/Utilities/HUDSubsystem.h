@@ -80,6 +80,10 @@ public:
     void HandleTurretRotationUpdate(float Yaw);
     UFUNCTION(BlueprintCallable)
     void HandleTurretPitchUpdate(float MinPitch, float MaxPitch, float CurrentPitch);
+    UFUNCTION(BlueprintCallable)
+    void UpdaticOpticNameHUD_Vehicle(FText OpticDisplayName);
+    UFUNCTION(BlueprintCallable)
+    void UpdateOpticMagnificationHUD_Vehicle(float OpticMagnification);
 
     UFUNCTION(BlueprintCallable)
     void RemoveWidget(UUW_HUD_LockOnIndicator_Base* UserWidget);

@@ -7,6 +7,7 @@
 #include "Core/UI/VehicleHUDs/UW_VehicleHUDComp_TurretLines.h"
 #include "Core/UI/VehicleHUDs/UW_VehicleHUDComp_TurretElvGauge.h"
 #include "Core/UI/VehicleHUDs/UW_VehicleHUDComp_TurretPitchMeter.h"
+#include "Core/UI/VehicleHUDs/UW_VehicleHUDComp_Optic.h"
 #include "Core/UI/VehicleHUDs/UW_VehicleHUDComp_Speedometer.h"
 #include "Utilities/I_HUDUpdates.h"
 #include "Core/UI/VehicleHUDs/UW_HUD_Vehicle_Base.h"
@@ -53,6 +54,10 @@ void UUW_HUD_Vehicle_Base::BindComponents()
 		else if (UUW_VehicleHUDComp_Speedometer* SpeedometerComp = Cast<UUW_VehicleHUDComp_Speedometer>(Widget))
 		{
 			Speedometer = SpeedometerComp;
+		}
+		else if (UUW_VehicleHUDComp_Optic* OpticComp = Cast<UUW_VehicleHUDComp_Optic>(Widget))
+		{
+			OpticStatus = OpticComp;
 		}
 	});
 }
@@ -134,4 +139,19 @@ void UUW_HUD_Vehicle_Base::UpdateEquippedWeaponHUD(FText WeaponName, UTexture2D*
 
 }
 
+void UUW_HUD_Vehicle_Base::UpdateOpticNameHUD(FText OpticName)
+{
+	if (OpticStatus)
+	{
+		OpticStatus->UpdateOpticName(OpticName);
+	}
+}
+
+void UUW_HUD_Vehicle_Base::UpdateOpticMagnificationHUD(float OpticMagnification)
+{
+	if (OpticStatus)
+	{
+		OpticStatus->UpdateOpticMagnification(OpticMagnification);
+	}
+}
 

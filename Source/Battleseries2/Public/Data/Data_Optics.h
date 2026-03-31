@@ -13,7 +13,11 @@ struct FOpticData : public FTableRowBase
 	FText OpticDisplayName = FText();
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)		
-	FText WeaponDisplayNameAbrev = FText::FromString("60hz");
+	FText OpticDisplayNameAbrev = FText::FromString("60hz");
+
+	//optic position (on, off, magnified, unmagnified)?
+
+	//inverse UI color?
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	FPostProcessSettings OpticPPSettings = FPostProcessSettings();

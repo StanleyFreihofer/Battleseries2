@@ -194,6 +194,22 @@ void UHUDSubsystem::HandleTurretPitchUpdate(float MinPitch, float MaxPitch, floa
 	UpdateTurretElevationHUD_Vehicle(MinPitch, MaxPitch, CurrentPitch);
 }
 
+void UHUDSubsystem::UpdaticOpticNameHUD_Vehicle(FText OpticDisplayName)
+{
+	if (CurrentVehicleHMD && CurrentVehicleHMD->OpticStatus)
+	{
+		CurrentVehicleHMD->UpdateOpticNameHUD(OpticDisplayName);
+	}
+}
+
+void UHUDSubsystem::UpdateOpticMagnificationHUD_Vehicle(float OpticMagnification)
+{
+	if (CurrentVehicleHMD && CurrentVehicleHMD->OpticStatus)
+	{
+		CurrentVehicleHMD->UpdateOpticMagnificationHUD(OpticMagnification);
+	}
+}
+
 void UHUDSubsystem::RemoveWidget(UUW_HUD_LockOnIndicator_Base* UserWidget)
 {
 	if (!UserWidget) return;

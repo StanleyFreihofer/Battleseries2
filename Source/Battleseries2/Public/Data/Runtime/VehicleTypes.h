@@ -12,10 +12,16 @@ struct FOpticState
 	GENERATED_BODY()
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)		//the optics available to cycle through (first option is default) (OpticIDs)
-	TArray<FName> CurrentAvailableOptics;
+	TArray<FName> CurrentAvailableOptics = { FName("NAME_None") };
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	int32 CurrentOpticIndex = 0;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool isOn = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool isMagnified = false;
 };
 
 USTRUCT(BlueprintType)
@@ -80,7 +86,7 @@ struct FGenericVehicleState
 	FName CurrentCamo = NAME_None;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	bool LoadoutApplied = false;			//<--- change to string, denote WHO's loadout it is?
+	bool LoadoutApplied = false;			//<--- change to string, denote WHO's loadout it is? (might be good for comparing if different people hop into the main seat)
 };
 
 USTRUCT(BlueprintType)
@@ -88,7 +94,7 @@ struct FVehicleCurrentState
 {
 	GENERATED_BODY()
 	//health?
-	//some sort of string/identifier of who/what loadout its carrying (might be good for comparing if different people hop into the main seat)
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TArray<FSeatState> SeatStates;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
