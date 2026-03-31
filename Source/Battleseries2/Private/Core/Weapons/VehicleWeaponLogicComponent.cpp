@@ -684,6 +684,7 @@ void UVehicleWeaponLogicComponent::UpdateSeatRangefinder(int32 SeatIndex, FTrans
 
 void UVehicleWeaponLogicComponent::HandleLockOn(int32 SeatIndex, FTransform TraceTransform, TArray<AActor*> ActorsToIgnore)
 {
+	//remember, this gets called on tick
 	FVehicleWeaponSystem_Runtime* SystemPtr = VehicleWeaponSystem.Find(SeatIndex);
 	const FBaseWeaponData& StaticWeaponData = GetBaseWeaponDataInSlot(SeatIndex, GetCWIForSeat(SeatIndex));
 	FVehicleWeapon_Runtime& CurrentWeapon = GetEquippedWeaponInSeat(SeatIndex);
@@ -721,6 +722,8 @@ void UVehicleWeaponLogicComponent::HandleLockOn(int32 SeatIndex, FTransform Trac
 	{
 		DemoteLockOnStatus(SeatIndex, LockOnState);
 	}
+
+	//update in flight projectiles here if require constant lock to target?
 }
 
 void UVehicleWeaponLogicComponent::StartLockingOn(int32& SeatIndex, FVehicleWeapon_Runtime& CurrentWeapon, const FWeaponHomingData& HomingData, const FHitResult& HitResult)

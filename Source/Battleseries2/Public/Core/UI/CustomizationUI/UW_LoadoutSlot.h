@@ -188,11 +188,11 @@ public:
 	UFUNCTION(BlueprintCallable)
 	bool ValidateSlotDeselection();
 	UFUNCTION(BlueprintCallable)
-	void UpdateSlot_Hover();
+	void UpdateSlot_Select();
 	UFUNCTION(BlueprintCallable)
-	void UpdateSlot_Unhover();
+	void UpdateSlot_Deselect();
 	UFUNCTION(BlueprintCallable)
-	void HandleHoverStatus();
+	void HandleSelectStatus();
 
 private:
 	UDataManagerSubsystem* DataManager;

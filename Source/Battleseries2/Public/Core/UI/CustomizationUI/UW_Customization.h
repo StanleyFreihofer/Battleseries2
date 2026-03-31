@@ -134,6 +134,8 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void FillDetailsPanel_VehicleWeapon(FName WeaponID);
 	UFUNCTION(BlueprintCallable)
+	void FillDetailsPanel_Optic(FName OpticID);
+	UFUNCTION(BlueprintCallable)
 	void FillDetailsPanel_Camo(FName CamoID);
 
 	UFUNCTION(BlueprintCallable)
@@ -155,7 +157,7 @@ protected:
 	virtual FReply NativeOnMouseWheel(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
 
 private:
-	UDataManagerSubsystem* DataSubsystem;
+	//UDataManagerSubsystem* DataSubsystem;
 
 };
 

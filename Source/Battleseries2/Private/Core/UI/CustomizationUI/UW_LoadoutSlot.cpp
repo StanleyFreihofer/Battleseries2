@@ -34,9 +34,9 @@ void UUW_LoadoutSlot::Init_LoadoutSlot_Vehicle(FCustomizationSlotConfig Customiz
 	{
 		AddDropdownOption(SlotData.SlotConfig.AvailableItems[i], i);
 	}
-	Btn_LoadoutSlot->OnHovered.AddDynamic(this, &UUW_LoadoutSlot::UpdateSlot_Hover);
-	Btn_LoadoutSlot->OnUnhovered.AddDynamic(this, &UUW_LoadoutSlot::HandleHoverStatus);
+	Btn_LoadoutSlot->OnHovered.AddDynamic(this, &UUW_LoadoutSlot::HandleSlotSelected);
 	Btn_LoadoutSlot->OnClicked.AddDynamic(this, &UUW_LoadoutSlot::HandleSlotSelected);
+	Btn_LoadoutSlot->OnUnhovered.AddDynamic(this, &UUW_LoadoutSlot::HandleSelectStatus);
 }
 
 void UUW_LoadoutSlot::AddDropdownOption(FName NewOptionID, int32 OptionIndex)
@@ -85,8 +85,8 @@ void UUW_LoadoutSlot::AddDropdownOption(FName NewOptionID, int32 OptionIndex)
 	{
 
 	}
-	NewDropdownOption->Btn_DropdownOption->OnHovered.AddDynamic(this, &UUW_LoadoutSlot::UpdateSlot_Hover);
-	NewDropdownOption->Btn_DropdownOption->OnUnhovered.AddDynamic(this, &UUW_LoadoutSlot::HandleHoverStatus);
+	NewDropdownOption->Btn_DropdownOption->OnHovered.AddDynamic(this, &UUW_LoadoutSlot::UpdateSlot_Select);
+	NewDropdownOption->Btn_DropdownOption->OnUnhovered.AddDynamic(this, &UUW_LoadoutSlot::HandleSelectStatus);
 	NewDropdownOption->OnOptionClicked.AddDynamic(this, &UUW_LoadoutSlot::HandleOptionSelected);
 	VerticalBox_OptionsList->AddChild(NewDropdownOption);
 	DropdownOptions.Add(NewDropdownOption);
@@ -95,6 +95,7 @@ void UUW_LoadoutSlot::AddDropdownOption(FName NewOptionID, int32 OptionIndex)
 
 void UUW_LoadoutSlot::HandleSlotSelected()
 {
+	UpdateSlot_Select();
 	OnSlotOptionUsed.Broadcast(SlotData, SlotData.SelectedOptionIndex);
 }
 
@@ -160,7 +161,7 @@ bool UUW_LoadoutSlot::ValidateSlotDeselection()
 	return true;	//nothing in slot is selected	
 }
 
-void UUW_LoadoutSlot::UpdateSlot_Hover()
+void UUW_LoadoutSlot::UpdateSlot_Select()
 {
 	SB_Slot->SetHeightOverride(SB_SlotHeightOverride_UnHovered * 4);
 	Img_ItemIcon_Unhover->SetVisibility(ESlateVisibility::Hidden);
@@ -179,7 +180,7 @@ void UUW_LoadoutSlot::UpdateSlot_Hover()
 	}
 }
 
-void UUW_LoadoutSlot::UpdateSlot_Unhover()
+void UUW_LoadoutSlot::UpdateSlot_Deselect()
 {
 	SB_Slot->SetHeightOverride(SB_SlotHeightOverride_UnHovered);
 	Img_ItemIcon_Unhover->SetVisibility(ESlateVisibility::Visible);
@@ -191,11 +192,10 @@ void UUW_LoadoutSlot::UpdateSlot_Unhover()
 	//OnSlotDeselected.Broadcast();
 }
 
-void UUW_LoadoutSlot::HandleHoverStatus()		//wrapper function for delegates
+void UUW_LoadoutSlot::HandleSelectStatus()		//wrapper function for delegates
 {
 	if (ValidateSlotDeselection())
 	{
-		UpdateSlot_Unhover();
-		
+		UpdateSlot_Deselect();
 	}
 }

@@ -24,13 +24,14 @@
 #include "Core/Weapons/VehicleWeaponLogicComponent.h"
 #include "Core/PlayerController_Base.h"
 #include "Data/Weapons/VehicleWeapons/Data_VehicleWeapon.h"
+#include "Data/Data_Optics.h"
 #include "Data/Data_Camo.h"
 #include "Data/Vehicles/VehicleDefaults.h"
 
 void UUW_Customization::NativeConstruct()
 {
 	Super::NativeConstruct();
-	DataSubsystem = GetData_UUWCustomization();
+	//DataSubsystem = GetData_UUWCustomization();
 	CustomizationUIState.CurrentCustomizationMode = ECoreType::Vehicle;
 
 	Btn_ExitCustomization->OnClicked.AddDynamic(this, &UUW_Customization::ExitCustomization);
@@ -72,7 +73,7 @@ void UUW_Customization::Init_TypeScrollBox()
 
 void UUW_Customization::Build_VehicleTypeScrollbox()				
 {
-	for (E_VehicleType VehicleType : TEnumRange<E_VehicleType>())
+	for (E_VehicleType VehicleType : TEnumRange<E_VehicleType>())		//change to data from customization defaults
 	{
 		UUW_VehicleTypeButton* NewVehicleTypeButton = CreateWidget<UUW_VehicleTypeButton>(GetWorld(), VehicleTypeButton);
 		NewVehicleTypeButton->SetVehicleType((int32)VehicleType);
@@ -135,8 +136,8 @@ void UUW_Customization::RefreshTypeScrollBox()
 void UUW_Customization::Build_VehicleLoadoutPanel(int32 TypeEnumIndex)
 {
 	E_VehicleType VehicleType = static_cast<E_VehicleType>(TypeEnumIndex);
-	FName VehicleID = DataSubsystem->GetFirstVehicleIDOfType(VehicleType);
-	const FVehicleData& VehicleData = *DataSubsystem->GetVehicleDataRow(VehicleID);
+	FName VehicleID = GetData_UUWCustomization()->GetFirstVehicleIDOfType(VehicleType);
+	const FVehicleData& VehicleData = *GetData_UUWCustomization()->GetVehicleDataRow(VehicleID);
 
 	TMap<int32, FAvailableItems*> CustomizableSeatOptions;			//option list to be built out
 	for (int32 SI = 0; SI < VehicleData.Seats.Num(); SI++)
@@ -327,6 +328,9 @@ void UUW_Customization::UpdateDetailsPanel(FSlotData NewSlotData, int32 OptionIn
 		case ECoreItemType::VehicleWeapon:
 			FillDetailsPanel_VehicleWeapon(NewSlotData.SlotConfig.AvailableItems[OptionIndex]);
 			break;
+		case ECoreItemType::VehicleOptic:
+			FillDetailsPanel_Optic(NewSlotData.SlotConfig.AvailableItems[OptionIndex]);
+			break;
 		case ECoreItemType::Camo:
 			FillDetailsPanel_Camo(NewSlotData.SlotConfig.AvailableItems[OptionIndex]);
 			break;
@@ -345,20 +349,26 @@ void UUW_Customization::HideDetailsPanel()
 
 void UUW_Customization::FillDetailsPanel_VehicleWeapon(FName WeaponID)
 {
-	//add contingency for none
 	if (WeaponID.IsNone())
 	{
 		T_ItemName->SetText(FText::FromString("None"));
 		return;
 	}
 	UE_LOG(LogTemp, Error, TEXT("[UW_Customization::FillDetailsPanel_VehicleWeapon] WeaponID = %s"), *WeaponID.ToString());
-	const FVehicleWeaponData* VehicleWeaponData = DataSubsystem->GetVehicleWeaponDataRow(WeaponID);
+	const FVehicleWeaponData* VehicleWeaponData = GetData_UUWCustomization()->GetVehicleWeaponDataRow(WeaponID);
 	T_ItemName->SetText(VehicleWeaponData->WeaponData.WeaponClassification.WeaponDisplayName);
+}
+
+void UUW_Customization::FillDetailsPanel_Optic(FName OpticID)
+{
+	const FOpticData* OpticData = GetData_UUWCustomization()->GetOpticDataRow(OpticID);
+	T_ItemName->SetText(OpticData->OpticDisplayName);
+	T_Description->SetText(OpticData->OpticDescription);
 }
 
 void UUW_Customization::FillDetailsPanel_Camo(FName CamoID)
 {
-	const FCamoData* CamoData = DataSubsystem->GetCamoDataRow(CamoID);
+	const FCamoData* CamoData = GetData_UUWCustomization()->GetCamoDataRow(CamoID);
 	T_ItemName->SetText(CamoData->CamoDisplayName);
 	T_Description->SetText(CamoData->CamoDescription);
 	Img_Icon->SetBrushFromTexture(CamoData->CamoIcon.LoadSynchronous());
@@ -387,7 +397,7 @@ void UUW_Customization::UpdateVehiclePreview(int32 TypeEnumIndex)
 
 	USaveSubsystem* SaveSubsystem = GetGameInstance()->GetSubsystem<USaveSubsystem>();
 	FString TypeName = StaticEnum<E_VehicleType>()->GetNameStringByValue((int64)VehicleType);
-	UDataTable* VehicleDataTable = DataSubsystem->GetVehicleDataTable();
+	UDataTable* VehicleDataTable = GetData_UUWCustomization()->GetVehicleDataTable();
 	TArray<FName> AllVehicleIDsOfType = FVehicleData::GetRowNamesOfType(VehicleDataTable, VehicleType);
 	FName RowName = FName(*StaticEnum<E_VehicleType>()->GetNameStringByValue((int64)VehicleType));
 
@@ -396,7 +406,7 @@ void UUW_Customization::UpdateVehiclePreview(int32 TypeEnumIndex)
 	NewVehicleStartingData.StartingVehicleLoadout = SaveSubsystem->GetVehicleLoadout(VehicleType);
 	NewVehicleStartingData.VehicleID = AllVehicleIDsOfType[0];
 
-	FTransform PreviewTransform = DataSubsystem->GetVehicleDataRow(NewVehicleStartingData.VehicleID)->CustomizationPosition;
+	FTransform PreviewTransform = GetData_UUWCustomization()->GetVehicleDataRow(NewVehicleStartingData.VehicleID)->CustomizationPosition;
 	UE_LOG(LogTemp, Warning, TEXT("location: %s"), *PreviewTransform.GetLocation().ToString());
 
 	//CustomizationUIState.PreviewStageActor->CurrentVehicle->VehicleWeaponLogicComponent->OnVWSCleared.AddDynamic(this, &UUW_Customization::UpdateVehiclePreview);
