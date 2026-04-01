@@ -28,4 +28,10 @@ struct FOpticData : public FTableRowBase
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (tooltip = "the number to divide by (by itself represents the magnification value)")) //the number to divide current/default zoom by (by itself represents magnification value)
 	float ZoomMagnification = 1.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Audio")
+	USoundBase* PowerOnSound = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Audio")
+	USoundBase* PowerOffSound = nullptr;
 };

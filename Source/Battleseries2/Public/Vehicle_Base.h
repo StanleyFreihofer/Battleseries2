@@ -46,20 +46,19 @@ struct FVehicleStartingData
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Instance")
 	bool PreviewVehicle = false;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Instance")			//use to permanently occupy certain seats for lifetime of vehicle
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Instance", meta = (tooltip = "use to permanently occupy certain seats for lifetime of vehicle"))			
 	TArray<int32> OccupiedSeats;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Instance")
-	bool OverrideDefaultLoadout = false;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Instance")
 	FPlayerLoadoutConfig_Vehicle StartingVehicleLoadout = FPlayerLoadoutConfig_Vehicle();
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Instance")
-	bool LockLoadout = false;														//lock loadout to whatever it starts with (default or custom defined here) so nobody entering updates/changes it for its entire lifetime
-
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Instance", meta = (tooltip = "if on, this will prevent any player/custom loadouts from being applied to the vehicle on enter of it for its lifetime"))
+	bool LockLoadout = false;													
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Instance")		
 	float StartingHealth = 100.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Instance")			
+	float KillSwitchTimer = -1.0f;
 };
 
 UCLASS()
@@ -88,7 +87,7 @@ public:
 	//VARIABLES
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "__Instance")
 	FVehicleStartingData VehicleStartingData = FVehicleStartingData();
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "__Runtime")
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "__Runtime")
 	FVehicleCurrentState VehicleCurrentState = FVehicleCurrentState();
 
 	//Static Data

@@ -170,7 +170,14 @@ void AVehicle_Base::Init_DefaultSeatRemoteCamera(int32 SeatIndex)
 			VehicleCurrentState.SeatStates[SeatIndex].DefaultCamera = NewCamera;
 			UpdateSeatActiveCamera(SeatIndex, NewCamera);
 			//optic
-			VehicleCurrentState.SeatStates[SeatIndex].OpticState.CurrentAvailableOptics[0] = VehicleData->Seats[SeatIndex].DefaultOptic;
+			if (VehicleStartingData.StartingVehicleLoadout.SeatLoadout.Find(SeatIndex) && !VehicleStartingData.StartingVehicleLoadout.SeatLoadout.Find(SeatIndex)->Optic.IsNone())
+			{
+				VehicleCurrentState.SeatStates[SeatIndex].OpticState.CurrentAvailableOptics.Init(VehicleStartingData.StartingVehicleLoadout.SeatLoadout.Find(SeatIndex)->Optic, 1);
+			}
+			else
+			{
+				VehicleCurrentState.SeatStates[SeatIndex].OpticState.CurrentAvailableOptics.Init(VehicleData->Seats[SeatIndex].DefaultOptic, 1);
+			}
 			UpdateRemoteCamPP(SeatIndex, GetDataManager()->GetOpticDataRow(VehicleCurrentState.SeatStates[SeatIndex].OpticState.CurrentAvailableOptics[VehicleCurrentState.SeatStates[SeatIndex].OpticState.CurrentOpticIndex])->OpticPPSettings, 1.0f);
 			break;
 	}
@@ -214,15 +221,24 @@ void AVehicle_Base::Init_SeatHUDComp(int32& SeatIndex)
 void AVehicle_Base::Init_Seats()
 {
 	VehicleCurrentState.SeatStates.SetNum(VehicleData->Seats.Num());
-	for (int32 i = 0; i < VehicleData->Seats.Num(); ++i)
+	for (int32 SI = 0; SI < VehicleData->Seats.Num(); ++SI)
 	{
-		const FSeatData& SeatInfo = VehicleData->Seats[i];
+		const FSeatData& SeatInfo = VehicleData->Seats[SI];
 
-		Init_DefaultSeatRemoteCamera(i);	
+		Init_DefaultSeatRemoteCamera(SI);	
 
 		if (SeatInfo.DefaultCharacterContext.SeatHUD)
 		{
-			Init_SeatHUDComp(i);
+			Init_SeatHUDComp(SI);
+		}
+
+		for (int32 i = 0; i < VehicleStartingData.OccupiedSeats.Num(); ++i)
+		{
+			if (VehicleStartingData.OccupiedSeats[i] == SI)
+			{
+				VehicleCurrentState.SeatStates[SI].isOccupied = true;
+				break;
+			}
 		}
 	}
 
@@ -408,6 +424,11 @@ void AVehicle_Base::ApplyOpticToSeat(int32 SeatIndex)
 
 void AVehicle_Base::ApplyLoadoutToVehicle()
 {
+	if (VehicleStartingData.LockLoadout)
+	{
+		return;
+	}
+
 	if (!VehicleCurrentState.GenericVehicleState.LoadoutApplied)
 	{
 		for (int32 i = 0; i < VehicleData->Seats.Num(); i++)
@@ -708,7 +729,6 @@ void AVehicle_Base::DropGunner(TWeakObjectPtr<ACharacter_Base> Character, int32&
 
 void AVehicle_Base::AttemptEnterVehicle(ACharacter_Base* Character)
 {
-	//Attempt Enter Vehicle
 	UE_LOG(LogTemp, Log, TEXT("ENTER VEHICLE"));
 	bool bFoundSeat = CycleThroughSeats(Character);
 	if (bFoundSeat)
@@ -804,10 +824,10 @@ void AVehicle_Base::ToggleOptic(int32 SeatIndex)
 	OpticState.CurrentOpticIndex = (OpticState.CurrentOpticIndex + 1) % OpticState.CurrentAvailableOptics.Num();
 	if (PreviousOpticIndex != OpticState.CurrentOpticIndex)
 	{
-		const FOpticData& OpticData = *GetDataManager()->GetOpticDataRow(OpticState.CurrentAvailableOptics[OpticState.CurrentOpticIndex]);
-
+		const FOpticData& CurrentOpticData = *GetDataManager()->GetOpticDataRow(OpticState.CurrentAvailableOptics[OpticState.CurrentOpticIndex]);
+		const FOpticData& PreviousOpticData = *GetDataManager()->GetOpticDataRow(OpticState.CurrentAvailableOptics[PreviousOpticIndex]);
 		//HandleTogglePPOptic
-		if (OpticData.OpticPPSettings.WeightedBlendables.Array.Num() > 0)
+		if (CurrentOpticData.OpticPPSettings.WeightedBlendables.Array.Num() > 0)
 		{
 
 			UpdateRemoteCamPP(SeatIndex, GetDataManager()->GetOpticDataRow(OpticState.CurrentAvailableOptics[OpticState.CurrentOpticIndex])->OpticPPSettings, 1.0f);
@@ -819,13 +839,13 @@ void AVehicle_Base::ToggleOptic(int32 SeatIndex)
 			{
 				//turn on PP optic
 				OpticState.isOn = true;
-				//post process turn on audio
+				UGameplayStatics::PlaySound2D(GetWorld(), CurrentOpticData.PowerOnSound);
 				if (VehicleCurrentState.SeatStates[SeatIndex].UpdateHUD)
 				{
-					GetHUDSystem()->UpdaticOpticNameHUD_Vehicle(OpticData.OpticDisplayNameAbrev);
-					if (OpticData.InverseUIColor.A > 0)
+					GetHUDSystem()->UpdaticOpticNameHUD_Vehicle(CurrentOpticData.OpticDisplayNameAbrev);
+					if (CurrentOpticData.InverseUIColor.A > 0)
 					{
-						GetHUDSystem()->UpdateVehicleHUD_Color(OpticData.InverseUIColor);
+						GetHUDSystem()->UpdateVehicleHUD_Color(CurrentOpticData.InverseUIColor);
 					}
 				}
 				
@@ -838,14 +858,15 @@ void AVehicle_Base::ToggleOptic(int32 SeatIndex)
 				//turn off PP optic
 				UpdateRemoteCamPP(SeatIndex, FPostProcessSettings(), 0.0f);
 				OpticState.isOn = false;
+				UGameplayStatics::PlaySound2D(GetWorld(), PreviousOpticData.PowerOffSound);
 				if (VehicleCurrentState.SeatStates[SeatIndex].UpdateHUD)
 				{
-					GetHUDSystem()->UpdaticOpticNameHUD_Vehicle(OpticData.OpticDisplayNameAbrev);
-					if (GetDataManager()->GetOpticDataRow(OpticState.CurrentAvailableOptics[PreviousOpticIndex])->InverseUIColor.A > 0)
+					GetHUDSystem()->UpdaticOpticNameHUD_Vehicle(CurrentOpticData.OpticDisplayNameAbrev);
+					if (PreviousOpticData.InverseUIColor.A > 0)
 					{
 
 					}
-					if (OpticData.InverseUIColor.A == 0)
+					if (CurrentOpticData.InverseUIColor.A == 0)
 					{
 						GetHUDSystem()->UpdateVehicleHUD_Color(FLinearColor(0.0f, 1.0f, 0.036889f, 1.0f));		//HARD CODED FOR NOW, CHANGE TO BE TAKEN FROM HUD/UI SETTINGS
 					}
@@ -853,7 +874,7 @@ void AVehicle_Base::ToggleOptic(int32 SeatIndex)
 			}
 		}
 
-		ToggleMagnificationOptic(SeatIndex, OpticData.ZoomMagnification);
+		ToggleMagnificationOptic(SeatIndex, CurrentOpticData.ZoomMagnification);
 	}
 }
 

@@ -11,11 +11,13 @@ struct FOpticState
 {
 	GENERATED_BODY()
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)		//the optics available to cycle through (first option is default) (OpticIDs)
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)		//the optics available to cycle through (first option is default) (OpticIDs)
 	TArray<FName> CurrentAvailableOptics = { FName("NAME_None") };
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	int32 CurrentOpticIndex = 0;
+
+	//current magnfication index?
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	bool isOn = false;
