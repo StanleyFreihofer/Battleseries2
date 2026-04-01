@@ -837,44 +837,56 @@ void AVehicle_Base::ToggleOptic(int32 SeatIndex)
 			}
 			else
 			{
-				//turn on PP optic
-				OpticState.isOn = true;
-				UGameplayStatics::PlaySound2D(GetWorld(), CurrentOpticData.PowerOnSound);
-				if (VehicleCurrentState.SeatStates[SeatIndex].UpdateHUD)
-				{
-					GetHUDSystem()->UpdaticOpticNameHUD_Vehicle(CurrentOpticData.OpticDisplayNameAbrev);
-					if (CurrentOpticData.InverseUIColor.A > 0)
-					{
-						GetHUDSystem()->UpdateVehicleHUD_Color(CurrentOpticData.InverseUIColor);
-					}
-				}
-				
+				TurnOnPPOptic(SeatIndex);
 			}
 		}
 		else
 		{
 			if (OpticState.isOn)
 			{
-				//turn off PP optic
-				UpdateRemoteCamPP(SeatIndex, FPostProcessSettings(), 0.0f);
-				OpticState.isOn = false;
-				UGameplayStatics::PlaySound2D(GetWorld(), PreviousOpticData.PowerOffSound);
-				if (VehicleCurrentState.SeatStates[SeatIndex].UpdateHUD)
-				{
-					GetHUDSystem()->UpdaticOpticNameHUD_Vehicle(CurrentOpticData.OpticDisplayNameAbrev);
-					if (PreviousOpticData.InverseUIColor.A > 0)
-					{
-
-					}
-					if (CurrentOpticData.InverseUIColor.A == 0)
-					{
-						GetHUDSystem()->UpdateVehicleHUD_Color(FLinearColor(0.0f, 1.0f, 0.036889f, 1.0f));		//HARD CODED FOR NOW, CHANGE TO BE TAKEN FROM HUD/UI SETTINGS
-					}
-				}
+				TurnOffPPOptic(SeatIndex, PreviousOpticIndex);
 			}
 		}
 
 		ToggleMagnificationOptic(SeatIndex, CurrentOpticData.ZoomMagnification);
+	}
+}
+
+void AVehicle_Base::TurnOnPPOptic(int32 SeatIndex)
+{
+	FOpticState& OpticState = VehicleCurrentState.SeatStates[SeatIndex].OpticState;
+	const FOpticData& CurrentOpticData = *GetDataManager()->GetOpticDataRow(OpticState.CurrentAvailableOptics[OpticState.CurrentOpticIndex]);
+	OpticState.isOn = true;
+	UGameplayStatics::PlaySound2D(GetWorld(), CurrentOpticData.PowerOnSound);
+	if (VehicleCurrentState.SeatStates[SeatIndex].UpdateHUD)
+	{
+		GetHUDSystem()->UpdaticOpticNameHUD_Vehicle(CurrentOpticData.OpticDisplayNameAbrev);
+		if (CurrentOpticData.InverseUIColor.A > 0)
+		{
+			GetHUDSystem()->UpdateVehicleHUD_Color(CurrentOpticData.InverseUIColor);
+		}
+	}
+}
+
+void AVehicle_Base::TurnOffPPOptic(int32 SeatIndex, int32 PreviousOpticIndex)
+{
+	FOpticState& OpticState = VehicleCurrentState.SeatStates[SeatIndex].OpticState;
+	const FOpticData& CurrentOpticData = *GetDataManager()->GetOpticDataRow(OpticState.CurrentAvailableOptics[OpticState.CurrentOpticIndex]);
+	const FOpticData& PreviousOpticData = *GetDataManager()->GetOpticDataRow(OpticState.CurrentAvailableOptics[PreviousOpticIndex]);
+	UpdateRemoteCamPP(SeatIndex, FPostProcessSettings(), 0.0f);
+	OpticState.isOn = false;
+	UGameplayStatics::PlaySound2D(GetWorld(), PreviousOpticData.PowerOffSound);
+	if (VehicleCurrentState.SeatStates[SeatIndex].UpdateHUD)
+	{
+		GetHUDSystem()->UpdaticOpticNameHUD_Vehicle(CurrentOpticData.OpticDisplayNameAbrev);
+		if (PreviousOpticData.InverseUIColor.A > 0)
+		{
+
+		}
+		if (CurrentOpticData.InverseUIColor.A == 0)
+		{
+			GetHUDSystem()->UpdateVehicleHUD_Color(FLinearColor(0.0f, 1.0f, 0.036889f, 1.0f));		//HARD CODED FOR NOW, CHANGE TO BE TAKEN FROM HUD/UI SETTINGS
+		}
 	}
 }
 
@@ -889,9 +901,10 @@ void AVehicle_Base::ToggleMagnificationOptic(int32 SeatIndex, float ZoomMagnific
 		float NewFOV = CurrentFOV / ZoomMagnification;			//CHANGE TO DEFAULT DATA 	
 		if (!OpticState.isMagnified)
 		{
+			const FOpticData& CurrentOpticData = *GetDataManager()->GetOpticDataRow(OpticState.CurrentAvailableOptics[OpticState.CurrentOpticIndex]);
 			CurrentFOV = NewFOV;
 			OpticState.isMagnified = true;
-			//zoom in audio
+			UGameplayStatics::PlaySound2D(GetWorld(), CurrentOpticData.PowerOnSound);
 			if (VehicleCurrentState.SeatStates[SeatIndex].UpdateHUD)
 			{
 				GetHUDSystem()->UpdateOpticMagnificationHUD_Vehicle(ZoomMagnification);
@@ -904,9 +917,10 @@ void AVehicle_Base::ToggleMagnificationOptic(int32 SeatIndex, float ZoomMagnific
 		//WORK ON THIS
 		if (!OpticState.isOn)
 		{
+			const FOpticData& CurrentOpticData = *GetDataManager()->GetOpticDataRow(OpticState.CurrentAvailableOptics[OpticState.CurrentOpticIndex]);
 			CurrentFOV = 90.0f;
 			OpticState.isMagnified = false;
-
+			UGameplayStatics::PlaySound2D(GetWorld(), CurrentOpticData.PowerOnSound);
 			if (VehicleCurrentState.SeatStates[SeatIndex].UpdateHUD)
 			{
 				GetHUDSystem()->UpdateOpticMagnificationHUD_Vehicle(ZoomMagnification);

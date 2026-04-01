@@ -239,6 +239,10 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void ToggleOptic(int32 SeatIndex);
 	UFUNCTION(BlueprintCallable)
+	void TurnOnPPOptic(int32 SeatIndex);
+	UFUNCTION(BlueprintCallable)
+	void TurnOffPPOptic(int32 SeatIndex, int32 PreviousOpticIndex);
+	UFUNCTION(BlueprintCallable)
 	void ToggleMagnificationOptic(int32 SeatIndex, float ZoomMagnification);
 
 	//Applying
