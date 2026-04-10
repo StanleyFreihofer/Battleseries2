@@ -11,6 +11,7 @@ class UUW_VehicleTypeButton;
 class UUW_LoadoutSlot;
 class ALoadoutPreviewStage;
 class UDataManagerSubsystem;
+class APlayerController_Base;
 enum class ECoreItemType : uint8;
 enum class ECoreType : uint8;
 enum class EGenericItemContext : uint8;
@@ -24,13 +25,10 @@ struct FCustomizationUIState
 {
 	GENERATED_BODY()
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
-	TWeakObjectPtr<ALoadoutPreviewStage> PreviewStageActor = nullptr;
-
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)		//the mode/generic category of thing we are customizing
 	ECoreType CurrentCustomizationMode = ECoreType::Vehicle;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)		//in the type scrollbox, designates the index within that enum of thing we are currenlty customizing
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)		//in the type scrollbox, designates the index within that enum of thing we are currently customizing
 	int32 TypeEnumIndex = -1;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
@@ -38,6 +36,12 @@ struct FCustomizationUIState
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
 	TArray<UUW_LoadoutSlot*> LoadoutSlots;		//each of the loadout slots
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	bool isRotating = false;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	FVector2D LastMousePosition = FVector2D();
 };
 
 
@@ -57,6 +61,12 @@ public:
 	class UVerticalBox* VerticalBox_LoadoutPanel = nullptr;
 	UPROPERTY(meta = (BindWidget))
 	UButton* Btn_ExitCustomization = nullptr;
+	UPROPERTY(meta = (BindWidget))
+	UButton* Btn_WeaponMode = nullptr;
+	UPROPERTY(meta = (BindWidget))
+	UButton* Btn_VehicleMode = nullptr;
+	UPROPERTY(meta = (BindWidget))
+	UButton* Btn_CharacterMode = nullptr;
 
 	//details panel
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta = (BindWidget))
@@ -94,7 +104,9 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void Init_Customization(ALoadoutPreviewStage* InputStageActor);
 	UFUNCTION(BlueprintCallable)
-	void SetPreviewStageActor(ALoadoutPreviewStage* InputStageActor);
+	void EnterVehicleMode(bool OverrideCheck, bool BlendView);
+	UFUNCTION(BlueprintCallable)
+	void EnterWeaponMode(bool OverrideCheck, bool BlendView);
 	UFUNCTION(BlueprintCallable)
 	void Init_TypeScrollBox();
 	UFUNCTION(BlueprintCallable)
@@ -151,13 +163,22 @@ public:
 	void ExitCustomization();
 
 	UFUNCTION()
+	void OnVehicleModeBtnClicked();
+	UFUNCTION()
+	void OnWeaponModeBtnClicked();
+
+	UFUNCTION()
 	UDataManagerSubsystem* GetData_UUWCustomization();
 
 protected:
 	virtual FReply NativeOnMouseWheel(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
+	//virtual FReply NativeOnMouseMove(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
+	virtual FReply NativeOnMouseButtonUp(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
+	virtual FReply NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
 
 private:
 	//UDataManagerSubsystem* DataSubsystem;
+	APlayerController_Base* PC;
 
 };
 

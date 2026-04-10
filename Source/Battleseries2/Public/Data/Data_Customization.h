@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "Engine/DataAsset.h"
+#include "Vehicle_Base.h"
 #include "Data_Customization.generated.h"
 
 class UUW_Customization;
@@ -21,6 +22,12 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
 	TSubclassOf<ALoadoutPreviewStage> PreviewStageClass = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TSubclassOf<AVehicle_Base> PreviewVehicleClass = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UStaticMesh* GarageMesh = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FTransform PreviewSpawnTransform = FTransform::Identity;

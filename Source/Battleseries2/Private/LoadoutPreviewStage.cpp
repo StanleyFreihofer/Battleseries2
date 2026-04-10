@@ -3,6 +3,7 @@
 
 #include "LoadoutPreviewStage.h"
 #include "Vehicle_Base.h"
+#include "Camera/CameraActor.h"
 
 
 // Sets default values
@@ -10,112 +11,132 @@ ALoadoutPreviewStage::ALoadoutPreviewStage()
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
+	Root = CreateDefaultSubobject<USceneComponent>(TEXT("Root"));
+	GarageMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("GarageStage"));
 	VehicleAnchor = CreateDefaultSubobject<USceneComponent>(TEXT("VehicleAnchor"));
-	RootComponent = VehicleAnchor;
-	SpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("SpringArmComponent"));
-	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("CameraComponent"));
 
-	SpringArm->SetupAttachment(VehicleAnchor, FName(""));
-	Camera->SetupAttachment(SpringArm, FName("SpringEndpoint"));
+	SetRootComponent(Root);
+	GarageMesh->SetupAttachment(Root);
+	VehicleAnchor->SetupAttachment(Root);
+	VehicleBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("VehicleBoom"));
+	WeaponBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("WeaponBoom"));
+	VehicleBoom->SetupAttachment(VehicleAnchor, FName(""));
+	WeaponBoom->SetupAttachment(Root, FName(""));
 }
 
 // Called when the game starts or when spawned
 void ALoadoutPreviewStage::BeginPlay()
 {
 	Super::BeginPlay();
+
+	//assumes vehicle ca comp is valid and is a vehicle
+	PreviewStageState.CurrentVehicle = GetWorld()->SpawnActorDeferred<AVehicle_Base>(VehicleClass, FTransform::Identity);
+	PreviewStageState.CurrentVehicle->VehicleStartingData.PreviewVehicle = true;
+	PreviewStageState.CurrentVehicle->AttachToComponent(VehicleAnchor, FAttachmentTransformRules::KeepRelativeTransform);
+
+	FActorSpawnParameters SpawnParams;
+	SpawnParams.Owner = this;
+	SpawnParams.Instigator = GetInstigator();
+
+	PreviewStageState.VehicleCam = GetWorld()->SpawnActor<ACameraActor>(ACameraActor::StaticClass(), FTransform::Identity, SpawnParams);
+	PreviewStageState.VehicleCam->AttachToComponent(VehicleBoom, FAttachmentTransformRules::KeepRelativeTransform, FName("SpringEndpoint"));
+	PreviewStageState.VehicleCam->GetCameraComponent()->bConstrainAspectRatio = false;
+	PreviewStageState.WeaponCam = GetWorld()->SpawnActor<ACameraActor>(ACameraActor::StaticClass(), FTransform::Identity, SpawnParams);
+	PreviewStageState.WeaponCam->AttachToComponent(WeaponBoom, FAttachmentTransformRules::KeepRelativeTransform, FName("SpringEndpoint"));
+	PreviewStageState.WeaponCam->GetCameraComponent()->bConstrainAspectRatio = false;
+	CenterCameraOnVehicle();
 }
 
 // Called every frame
 void ALoadoutPreviewStage::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	//FVector Start = SpringArm->GetComponentLocation();
-	//FVector End = Camera->GetComponentLocation();
-	//DrawDebugLine(GetWorld(), Start, End, FColor::Green, false, -1.f, 0, 2.f);
 }
 
 void ALoadoutPreviewStage::SetupNewPreviewVehicle(FTransform PreviewTransformOffset, FVehicleStartingData InputVehicleStartingData)
 {
-	FTransform AnchorTransform = VehicleAnchor->GetComponentTransform();
-	FTransform OffsetTransform = PreviewTransformOffset;
-	const FTransform FinalTransform = OffsetTransform * AnchorTransform;
-	UE_LOG(LogTemp, Warning, TEXT("location: %s"), *FinalTransform.GetLocation().ToString());
-
-	if (CurrentVehicle)
-	{
-		CurrentVehicle->SetActorTransform(FinalTransform);
-		CurrentVehicle->SetVehicleAndInit(InputVehicleStartingData);
-
-	}
-	else
-	{
-		FActorSpawnParameters SpawnParams;
-		SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-		CurrentVehicle = GetWorld()->SpawnActor<AVehicle_Base>(VehicleClass, FinalTransform, SpawnParams);
-		if (CurrentVehicle)
-		{
-			CurrentVehicle->SetVehicleAndInit(InputVehicleStartingData);
-		}
-		else
-		{
-			FString ClassName = VehicleClass ? VehicleClass->GetName() : TEXT("NULL CLASS");
-			UE_LOG(LogTemp, Error, TEXT("[SaveSubsystem] Failed to spawn VehicleClass: %s"), *VehicleClass->GetName());
-		}
-		//CurrentVehicle->SetVehicleAndInit(InputVehicleStartingData);
-	}
-	CurrentObject = CurrentVehicle;
-	CurrentVehicle->OnMeshReady.RemoveDynamic(this, &ALoadoutPreviewStage::CenterCameraOnVehicle);
-	CurrentVehicle->OnMeshReady.AddDynamic(this, &ALoadoutPreviewStage::CenterCameraOnVehicle);
+	PreviewStageState.CurrentVehicle->SetVehicleAndInit(InputVehicleStartingData);
+	PreviewStageState.CurrentVehicle->SetActorRelativeTransform(PreviewTransformOffset);
 }
 
 void ALoadoutPreviewStage::CenterCameraOnVehicle()
 {
-	FName RootBoneToAttachTo = GetVehicleMeshRootBoneName();
-	SpringArm->AttachToComponent(CurrentVehicle->VehicleMeshComponent, FAttachmentTransformRules::SnapToTargetIncludingScale, RootBoneToAttachTo);
-	Camera->AttachToComponent(SpringArm, FAttachmentTransformRules::SnapToTargetIncludingScale);
-	//SpringArm->SetRelativeRotation(FRotator::ZeroRotator);
-	SpringArm->SetRelativeLocation(FVector(0, 0, 0)); // height above vehicle
-	SpringArm->SetRelativeRotation(FRotator(-30, -150,0)); // slight tilt
+	VehicleBoom->SetRelativeLocation(FVector(0, 0, 0)); // height above vehicle
+	VehicleBoom->SetRelativeRotation(FRotator(-30, -150,0)); // slight tilt
 }
 
 void ALoadoutPreviewStage::RotatePreview(float DeltaYaw, float DeltaPitch)
 {
-	if (RotateObject)
+	if (PreviewStageState.RotateObject)
 	{
 		// Rotate the mesh locally
-		FRotator NewRotation = CurrentObject->GetActorRotation();
-		NewRotation.Yaw += DeltaYaw * RotateSpeed;
-		NewRotation.Pitch = FMath::Clamp(NewRotation.Pitch + DeltaPitch * RotateSpeed, -90.f, 90.f);
-		CurrentObject->SetActorRelativeRotation(NewRotation);
+		switch (PreviewStageState.CurrentStageMode)
+		{
+			case ECoreType::Vehicle:
+				FRotator NewRotation = PreviewStageState.CurrentVehicle->GetActorRotation();
+				NewRotation.Yaw += DeltaYaw * RotateSpeed;
+				NewRotation.Pitch = FMath::Clamp(NewRotation.Pitch + DeltaPitch * RotateSpeed, -90.f, 90.f);
+				PreviewStageState.CurrentVehicle->SetActorRelativeRotation(NewRotation);
+				break;
+		}
+
 	}
 	else
 	{
 		// Rotate the camera (spring arm) around mesh
-		FRotator NewRotation = SpringArm->GetRelativeRotation();
-		NewRotation.Yaw += DeltaYaw * RotateSpeed;
-		NewRotation.Pitch = FMath::Clamp(NewRotation.Pitch + DeltaPitch * RotateSpeed, -90.f, 45.f);
-		NewRotation.Roll = FMath::Clamp(NewRotation.Roll, 0.f, 0.f); // clamp roll
-		SpringArm->SetRelativeRotation(NewRotation);
+		switch (PreviewStageState.CurrentStageMode)
+		{
+			case ECoreType::Vehicle:
+				FRotator NewRotation = VehicleBoom->GetRelativeRotation();
+				NewRotation.Yaw += DeltaYaw * RotateSpeed;
+				NewRotation.Pitch = FMath::Clamp(NewRotation.Pitch + DeltaPitch * RotateSpeed, -90.f, 45.f);
+				NewRotation.Roll = FMath::Clamp(NewRotation.Roll, 0.f, 0.f); // clamp roll
+				VehicleBoom->SetRelativeRotation(NewRotation);
+				break;
+		}
 	}
 }
 
 void ALoadoutPreviewStage::ZoomPreview(float DeltaZoom)
 {
-	float NewLength = FMath::Clamp(SpringArm->TargetArmLength - DeltaZoom * ZoomSpeed, MinZoom, MaxZoom);
-	SpringArm->TargetArmLength = NewLength;
+	switch (PreviewStageState.CurrentStageMode)
+	{
+		case ECoreType::Vehicle:
+			float NewLength = FMath::Clamp(VehicleBoom->TargetArmLength - DeltaZoom * ZoomSpeed, MinZoom, MaxZoom);
+			VehicleBoom->TargetArmLength = NewLength;
+			break;
+	}
 }
 
 FName ALoadoutPreviewStage::GetVehicleMeshRootBoneName()
 {
-	if (!CurrentVehicle->VehicleMeshComponent->GetSkeletalMeshAsset())
+	if (!PreviewStageState.CurrentVehicle->VehicleMeshComponent->GetSkeletalMeshAsset())
 	{
 		UE_LOG(LogTemp, Warning, TEXT("No vehicle to center camera on!"));
 		return NAME_None;
 	}
-	USkeletalMesh* VehicleMesh = CurrentVehicle->VehicleMeshComponent->GetSkeletalMeshAsset();
+	USkeletalMesh* VehicleMesh = PreviewStageState.CurrentVehicle->VehicleMeshComponent->GetSkeletalMeshAsset();
 	FName RootBoneName = VehicleMesh->GetRefSkeleton().GetBoneName(0);
 	UE_LOG(LogTemp, Warning, TEXT("RootBoneName = %s"), *RootBoneName.ToString());
 	return RootBoneName;
+}
+
+AActor* ALoadoutPreviewStage::GetCurrentPreviewCameraActor()
+{
+	//use this to get a view target
+	switch (PreviewStageState.CurrentStageMode)
+	{
+		case ECoreType::Character:
+			return nullptr;
+			break;
+		case ECoreType::Weapon:
+			return PreviewStageState.WeaponCam;
+			break;
+		case ECoreType::Vehicle:
+			return PreviewStageState.VehicleCam;
+			break;
+	}
+	return nullptr;
 }
 
 

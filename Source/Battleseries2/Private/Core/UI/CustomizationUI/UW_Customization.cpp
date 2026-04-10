@@ -28,12 +28,20 @@
 #include "Data/Data_Camo.h"
 #include "Data/Vehicles/VehicleDefaults.h"
 
+/**
+* currently alot of similar/same state stored on both the customization menu and the loadout stage... merge into 1 system?
+* possibly loading ui class with too much non-UI logic?
+**/
+
 void UUW_Customization::NativeConstruct()
 {
 	Super::NativeConstruct();
-	//DataSubsystem = GetData_UUWCustomization();
-	CustomizationUIState.CurrentCustomizationMode = ECoreType::Vehicle;
 
+	PC = Cast<APlayerController_Base>(GetOwningPlayer());
+	CustomizationUIState.CurrentCustomizationMode = ECoreType::Vehicle;							//change this to be from customization default data
+
+	Btn_VehicleMode->OnClicked.AddDynamic(this, &UUW_Customization::OnVehicleModeBtnClicked);
+	Btn_WeaponMode->OnClicked.AddDynamic(this, &UUW_Customization::OnWeaponModeBtnClicked);
 	Btn_ExitCustomization->OnClicked.AddDynamic(this, &UUW_Customization::ExitCustomization);
 
 	//Init_Customization();			//dont autostart?
@@ -46,24 +54,58 @@ void UUW_Customization::NativeTick(const FGeometry& MyGeometry, float InDeltaTim
 
 void UUW_Customization::Init_Customization(ALoadoutPreviewStage* InputStageActor)
 {
-	SetPreviewStageActor(InputStageActor);
+	//called on enter of customization
 	switch (CustomizationUIState.CurrentCustomizationMode)
 	{
 		case ECoreType::Character:
 		case ECoreType::Weapon:
+			EnterWeaponMode(true, false);
 			break;
 		case ECoreType::Vehicle:
-			Build_VehicleTypeScrollbox();
-			CustomizationUIState.TypeEnumIndex = 1;				//set currentvehicle type to 1 so function updateselectedvehicle will run (will only run as intended if currentvehicletype != inputvehicletype)
-			RefreshTypeScrollBox();
-			UpdateSelectedVehicleType(0);			//default selected vehicle after customization widget is built is first one
+			EnterVehicleMode(true, false);
 			break;
 	}
 }
 
-void UUW_Customization::SetPreviewStageActor(ALoadoutPreviewStage* InputStageActor)
+void UUW_Customization::EnterVehicleMode(bool OverrideCheck, bool BlendView)
 {
-	CustomizationUIState.PreviewStageActor = InputStageActor;
+	if (!OverrideCheck)
+	{
+		if (CustomizationUIState.CurrentCustomizationMode == ECoreType::Vehicle)
+		{
+			return;
+		}
+	}
+	
+	CustomizationUIState.CurrentCustomizationMode = ECoreType::Vehicle;
+	Build_VehicleTypeScrollbox();
+	CustomizationUIState.TypeEnumIndex = 1;				//set currentvehicle type to 1 so function updateselectedvehicle will run (will only run as intended if currentvehicletype != inputvehicletype)
+	RefreshTypeScrollBox();
+	PC->PreviewStageActor->PreviewStageState.CurrentStageMode = ECoreType::Vehicle;		//make function on stage side
+	if (BlendView)
+	{
+		PC->SetViewTargetWithBlend(PC->PreviewStageActor->GetCurrentPreviewCameraActor(), 2.0f);
+	}
+	else
+	{
+		PC->SetViewTarget(PC->PreviewStageActor->GetCurrentPreviewCameraActor());
+	}
+	UpdateSelectedVehicleType(0);			//default selected vehicle after customization widget is built is first one
+}
+
+void UUW_Customization::EnterWeaponMode(bool OverrideCheck, bool BlendView)
+{
+	CustomizationUIState.CurrentCustomizationMode = ECoreType::Weapon;
+	PC->PreviewStageActor->PreviewStageState.CurrentStageMode = ECoreType::Weapon;
+
+	if (BlendView)
+	{
+		PC->SetViewTargetWithBlend(PC->PreviewStageActor->GetCurrentPreviewCameraActor(), 2.0f);
+	}
+	else
+	{
+		PC->SetViewTarget(PC->PreviewStageActor->GetCurrentPreviewCameraActor());
+	}
 }
 
 void UUW_Customization::Init_TypeScrollBox()
@@ -201,12 +243,15 @@ void UUW_Customization::Build_VehicleLoadoutData_Optic(const FSeatData& SeatData
 
 void UUW_Customization::Build_VehicleLoadoutData_Camo(const FVehicleData& VehicleData, int32 TypeEnumIndex)
 {
-	TArray<FName> Camos;
-	VehicleData.AvailableCamos.GetKeys(Camos);
-	FCustomizationSlotConfig NewSlotData = Build_LoadoutSlotData(Camos, ECoreItemType::Camo, -1, FText());
-	UUW_LoadoutSlot* NewSlotWidget = CreateNewLoadoutSlot();
-	NewSlotWidget->Init_LoadoutSlot_Vehicle(NewSlotData, 0);		//<--THIS SHOULDNT NEED A SEAT INDEX
-	LoadCurrentSave_VehicleCamo(NewSlotWidget, TypeEnumIndex);
+	if (VehicleData.AvailableCamos.Num() > 1)
+	{
+		TArray<FName> Camos;
+		VehicleData.AvailableCamos.GetKeys(Camos);
+		FCustomizationSlotConfig NewSlotData = Build_LoadoutSlotData(Camos, ECoreItemType::Camo, -1, FText());
+		UUW_LoadoutSlot* NewSlotWidget = CreateNewLoadoutSlot();
+		NewSlotWidget->Init_LoadoutSlot_Vehicle(NewSlotData, 0);		//<--THIS SHOULDNT NEED A SEAT INDEX
+		LoadCurrentSave_VehicleCamo(NewSlotWidget, TypeEnumIndex);
+	}
 }
 
 UUW_LoadoutSlot* UUW_Customization::CreateNewLoadoutSlot()
@@ -388,9 +433,10 @@ void UUW_Customization::UpdateVehiclePreview(int32 TypeEnumIndex)
 
 	//1. clear soontobe previous vehicle's loadout
 	//E_VehicleType VehicleType = CustomizationUIState.CustomizationUIState_Vehicle.CurrentVehicleType;
-	if (CustomizationUIState.PreviewStageActor->CurrentVehicle)
+	
+	if (PC->PreviewStageActor->PreviewStageState.CurrentVehicle)
 	{
-		CustomizationUIState.PreviewStageActor->CurrentVehicle->ClearEntireLoadoutFromVehicle();
+		PC->PreviewStageActor->PreviewStageState.CurrentVehicle->ClearEntireLoadoutFromVehicle();
 	}
 
 	//create new VehicleInstanceData (id, loadout, preview)
@@ -409,8 +455,7 @@ void UUW_Customization::UpdateVehiclePreview(int32 TypeEnumIndex)
 	FTransform PreviewTransform = GetData_UUWCustomization()->GetVehicleDataRow(NewVehicleStartingData.VehicleID)->CustomizationPosition;
 	UE_LOG(LogTemp, Warning, TEXT("location: %s"), *PreviewTransform.GetLocation().ToString());
 
-	//CustomizationUIState.PreviewStageActor->CurrentVehicle->VehicleWeaponLogicComponent->OnVWSCleared.AddDynamic(this, &UUW_Customization::UpdateVehiclePreview);
-	CustomizationUIState.PreviewStageActor->SetupNewPreviewVehicle(PreviewTransform, NewVehicleStartingData);		//<--default selection
+	PC->PreviewStageActor->SetupNewPreviewVehicle(PreviewTransform, NewVehicleStartingData);		//<--default selection
 }
 
 void UUW_Customization::UpdateSelectedVehicleType(int32 TypeEnumIndex)
@@ -444,25 +489,33 @@ void UUW_Customization::HandleSlotSelectionChanged(int32 SeatIndex, FCustomizati
 	{
 		case ECoreItemType::VehicleWeapon:
 			SaveSubsystem->SetLoadoutWeaponChoice_Vehicle(CurrentVehicleType, SeatIndex, SlotConfig.ItemSlot, SelectedItemID);
-			CustomizationUIState.PreviewStageActor->CurrentVehicle->VehicleWeaponLogicComponent->ClearWeaponSlotFromSeat(SeatIndex, SlotConfig.ItemSlot);
+			PC->PreviewStageActor->PreviewStageState.CurrentVehicle->VehicleWeaponLogicComponent->ClearWeaponSlotFromSeat(SeatIndex, SlotConfig.ItemSlot);
 			UE_LOG(LogTemp, Error, TEXT("[UW_Customization::HandleSlotSelectionChanged] ApplyLoadoutToSeat will be fired here"));
-			CustomizationUIState.PreviewStageActor->CurrentVehicle->VehicleWeaponLogicComponent->ApplyWeaponAtIndexToSeat(SeatIndex, SlotConfig.ItemSlot, SelectedItemID);
+			PC->PreviewStageActor->PreviewStageState.CurrentVehicle->VehicleWeaponLogicComponent->ApplyWeaponAtIndexToSeat(SeatIndex, SlotConfig.ItemSlot, SelectedItemID);
 			break;
 		case ECoreItemType::VehicleOptic:
 			SaveSubsystem->SetLoadoutOpticChoice_Vehicle(CurrentVehicleType, SeatIndex, SelectedItemID);
 			break;
 		case ECoreItemType::Camo:
-			//need vehicle/weapon/character mode state
 			SaveSubsystem->SetLoadoutCamoChoice_Vehicle(CurrentVehicleType, SelectedItemID);
-			CustomizationUIState.PreviewStageActor->CurrentVehicle->ApplyCamoToVehicle(SelectedItemID);
+			PC->PreviewStageActor->PreviewStageState.CurrentVehicle->ApplyCamoToVehicle(SelectedItemID);
 			break;
 	}
 }
 
 void UUW_Customization::ExitCustomization()
 {
-	APlayerController_Base* PC = Cast<APlayerController_Base>(GetOwningPlayer());
 	PC->ExitCustomizationScreen();
+}
+
+void UUW_Customization::OnVehicleModeBtnClicked()
+{
+	EnterVehicleMode(false, true);
+}
+
+void UUW_Customization::OnWeaponModeBtnClicked()
+{
+	EnterWeaponMode(false, true);
 }
 
 UDataManagerSubsystem* UUW_Customization::GetData_UUWCustomization()
@@ -482,8 +535,22 @@ FReply UUW_Customization::NativeOnMouseWheel(const FGeometry& InGeometry, const 
 	}
 	else
 	{
-		CustomizationUIState.PreviewStageActor->ZoomPreview(WheelDelta);
+		PC->PreviewStageActor->ZoomPreview(WheelDelta);
 	}
+	return FReply::Handled();
+}
+
+
+FReply UUW_Customization::NativeOnMouseButtonUp(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
+{
+	CustomizationUIState.isRotating = false;
+	return FReply::Handled();
+}
+
+FReply UUW_Customization::NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
+{
+	CustomizationUIState.isRotating = true;
+	CustomizationUIState.LastMousePosition = InMouseEvent.GetScreenSpacePosition();
 	return FReply::Handled();
 }
 

@@ -32,11 +32,14 @@ public:
 	UHUDSubsystem* GetHUDSystem();
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	UDataManagerSubsystem* GetDataSystem();
-protected:
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	ALoadoutPreviewStage* PreviewStageActor = nullptr;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TWeakObjectPtr<AActor> LastViewTarget = nullptr;
+protected:
+
+
 
 	virtual void BeginPlay() override;
 };

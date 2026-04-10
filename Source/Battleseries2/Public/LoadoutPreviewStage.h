@@ -9,6 +9,27 @@
 #include "Vehicle_Base.h"
 #include "LoadoutPreviewStage.generated.h"
 
+USTRUCT(BlueprintType)
+struct FPreviewState
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)		//the mode/generic category of thing we are customizing
+	ECoreType CurrentStageMode = ECoreType::Vehicle;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	AVehicle_Base* CurrentVehicle = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool RotateObject = false;		//true = rotate object, false = orbit camera
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	ACameraActor* WeaponCam = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	ACameraActor* VehicleCam = nullptr;
+};
+
 UCLASS()
 class BATTLESERIES2_API ALoadoutPreviewStage : public AActor
 {
@@ -19,20 +40,26 @@ public:
 	ALoadoutPreviewStage();
 
 	//Components
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
-	USpringArmComponent* SpringArm = nullptr;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
-	UCameraComponent* Camera = nullptr;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	USceneComponent* Root = nullptr;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	USceneComponent* VehicleAnchor = nullptr;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Components")
+	UStaticMeshComponent* GarageMesh = nullptr;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	USpringArmComponent* VehicleBoom = nullptr;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	USpringArmComponent* WeaponBoom = nullptr;
+
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	struct FPreviewState PreviewStageState = FPreviewState();
+
+
+	//move to customization data
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TSubclassOf<AVehicle_Base> VehicleClass = nullptr;
-	UPROPERTY(BlueprintReadWrite)
-	AVehicle_Base* CurrentVehicle = nullptr;
-	UPROPERTY()
-	AActor* CurrentObject = nullptr;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	bool RotateObject = false;		//true = rotate object, false = orbit camera
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float RotateSpeed = 1.f;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
@@ -48,6 +75,8 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	FName GetVehicleMeshRootBoneName();
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	AActor* GetCurrentPreviewCameraActor();
 
 	UFUNCTION(BlueprintCallable)
 	void CenterCameraOnVehicle();
@@ -61,8 +90,7 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
-	UPROPERTY(VisibleAnywhere)
-	USceneComponent* VehicleAnchor = nullptr;
+
 
 public:	
 	// Called every frame

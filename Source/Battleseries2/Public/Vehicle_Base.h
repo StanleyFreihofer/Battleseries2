@@ -85,7 +85,7 @@ public:
 
 
 	//VARIABLES
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "__Instance")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (ExposeOnSpawn = "true"), Category = "__Instance")
 	FVehicleStartingData VehicleStartingData = FVehicleStartingData();
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "__Runtime")
 	FVehicleCurrentState VehicleCurrentState = FVehicleCurrentState();
