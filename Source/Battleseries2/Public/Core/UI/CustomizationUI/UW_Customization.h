@@ -7,7 +7,7 @@
 #include "Data/Vehicles/Data_Vehicle.h"
 #include "UW_Customization.generated.h"
 
-class UUW_VehicleTypeButton;
+class UUW_LoadoutTypeButton;
 class UUW_LoadoutSlot;
 class ALoadoutPreviewStage;
 class UDataManagerSubsystem;
@@ -32,7 +32,7 @@ struct FCustomizationUIState
 	int32 TypeEnumIndex = -1;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
-	TArray<UUW_VehicleTypeButton*> TypeButtons;
+	TArray<UUW_LoadoutTypeButton*> TypeButtons;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
 	TArray<UUW_LoadoutSlot*> LoadoutSlots;		//each of the loadout slots
@@ -82,7 +82,7 @@ public:
 	FTimerHandle DetailsPanel_FadeTimerHandle = FTimerHandle();
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-	TSubclassOf<UUW_VehicleTypeButton> VehicleTypeButton = nullptr;
+	TSubclassOf<UUW_LoadoutTypeButton> VehicleTypeButton = nullptr;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	TSubclassOf<UUW_LoadoutSlot> LoadoutSlot = nullptr;
@@ -106,7 +106,11 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void EnterVehicleMode(bool OverrideCheck, bool BlendView);
 	UFUNCTION(BlueprintCallable)
-	void EnterWeaponMode(bool OverrideCheck, bool BlendView);
+	void EnterLoadoutMode(bool OverrideCheck, bool BlendView);
+	UFUNCTION(BlueprintCallable)
+	void EnterItemMode();
+	UFUNCTION(BlueprintCallable)
+	void ClearPreviousMode();
 	UFUNCTION(BlueprintCallable)
 	void Init_TypeScrollBox();
 	UFUNCTION(BlueprintCallable)

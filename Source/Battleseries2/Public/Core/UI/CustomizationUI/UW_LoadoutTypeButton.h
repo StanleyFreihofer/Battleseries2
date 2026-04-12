@@ -8,26 +8,26 @@
 #include "Components/TextBlock.h" 
 #include "Components/SizeBox.h"
 #include "Data/Vehicles/Data_Vehicle.h"
-#include "UW_VehicleTypeButton.generated.h"
+#include "UW_LoadoutTypeButton.generated.h"
 
 class UDataManagerSubsystem;
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnVehicleTypeClicked, int32, TypeIndex);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnLoadoutTypeClicked, int32, TypeIndex);
 
 /**
  * 
  */
 UCLASS()
-class BATTLESERIES2_API UUW_VehicleTypeButton : public UUserWidget
+class BATTLESERIES2_API UUW_LoadoutTypeButton : public UUserWidget
 {
 	GENERATED_BODY()
 
 public:
 	UPROPERTY(meta = (BindWidget))
-	UButton* Btn_VehicleType = nullptr;
+	UButton* Btn_LoadoutType = nullptr;
 
 	UPROPERTY(meta = (BindWidget))
-	UTextBlock* T_VehicleTypeName = nullptr;
+	UTextBlock* T_LoadoutTypeName = nullptr;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (BindWidget))
 	USizeBox* SizeBox = nullptr;
 
@@ -35,7 +35,7 @@ public:
 	int32 TypeEnumIndex = -1;
 
 	UPROPERTY(BlueprintAssignable)
-	FOnVehicleTypeClicked OnVehicleTypeClicked;
+	FOnLoadoutTypeClicked OnLoadoutTypeClicked;
 
 	UFUNCTION(BlueprintCallable)
 	void SetVehicleType(int32 NewType);

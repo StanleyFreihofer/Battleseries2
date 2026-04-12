@@ -14,7 +14,7 @@
 #include "Components/PanelWidget.h"     // Base class for panels
 #include "Components/Border.h"
 #include "Core/UI/CustomizationUI/UW_LoadoutSlot.h"
-#include "Core/UI/CustomizationUI/UW_VehicleTypeButton.h"
+#include "Core/UI/CustomizationUI/UW_LoadoutTypeButton.h"
 #include "LoadoutPreviewStage.h"
 #include "TimerManager.h"
 #include "Engine/World.h"
@@ -59,7 +59,7 @@ void UUW_Customization::Init_Customization(ALoadoutPreviewStage* InputStageActor
 	{
 		case ECoreType::Character:
 		case ECoreType::Weapon:
-			EnterWeaponMode(true, false);
+			EnterLoadoutMode(true, false);
 			break;
 		case ECoreType::Vehicle:
 			EnterVehicleMode(true, false);
@@ -69,18 +69,20 @@ void UUW_Customization::Init_Customization(ALoadoutPreviewStage* InputStageActor
 
 void UUW_Customization::EnterVehicleMode(bool OverrideCheck, bool BlendView)
 {
-	if (!OverrideCheck)
+	if (!OverrideCheck)		//used to ensure hitting the same button repeatedly wont result in reinitialization, entervehiclemode logic should only occur on enter into customization for first time or enter from other customization mode
 	{
 		if (CustomizationUIState.CurrentCustomizationMode == ECoreType::Vehicle)
 		{
 			return;
 		}
 	}
+
+	ClearPreviousMode();
 	
 	CustomizationUIState.CurrentCustomizationMode = ECoreType::Vehicle;
 	Build_VehicleTypeScrollbox();
 	CustomizationUIState.TypeEnumIndex = 1;				//set currentvehicle type to 1 so function updateselectedvehicle will run (will only run as intended if currentvehicletype != inputvehicletype)
-	RefreshTypeScrollBox();
+
 	PC->PreviewStageActor->PreviewStageState.CurrentStageMode = ECoreType::Vehicle;		//make function on stage side
 	if (BlendView)
 	{
@@ -90,13 +92,25 @@ void UUW_Customization::EnterVehicleMode(bool OverrideCheck, bool BlendView)
 	{
 		PC->SetViewTarget(PC->PreviewStageActor->GetCurrentPreviewCameraActor());
 	}
-	UpdateSelectedVehicleType(0);			//default selected vehicle after customization widget is built is first one
+
+	UpdateSelectedVehicleType(0);
+
+	/**
+	GetWorld()->GetTimerManager().SetTimerForNextTick([this]()
+	{
+		//RefreshTypeScrollBox();
+		UpdateSelectedVehicleType(0);
+	});
+	**/
 }
 
-void UUW_Customization::EnterWeaponMode(bool OverrideCheck, bool BlendView)
+void UUW_Customization::EnterLoadoutMode(bool OverrideCheck, bool BlendView)
 {
-	CustomizationUIState.CurrentCustomizationMode = ECoreType::Weapon;
-	PC->PreviewStageActor->PreviewStageState.CurrentStageMode = ECoreType::Weapon;
+	//character loadout (or kits)
+	ClearPreviousMode();
+
+	CustomizationUIState.CurrentCustomizationMode = ECoreType::Class;
+	PC->PreviewStageActor->PreviewStageState.CurrentStageMode = ECoreType::Class;
 
 	if (BlendView)
 	{
@@ -106,6 +120,24 @@ void UUW_Customization::EnterWeaponMode(bool OverrideCheck, bool BlendView)
 	{
 		PC->SetViewTarget(PC->PreviewStageActor->GetCurrentPreviewCameraActor());
 	}
+}
+
+void UUW_Customization::EnterItemMode()
+{
+	//enter into mode that allows 1 to customize an item within a loadout (guns/character weapon for example)
+}
+
+void UUW_Customization::ClearPreviousMode()
+{
+	//clear type buttons
+	for (UUW_LoadoutTypeButton* TypeButton : CustomizationUIState.TypeButtons)
+	{
+		TypeButton->RemoveFromParent();
+	}
+	CustomizationUIState.TypeButtons.Empty();
+
+	Clear_LoadoutPanel();
+	ScrollBox->ClearChildren();
 }
 
 void UUW_Customization::Init_TypeScrollBox()
@@ -117,9 +149,9 @@ void UUW_Customization::Build_VehicleTypeScrollbox()
 {
 	for (E_VehicleType VehicleType : TEnumRange<E_VehicleType>())		//change to data from customization defaults
 	{
-		UUW_VehicleTypeButton* NewVehicleTypeButton = CreateWidget<UUW_VehicleTypeButton>(GetWorld(), VehicleTypeButton);
+		UUW_LoadoutTypeButton* NewVehicleTypeButton = CreateWidget<UUW_LoadoutTypeButton>(GetWorld(), VehicleTypeButton);
 		NewVehicleTypeButton->SetVehicleType((int32)VehicleType);
-		NewVehicleTypeButton->OnVehicleTypeClicked.AddDynamic(this, &UUW_Customization::UpdateSelectedVehicleType);			//bind the delegate 
+		NewVehicleTypeButton->OnLoadoutTypeClicked.AddDynamic(this, &UUW_Customization::UpdateSelectedVehicleType);			
 		ScrollBox->AddChild(NewVehicleTypeButton);
 		CustomizationUIState.TypeButtons.Add(NewVehicleTypeButton);
 	}
@@ -128,13 +160,13 @@ void UUW_Customization::Build_VehicleTypeScrollbox()
 void UUW_Customization::RepopulateTypeScrollBox()
 {
 	ScrollBox->ClearChildren();
-	float ScrollBoxWidth = ScrollBox->GetTickSpaceGeometry().GetLocalSize().X;
-	if (ScrollBoxWidth <= 0) ScrollBoxWidth = 1920.0f; // Fallback for first frame
-	float TargetWidth = ScrollBoxWidth / 3.0f;
-	for (UUW_VehicleTypeButton* Btn : CustomizationUIState.TypeButtons)
+	//float ScrollBoxWidth = 1920.0f;//ScrollBox->GetTickSpaceGeometry().GetLocalSize().X;
+	//if (ScrollBoxWidth <= 0) ScrollBoxWidth = 1920.0f; // Fallback for first frame
+	//float TargetWidth = ScrollBoxWidth / 3.0f;
+	for (UUW_LoadoutTypeButton* Btn : CustomizationUIState.TypeButtons)
 	{
 		ScrollBox->AddChild(Btn);
-		Btn->SizeBox->SetWidthOverride(TargetWidth);
+		Btn->SizeBox->SetWidthOverride(360.0f);
 	}
 }
 
@@ -156,14 +188,14 @@ void UUW_Customization::RefreshTypeScrollBox()
 	{
 		if (CurrentPos > 1)
 		{
-			UUW_VehicleTypeButton* FirstBtn = ButtonArray[0];
+			UUW_LoadoutTypeButton* FirstBtn = ButtonArray[0];
 			ButtonArray.RemoveAt(0);
 			ButtonArray.Add(FirstBtn);
 			CurrentPos--;
 		}
 		else if (CurrentPos < 1)
 		{
-			UUW_VehicleTypeButton* LastBtn = ButtonArray.Last();
+			UUW_LoadoutTypeButton* LastBtn = ButtonArray.Last();
 			ButtonArray.RemoveAt(ButtonArray.Num() - 1);
 			ButtonArray.Insert(LastBtn, 0);
 			CurrentPos++;
@@ -402,6 +434,7 @@ void UUW_Customization::FillDetailsPanel_VehicleWeapon(FName WeaponID)
 	UE_LOG(LogTemp, Error, TEXT("[UW_Customization::FillDetailsPanel_VehicleWeapon] WeaponID = %s"), *WeaponID.ToString());
 	const FVehicleWeaponData* VehicleWeaponData = GetData_UUWCustomization()->GetVehicleWeaponDataRow(WeaponID);
 	T_ItemName->SetText(VehicleWeaponData->WeaponData.WeaponClassification.WeaponDisplayName);
+	T_Description->SetText(VehicleWeaponData->WeaponData.WeaponClassification.WeaponDescription);
 }
 
 void UUW_Customization::FillDetailsPanel_Optic(FName OpticID)
@@ -469,7 +502,7 @@ void UUW_Customization::UpdateSelectedVehicleType(int32 TypeEnumIndex)
 		Build_VehicleLoadoutPanel(CustomizationUIState.TypeEnumIndex);
 		UpdateVehiclePreview(TypeEnumIndex);
 
-		for (UUW_VehicleTypeButton* VehicleTypeButtonInQuestion : CustomizationUIState.TypeButtons)		//make this a function (handle typeselection or some shi)
+		for (UUW_LoadoutTypeButton* VehicleTypeButtonInQuestion : CustomizationUIState.TypeButtons)		//make this a function (handle typeselection or some shi)
 		{
 			if (VehicleTypeButtonInQuestion->TypeEnumIndex != TypeEnumIndex)
 			{
@@ -515,7 +548,7 @@ void UUW_Customization::OnVehicleModeBtnClicked()
 
 void UUW_Customization::OnWeaponModeBtnClicked()
 {
-	EnterWeaponMode(false, true);
+	EnterLoadoutMode(false, true);
 }
 
 UDataManagerSubsystem* UUW_Customization::GetData_UUWCustomization()

@@ -21,6 +21,9 @@ struct FBaseClassificationData
 	FText WeaponDisplayNameAbrev = FText();
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	FText WeaponDescription = FText();
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	EWeaponType WeaponType = EWeaponType::AssaultRifle;
 };
 

@@ -34,8 +34,8 @@ void UUW_LoadoutSlot::Init_LoadoutSlot_Vehicle(FCustomizationSlotConfig Customiz
 	{
 		AddDropdownOption(SlotData.SlotConfig.AvailableItems[i], i);
 	}
-	Btn_LoadoutSlot->OnHovered.AddDynamic(this, &UUW_LoadoutSlot::HandleSlotSelected);
-	Btn_LoadoutSlot->OnClicked.AddDynamic(this, &UUW_LoadoutSlot::HandleSlotSelected);
+	Btn_LoadoutSlot->OnHovered.AddDynamic(this, &UUW_LoadoutSlot::HandleSlotHovered);				//hover should be show list of options
+	Btn_LoadoutSlot->OnClicked.AddDynamic(this, &UUW_LoadoutSlot::HandleSlotHovered);				//click should be (if customizable) enter into this thing (weapon) to customize
 	Btn_LoadoutSlot->OnUnhovered.AddDynamic(this, &UUW_LoadoutSlot::HandleSelectStatus);
 }
 
@@ -85,18 +85,30 @@ void UUW_LoadoutSlot::AddDropdownOption(FName NewOptionID, int32 OptionIndex)
 	{
 
 	}
-	NewDropdownOption->Btn_DropdownOption->OnHovered.AddDynamic(this, &UUW_LoadoutSlot::UpdateSlot_Select);
+	NewDropdownOption->Btn_DropdownOption->OnHovered.AddDynamic(this, &UUW_LoadoutSlot::UpdateSlot_Hover);		
 	NewDropdownOption->Btn_DropdownOption->OnUnhovered.AddDynamic(this, &UUW_LoadoutSlot::HandleSelectStatus);
-	NewDropdownOption->OnOptionClicked.AddDynamic(this, &UUW_LoadoutSlot::HandleOptionSelected);
+	NewDropdownOption->OnOptionClicked.AddDynamic(this, &UUW_LoadoutSlot::HandleOptionSelected);			
 	VerticalBox_OptionsList->AddChild(NewDropdownOption);
 	DropdownOptions.Add(NewDropdownOption);
 	NewDropdownOption->Init_DropdownOption(NewOptionID, DisplayName, OptionIndex, ESlateVisibility::Collapsed);
 }
 
+void UUW_LoadoutSlot::HandleSlotHovered()
+{
+	UpdateSlot_Hover();
+	OnSlotOptionUsed.Broadcast(SlotData, SlotData.SelectedOptionIndex);
+}
+
 void UUW_LoadoutSlot::HandleSlotSelected()
 {
-	UpdateSlot_Select();
-	OnSlotOptionUsed.Broadcast(SlotData, SlotData.SelectedOptionIndex);
+	//enters user into customization of whatever selected item in this loadout slot, we are customizing an item within the loadout (2 layers of customization down technically: loadout>item)
+	//should only enter into customization if item in this slot can be customized (gun can be customized, grenade or vehicle weapon cant for example)
+
+	switch (SlotData.SlotConfig.CoreItemType)
+	{
+		case ECoreItemType::CharacterWeapon:
+			break;
+	}
 }
 
 void UUW_LoadoutSlot::HandleOptionSelected(UUW_DropdownOption* ClickedOption)
@@ -161,7 +173,7 @@ bool UUW_LoadoutSlot::ValidateSlotDeselection()
 	return true;	//nothing in slot is selected	
 }
 
-void UUW_LoadoutSlot::UpdateSlot_Select()
+void UUW_LoadoutSlot::UpdateSlot_Hover()
 {
 	SB_Slot->SetHeightOverride(SB_SlotHeightOverride_UnHovered * 4);
 	Img_ItemIcon_Unhover->SetVisibility(ESlateVisibility::Hidden);
@@ -180,7 +192,7 @@ void UUW_LoadoutSlot::UpdateSlot_Select()
 	}
 }
 
-void UUW_LoadoutSlot::UpdateSlot_Deselect()
+void UUW_LoadoutSlot::UpdateSlot_UnHover()
 {
 	SB_Slot->SetHeightOverride(SB_SlotHeightOverride_UnHovered);
 	Img_ItemIcon_Unhover->SetVisibility(ESlateVisibility::Visible);
@@ -196,6 +208,6 @@ void UUW_LoadoutSlot::HandleSelectStatus()		//wrapper function for delegates
 {
 	if (ValidateSlotDeselection())
 	{
-		UpdateSlot_Deselect();
+		UpdateSlot_UnHover();
 	}
 }

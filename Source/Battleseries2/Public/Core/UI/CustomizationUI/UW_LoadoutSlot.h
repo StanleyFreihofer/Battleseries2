@@ -172,6 +172,8 @@ public:
 	void AddDropdownOption(FName NewOptionID, int32 OptionIndex);
 
 	UFUNCTION(BlueprintCallable)
+	void HandleSlotHovered();
+	UFUNCTION(BlueprintCallable)
 	void HandleSlotSelected();
 	UFUNCTION(BlueprintCallable)
 	void HandleOptionSelected(UUW_DropdownOption* ClickedOption);
@@ -188,9 +190,9 @@ public:
 	UFUNCTION(BlueprintCallable)
 	bool ValidateSlotDeselection();
 	UFUNCTION(BlueprintCallable)
-	void UpdateSlot_Select();
+	void UpdateSlot_Hover();
 	UFUNCTION(BlueprintCallable)
-	void UpdateSlot_Deselect();
+	void UpdateSlot_UnHover();
 	UFUNCTION(BlueprintCallable)
 	void HandleSelectStatus();
 

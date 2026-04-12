@@ -48,6 +48,7 @@ UENUM(BlueprintType)
 enum class ECoreType : uint8
 {
 	Character		UMETA(DisplayName = "Character"),
+	Class			UMETA(DisplayName = "Class/Loadout/Kit"),
 	Weapon			UMETA(DisplayName = "Weapon"),
 	Vehicle			UMETA(DisplayName = "Vehicle")
 };

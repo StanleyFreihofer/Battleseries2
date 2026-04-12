@@ -24,7 +24,10 @@ struct FPreviewState
 	bool RotateObject = false;		//true = rotate object, false = orbit camera
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
-	ACameraActor* WeaponCam = nullptr;
+	ACameraActor* LoadoutCam = nullptr;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	ACameraActor* ItemCam = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	ACameraActor* VehicleCam = nullptr;
@@ -50,7 +53,9 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	USpringArmComponent* VehicleBoom = nullptr;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
-	USpringArmComponent* WeaponBoom = nullptr;
+	USpringArmComponent* LoadoutBoom = nullptr;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	USpringArmComponent* ItemBoom = nullptr;
 
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
