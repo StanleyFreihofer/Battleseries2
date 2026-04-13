@@ -15,7 +15,7 @@ enum class E_MovementType : uint8
 };
 
 UENUM(BlueprintType)
-enum class E_VehicleType : uint8
+enum class EVehicleType : uint8
 {
 	Tank					UMETA(DisplayName = "Tank"),
 	TankDestroyer			UMETA(DisplayName = "Tank Destroyer"),
@@ -40,7 +40,7 @@ enum class E_VehicleType : uint8
 	//VTOL
 	//stationary turret?
 };
-ENUM_RANGE_BY_COUNT(E_VehicleType, E_VehicleType::MAX);
+ENUM_RANGE_BY_COUNT(EVehicleType, EVehicleType::MAX);
 
 UENUM(BlueprintType)
 enum class E_SeatRole : uint8

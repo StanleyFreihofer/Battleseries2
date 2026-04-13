@@ -21,10 +21,12 @@ ALoadoutPreviewStage::ALoadoutPreviewStage()
 	VehicleAnchor->SetupAttachment(Root);
 	VehicleBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("VehicleBoom"));
 	LoadoutBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("LoadoutBoom"));
+	PreviewGun = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("PreviewGun"));
 	ItemBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("ItemBoom"));
 	VehicleBoom->SetupAttachment(VehicleAnchor, FName(""));
 	LoadoutBoom->SetupAttachment(Root, FName(""));
-	ItemBoom->SetupAttachment(Root, FName(""));
+	PreviewGun->SetupAttachment(Root);
+	ItemBoom->SetupAttachment(PreviewGun, FName(""));
 }
 
 // Called when the game starts or when spawned
@@ -71,9 +73,17 @@ void ALoadoutPreviewStage::CenterCameraOnVehicle()
 	VehicleBoom->SetRelativeRotation(FRotator(-30, -150,0)); // slight tilt
 }
 
+void ALoadoutPreviewStage::UpdateCameraBoomLength(USpringArmComponent* CamBoom, float DeltaZoom, float ZoomSpeed, float MinZoom, float MaxZoom)
+{
+	float NewLength;
+	NewLength = FMath::Clamp(CamBoom->TargetArmLength - DeltaZoom * ZoomSpeed, MinZoom, MaxZoom);
+	CamBoom->TargetArmLength = NewLength;
+}
+
 void ALoadoutPreviewStage::RotatePreview(float DeltaYaw, float DeltaPitch)
 {
 	FRotator NewRotation;
+	float RotateSpeed = GetCustomizationSystemDefaults()->CustomizationModeCamSettings.Find(PreviewStageState.CurrentStageMode)->RotateSpeed;
 	if (PreviewStageState.RotateObject)
 	{
 		// Rotate the mesh locally
@@ -115,18 +125,20 @@ void ALoadoutPreviewStage::RotatePreview(float DeltaYaw, float DeltaPitch)
 
 void ALoadoutPreviewStage::ZoomPreview(float DeltaZoom)
 {
+	float ZoomSpeed = GetCustomizationSystemDefaults()->CustomizationModeCamSettings.Find(PreviewStageState.CurrentStageMode)->ZoomSpeed;
+	float MinZoom = GetCustomizationSystemDefaults()->CustomizationModeCamSettings.Find(PreviewStageState.CurrentStageMode)->MinZoom;
+	float MaxZoom = GetCustomizationSystemDefaults()->CustomizationModeCamSettings.Find(PreviewStageState.CurrentStageMode)->MaxZoom;
+
 	switch (PreviewStageState.CurrentStageMode)
 	{
-		float NewLength;
 		case ECoreType::Vehicle:
-			NewLength = FMath::Clamp(VehicleBoom->TargetArmLength - DeltaZoom * ZoomSpeed, MinZoom, MaxZoom);
-			VehicleBoom->TargetArmLength = NewLength;
+			UpdateCameraBoomLength(VehicleBoom, DeltaZoom, ZoomSpeed, MinZoom, MaxZoom);
 			break;
 		case ECoreType::Class:
-			NewLength = FMath::Clamp(LoadoutBoom->TargetArmLength - DeltaZoom * ZoomSpeed, MinZoom, MaxZoom);
-			LoadoutBoom->TargetArmLength = NewLength;
+			UpdateCameraBoomLength(LoadoutBoom, DeltaZoom, ZoomSpeed, MinZoom, MaxZoom);
+			break;
 		case ECoreType::Weapon:
-			NewLength = FMath::Clamp(LoadoutBoom->TargetArmLength - DeltaZoom * ZoomSpeed, MinZoom, MaxZoom);
+			UpdateCameraBoomLength(ItemBoom, DeltaZoom, ZoomSpeed, MinZoom, MaxZoom);
 			break;
 	}
 }
@@ -163,6 +175,11 @@ AActor* ALoadoutPreviewStage::GetCurrentPreviewCameraActor()
 			break;
 	}
 	return nullptr;
+}
+
+UDA_CustomizationDefaults* ALoadoutPreviewStage::GetCustomizationSystemDefaults()
+{
+	return GetGameInstance()->GetSubsystem<UDataManagerSubsystem>()->GetCustomizationDefaults();
 }
 
 

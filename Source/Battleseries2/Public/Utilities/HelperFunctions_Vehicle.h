@@ -14,9 +14,9 @@ class BATTLESERIES2_API UHelperFunctions_Vehicle : public UObject
 public:
     // Convert all row names in a DataTable to enum values
     UFUNCTION(BlueprintCallable, Category = "Vehicle|HUD")
-    static void ConvertNamesToVehicleTypes(const TArray<FName>& VehicleTypeNames, TArray<E_VehicleType>& OutVehicleTypes);
+    static void ConvertNamesToVehicleTypes(const TArray<FName>& VehicleTypeNames, TArray<EVehicleType>& OutVehicleTypes);
 
     // Convert enum value to its literal string name (not DisplayName)
     UFUNCTION(BlueprintCallable, Category = "Vehicle|HUD")
-    static FString GetVehicleTypeLiteralString(E_VehicleType VehicleType);
+    static FString GetVehicleTypeLiteralString(EVehicleType VehicleType);
 };

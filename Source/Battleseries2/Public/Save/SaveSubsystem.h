@@ -26,18 +26,18 @@ class BATTLESERIES2_API USaveSubsystem : public UGameInstanceSubsystem
 		UFUNCTION(BlueprintCallable)
 		UPlayerSave_Loadout* GetLoadoutSave() const { return LoadoutSave; }
 		UFUNCTION(BlueprintCallable)
-		const FPlayerLoadoutConfig_Vehicle& GetVehicleLoadout(E_VehicleType VehicleType);
+		const FPlayerLoadoutConfig_Vehicle& GetVehicleLoadout(EVehicleType VehicleType);
 		UFUNCTION(BlueprintCallable)
-		const FSavedSeatLoadout& GetSeatLoadout(E_VehicleType VehicleType, int32 SeatIndex);
+		const FSavedSeatLoadout& GetSeatLoadout(EVehicleType VehicleType, int32 SeatIndex);
 
 		UFUNCTION(BlueprintCallable)
-		void SetLoadoutWeaponChoice_Vehicle(E_VehicleType VehicleType, int32 SeatIndex, int32 WeaponIndex, FName WeaponID);
+		void SetLoadoutWeaponChoice_Vehicle(EVehicleType VehicleType, int32 SeatIndex, int32 WeaponIndex, FName WeaponID);
 		UFUNCTION(BlueprintCallable)
-		void SetLoadoutOpticChoice_Vehicle(E_VehicleType VehicleType, int32 SeatIndex, FName OpticID);
+		void SetLoadoutOpticChoice_Vehicle(EVehicleType VehicleType, int32 SeatIndex, FName OpticID);
 		UFUNCTION(BlueprintCallable)
-		void SetLoadoutCamoChoice_Vehicle(E_VehicleType VehicleType, FName CamoID);
+		void SetLoadoutCamoChoice_Vehicle(EVehicleType VehicleType, FName CamoID);
 
 		UFUNCTION(BlueprintCallable)
-		void EnsureSeatDefaults(E_VehicleType VehicleType, int32 SeatIndex);
+		void EnsureSeatDefaults(EVehicleType VehicleType, int32 SeatIndex);
 	
 };

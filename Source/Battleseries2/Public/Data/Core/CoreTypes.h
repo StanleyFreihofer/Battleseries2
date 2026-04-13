@@ -34,9 +34,27 @@ struct FSavedSeatLoadout
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TArray<FName> Weapons;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	FName Optic;
+	FName Optic = NAME_None;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	FName Upgrade;
+	FName Upgrade = NAME_None;
+};
+
+USTRUCT(BlueprintType)
+struct FPlayerLoadoutConfig_Class
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FName PrimaryWeapon = NAME_None;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FName Sidearm = NAME_None;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FName Gadget1 = NAME_None;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FName Gadget2 = NAME_None;
 };
 
 USTRUCT(BlueprintType)
@@ -49,7 +67,7 @@ struct FPlayerLoadoutConfig_Vehicle
 	TMap<int32, FSavedSeatLoadout> SeatLoadout;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	FName VehicleCamo;
+	FName VehicleCamo = NAME_None;
 };
 
 USTRUCT(BlueprintType)

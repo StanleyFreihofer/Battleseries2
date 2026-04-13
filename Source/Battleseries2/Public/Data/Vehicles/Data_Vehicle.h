@@ -317,7 +317,7 @@ struct FVehicleData : public FTableRowBase			//<-- makes it accessible for data 
 	E_MovementType Movement_Type = E_MovementType::GroundVehicle;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	E_VehicleType Vehicle_Type = E_VehicleType::Tank;
+	EVehicleType Vehicle_Type = EVehicleType::Tank;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	TSoftObjectPtr<UTexture2D> VehicleIcon = nullptr;
@@ -355,9 +355,9 @@ struct FVehicleData : public FTableRowBase			//<-- makes it accessible for data 
 	FHelicopterData Helicopter_Data = FHelicopterData();
 
 	// --- Static helper function to get row names by vehicle type ---
-	static TArray<FName> GetRowNamesOfType(UDataTable* VehicleDataTable, E_VehicleType TypeToFilter)
+	static TArray<FName> GetRowNamesOfType(UDataTable* VehicleDataTable, EVehicleType TypeToFilter)
 	{
-		FString TypeName = StaticEnum<E_VehicleType>()->GetNameStringByValue((int64)TypeToFilter);
+		FString TypeName = StaticEnum<EVehicleType>()->GetNameStringByValue((int64)TypeToFilter);
 		TArray<FName> AllVehicleIDsOfType;
 		const TArray<FName>& AllVehicleIDs = VehicleDataTable->GetRowNames();
 		for (FName VehicleID : AllVehicleIDs)

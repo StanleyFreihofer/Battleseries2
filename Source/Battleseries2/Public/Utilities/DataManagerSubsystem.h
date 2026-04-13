@@ -15,9 +15,10 @@ struct FVehicleAttachmentData;
 struct FOpticData;
 struct FProjectileData;
 struct FCamoData;
-enum class E_VehicleType : uint8;
+enum class EVehicleType : uint8;
 class UDA_CharacterDefaults;
 class UDA_VehicleDefaults;
+class UDA_SoldierClassDefaults;
 class UDA_WeaponDefaults;
 class UDA_CustomizationDefaults;
 class UDA_CoreTypes;
@@ -57,6 +58,9 @@ public:
 
     UPROPERTY(EditAnywhere, Category = "Data Assets")
     TSoftObjectPtr<UDA_CharacterDefaults> CharacterDefaultsDAAsset;
+
+    UPROPERTY(EditAnywhere, Category = "Data Assets")
+    TSoftObjectPtr<UDA_SoldierClassDefaults> SoldierClassDefaultsDAAsset;
 
     UPROPERTY(EditAnywhere, Category = "Data Assets")
     TSoftObjectPtr<UDA_WeaponDefaults> WeaponDefaultsDAAsset;
@@ -112,6 +116,9 @@ public:
     UDA_CharacterDefaults* GetCharacterDefaults() const { return CharacterDefaultsDataAsset; }
 
     UFUNCTION(BlueprintCallable, Category = "Data")
+    UDA_SoldierClassDefaults* GetSoldierClassDefaults() const { return SoldierClassDefaultsDataAsset; }
+
+    UFUNCTION(BlueprintCallable, Category = "Data")
     UDA_WeaponDefaults* GetWeaponDefaults() const { return WeaponDefaultsDataAsset; }
 
     UFUNCTION(BlueprintCallable, Category = "Data")
@@ -141,7 +148,7 @@ public:
     UFUNCTION(BlueprintCallable)
     TArray<FName> GetAllProjectileIDs() const;
     UFUNCTION(BlueprintCallable)
-    FName GetFirstVehicleIDOfType(E_VehicleType VehicleType) const;
+    FName GetFirstVehicleIDOfType(EVehicleType VehicleType) const;
     UFUNCTION(BlueprintCallable)
     FText GetWeaponSlotName(int32 WeaponSlotIndex);
 
@@ -194,6 +201,9 @@ private:
 
     UPROPERTY()
     UDA_CharacterDefaults* CharacterDefaultsDataAsset;
+
+    UPROPERTY()
+    UDA_SoldierClassDefaults* SoldierClassDefaultsDataAsset;
 
     UPROPERTY()
     UDA_WeaponDefaults* WeaponDefaultsDataAsset;

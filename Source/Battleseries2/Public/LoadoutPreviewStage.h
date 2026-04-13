@@ -9,6 +9,8 @@
 #include "Vehicle_Base.h"
 #include "LoadoutPreviewStage.generated.h"
 
+struct FAttachmentState;
+
 USTRUCT(BlueprintType)
 struct FPreviewState
 {
@@ -19,6 +21,9 @@ struct FPreviewState
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	AVehicle_Base* CurrentVehicle = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)				//attachment state of preview gun
+	TArray<FAttachmentState> PreviewGun_AttachmentState;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	bool RotateObject = false;		//true = rotate object, false = orbit camera
@@ -49,47 +54,38 @@ public:
 	USceneComponent* VehicleAnchor = nullptr;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Components")
 	UStaticMeshComponent* GarageMesh = nullptr;
-
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	USpringArmComponent* VehicleBoom = nullptr;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	USpringArmComponent* LoadoutBoom = nullptr;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	USpringArmComponent* ItemBoom = nullptr;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
+	USkeletalMeshComponent* PreviewGun = nullptr;
 
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	struct FPreviewState PreviewStageState = FPreviewState();
 
-
-	//move to customization data
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	TSubclassOf<AVehicle_Base> VehicleClass = nullptr;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float RotateSpeed = 1.f;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float ZoomSpeed = 20.f;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float MinZoom = 50.f;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float MaxZoom = 1500.f;
-
 	//if we're gonna expand to not just be spawning vehicle but also regular weapons, need additional functions (consider interface)
 	UFUNCTION(BlueprintCallable)
 	void SetupNewPreviewVehicle(FTransform PreviewTransformOffset, FVehicleStartingData InputVehicleStartingData);
-
-	UFUNCTION(BlueprintCallable)
-	FName GetVehicleMeshRootBoneName();
-	UFUNCTION(BlueprintCallable, BlueprintPure)
-	AActor* GetCurrentPreviewCameraActor();
-
 	UFUNCTION(BlueprintCallable)
 	void CenterCameraOnVehicle();
+	UFUNCTION(BlueprintCallable)
+	void UpdateCameraBoomLength(USpringArmComponent* CamBoom, float DeltaZoom, float ZoomSpeed, float MinZoom, float MaxZoom);
 
 	UFUNCTION(BlueprintCallable)
 	void RotatePreview(float DeltaYaw, float DeltaPitch);
 	UFUNCTION(BlueprintCallable)
 	void ZoomPreview(float DeltaZoom);
+
+	UFUNCTION(BlueprintCallable)
+	FName GetVehicleMeshRootBoneName();
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	AActor* GetCurrentPreviewCameraActor();
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	UDA_CustomizationDefaults* GetCustomizationSystemDefaults();
 
 protected:
 	// Called when the game starts or when spawned

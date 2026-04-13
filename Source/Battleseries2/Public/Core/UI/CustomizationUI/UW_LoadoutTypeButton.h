@@ -38,6 +38,8 @@ public:
 	FOnLoadoutTypeClicked OnLoadoutTypeClicked;
 
 	UFUNCTION(BlueprintCallable)
+	void SetSoldierClassType(int32 NewType);
+	UFUNCTION(BlueprintCallable)
 	void SetVehicleType(int32 NewType);
 
 	UFUNCTION(BlueprintCallable)

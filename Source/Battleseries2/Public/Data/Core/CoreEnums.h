@@ -67,8 +67,10 @@ enum class EClassType : uint8
 	Medic		UMETA(DisplayName = "Medic"),
 	Engineer	UMETA(DisplayName = "Engineer"),
 	Support		UMETA(DisplayName = "Support"),
-	Recon		UMETA(DisplayName = "Recon")
+	Recon		UMETA(DisplayName = "Recon"),
+	MAX			UMETA(Hidden)
 };
+ENUM_RANGE_BY_COUNT(EClassType, EClassType::MAX);
 
 
 /**

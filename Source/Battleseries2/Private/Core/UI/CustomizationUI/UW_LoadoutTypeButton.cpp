@@ -3,6 +3,7 @@
 #include "Core/UI/CustomizationUI/UW_LoadoutTypeButton.h"
 #include "Utilities/DataManagerSubsystem.h"
 #include "Data/Vehicles/VehicleDefaults.h"
+#include "Data/SoldierClassDefaults.h"
 
 void UUW_LoadoutTypeButton::NativeConstruct()
 {
@@ -16,11 +17,19 @@ void UUW_LoadoutTypeButton::NativeConstruct()
 	}
 };
 
+void UUW_LoadoutTypeButton::SetSoldierClassType(int32 NewType)
+{
+	TypeEnumIndex = NewType;
+	DataSubsystem = GetGameInstance()->GetSubsystem<UDataManagerSubsystem>();
+	FText DisplayNameText = DataSubsystem->GetSoldierClassDefaults()->SoldierClassDefinitions.Find(static_cast<EClassType>(NewType))->DisplayName;
+	T_LoadoutTypeName->SetText(DisplayNameText);
+}
+
 void UUW_LoadoutTypeButton::SetVehicleType(int32 NewType)
 {
 	TypeEnumIndex = NewType;
     DataSubsystem = GetGameInstance()->GetSubsystem<UDataManagerSubsystem>();
-	FText DisplayNameText = DataSubsystem->GetVehicleDefaults()->VehicleTypeDefintions.Find(static_cast<E_VehicleType>(NewType))->DisplayName;
+	FText DisplayNameText = DataSubsystem->GetVehicleDefaults()->VehicleTypeDefintions.Find(static_cast<EVehicleType>(NewType))->DisplayName;
 	UE_LOG(LogTemp, Warning, TEXT("[UUW_LoadoutTypeButton::SetVehicleType] %s"), *DisplayNameText.ToString());
     T_LoadoutTypeName->SetText(DisplayNameText);
 }

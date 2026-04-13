@@ -4,7 +4,7 @@
 #include "Engine/DataAsset.h"
 #include "VehicleDefaults.generated.h"
 
-enum class E_VehicleType : uint8;
+enum class EVehicleType : uint8;
 
 //defines traits of a vehicle type
 
@@ -13,17 +13,14 @@ struct FVehicleTypeDefintion
 {
 	GENERATED_BODY()
 
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)      //need this?
-    E_VehicleType VehicleType;
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+    FText DisplayName = FText::GetEmpty();
 
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-    FText DisplayName;
+    FText Description = FText::GetEmpty();
 
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-    FText Description;
-
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-    TSoftObjectPtr<UTexture2D> TypeIcon;                //minimap?
+    TSoftObjectPtr<UTexture2D> TypeIcon = nullptr;               //minimap?
 
     //default seat count?
     //default turrets, weapons, etc?
@@ -39,5 +36,5 @@ public:
     TSoftObjectPtr<UMaterialInterface> HUDMasterMaterial = nullptr;
 
     UPROPERTY(EditAnywhere, BlueprintReadOnly)
-    TMap<E_VehicleType, FVehicleTypeDefintion> VehicleTypeDefintions;
+    TMap<EVehicleType, FVehicleTypeDefintion> VehicleTypeDefintions;
 };

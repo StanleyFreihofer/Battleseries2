@@ -68,6 +68,7 @@ void UDataManagerSubsystem::LoadDataTables()
     CoreTypeDefinitionsDataAsset = CoreTypeDefinitionsDAAsset.LoadSynchronous();
     CustomizationDefaultsDataAsset = CustomizationDefaultsDAAsset.LoadSynchronous();
     CharacterDefaultsDataAsset = CharacterDefaultsDAAsset.LoadSynchronous();
+    SoldierClassDefaultsDataAsset = SoldierClassDefaultsDAAsset.LoadSynchronous();
     WeaponDefaultsDataAsset = WeaponDefaultsDAAsset.LoadSynchronous();
     VehicleDefaultsDataAsset = VehicleDefaultsDAAsset.LoadSynchronous();
 
@@ -170,7 +171,7 @@ TArray<FName> UDataManagerSubsystem::GetAllProjectileIDs() const
     return AllProjectileRowNames;
 }
 
-FName UDataManagerSubsystem::GetFirstVehicleIDOfType(E_VehicleType VehicleType) const
+FName UDataManagerSubsystem::GetFirstVehicleIDOfType(EVehicleType VehicleType) const
 {
     TArray<FName> VehicleIDs = GetAllVehicleIDs();
     FName VehicleIDofType;

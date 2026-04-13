@@ -81,7 +81,7 @@ public:
 	FTimerHandle DetailsPanel_FadeTimerHandle = FTimerHandle();
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-	TSubclassOf<UUW_LoadoutTypeButton> VehicleTypeButton = nullptr;
+	TSubclassOf<UUW_LoadoutTypeButton> LoadoutTypeButton = nullptr;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	TSubclassOf<UUW_LoadoutSlot> LoadoutSlot = nullptr;
@@ -113,12 +113,16 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void Init_TypeScrollBox();
 	UFUNCTION(BlueprintCallable)
+	void Build_ClassTypeScrollbox();
+	UFUNCTION(BlueprintCallable)
 	void Build_VehicleTypeScrollbox();
 	UFUNCTION(BlueprintCallable)
-	void RepopulateTypeScrollBox();
+	void RepopulateTypeScrollBox(int32 VisibleLength);
 	UFUNCTION(BlueprintCallable)
-	void RefreshTypeScrollBox();
+	void RefreshTypeScrollBox(int32 VisibleLength);
 
+	UFUNCTION(BlueprintCallable)
+	void Build_SoldierClassLoadoutPanel(int32 TypeEnumIndex);
 	UFUNCTION(BlueprintCallable)
 	void Build_VehicleLoadoutPanel(int32 TypeEnumIndex);
 	UFUNCTION(BlueprintCallable)
@@ -156,6 +160,8 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void UpdateVehiclePreview(int32 TypeEnumIndex);
 
+	UFUNCTION(BlueprintType)
+	void UpdateSelectedClassType(int32 TypeEnumIndex);
 	UFUNCTION(BlueprintCallable)
 	void UpdateSelectedVehicleType(int32 TypeEnumIndex);
 

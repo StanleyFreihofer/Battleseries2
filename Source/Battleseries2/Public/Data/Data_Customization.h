@@ -5,6 +5,8 @@
 #include "Vehicle_Base.h"
 #include "Data_Customization.generated.h"
 
+enum class ECoreType : uint8;
+enum class EVehicleType : uint8;
 class UUW_Customization;
 class ALoadoutPreviewStage;
 
@@ -26,8 +28,6 @@ struct FCustomizationModeCamSettings
 	float MinZoom = 50.f;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	float MaxZoom = 1500.f;
-
-
 };
 
 UCLASS(BlueprintType)
@@ -38,14 +38,18 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	TSubclassOf<UUW_Customization> CustomizationWidgetClass = nullptr;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Stage Settings")
 	TSubclassOf<ALoadoutPreviewStage> PreviewStageClass = nullptr;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	TSubclassOf<AVehicle_Base> PreviewVehicleClass = nullptr;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Stage Settings")
 	FTransform PreviewSpawnTransform = FTransform::Identity;
 
-	//what vehicle types can be customized?
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Vehicle Settings")
+	TSubclassOf<AVehicle_Base> PreviewVehicleClass = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Vehicle Settings")
+	TArray<EVehicleType> CustomizableVehicleTypes;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	TMap<ECoreType, FCustomizationModeCamSettings> CustomizationModeCamSettings;
 };
