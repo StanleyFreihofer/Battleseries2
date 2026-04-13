@@ -15,13 +15,32 @@ class AProjectile_Base;
 //this class is used by on-foot weapons/characters
 
 USTRUCT(BlueprintType)
+struct FAttachmentState
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FName AttachmentID = NAME_None;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float CurrentRailOffset = 0.0f;		//tuning value
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TObjectPtr<UStaticMeshComponent> SpawnedComponent = nullptr; // The actual mesh on the gun
+};
+
+USTRUCT(BlueprintType)
 struct FOnFootWeaponSystem_Runtime
 {
 	GENERATED_BODY()
 
-	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FBaseWeaponSystem_Runtime BaseWeaponSystem = FBaseWeaponSystem_Runtime();
-	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TArray<FAttachmentState> AttachmentState;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TArray<USkeletalMeshComponent*> WeaponMeshes;			//the actual weapon mesh (gun model for example)
 
 };

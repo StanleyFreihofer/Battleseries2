@@ -3,6 +3,7 @@
 
 #include "LoadoutPreviewStage.h"
 #include "Vehicle_Base.h"
+#include "Data/Data_Customization.h"
 #include "Camera/CameraActor.h"
 
 
@@ -32,7 +33,7 @@ void ALoadoutPreviewStage::BeginPlay()
 	Super::BeginPlay();
 
 	//assumes vehicle ca comp is valid and is a vehicle
-	PreviewStageState.CurrentVehicle = GetWorld()->SpawnActorDeferred<AVehicle_Base>(GetGameInstance()->GetSubsystem<UDataManagerSubsystem>()->GetCustomizationDefaults()., FTransform::Identity);
+	PreviewStageState.CurrentVehicle = GetWorld()->SpawnActorDeferred<AVehicle_Base>(GetGameInstance()->GetSubsystem<UDataManagerSubsystem>()->GetCustomizationDefaults()->PreviewVehicleClass, FTransform::Identity);
 	PreviewStageState.CurrentVehicle->VehicleStartingData.PreviewVehicle = true;
 	PreviewStageState.CurrentVehicle->AttachToComponent(VehicleAnchor, FAttachmentTransformRules::KeepRelativeTransform);
 

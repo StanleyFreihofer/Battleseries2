@@ -20,7 +20,7 @@
 #include "Engine/World.h"
 #include "Math/UnrealMathUtility.h"
 #include "Utilities/HelperFunctions_Vehicle.h"
-#include "Data/Runtime/CoreTypes.h"
+#include "Data/Core/CoreTypes.h"
 #include "Core/Weapons/VehicleWeaponLogicComponent.h"
 #include "Core/PlayerController_Base.h"
 #include "Data/Weapons/VehicleWeapons/Data_VehicleWeapon.h"

@@ -5,7 +5,7 @@
 #include "Components/VerticalBox.h"     // For UVerticalBox
 #include "Components/Button.h"          // For UButton
 #include "Components/TextBlock.h"       // For UTextBlock
-#include "Data/Runtime/CoreTypes.h"
+#include "Data/Core/CoreTypes.h"
 #include "Data/Weapons/VehicleWeapons/Data_VehicleWeapon.h"
 #include "Data/Data_Optics.h"
 #include "Data/Data_Camo.h"

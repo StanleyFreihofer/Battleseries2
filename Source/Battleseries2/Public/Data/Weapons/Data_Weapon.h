@@ -10,7 +10,7 @@
 
 
 USTRUCT(BlueprintType)
-struct FBaseClassificationData
+struct FBaseWeaponClassificationData
 {
 	GENERATED_BODY()
 
@@ -22,9 +22,6 @@ struct FBaseClassificationData
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	FText WeaponDescription = FText();
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	EWeaponType WeaponType = EWeaponType::AssaultRifle;
 };
 
 USTRUCT(BlueprintType)
@@ -181,7 +178,7 @@ struct FBaseWeaponData
 	GENERATED_BODY()
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	FBaseClassificationData WeaponClassification = FBaseClassificationData();
+	FBaseWeaponClassificationData WeaponClassification = FBaseWeaponClassificationData();
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FWeaponFunctionalityData WeaponFunctionality = FWeaponFunctionalityData();

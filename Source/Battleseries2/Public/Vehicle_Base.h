@@ -8,7 +8,7 @@
 #include "Camera/CameraComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Data/Vehicles/Data_Vehicle.h"
-#include "Data/Runtime/CoreTypes.h"
+#include "Data/Core/CoreTypes.h"
 #include "Utilities/DataManagerSubsystem.h"
 #include "Engine/DataTable.h"
 #include "Utilities/I_VehicleDataAccessor.h"

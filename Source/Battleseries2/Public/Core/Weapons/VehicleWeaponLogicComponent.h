@@ -7,7 +7,7 @@
 #include "Utilities/I_VehicleDataAccessor.h"
 #include "Data/Runtime/WeaponTypes.h"
 #include "Data/Vehicles/Data_Seat.h"
-#include "Data/Runtime/CoreTypes.h"
+#include "Data/Core/CoreTypes.h"
 #include "VehicleWeaponLogicComponent.generated.h"
 
 class USpringArmComponent;

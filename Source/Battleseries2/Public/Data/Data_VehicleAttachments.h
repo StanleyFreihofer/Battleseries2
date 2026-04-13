@@ -2,7 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "Engine/DataTable.h"
-#include "Data_Attachments.generated.h"
+#include "Data_VehicleAttachments.generated.h"
 
 USTRUCT(BlueprintType)
 struct FAttachmentCamoData
@@ -14,7 +14,7 @@ struct FAttachmentCamoData
 };
 
 USTRUCT(BlueprintType)
-struct FAttachmentData : public FTableRowBase
+struct FVehicleAttachmentData : public FTableRowBase
 {
 	GENERATED_BODY()
 

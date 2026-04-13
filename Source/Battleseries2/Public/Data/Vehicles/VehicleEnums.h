@@ -9,9 +9,9 @@ enum class E_MovementType : uint8
 	GroundVehicle	UMETA(DisplayName = "Ground Vehicle"),
 	Helicopter		UMETA(DisplayName = "Helicopter"),
 	Jet				UMETA(DisplayName = "Jet"),
-	Boat			UMETA(DisplayName = "Boat")
-	//stationary?
-	//vtol?
+	Boat			UMETA(DisplayName = "Boat"),
+	VTOL			UMETA(DisplayName = "VTOL"),
+	Stationary		UMETA(DisplayName = "Stationary", ToolTip = "CIWS, TOW launcher, artillery guns, etc")	
 };
 
 UENUM(BlueprintType)

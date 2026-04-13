@@ -13,7 +13,7 @@ class ALoadoutPreviewStage;
  */
 
 USTRUCT(BlueprintType)
-struct CustomizationModeCamSettings
+struct FCustomizationModeCamSettings
 {
 	//the settings of the camera/camera boom for a mode
 	GENERATED_BODY()

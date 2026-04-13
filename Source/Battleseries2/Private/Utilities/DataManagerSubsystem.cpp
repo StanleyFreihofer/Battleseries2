@@ -3,13 +3,15 @@
 #include "Engine/DataTable.h"
 #include "Engine/StreamableManager.h"
 #include "Engine/AssetManager.h"
-#include "Data/Runtime/CoreTypes.h"
+#include "Data/Core/CoreTypes.h"
 #include "Data/Vehicles/Data_Seat.h"
 #include "Data/Weapons/Data_Weapon.h"
+#include "Data/Weapons/Data_InfantryWeapon.h"
+#include "Data/Weapons/Data_WeaponAttachments.h"
 #include "Data/Vehicles/Data_Vehicle.h"
 #include "Data/Weapons/VehicleWeapons/Data_VehicleWeapon.h"
 #include "Data/Weapons/Data_Projectile.h"
-#include "Data/Data_Attachments.h"
+#include "Data/Data_VehicleAttachments.h"
 #include "Data/Data_Optics.h"
 #include "Data/Data_Camo.h"
 #include "Data/Characters/CharacterDefaults.h"
@@ -54,11 +56,13 @@ void UDataManagerSubsystem::LoadDataTables()
     UE_LOG(LogTemp, Warning, TEXT("VehicleDT: %s"), VehicleDataTableAsset.IsValid() ? TEXT("Valid") : TEXT("Null"));
     UE_LOG(LogTemp, Warning, TEXT("ProjectileDT: %s"), ProjectileDataTableAsset.IsValid() ? TEXT("Valid") : TEXT("Null"));
 
+    InfantryWeaponDataTable = InfantryWeaponDataTableAsset.LoadSynchronous();
+    WeaponAttachmentDataTable = InfantryWeaponDataTableAsset.LoadSynchronous();
     VehicleDataTable = VehicleDataTableAsset.LoadSynchronous();
     VehicleWeaponDataTable = VehicleWeaponDataTableAsset.LoadSynchronous();
     ProjectileDataTable = ProjectileDataTableAsset.LoadSynchronous();
     OpticDataTable = OpticDataTableAsset.LoadSynchronous();
-    AttachmentDataTable = AttachmentDataTableAsset.LoadSynchronous();
+    VehicleAttachmentDataTable = VehicleAttachmentDataTableAsset.LoadSynchronous();
     CamoDataTable = CamoDataTableAsset.LoadSynchronous();
 
     CoreTypeDefinitionsDataAsset = CoreTypeDefinitionsDAAsset.LoadSynchronous();
@@ -86,16 +90,33 @@ FVehicleWeaponData UDataManagerSubsystem::GetVehicleWeaponDataRowCopy(FName RowN
     return *VehicleWeaponData;
 }
 
-FAttachmentData UDataManagerSubsystem::GetAttachmentDataRowCopy(FName RowName) const
+FVehicleAttachmentData UDataManagerSubsystem::GetVehicleAttachmentDataRowCopy(FName RowName) const
 {
-    const FAttachmentData* AttachmentData = AttachmentDataTable->FindRow<FAttachmentData>(RowName, TEXT("AttachmentDataLookup"));
-    return *AttachmentData;
+    const FVehicleAttachmentData* VehicleAttachmentData = VehicleAttachmentDataTable->FindRow<FVehicleAttachmentData>(RowName, TEXT("AttachmentDataLookup"));
+    return *VehicleAttachmentData;
 }
 
 FProjectileData UDataManagerSubsystem::GetProjectileDataRowCopy(FName RowName) const
 {
     const FProjectileData* ProjectileData = ProjectileDataTable->FindRow<FProjectileData>(RowName, TEXT("ProjectileDataLookup"));
     return *ProjectileData;
+}
+
+
+
+
+
+//CPP Functions
+const FInfantryWeaponData* UDataManagerSubsystem::GetInfantryWeaponDataRow(FName RowName) const
+{
+    const FInfantryWeaponData* InfantryWeaponData = InfantryWeaponDataTable->FindRow<FInfantryWeaponData>(RowName, TEXT("InfantryWeaponDataLookup"));
+    return InfantryWeaponData;
+}
+
+const FWeaponAttachmentData* UDataManagerSubsystem::GetWeaponAttachmentDataRow(FName RowName) const
+{
+    const FWeaponAttachmentData* WeaponAttachmentData = WeaponAttachmentDataTable->FindRow<FWeaponAttachmentData>(RowName, TEXT("WeaponAttachmentDataLookup"));
+    return WeaponAttachmentData;
 }
 
 //const because we want the pointer to be read-only (dont wanna modify table data)
@@ -111,9 +132,9 @@ const FVehicleWeaponData* UDataManagerSubsystem::GetVehicleWeaponDataRow(FName R
     return VehicleWeaponDataPtr;
 }
 
-const FAttachmentData* UDataManagerSubsystem::GetAttachmentDataRow(FName RowName) const
+const FVehicleAttachmentData* UDataManagerSubsystem::GetVehicleAttachmentDataRow(FName RowName) const
 {
-    const FAttachmentData* AttachmentDataPtr = AttachmentDataTable->FindRow<FAttachmentData>(RowName, TEXT("AttachmentDataLookup"));
+    const FVehicleAttachmentData* AttachmentDataPtr = VehicleAttachmentDataTable->FindRow<FVehicleAttachmentData>(RowName, TEXT("AttachmentDataLookup"));
     return AttachmentDataPtr;
 }
 

@@ -5,6 +5,7 @@
 #include "Blueprint/UserWidget.h"
 #include "Components/Button.h"
 #include "Data/Vehicles/Data_Vehicle.h"
+#include "Data/Core/CoreTypes.h"
 #include "UW_Customization.generated.h"
 
 class UUW_LoadoutTypeButton;
@@ -12,8 +13,6 @@ class UUW_LoadoutSlot;
 class ALoadoutPreviewStage;
 class UDataManagerSubsystem;
 class APlayerController_Base;
-enum class ECoreItemType : uint8;
-enum class ECoreType : uint8;
 enum class EGenericItemContext : uint8;
 struct FCustomizationSlotState;
 struct FCustomizationSlotConfig;

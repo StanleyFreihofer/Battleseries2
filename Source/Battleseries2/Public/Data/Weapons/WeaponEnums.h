@@ -13,12 +13,7 @@ enum class EWeaponType : uint8
 	Shotgun			UMETA(DisplayName = "Shotgun"),
 	DMR				UMETA(DisplayName = "Designated Marksman Rifle"),
 	SniperRifle		UMETA(DisplayName = "Sniper Rifle"),
-	Pistol			UMETA(DisplayName = "Pistol"),
-	Vehicle			UMETA(DisplayName = "Vehicle")
-	//special
-	//launcher
-	//stationary
-	//melee
+	Pistol			UMETA(DisplayName = "Pistol")
 };
 
 UENUM(BlueprintType)
@@ -58,6 +53,11 @@ enum class ETargetingCategory : uint8
 	Location			UMETA(DisplayName = "Location"),
 	MAX					UMETA(Hidden)
 };
+
+
+/**
+* STATES
+**/
 
 UENUM(BlueprintType)
 enum class EAmmoDepletionMethod : uint8

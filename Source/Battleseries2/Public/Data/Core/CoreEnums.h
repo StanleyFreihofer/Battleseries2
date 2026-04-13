@@ -1,0 +1,96 @@
+#pragma once
+
+#include "CoreMinimal.h"
+#include "CoreEnums.generated.h"
+
+//alot of this is used to route through data manager (gives it the data needed to look up the correct dt)
+
+UENUM(BlueprintType)
+enum class EVehicleItemType : uint8
+{
+	Weapon					UMETA(DisplayName = "Weapon"),
+	Countermeasure			UMETA(DisplayName = "Countermeasure"),
+	Optic					UMETA(DisplayName = "Optic"),
+	Upgrade					UMETA(DisplayName = "Upgrade"),
+	//Gadget					UMETA(DisplayName = "Gadget")
+	//Equipment
+	//Camo
+};
+
+UENUM(BlueprintType)
+enum class ECharacterItemType : uint8
+{
+	Weapon				UMETA(DisplayName = "Weapon"),
+	Gadget				UMETA(DisplayName = "Gadget"),
+	Grenade				UMETA(DisplayName = "Grenade")
+	//knife
+	//specialization/upgrade
+	//camo
+};
+
+
+
+UENUM(BlueprintType)
+enum class ECoreType : uint8
+{
+	Character		UMETA(DisplayName = "Character"),
+	Class			UMETA(DisplayName = "Class/Loadout/Kit"),
+	Weapon			UMETA(DisplayName = "Weapon"),
+	Vehicle			UMETA(DisplayName = "Vehicle")
+};
+
+UENUM(BlueprintType)
+enum class ECoreItemType : uint8
+{
+	CharacterWeapon				UMETA(DisplayName = "Character Weapon"),
+	CharacterGadget				UMETA(DisplayName = "Character Gadget"),
+	//character grenade
+	//character knife
+	VehicleWeapon				UMETA(DisplayName = "Vehicle Weapon"),
+	VehicleOptic				UMETA(DisplayName = "Vehicle Optic"),
+	VehicleCountermeasure		UMETA(DisplayName = "Vehicle Countermeasure"),
+	VehicleUpgrade				UMETA(DisplayName = "Vehicle Upgrade"),
+	Camo						UMETA(DisplayName = "Camo")
+};
+
+UENUM(BlueprintType)
+enum class EFactionType : uint8
+{
+	US				UMETA(DisplayName = "US"),
+	Russia			UMETA(DisplayName = "Russia"),
+	China			UMETA(DisplayName = "China")
+};
+
+UENUM(BlueprintType)
+enum class EClassType : uint8
+{
+	Medic		UMETA(DisplayName = "Medic"),
+	Engineer	UMETA(DisplayName = "Engineer"),
+	Support		UMETA(DisplayName = "Support"),
+	Recon		UMETA(DisplayName = "Recon")
+};
+
+
+/**
+* Stat Modifier Enums
+**/
+
+UENUM(BlueprintType)
+enum class EStatToAffect : uint8
+{
+	Health,
+	Recoil,
+	MuzzleVelocity,
+	MagSize,
+	MaxReserveAmmo,
+	ADS_Speed
+};
+
+UENUM(BlueprintType)
+enum class EModifierOp : uint8
+{
+	Add,
+	Subtract,
+	Multiply,
+	Divide
+};

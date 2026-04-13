@@ -16,7 +16,7 @@ struct FVehicleWeaponData : public FTableRowBase
 	GENERATED_BODY()
 
 	//base weapon data (from Data_Weapon) TO BE FILLED IN HERE
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	FBaseWeaponData WeaponData;
 };
 

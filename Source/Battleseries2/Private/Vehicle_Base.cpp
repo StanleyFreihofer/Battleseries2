@@ -5,7 +5,7 @@
 #include "Camera/CameraActor.h"
 #include "Data/Vehicles/Data_Vehicle.h"				//need to access members
 #include "Data/Vehicles/Data_Seat.h"				//need to access members
-#include "Data/Data_Attachments.h"
+#include "Data/Data_VehicleAttachments.h"
 #include "Data/Data_Optics.h"
 #include "Data/Vehicles/VehicleDefaults.h"
 #include "Utilities/ProjectilePoolSubsystem.h"
@@ -491,7 +491,7 @@ void AVehicle_Base::ApplyCamoToAttachment(TWeakObjectPtr<UMeshComponent> Mesh, F
 {
 	if (!Mesh.IsValid() || AttachmentID == NAME_None || CamoID == NAME_None) return;
 
-	const FAttachmentData& AttachmentData = *GetDataManager()->GetAttachmentDataRow(AttachmentID);
+	const FVehicleAttachmentData& AttachmentData = *GetDataManager()->GetVehicleAttachmentDataRow(AttachmentID);
 	const FAttachmentCamoData* CamoData = AttachmentData.AvailableCamos.Find(CamoID);
 	if (!CamoData)
 	{

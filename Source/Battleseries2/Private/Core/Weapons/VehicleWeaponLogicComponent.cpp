@@ -7,7 +7,7 @@
 #include "Data/Runtime/ProjectileTypes.h"
 #include "Data/Weapons/VehicleWeapons/Data_VehicleWeapon.h"
 #include "Data/Weapons/WeaponDefaults.h"
-#include "Data/Data_Attachments.h"
+#include "Data/Data_VehicleAttachments.h"
 #include "Core/Weapons/WeaponFunctions.h"
 #include "Core/UI/VehicleHUDs/UW_HUD_Vehicle_Base.h"
 #include "Utilities/HUDSubsystem.h"
@@ -177,7 +177,7 @@ void UVehicleWeaponLogicComponent::HandleApplyWeaponMesh(int32 SeatIndex, int32 
 	FVehicleWeapon_Runtime& VehicleWeaponToFill = WeaponSystem->Weapons[WeaponIndex];
 	if (VehicleWeaponToFill.VehicleWeaponInstanceData.bHasSeparateMesh && WeaponIndex == OwnerDataAccessor->GetVehicleData().Seats[SeatIndex].AvailableItems.WeaponMeshDriverSlotIndex)
 	{
-		const FAttachmentData& AttachmentData = *DataSubsystem->GetAttachmentDataRow(VehicleWeaponToFill.VehicleWeaponInstanceData.AttachmentInstanceData.AttachmentID);
+		const FVehicleAttachmentData& AttachmentData = *DataSubsystem->GetVehicleAttachmentDataRow(VehicleWeaponToFill.VehicleWeaponInstanceData.AttachmentInstanceData.AttachmentID);
 		TWeakObjectPtr<USkeletalMesh> LoadedMesh = AttachmentData.Attachment_SKM.LoadSynchronous();
 		UClass* LoadedAnimClass = AttachmentData.Attachment_AnimClass.LoadSynchronous();
 		if (!WeaponSystem->VehicleWeaponSystemState.WeaponSystemMesh.IsValid())
@@ -236,7 +236,7 @@ void UVehicleWeaponLogicComponent::ApplyWeaponDecoratives(const TArray<FDecorati
 		const FDecorative& WeaponDecorative = WeaponDecoratives[i];
 		if (WeaponDecorative.AttachmentID != NAME_None)
 		{
-			const FAttachmentData& AttachmentData = *DataSubsystem->GetAttachmentDataRow(WeaponDecorative.AttachmentID);
+			const FVehicleAttachmentData& AttachmentData = *DataSubsystem->GetVehicleAttachmentDataRow(WeaponDecorative.AttachmentID);
 			TWeakObjectPtr<UStaticMesh> LoadedMesh = AttachmentData.Attachment_SM.LoadSynchronous();
 			TWeakObjectPtr<UStaticMeshComponent> SMComp = NewObject<UStaticMeshComponent>(GetOwner());
 			SMComp->SetStaticMesh(LoadedMesh.Get());

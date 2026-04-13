@@ -6,10 +6,12 @@
 #include "Engine/DataAsset.h"
 #include "DataManagerSubsystem.generated.h"
 
+struct FInfantryWeaponData;
+struct FWeaponAttachmentData;
 struct FVehicleData;
 struct FVehicleTypeDefintion;
 struct FVehicleWeaponData;
-struct FAttachmentData;
+struct FVehicleAttachmentData;
 struct FOpticData;
 struct FProjectileData;
 struct FCamoData;
@@ -30,6 +32,12 @@ class BATTLESERIES2_API UDataManagerSubsystem : public UGameInstanceSubsystem
 public:
     // Editor-assigned soft references
     UPROPERTY(EditAnywhere, Category = "Data Tables")
+    TSoftObjectPtr<UDataTable> InfantryWeaponDataTableAsset;
+
+    UPROPERTY(EditAnywhere, Category = "Data Tables")
+    TSoftObjectPtr<UDataTable> WeaponAttachmentDataTableAsset;
+
+    UPROPERTY(EditAnywhere, Category = "Data Tables")
     TSoftObjectPtr<UDataTable> VehicleDataTableAsset;
 
     UPROPERTY(EditAnywhere, Category = "Data Tables")
@@ -39,7 +47,7 @@ public:
     TSoftObjectPtr<UDataTable> ProjectileDataTableAsset;
 
     UPROPERTY(EditAnywhere, Category = "Data Tables")
-    TSoftObjectPtr<UDataTable> AttachmentDataTableAsset;
+    TSoftObjectPtr<UDataTable> VehicleAttachmentDataTableAsset;
 
     UPROPERTY(EditAnywhere, Category = "Data Tables")
     TSoftObjectPtr<UDataTable> OpticDataTableAsset;
@@ -89,7 +97,7 @@ public:
     UDataTable* GetProjectileDataTable() const { return ProjectileDataTable; }
 
     UFUNCTION(BlueprintCallable, Category = "Data")
-    UDataTable* GetAttachmentDataTable() const { return AttachmentDataTable; }
+    UDataTable* GetVehicleAttachmentDataTable() const { return VehicleAttachmentDataTable; }
 
     UFUNCTION(BlueprintCallable, Category = "Data")
     UDataTable* GetOpticDataTable() const { return OpticDataTable; }
@@ -123,7 +131,7 @@ public:
     UFUNCTION(BlueprintCallable, Category = "Data")
     FVehicleWeaponData GetVehicleWeaponDataRowCopy(FName RowName) const;
     UFUNCTION(BlueprintCallable, Category = "Data")
-    FAttachmentData GetAttachmentDataRowCopy(FName RowName) const;
+    FVehicleAttachmentData GetVehicleAttachmentDataRowCopy(FName RowName) const;
     UFUNCTION(BlueprintCallable, Category = "Data")
     FProjectileData GetProjectileDataRowCopy(FName RowName) const;
     UFUNCTION(BlueprintCallable, Category = "Data")
@@ -142,15 +150,24 @@ public:
 
 
     //CPP Only Functions
+    const FInfantryWeaponData* GetInfantryWeaponDataRow(FName RowName) const;
+    const FWeaponAttachmentData* GetWeaponAttachmentDataRow(FName RowName) const;
     const FVehicleData* GetVehicleDataRow(FName RowName) const;
     const FVehicleWeaponData* GetVehicleWeaponDataRow(FName RowName) const;
-    const FAttachmentData* GetAttachmentDataRow(FName RowName) const;
+    const FVehicleAttachmentData* GetVehicleAttachmentDataRow(FName RowName) const;
     const FOpticData* GetOpticDataRow(FName RowName) const;
     const FProjectileData* GetProjectileDataRow(FName RowName) const;
     const FCamoData* GetCamoDataRow(FName RowName) const;
 
 private:
     //loaded data
+
+    UPROPERTY()
+    UDataTable* InfantryWeaponDataTable;
+
+    UPROPERTY()
+    UDataTable* WeaponAttachmentDataTable;
+
     UPROPERTY()
     UDataTable* VehicleDataTable;
 
@@ -164,7 +181,7 @@ private:
     UDataTable* WeaponDataTable;
 
     UPROPERTY()
-    UDataTable* AttachmentDataTable;
+    UDataTable* VehicleAttachmentDataTable;
 
     UPROPERTY()
     UDataTable* OpticDataTable;
