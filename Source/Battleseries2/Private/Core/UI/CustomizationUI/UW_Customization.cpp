@@ -16,6 +16,7 @@
 #include "Components/CanvasPanelSlot.h"
 #include "Core/UI/CustomizationUI/UW_LoadoutSlot.h"
 #include "Core/UI/CustomizationUI/UW_LoadoutTypeButton.h"
+#include "Core/UI/CustomizationUI/UW_DropdownOption.h"
 #include "LoadoutPreviewStage.h"
 #include "TimerManager.h"
 #include "Engine/World.h"
@@ -31,6 +32,7 @@
 #include "Data/Data_Camo.h"
 #include "Data/SoldierClassDefaults.h"
 #include "Data/Vehicles/VehicleDefaults.h"
+#include "Data/Data_Customization.h"
 
 /**
 * currently alot of similar/same state stored on both the customization menu and the loadout stage... merge into 1 system?
@@ -98,14 +100,6 @@ void UUW_Customization::EnterVehicleMode(bool OverrideCheck, bool BlendView)
 	}
 
 	UpdateSelectedVehicleType(0);
-
-	/**
-	GetWorld()->GetTimerManager().SetTimerForNextTick([this]()
-	{
-		//RefreshTypeScrollBox();
-		UpdateSelectedVehicleType(0);
-	});
-	**/
 }
 
 void UUW_Customization::EnterLoadoutMode(bool OverrideCheck, bool BlendView)
@@ -167,7 +161,8 @@ void UUW_Customization::Build_ClassTypeScrollbox()
 
 void UUW_Customization::Build_VehicleTypeScrollbox()				
 {
-	for (EVehicleType VehicleType : TEnumRange<EVehicleType>())		//change to data from customization defaults
+	TArray<EVehicleType>& AvailableVehicleTypes = GetData_UUWCustomization()->GetCustomizationDefaults()->CustomizableVehicleTypes;
+	for (EVehicleType VehicleType : AvailableVehicleTypes)		
 	{
 		UUW_LoadoutTypeButton* NewLoadoutTypeButton = CreateWidget<UUW_LoadoutTypeButton>(GetWorld(), LoadoutTypeButton);
 		NewLoadoutTypeButton->SetVehicleType((int32)VehicleType);
@@ -325,6 +320,7 @@ UUW_LoadoutSlot* UUW_Customization::CreateNewLoadoutSlot()
 	VerticalBox_LoadoutPanel->AddChild(NewSlotWidget);
 	CustomizationUIState.LoadoutSlots.Add(NewSlotWidget);
 	NewSlotWidget->OnSlotSelectionChanged.AddDynamic(this, &UUW_Customization::HandleSlotSelectionChanged);
+	NewSlotWidget->OnSlotHovered.AddDynamic(this, &UUW_Customization::HandleSlotHovered);
 	NewSlotWidget->OnSlotOptionUsed.AddDynamic(this, &UUW_Customization::UpdateDetailsPanel);
 	NewSlotWidget->OnSlotDeselected.AddDynamic(this, &UUW_Customization::HideDetailsPanel);
 	return NewSlotWidget;
@@ -396,8 +392,10 @@ void UUW_Customization::Clear_LoadoutPanel()
 	VerticalBox_LoadoutPanel->ClearChildren();
 	for (UUW_LoadoutSlot* SlotWidget : CustomizationUIState.LoadoutSlots)
 	{
+		SlotWidget->HideOptions();
 		SlotWidget->RemoveFromParent();
 	}
+
 	CustomizationUIState.LoadoutSlots.Empty();
 }
 
@@ -531,7 +529,15 @@ void UUW_Customization::UpdateSelectedClassType(int32 TypeEnumIndex)
 		CustomizationUIState.TypeEnumIndex = TypeEnumIndex;
 
 		Clear_LoadoutPanel();
-		RefreshTypeScrollBox(CustomizationUIState.TypeButtons.Num());
+		//Buid_ClassKitLoadoutPanel
+		for (UUW_LoadoutTypeButton* ClassTypeButtonInQuestion : CustomizationUIState.TypeButtons)		//make this a function (handle typeselection or some shi)
+		{
+			if (ClassTypeButtonInQuestion->TypeEnumIndex != TypeEnumIndex)
+			{
+				ClassTypeButtonInQuestion->SetButtonDeselected();
+			}
+		}
+		RefreshTypeScrollBox(GetData_UUWCustomization()->GetCustomizationDefaults()->NumOfViewableTypeButtons_SoldierClassMode);
 	}
 }
 
@@ -540,7 +546,6 @@ void UUW_Customization::UpdateSelectedVehicleType(int32 TypeEnumIndex)
 	if (TypeEnumIndex != CustomizationUIState.TypeEnumIndex)
 	{
 		CustomizationUIState.TypeEnumIndex = TypeEnumIndex;
-		//auto& ButtonArray = CustomizationUIState.TypeButtons;
 
 		Clear_LoadoutPanel();
 		Build_VehicleLoadoutPanel(CustomizationUIState.TypeEnumIndex);
@@ -554,7 +559,7 @@ void UUW_Customization::UpdateSelectedVehicleType(int32 TypeEnumIndex)
 			}
 		}
 
-		RefreshTypeScrollBox(3);
+		RefreshTypeScrollBox(GetData_UUWCustomization()->GetCustomizationDefaults()->NumOfViewableTypeButtons_VehicleMode);
 	}
 }
 
@@ -577,6 +582,25 @@ void UUW_Customization::HandleSlotSelectionChanged(int32 SeatIndex, FCustomizati
 			SaveSubsystem->SetLoadoutCamoChoice_Vehicle(CurrentVehicleType, SelectedItemID);
 			PC->PreviewStageActor->PreviewStageState.CurrentVehicle->ApplyCamoToVehicle(SelectedItemID);
 			break;
+	}
+}
+
+void UUW_Customization::HandleSlotHovered(const TArray<UUW_DropdownOption*>& Options, FSlotData Data)
+{
+	VerticalBox_Dropdowns->ClearChildren();
+
+	for (UUW_LoadoutSlot* SlotToCheck : CustomizationUIState.LoadoutSlots)
+	{
+		if (SlotToCheck->ValidateSlotDeselection())
+		{
+			SlotToCheck->UpdateSlot_UnHover();
+		}
+	}
+
+	for (UUW_DropdownOption* Option : Options)
+	{
+		VerticalBox_Dropdowns->AddChild(Option);
+		Option->SetVisibility(ESlateVisibility::Visible);
 	}
 }
 

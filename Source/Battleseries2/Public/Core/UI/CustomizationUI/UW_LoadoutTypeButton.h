@@ -7,7 +7,6 @@
 #include "Components/Button.h"
 #include "Components/TextBlock.h" 
 #include "Components/SizeBox.h"
-#include "Data/Vehicles/Data_Vehicle.h"
 #include "UW_LoadoutTypeButton.generated.h"
 
 class UDataManagerSubsystem;

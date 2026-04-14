@@ -10,6 +10,7 @@
 
 class UUW_LoadoutTypeButton;
 class UUW_LoadoutSlot;
+class UUW_DropdownOption;
 class ALoadoutPreviewStage;
 class UDataManagerSubsystem;
 class APlayerController_Base;
@@ -52,6 +53,8 @@ class BATTLESERIES2_API UUW_Customization : public UUserWidget
 public:
 
 	//Designer Components
+
+	//loadout panel
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta = (BindWidget))
 	class UScrollBox* ScrollBox = nullptr;
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta = (BindWidget))
@@ -59,13 +62,20 @@ public:
 	UPROPERTY(meta = (BindWidget))
 	class UVerticalBox* VerticalBox_LoadoutPanel = nullptr;
 	UPROPERTY(meta = (BindWidget))
-	UButton* Btn_ExitCustomization = nullptr;
+	class UVerticalBox* VerticalBox_Dropdowns = nullptr;
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta = (BindWidget))
+	class UTextBlock* T_PreviewName = nullptr;
 	UPROPERTY(meta = (BindWidget))
 	UButton* Btn_WeaponMode = nullptr;
 	UPROPERTY(meta = (BindWidget))
 	UButton* Btn_VehicleMode = nullptr;
 	UPROPERTY(meta = (BindWidget))
 	UButton* Btn_CharacterMode = nullptr;
+
+
+	UPROPERTY(meta = (BindWidget))
+	UButton* Btn_ExitCustomization = nullptr;
+
 
 	//details panel
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta = (BindWidget))
@@ -167,6 +177,8 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void HandleSlotSelectionChanged(int32 SeatIndex, FCustomizationSlotConfig SlotConfig, FName SelectedItemID);
+	UFUNCTION(BlueprintCallable)
+	void HandleSlotHovered(const TArray<UUW_DropdownOption*>& Options, FSlotData Data);
 
 	UFUNCTION(BlueprintCallable)
 	void ExitCustomization();

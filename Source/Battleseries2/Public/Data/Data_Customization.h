@@ -15,7 +15,7 @@ class ALoadoutPreviewStage;
  */
 
 USTRUCT(BlueprintType)
-struct FCustomizationModeCamSettings
+struct FCustomizationMode_CamSettings
 {
 	//the settings of the camera/camera boom for a mode
 	GENERATED_BODY()
@@ -35,8 +35,14 @@ class BATTLESERIES2_API UDA_CustomizationDefaults : public UDataAsset
 {
 	GENERATED_BODY()
 public:
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UI Settings")
 	TSubclassOf<UUW_Customization> CustomizationWidgetClass = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UI Settings | Soldier Class Mode")
+	int32 NumOfViewableTypeButtons_SoldierClassMode = 0;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UI Settings | Vehicle Mode")
+	int32 NumOfViewableTypeButtons_VehicleMode = 0;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Stage Settings")
 	TSubclassOf<ALoadoutPreviewStage> PreviewStageClass = nullptr;
@@ -51,5 +57,5 @@ public:
 	TArray<EVehicleType> CustomizableVehicleTypes;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	TMap<ECoreType, FCustomizationModeCamSettings> CustomizationModeCamSettings;
+	TMap<ECoreType, FCustomizationMode_CamSettings> CustomizationModeCamSettings;
 };

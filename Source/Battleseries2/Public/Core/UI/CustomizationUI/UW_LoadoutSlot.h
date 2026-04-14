@@ -116,6 +116,7 @@ struct FSlotData
 
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnSlotSelectionChanged, int32, SeatIndex, FCustomizationSlotConfig, SlotConfig, FName, SelectedID);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnSlotHovered, const TArray<UUW_DropdownOption*>&, Options, FSlotData, Data);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnSlotOptionUsed, FSlotData, SlotData, int32, OptionIndex);		
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnSlotDeselected);
 
@@ -139,8 +140,8 @@ public:
 	class UTextBlock* T_SelectedOptionLabel = nullptr;
 	UPROPERTY(meta = (BindWidget))
 	class UImage* Img_ItemIcon_Unhover = nullptr;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (BindWidget))
-	class UVerticalBox* VerticalBox_OptionsList = nullptr;
+// UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (BindWidget))
+	//class UVerticalBox* VerticalBox_OptionsList = nullptr;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	FSlotData SlotData = FSlotData();
@@ -151,6 +152,8 @@ public:
 	FOnSlotOptionUsed OnSlotOptionUsed;
 	UPROPERTY(BlueprintAssignable)
 	FOnSlotDeselected OnSlotDeselected;
+	UPROPERTY(BlueprintAssignable)
+	FOnSlotHovered OnSlotHovered;
 
 	UPROPERTY(BlueprintReadWrite)
 	float SB_SlotHeightOverride_UnHovered = 0.0f;
@@ -183,8 +186,6 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void UpdateSlotSelection(int32 OptionIndex);
-	UFUNCTION(BlueprintCallable)
-	void ShowOptions();
 	UFUNCTION(BlueprintCallable)
 	void HideOptions();
 	UFUNCTION(BlueprintCallable)

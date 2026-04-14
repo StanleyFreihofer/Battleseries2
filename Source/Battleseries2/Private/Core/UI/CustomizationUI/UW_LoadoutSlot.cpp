@@ -2,6 +2,7 @@
 
 #include "Core/UI/CustomizationUI/UW_LoadoutSlot.h"
 #include "Core/UI/CustomizationUI/UW_DropdownOption.h"
+#include "Core/UI/CustomizationUI/UW_Customization.h"
 #include "Components/VerticalBox.h"     // For UVerticalBox
 #include "Components/Button.h"          // For UButton
 #include "Components/TextBlock.h"       // For UTextBlock
@@ -78,7 +79,6 @@ void UUW_LoadoutSlot::AddDropdownOption(FName NewOptionID, int32 OptionIndex)
 					DisplayName = CamoData->CamoDisplayName;
 				}
 				break;
-
 		}
 	}
 	else
@@ -87,10 +87,9 @@ void UUW_LoadoutSlot::AddDropdownOption(FName NewOptionID, int32 OptionIndex)
 	}
 	NewDropdownOption->Btn_DropdownOption->OnHovered.AddDynamic(this, &UUW_LoadoutSlot::UpdateSlot_Hover);		
 	NewDropdownOption->Btn_DropdownOption->OnUnhovered.AddDynamic(this, &UUW_LoadoutSlot::HandleSelectStatus);
-	NewDropdownOption->OnOptionClicked.AddDynamic(this, &UUW_LoadoutSlot::HandleOptionSelected);			
-	VerticalBox_OptionsList->AddChild(NewDropdownOption);
+	NewDropdownOption->OnOptionClicked.AddDynamic(this, &UUW_LoadoutSlot::HandleOptionSelected);	
+	NewDropdownOption->Init_DropdownOption(NewOptionID, DisplayName, OptionIndex, ESlateVisibility::Hidden);
 	DropdownOptions.Add(NewDropdownOption);
-	NewDropdownOption->Init_DropdownOption(NewOptionID, DisplayName, OptionIndex, ESlateVisibility::Collapsed);
 }
 
 void UUW_LoadoutSlot::HandleSlotHovered()
@@ -113,6 +112,7 @@ void UUW_LoadoutSlot::HandleSlotSelected()
 
 void UUW_LoadoutSlot::HandleOptionSelected(UUW_DropdownOption* ClickedOption)
 {
+	//when a dropdown option is selected
 	UpdateSlotSelection(ClickedOption->OptionIndex);
 	OnSlotSelectionChanged.Broadcast(SlotData.VehicleSlotData.AssignedSeatIndex, SlotData.SlotConfig, ClickedOption->ItemID);		//triggers [UW_Customization::HandleSlotSelectionChanged]
 	HideOptions();
@@ -138,14 +138,6 @@ void UUW_LoadoutSlot::UpdateSlotSelection(int32 OptionIndex)
 	{
 		UUW_DropdownOption* OptionInQuestion = DropdownOptions[SlotData.SelectedOptionIndex];
 		T_SelectedOptionLabel->SetText(OptionInQuestion->T_OptionName->GetText());
-	}
-}
-
-void UUW_LoadoutSlot::ShowOptions()
-{
-	for (UUW_DropdownOption* Option : DropdownOptions)
-	{
-		Option->SetVisibility(ESlateVisibility::Visible);
 	}
 }
 
@@ -180,8 +172,9 @@ void UUW_LoadoutSlot::UpdateSlot_Hover()
 	Btn_LoadoutSlot->SetColorAndOpacity(FLinearColor::Black);
 	Btn_LoadoutSlot->SetBackgroundColor(FLinearColor::White);
 	SB_HoverIcon->SetHeightOverride(400);
-	ShowOptions();
+	//ShowOptions();
 	UE_LOG(LogTemp, Warning, TEXT("Hovered"));
+	OnSlotHovered.Broadcast(DropdownOptions, SlotData);
 	for (int32 i = 0; i < DropdownOptions.Num(); i++)
 	{
 		UUW_DropdownOption* Option = DropdownOptions[i];
@@ -208,6 +201,6 @@ void UUW_LoadoutSlot::HandleSelectStatus()		//wrapper function for delegates
 {
 	if (ValidateSlotDeselection())
 	{
-		UpdateSlot_UnHover();
+		//UpdateSlot_UnHover();
 	}
 }

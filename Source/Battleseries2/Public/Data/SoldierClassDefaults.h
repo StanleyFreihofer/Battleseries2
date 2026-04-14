@@ -2,9 +2,10 @@
 
 #include "CoreMinimal.h"
 #include "Engine/DataAsset.h"
-#include "Data/Core/CoreEnums.h"
-#include "Data/Weapons/WeaponEnums.h"
 #include "SoldierClassDefaults.generated.h"
+
+enum class EWeaponType : uint8;
+enum class EClassType : uint8;
 
 USTRUCT(BlueprintType)
 struct FSoldierClassDefinition
