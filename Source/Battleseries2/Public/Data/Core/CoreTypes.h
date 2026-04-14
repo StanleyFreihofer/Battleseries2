@@ -45,10 +45,7 @@ struct FPlayerLoadoutConfig_Class
 	GENERATED_BODY()
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	FName PrimaryWeapon = NAME_None;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	FName Sidearm = NAME_None;
+	TArray<FName> Weapons;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FName Gadget1 = NAME_None;

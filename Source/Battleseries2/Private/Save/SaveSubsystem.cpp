@@ -22,7 +22,7 @@ void USaveSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 		LoadoutSave = Cast<UPlayerSave_Loadout>(UGameplayStatics::CreateSaveGameObject(UPlayerSave_Loadout::StaticClass()));
 		UGameplayStatics::SaveGameToSlot(LoadoutSave, SlotName, UserIndex);
 	}
-	for (auto& Pair : LoadoutSave->VehicleConfigs)
+	for (auto& Pair : LoadoutSave->VehicleLoadoutConfigs)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("[SaveSubsystem::Initialize] Loaded VehicleConfig key: %d, Seats: %d"), (int32)Pair.Key, Pair.Value.SeatLoadout.Num());
 	}
@@ -34,12 +34,22 @@ void USaveSubsystem::Deinitialize()
 	LoadoutSave = nullptr;
 }
 
+const FPlayerLoadoutConfig_Class& USaveSubsystem::GetClassLoadoutVehicle(EClassType ClassType)
+{
+	if (const FPlayerLoadoutConfig_Class* ClassLoadout = LoadoutSave->ClassLoadoutConfigs.Find(ClassType))
+	{
+		return *ClassLoadout;
+	}
+	static FPlayerLoadoutConfig_Class Empty;
+	return Empty;
+}
+
 const FPlayerLoadoutConfig_Vehicle& USaveSubsystem::GetVehicleLoadout(EVehicleType VehicleType)
 {
-	if (const FPlayerLoadoutConfig_Vehicle* LoadoutForVehicle = LoadoutSave->VehicleConfigs.Find(VehicleType))
+	if (const FPlayerLoadoutConfig_Vehicle* LoadoutForVehicle = LoadoutSave->VehicleLoadoutConfigs.Find(VehicleType))
 	{
 		UE_LOG(LogTemp, Warning, TEXT("[SaveSubsystem::GetVehicleLoadout] unknown crash here"));
-		//UE_LOG(LogTemp, Warning, TEXT("GetVehicleLoadout, Returning LoadoutForVehicle: %s"), *LoadoutSave->VehicleConfigs.Find(VehicleType)->SeatLoadout.Find(0)->Weapons[0].ToString());
+		//UE_LOG(LogTemp, Warning, TEXT("GetVehicleLoadout, Returning LoadoutForVehicle: %s"), *LoadoutSave->VehicleLoadoutConfigs.Find(VehicleType)->SeatLoadout.Find(0)->Weapons[0].ToString());
 		return *LoadoutForVehicle;
 	}
 	UE_LOG(LogTemp, Warning, TEXT("[SaveSubsystem::GetVehicleLoadout] returning empty loadout"));
@@ -57,14 +67,25 @@ const FSavedSeatLoadout& USaveSubsystem::GetSeatLoadout(EVehicleType VehicleType
 		// Note: EnsureSeatDefaults might have reallocated the map memory
 	}
 	// auto-populate and then re-fetch
-	FSavedSeatLoadout* Result = LoadoutSave->VehicleConfigs[VehicleType].SeatLoadout.Find(SeatIndex);
+	FSavedSeatLoadout* Result = LoadoutSave->VehicleLoadoutConfigs[VehicleType].SeatLoadout.Find(SeatIndex);
 	checkf(Result, TEXT("[SaveSubsystem::GetSeatLoadout] Failed to find/create SeatLoadout for index %d"), SeatIndex);
 	return *Result;
 }
 
+void USaveSubsystem::SetLoadoutWeaponChoice_Infantry(EClassType ClassType, int32 WeaponIndex, FName WeaponID)
+{
+	FPlayerLoadoutConfig_Class& ClassConfig = LoadoutSave->ClassLoadoutConfigs.FindOrAdd(ClassType);
+	if (WeaponIndex >= ClassConfig.Weapons.Num())
+	{
+		ClassConfig.Weapons.SetNum(WeaponIndex + 1);
+	}
+	ClassConfig.Weapons[WeaponIndex] = WeaponID;
+	UGameplayStatics::SaveGameToSlot(LoadoutSave, "PlayerLoadouts", 0);
+}
+
 void USaveSubsystem::SetLoadoutWeaponChoice_Vehicle(EVehicleType VehicleType, int32 SeatIndex, int32 WeaponIndex, FName WeaponID)
 {
-	FPlayerLoadoutConfig_Vehicle& VehicleConfig = LoadoutSave->VehicleConfigs.FindOrAdd(VehicleType);
+	FPlayerLoadoutConfig_Vehicle& VehicleConfig = LoadoutSave->VehicleLoadoutConfigs.FindOrAdd(VehicleType);
 	FSavedSeatLoadout& SeatConfig = VehicleConfig.SeatLoadout.FindOrAdd(SeatIndex);
 
 	//Ensure all previous weapon slots exist (even if None)
@@ -84,7 +105,7 @@ void USaveSubsystem::SetLoadoutWeaponChoice_Vehicle(EVehicleType VehicleType, in
 	SeatConfig.Weapons[WeaponIndex] = WeaponID;
 
 	UE_LOG(LogTemp, Warning, TEXT("[SaveSubsystem::SetLoadoutWeaponChoice_Vehicle] Saved Vehicle %d Seat %d Slot %d = %s"), (int32)VehicleType, SeatIndex, WeaponIndex, *WeaponID.ToString());
-	for (auto& Pair : LoadoutSave->VehicleConfigs)
+	for (auto& Pair : LoadoutSave->VehicleLoadoutConfigs)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("[SaveSubsystem::SetLoadoutWeaponChoice_Vehicle] Saving VehicleConfig key: %d, Seats: %d"), (int32)Pair.Key, Pair.Value.SeatLoadout.Num());
 	}
@@ -95,7 +116,7 @@ void USaveSubsystem::SetLoadoutWeaponChoice_Vehicle(EVehicleType VehicleType, in
 
 void USaveSubsystem::SetLoadoutOpticChoice_Vehicle(EVehicleType VehicleType, int32 SeatIndex, FName OpticID)
 {
-	FPlayerLoadoutConfig_Vehicle& VehicleConfig = LoadoutSave->VehicleConfigs.FindOrAdd(VehicleType);
+	FPlayerLoadoutConfig_Vehicle& VehicleConfig = LoadoutSave->VehicleLoadoutConfigs.FindOrAdd(VehicleType);
 	FSavedSeatLoadout& SeatConfig = VehicleConfig.SeatLoadout.FindOrAdd(SeatIndex);
 	SeatConfig.Optic = OpticID;
 	UGameplayStatics::SaveGameToSlot(LoadoutSave, "PlayerLoadouts", 0);
@@ -103,7 +124,7 @@ void USaveSubsystem::SetLoadoutOpticChoice_Vehicle(EVehicleType VehicleType, int
 
 void USaveSubsystem::SetLoadoutCamoChoice_Vehicle(EVehicleType VehicleType, FName CamoID)
 {
-	FPlayerLoadoutConfig_Vehicle& VehicleConfig = LoadoutSave->VehicleConfigs.FindOrAdd(VehicleType);
+	FPlayerLoadoutConfig_Vehicle& VehicleConfig = LoadoutSave->VehicleLoadoutConfigs.FindOrAdd(VehicleType);
 	VehicleConfig.VehicleCamo = CamoID;
 	UGameplayStatics::SaveGameToSlot(LoadoutSave, "PlayerLoadouts", 0);
 }
@@ -127,7 +148,7 @@ void USaveSubsystem::EnsureSeatDefaults(EVehicleType VehicleType, int32 SeatInde
 	}
 
 	// Apply to the save
-	FPlayerLoadoutConfig_Vehicle& VehicleConfig = LoadoutSave->VehicleConfigs.FindOrAdd(VehicleType);
+	FPlayerLoadoutConfig_Vehicle& VehicleConfig = LoadoutSave->VehicleLoadoutConfigs.FindOrAdd(VehicleType);
 	FSavedSeatLoadout& SeatConfig = VehicleConfig.SeatLoadout.FindOrAdd(SeatIndex);
 	SeatConfig.Weapons = Weapons;
 

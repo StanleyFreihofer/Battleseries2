@@ -116,7 +116,7 @@ struct FVehicleWeaponInstanceData
 };
 
 USTRUCT(BlueprintType)
-struct FWeaponSlotChoices
+struct FVehicleWeaponSlotChoices
 {
 	GENERATED_BODY()
 
@@ -168,7 +168,7 @@ struct FAvailableItems
 	int32 WeaponMeshDriverSlotIndex = 0;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	TArray<FWeaponSlotChoices> AvailableWeaponSlots; //index 0 is primary, 1 is secondary
+	TArray<FVehicleWeaponSlotChoices> AvailableWeaponSlots; //index 0 is primary, 1 is secondary
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (tooltip = "The Array Indexes of the turret(s) this seat controls"))
 	TArray<int32> ControlledTurretIndexes;
@@ -186,7 +186,7 @@ struct FAvailableItems
 	{
 		TArray<FName> DefaultWeaponIDs;
 
-		for (const FWeaponSlotChoices& SlotWrapper : AvailableWeaponSlots)
+		for (const FVehicleWeaponSlotChoices& SlotWrapper : AvailableWeaponSlots)
 		{
 			const TMap<FName, FVehicleWeaponInstanceData>& SlotChoices = SlotWrapper.WeaponChoices;
 			if (SlotChoices.Num() > 0)

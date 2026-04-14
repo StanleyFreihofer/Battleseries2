@@ -233,6 +233,15 @@ void UUW_Customization::Build_SoldierClassLoadoutPanel(int32 TypeEnumIndex)
 	//soldier class
 	EClassType SoldierClassType = static_cast<EClassType>(TypeEnumIndex);
 	EWeaponType DefaultWeaponCategory = GetData_UUWCustomization()->GetSoldierClassDefaults()->SoldierClassDefinitions.Find(SoldierClassType)->AvailableWeaponCategories[0];
+
+	//Build_SoldierClassLoadoutData_WeaponData
+	const TArray<FName>& WeaponTypeIDs = GetData_UUWCustomization()->GetAllInfantryWeaponIDsOfType(DefaultWeaponCategory);
+	FCustomizationSlotConfig NewSlotData = Build_LoadoutSlotData(WeaponTypeIDs, ECoreItemType::CharacterWeapon, 0, FText::GetEmpty());
+	UUW_LoadoutSlot* NewSlotWidget = CreateNewLoadoutSlot();
+	NewSlotWidget->Init_LoadoutSlot_Vehicle(NewSlotData, -1);
+
+	//LoadCurrentSave_InfantryWeaponSlot
+	//USaveSubsystem* SaveSubsystem = GetGameInstance()->GetSubsystem<USaveSubsystem>();
 }
 
 void UUW_Customization::Build_VehicleLoadoutPanel(int32 TypeEnumIndex)
@@ -241,7 +250,7 @@ void UUW_Customization::Build_VehicleLoadoutPanel(int32 TypeEnumIndex)
 	FName VehicleID = GetData_UUWCustomization()->GetFirstVehicleIDOfType(VehicleType);
 	const FVehicleData& VehicleData = *GetData_UUWCustomization()->GetVehicleDataRow(VehicleID);
 
-	TMap<int32, FAvailableItems*> CustomizableSeatOptions;			//option list to be built out
+	//TMap<int32, FAvailableItems*> CustomizableSeatOptions;			//option list to be built out
 	for (int32 SI = 0; SI < VehicleData.Seats.Num(); SI++)
 	{
 		const FSeatData& SeatData = VehicleData.Seats[SI];
@@ -272,7 +281,7 @@ void UUW_Customization::Build_VehicleLoadoutData_Weapon(const FSeatData& SeatDat
 	//weapons (weapon slots)	
 	for (int32 i = 0; i < SeatData.AvailableItems.AvailableWeaponSlots.Num(); i++)
 	{
-		const FWeaponSlotChoices& WeaponSlot = SeatData.AvailableItems.AvailableWeaponSlots[i];
+		const FVehicleWeaponSlotChoices& WeaponSlot = SeatData.AvailableItems.AvailableWeaponSlots[i];
 		if (WeaponSlot.WeaponChoices.Num() > 1)			//if weapon choices > 1, we have multiple options/customization
 		{
 			TArray<FName> Weapons;
@@ -529,7 +538,7 @@ void UUW_Customization::UpdateSelectedClassType(int32 TypeEnumIndex)
 		CustomizationUIState.TypeEnumIndex = TypeEnumIndex;
 
 		Clear_LoadoutPanel();
-		//Buid_ClassKitLoadoutPanel
+		Build_SoldierClassLoadoutPanel(TypeEnumIndex);
 		for (UUW_LoadoutTypeButton* ClassTypeButtonInQuestion : CustomizationUIState.TypeButtons)		//make this a function (handle typeselection or some shi)
 		{
 			if (ClassTypeButtonInQuestion->TypeEnumIndex != TypeEnumIndex)
@@ -566,22 +575,36 @@ void UUW_Customization::UpdateSelectedVehicleType(int32 TypeEnumIndex)
 void UUW_Customization::HandleSlotSelectionChanged(int32 SeatIndex, FCustomizationSlotConfig SlotConfig, FName SelectedItemID)			//<--shouldnt this just be called update loadout
 {
 	USaveSubsystem* SaveSubsystem = GetGameInstance()->GetSubsystem<USaveSubsystem>();
-	EVehicleType CurrentVehicleType = static_cast<EVehicleType>(CustomizationUIState.TypeEnumIndex);
+
 	switch (SlotConfig.CoreItemType)
 	{
+		case ECoreItemType::CharacterWeapon:
+		{
+			EClassType CurrentClassType = static_cast<EClassType>(CustomizationUIState.TypeEnumIndex);
+			SaveSubsystem->SetLoadoutWeaponChoice_Infantry(CurrentClassType, SlotConfig.ItemSlot, SelectedItemID);
+			break;
+		}
 		case ECoreItemType::VehicleWeapon:
+		{
+			EVehicleType CurrentVehicleType = static_cast<EVehicleType>(CustomizationUIState.TypeEnumIndex);
 			SaveSubsystem->SetLoadoutWeaponChoice_Vehicle(CurrentVehicleType, SeatIndex, SlotConfig.ItemSlot, SelectedItemID);
 			PC->PreviewStageActor->PreviewStageState.CurrentVehicle->VehicleWeaponLogicComponent->ClearWeaponSlotFromSeat(SeatIndex, SlotConfig.ItemSlot);
-			UE_LOG(LogTemp, Error, TEXT("[UW_Customization::HandleSlotSelectionChanged] ApplyLoadoutToSeat will be fired here"));
 			PC->PreviewStageActor->PreviewStageState.CurrentVehicle->VehicleWeaponLogicComponent->ApplyWeaponAtIndexToSeat(SeatIndex, SlotConfig.ItemSlot, SelectedItemID);
 			break;
+		}
 		case ECoreItemType::VehicleOptic:
+		{
+			EVehicleType CurrentVehicleType = static_cast<EVehicleType>(CustomizationUIState.TypeEnumIndex);
 			SaveSubsystem->SetLoadoutOpticChoice_Vehicle(CurrentVehicleType, SeatIndex, SelectedItemID);
 			break;
+		}
 		case ECoreItemType::Camo:
+		{
+			EVehicleType CurrentVehicleType = static_cast<EVehicleType>(CustomizationUIState.TypeEnumIndex);
 			SaveSubsystem->SetLoadoutCamoChoice_Vehicle(CurrentVehicleType, SelectedItemID);
 			PC->PreviewStageActor->PreviewStageState.CurrentVehicle->ApplyCamoToVehicle(SelectedItemID);
 			break;
+		}
 	}
 }
 

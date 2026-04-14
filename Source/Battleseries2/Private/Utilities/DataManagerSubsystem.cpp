@@ -157,6 +157,13 @@ const FCamoData* UDataManagerSubsystem::GetCamoDataRow(FName RowName) const
     return CamoDataPtr;
 }
 
+TArray<FName> UDataManagerSubsystem::GetAllInfantryWeaponIDs() const
+{
+    UDataTable* InfantryWeaponDT = GetInfantryWeaponDataTable();
+    TArray<FName> AllInfantryWeaponRowNames = InfantryWeaponDT->GetRowNames();
+    return AllInfantryWeaponRowNames;
+}
+
 TArray<FName> UDataManagerSubsystem::GetAllVehicleIDs() const
 {
     UDataTable* VehicleDT = GetVehicleDataTable();
@@ -191,6 +198,20 @@ FText UDataManagerSubsystem::GetWeaponSlotName(int32 WeaponSlotIndex)
 {
     FText WeaponSlotName = WeaponDefaultsDataAsset->WeaponDefaults.WeaponSlotNames[WeaponSlotIndex];
     return WeaponSlotName;
+}
+
+TArray<FName> UDataManagerSubsystem::GetAllInfantryWeaponIDsOfType(EWeaponType WeaponType) const
+{
+    TArray<FName> AllInfantryWeaponIDsOfType;
+    for (FName WeaponID : GetAllInfantryWeaponIDs())
+    {
+        const FInfantryWeaponData* InfantryWeaponData = GetInfantryWeaponDataRow(WeaponID);
+        if (InfantryWeaponData->WeaponClassificationData.WeaponType == WeaponType)
+        {
+            AllInfantryWeaponIDsOfType.Add(WeaponID);
+        }
+    }
+    return AllInfantryWeaponIDsOfType;
 }
 
 void UDataManagerSubsystem::PreloadCoreAssets()

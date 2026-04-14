@@ -8,6 +8,8 @@
 #include "SaveSubsystem.generated.h"
 
 class UPlayerSave_Loadout;
+enum class EClassType : uint8;
+struct FPlayerLoadoutConfig_Class;
 
 /**
  * 
@@ -26,10 +28,14 @@ class BATTLESERIES2_API USaveSubsystem : public UGameInstanceSubsystem
 		UFUNCTION(BlueprintCallable)
 		UPlayerSave_Loadout* GetLoadoutSave() const { return LoadoutSave; }
 		UFUNCTION(BlueprintCallable)
+		const FPlayerLoadoutConfig_Class& GetClassLoadoutVehicle(EClassType ClassType);
+		UFUNCTION(BlueprintCallable)
 		const FPlayerLoadoutConfig_Vehicle& GetVehicleLoadout(EVehicleType VehicleType);
 		UFUNCTION(BlueprintCallable)
 		const FSavedSeatLoadout& GetSeatLoadout(EVehicleType VehicleType, int32 SeatIndex);
 
+		UFUNCTION(BlueprintCallable)
+		void SetLoadoutWeaponChoice_Infantry(EClassType ClassType, int32 WeaponIndex, FName WeaponID);
 		UFUNCTION(BlueprintCallable)
 		void SetLoadoutWeaponChoice_Vehicle(EVehicleType VehicleType, int32 SeatIndex, int32 WeaponIndex, FName WeaponID);
 		UFUNCTION(BlueprintCallable)

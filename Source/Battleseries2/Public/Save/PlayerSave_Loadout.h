@@ -17,9 +17,9 @@ class BATTLESERIES2_API UPlayerSave_Loadout : public USaveGame
 	public:
 
 		UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		TMap<EClassType, FPlayerLoadoutConfig_Class> ClassLoadoutConfig;
+		TMap<EClassType, FPlayerLoadoutConfig_Class> ClassLoadoutConfigs;
 
 		/** Map: Vehicle category -> player's saved config */
 		UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		TMap<EVehicleType, FPlayerLoadoutConfig_Vehicle> VehicleConfigs;
+		TMap<EVehicleType, FPlayerLoadoutConfig_Vehicle> VehicleLoadoutConfigs;
 };

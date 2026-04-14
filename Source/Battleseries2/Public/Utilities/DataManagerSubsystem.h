@@ -15,6 +15,7 @@ struct FVehicleAttachmentData;
 struct FOpticData;
 struct FProjectileData;
 struct FCamoData;
+enum class EWeaponType : uint8;
 enum class EVehicleType : uint8;
 class UDA_CharacterDefaults;
 class UDA_VehicleDefaults;
@@ -92,6 +93,9 @@ public:
     //HELPER FUNCTIONS
 
     UFUNCTION(BlueprintCallable, Category = "Data")
+    UDataTable* GetInfantryWeaponDataTable() const { return InfantryWeaponDataTable; }
+
+    UFUNCTION(BlueprintCallable, Category = "Data")
     UDataTable* GetVehicleDataTable() const { return VehicleDataTable; }
 
     UFUNCTION(BlueprintCallable, Category = "Data")
@@ -144,6 +148,8 @@ public:
     UFUNCTION(BlueprintCallable, Category = "Data")
     bool IsDataReady() const { return bDataReady; }
     UFUNCTION(BlueprintCallable)
+    TArray<FName> GetAllInfantryWeaponIDs() const;
+    UFUNCTION(BlueprintCallable)
     TArray<FName> GetAllVehicleIDs() const;
     UFUNCTION(BlueprintCallable)
     TArray<FName> GetAllProjectileIDs() const;
@@ -151,6 +157,8 @@ public:
     FName GetFirstVehicleIDOfType(EVehicleType VehicleType) const;
     UFUNCTION(BlueprintCallable)
     FText GetWeaponSlotName(int32 WeaponSlotIndex);
+    UFUNCTION(BlueprintCallable)
+    TArray<FName> GetAllInfantryWeaponIDsOfType(EWeaponType WeaponType) const;
 
     UFUNCTION(BlueprintCallable)
     void PreloadCoreAssets();

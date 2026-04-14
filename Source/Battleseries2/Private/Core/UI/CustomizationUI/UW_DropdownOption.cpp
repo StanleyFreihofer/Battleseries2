@@ -7,7 +7,6 @@
 void UUW_DropdownOption::NativeConstruct()
 {
 	Super::NativeConstruct();
-	Btn_DropdownOption->OnClicked.AddDynamic(this, &UUW_DropdownOption::HandleClicked);
 	//Btn_DropdownOption->OnHovered.AddDynamic(this, &UUW_DropdownOption::HandleHovered);
 }
 
@@ -17,6 +16,8 @@ void UUW_DropdownOption::Init_DropdownOption(FName ID, FText DisplayName, int32 
 	SetItemID(ID);
 	SetOptionText(DisplayName);
 	SetVisibility(ButtonVisibility);
+
+	Btn_DropdownOption->OnClicked.AddDynamic(this, &UUW_DropdownOption::HandleClicked);
 }
 
 void UUW_DropdownOption::SetOptionText(FText DisplayName)

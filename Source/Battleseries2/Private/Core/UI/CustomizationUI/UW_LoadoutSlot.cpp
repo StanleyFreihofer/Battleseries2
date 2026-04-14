@@ -7,6 +7,7 @@
 #include "Components/Button.h"          // For UButton
 #include "Components/TextBlock.h"       // For UTextBlock
 #include "Data/Core/CoreTypes.h"
+#include "Data/Weapons/Data_InfantryWeapon.h"
 #include "Data/Weapons/VehicleWeapons/Data_VehicleWeapon.h"
 #include "Data/Data_Optics.h"
 #include "Data/Data_Camo.h"
@@ -52,8 +53,6 @@ void UUW_LoadoutSlot::AddDropdownOption(FName NewOptionID, int32 OptionIndex)
 	{
 		switch (SlotData.SlotConfig.CoreItemType)
 		{
-			case ECoreItemType::CharacterWeapon:
-				break;
 			case ECoreItemType::VehicleWeapon:
 				{
 					const FVehicleWeaponData* VehicleWeaponData = DataManager->GetVehicleWeaponDataRow(NewOptionID);
@@ -83,7 +82,18 @@ void UUW_LoadoutSlot::AddDropdownOption(FName NewOptionID, int32 OptionIndex)
 	}
 	else
 	{
-
+		switch (SlotData.SlotConfig.CoreItemType)
+		{
+			case ECoreItemType::CharacterWeapon:
+			{
+				const FInfantryWeaponData* InfantryWeaponData = DataManager->GetInfantryWeaponDataRow(NewOptionID);
+				if (InfantryWeaponData)
+				{
+					DisplayName = InfantryWeaponData->WeaponClassificationData.BaseWeaponClassificationData.WeaponDisplayName;
+				}
+				break;
+			}
+		}
 	}
 	NewDropdownOption->Btn_DropdownOption->OnHovered.AddDynamic(this, &UUW_LoadoutSlot::UpdateSlot_Hover);		
 	NewDropdownOption->Btn_DropdownOption->OnUnhovered.AddDynamic(this, &UUW_LoadoutSlot::HandleSelectStatus);
