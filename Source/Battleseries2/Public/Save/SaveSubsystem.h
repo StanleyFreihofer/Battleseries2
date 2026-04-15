@@ -28,7 +28,7 @@ class BATTLESERIES2_API USaveSubsystem : public UGameInstanceSubsystem
 		UFUNCTION(BlueprintCallable)
 		UPlayerSave_Loadout* GetLoadoutSave() const { return LoadoutSave; }
 		UFUNCTION(BlueprintCallable)
-		const FPlayerLoadoutConfig_Class& GetClassLoadoutVehicle(EClassType ClassType);
+		const FPlayerLoadoutConfig_Class& GetClassLoadout(EClassType ClassType);
 		UFUNCTION(BlueprintCallable)
 		const FPlayerLoadoutConfig_Vehicle& GetVehicleLoadout(EVehicleType VehicleType);
 		UFUNCTION(BlueprintCallable)

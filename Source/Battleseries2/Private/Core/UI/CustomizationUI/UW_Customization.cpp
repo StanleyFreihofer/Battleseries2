@@ -142,11 +142,6 @@ void UUW_Customization::ClearPreviousMode()
 	ScrollBox->ClearChildren();
 }
 
-void UUW_Customization::Init_TypeScrollBox()
-{
-
-}
-
 void UUW_Customization::Build_ClassTypeScrollbox()
 {
 	for (EClassType SoldierClass : TEnumRange<EClassType>())
@@ -172,30 +167,68 @@ void UUW_Customization::Build_VehicleTypeScrollbox()
 	}
 }
 
-void UUW_Customization::RepopulateTypeScrollBox(int32 VisibleLength)
+void UUW_Customization::RepopulateTypeScrollBox(int32 NumOfVisibleButtons)
 {
-	ScrollBox->ClearChildren();
+	ScrollBox->ClearChildren();			//wipes the scrollbox clean
 	FVector2D ViewportSize;
 	GEngine->GameViewport->GetViewportSize(ViewportSize);
 	UCanvasPanelSlot* CanvasSlot = Cast<UCanvasPanelSlot>(SizeBox_ScrollBox->Slot);
-	float ScrollBoxWidth = CanvasSlot->GetSize().X / VisibleLength;
-	//float ScrollBoxWidth = 1920.0f;//ScrollBox->GetTickSpaceGeometry().GetLocalSize().X;
-	//if (ScrollBoxWidth <= 0) ScrollBoxWidth = 1920.0f; // Fallback for first frame
-	//float TargetWidth = ScrollBoxWidth / 3.0f;
+	float ScrollBoxWidth = CanvasSlot->GetSize().X;
+	float ButtonWidth = ScrollBoxWidth / NumOfVisibleButtons;
 	for (UUW_LoadoutTypeButton* Btn : CustomizationUIState.TypeButtons)
 	{
-		ScrollBox->AddChild(Btn);
-		//360.0f
-		Btn->SizeBox->SetWidthOverride(ScrollBoxWidth);
+		ScrollBox->AddChild(Btn);   // Adds them back in the NEW order we just made
+		Btn->SizeBox->SetWidthOverride(ButtonWidth);
+
+		if (Btn->TypeEnumIndex == CustomizationUIState.TypeEnumIndex)
+		{
+			Btn->SetButtonSelected();
+		}
 	}
 }
 
-void UUW_Customization::RefreshTypeScrollBox(int32 VisibleLength)
+void UUW_Customization::HandleRefreshTypeScrollBox(int32 NumOFVisibleButtons)
+{
+	auto& ButtonArray = CustomizationUIState.TypeButtons;
+	bool bShouldScroll = false;
+
+	switch (CustomizationUIState.CurrentCustomizationMode)
+	{
+		case ECoreType::Class:
+			bShouldScroll = GetData_UUWCustomization()->GetCustomizationDefaults()->Scroll_SoldierClassMode;
+			break;
+		case ECoreType::Vehicle:
+			bShouldScroll = GetData_UUWCustomization()->GetCustomizationDefaults()->Scroll_VehicleMode;
+			break;
+	}
+
+	// 2. Apply Logic
+	if (bShouldScroll)
+	{
+		// This function handles the array shuffling AND calls Repopulate
+		RefreshTypeScrollBox(NumOFVisibleButtons);
+	}
+	else
+	{
+		// Fix the order to standard Enum order
+		ButtonArray.Sort([](const UUW_LoadoutTypeButton& A, const UUW_LoadoutTypeButton& B) {
+			return A.TypeEnumIndex < B.TypeEnumIndex;
+			});
+
+		// Explicitly call Repopulate with the FULL count so they all fit
+		RepopulateTypeScrollBox(ButtonArray.Num());
+
+		// Reset scroll so we don't start halfway through a static list
+		ScrollBox->SetScrollOffset(0);
+	}
+}
+
+void UUW_Customization::RefreshTypeScrollBox(int32 NumOfVisibleButtons)
 {
 	auto& ButtonArray = CustomizationUIState.TypeButtons;
 	int32 NumOfButtons = ButtonArray.Num();
-
 	int32 CurrentPos = -1;
+
 	for (int32 i = 0; i < ButtonArray.Num(); i++)
 	{
 		if (ButtonArray[i]->TypeEnumIndex == CustomizationUIState.TypeEnumIndex)
@@ -209,22 +242,25 @@ void UUW_Customization::RefreshTypeScrollBox(int32 VisibleLength)
 	{
 		if (CurrentPos > 1)
 		{
+			//moving from front to back
 			UUW_LoadoutTypeButton* FirstBtn = ButtonArray[0];
-			ButtonArray.RemoveAt(0);
-			ButtonArray.Add(FirstBtn);
+			ButtonArray.RemoveAt(0);		//removes the first button
+			ButtonArray.Add(FirstBtn);		//sticks it on the end
 			CurrentPos--;
 		}
 		else if (CurrentPos < 1)
 		{
+			//moving from back to front
 			UUW_LoadoutTypeButton* LastBtn = ButtonArray.Last();
-			ButtonArray.RemoveAt(ButtonArray.Num() - 1);
-			ButtonArray.Insert(LastBtn, 0);
+			ButtonArray.RemoveAt(ButtonArray.Num() - 1);	//removes the last button
+			ButtonArray.Insert(LastBtn, 0);					//sticks it at the start
 			CurrentPos++;
 		}
 	}
 
-	RepopulateTypeScrollBox(VisibleLength);
-	ButtonArray[1]->SetButtonSelected();
+	RepopulateTypeScrollBox(NumOfVisibleButtons);
+	int32 ButtonToSelect = NumOfVisibleButtons / 2;
+	ButtonArray[ButtonToSelect]->SetButtonSelected();
 	ScrollBox->SetScrollOffset(0);
 }
 
@@ -238,9 +274,9 @@ void UUW_Customization::Build_SoldierClassLoadoutPanel(int32 TypeEnumIndex)
 	const TArray<FName>& WeaponTypeIDs = GetData_UUWCustomization()->GetAllInfantryWeaponIDsOfType(DefaultWeaponCategory);
 	FCustomizationSlotConfig NewSlotData = Build_LoadoutSlotData(WeaponTypeIDs, ECoreItemType::CharacterWeapon, 0, FText::GetEmpty());
 	UUW_LoadoutSlot* NewSlotWidget = CreateNewLoadoutSlot();
-	NewSlotWidget->Init_LoadoutSlot_Vehicle(NewSlotData, -1);
+	NewSlotWidget->Init_LoadoutSlot_Vehicle(NewSlotData, -1);			//CHANGE THIS
 
-	//LoadCurrentSave_InfantryWeaponSlot
+	LoadCurrentSave_InfantryWeaponSlot(NewSlotWidget, 0, TypeEnumIndex);
 	//USaveSubsystem* SaveSubsystem = GetGameInstance()->GetSubsystem<USaveSubsystem>();
 }
 
@@ -335,17 +371,37 @@ UUW_LoadoutSlot* UUW_Customization::CreateNewLoadoutSlot()
 	return NewSlotWidget;
 }
 
+void UUW_Customization::LoadCurrentSave_InfantryWeaponSlot(UUW_LoadoutSlot* NewSlotWidget, int32 WeaponIndex, int32 TypeEnumIndex)
+{
+	EClassType InfantryClassType = static_cast<EClassType>(TypeEnumIndex);
+	USaveSubsystem* SaveSubsystem = GetGameInstance()->GetSubsystem<USaveSubsystem>();
+
+	const FPlayerLoadoutConfig_Class& SavedClassLoadout = SaveSubsystem->GetClassLoadout(InfantryClassType);
+	if (SavedClassLoadout.Weapons.IsValidIndex(WeaponIndex))
+	{
+		FName SavedSelection = NAME_None;
+		int32 OptionIndex = 0;
+		SavedSelection = SavedClassLoadout.Weapons[WeaponIndex];
+		OptionIndex = NewSlotWidget->GetOptionIndexFromItemID(SavedSelection);
+		NewSlotWidget->UpdateSlotSelection(OptionIndex);
+	}
+	else
+	{
+		NewSlotWidget->UpdateSlotSelection(0);
+	}
+}
+
 void UUW_Customization::LoadCurrentSave_VehicleWeaponSlot(UUW_LoadoutSlot* NewSlotWidget, int32 SeatIndex, int32 WeaponIndex, int32 TypeEnumIndex)
 {
 	//DONT UPDATE PREVIEW HERE, THIS IS FOR SLOTS ONLY, PREVIEW USES APPLYLOADOUTTOSEAT ON VEHICLE CLASS
 	EVehicleType VehicleType = static_cast<EVehicleType>(TypeEnumIndex);
 	USaveSubsystem* SaveSubsystem = GetGameInstance()->GetSubsystem<USaveSubsystem>();
-	FName SavedSelection = NAME_None;
-	int32 OptionIndex = 0;
 	const FSavedSeatLoadout& SavedSeat = SaveSubsystem->GetSeatLoadout(VehicleType, SeatIndex);
 
 	if (SavedSeat.Weapons.IsValidIndex(WeaponIndex))
 	{
+		FName SavedSelection = NAME_None;
+		int32 OptionIndex = 0;
 		SavedSelection = SavedSeat.Weapons[WeaponIndex];
 		OptionIndex = NewSlotWidget->GetOptionIndexFromItemID(SavedSelection);
 		NewSlotWidget->UpdateSlotSelection(OptionIndex);
@@ -361,11 +417,12 @@ void UUW_Customization::LoadCurrentSave_VehicleOptic(UUW_LoadoutSlot* NewSlotWid
 {
 	EVehicleType VehicleType = static_cast<EVehicleType>(TypeEnumIndex);
 	USaveSubsystem* SaveSubsystem = GetGameInstance()->GetSubsystem<USaveSubsystem>();
-	FName SavedSelection = NAME_None;
-	int32 OptionIndex = 0;
+
 	const FSavedSeatLoadout& SavedSeat = SaveSubsystem->GetSeatLoadout(VehicleType, SeatIndex);
 	if (!SavedSeat.Optic.IsNone())
 	{
+		FName SavedSelection = NAME_None;
+		int32 OptionIndex = 0;
 		SavedSelection = SavedSeat.Optic;
 		OptionIndex = NewSlotWidget->GetOptionIndexFromItemID(SavedSelection);
 		NewSlotWidget->UpdateSlotSelection(OptionIndex);
@@ -380,12 +437,12 @@ void UUW_Customization::LoadCurrentSave_VehicleCamo(UUW_LoadoutSlot* NewSlotWidg
 {
 	EVehicleType VehicleType = static_cast<EVehicleType>(TypeEnumIndex);
 	USaveSubsystem* SaveSubsystem = GetGameInstance()->GetSubsystem<USaveSubsystem>();
-	FName SavedSelection = NAME_None;
-	int32 OptionIndex = 0;
 	const FPlayerLoadoutConfig_Vehicle& SavedVehicleLoadout = SaveSubsystem->GetVehicleLoadout(VehicleType);
 
 	if (SavedVehicleLoadout.VehicleCamo.IsValid())
 	{
+		FName SavedSelection = NAME_None;
+		int32 OptionIndex = 0;
 		SavedSelection = SavedVehicleLoadout.VehicleCamo;
 		OptionIndex = NewSlotWidget->GetOptionIndexFromItemID(SavedSelection);
 		NewSlotWidget->UpdateSlotSelection(OptionIndex);
@@ -539,14 +596,10 @@ void UUW_Customization::UpdateSelectedClassType(int32 TypeEnumIndex)
 
 		Clear_LoadoutPanel();
 		Build_SoldierClassLoadoutPanel(TypeEnumIndex);
-		for (UUW_LoadoutTypeButton* ClassTypeButtonInQuestion : CustomizationUIState.TypeButtons)		//make this a function (handle typeselection or some shi)
-		{
-			if (ClassTypeButtonInQuestion->TypeEnumIndex != TypeEnumIndex)
-			{
-				ClassTypeButtonInQuestion->SetButtonDeselected();
-			}
-		}
-		RefreshTypeScrollBox(GetData_UUWCustomization()->GetCustomizationDefaults()->NumOfViewableTypeButtons_SoldierClassMode);
+
+		HandleTypeSelection(TypeEnumIndex);
+
+		HandleRefreshTypeScrollBox(GetData_UUWCustomization()->GetCustomizationDefaults()->NumOfViewableTypeButtons_SoldierClassMode);
 	}
 }
 
@@ -560,15 +613,20 @@ void UUW_Customization::UpdateSelectedVehicleType(int32 TypeEnumIndex)
 		Build_VehicleLoadoutPanel(CustomizationUIState.TypeEnumIndex);
 		UpdateVehiclePreview(TypeEnumIndex);
 
-		for (UUW_LoadoutTypeButton* VehicleTypeButtonInQuestion : CustomizationUIState.TypeButtons)		//make this a function (handle typeselection or some shi)
-		{
-			if (VehicleTypeButtonInQuestion->TypeEnumIndex != TypeEnumIndex)
-			{
-				VehicleTypeButtonInQuestion->SetButtonDeselected();
-			}
-		}
+		HandleTypeSelection(TypeEnumIndex);
 
-		RefreshTypeScrollBox(GetData_UUWCustomization()->GetCustomizationDefaults()->NumOfViewableTypeButtons_VehicleMode);
+		HandleRefreshTypeScrollBox(GetData_UUWCustomization()->GetCustomizationDefaults()->NumOfViewableTypeButtons_VehicleMode);
+	}
+}
+
+void UUW_Customization::HandleTypeSelection(int32 TypeEnumIndex)
+{
+	for (UUW_LoadoutTypeButton* TypeButtonInQuestion : CustomizationUIState.TypeButtons)		
+	{
+		if (TypeButtonInQuestion->TypeEnumIndex != TypeEnumIndex)
+		{
+			TypeButtonInQuestion->SetButtonDeselected();
+		}
 	}
 }
 
@@ -582,6 +640,7 @@ void UUW_Customization::HandleSlotSelectionChanged(int32 SeatIndex, FCustomizati
 		{
 			EClassType CurrentClassType = static_cast<EClassType>(CustomizationUIState.TypeEnumIndex);
 			SaveSubsystem->SetLoadoutWeaponChoice_Infantry(CurrentClassType, SlotConfig.ItemSlot, SelectedItemID);
+			PC->PreviewStageActor->UpdateWeaponPreview(SelectedItemID);
 			break;
 		}
 		case ECoreItemType::VehicleWeapon:
@@ -672,7 +731,6 @@ FReply UUW_Customization::NativeOnMouseWheel(const FGeometry& InGeometry, const 
 	}
 	return FReply::Handled();
 }
-
 
 FReply UUW_Customization::NativeOnMouseButtonUp(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
 {

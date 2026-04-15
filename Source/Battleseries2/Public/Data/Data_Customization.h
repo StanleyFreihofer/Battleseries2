@@ -41,8 +41,14 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UI Settings | Soldier Class Mode")
 	int32 NumOfViewableTypeButtons_SoldierClassMode = 0;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UI Settings | Soldier Class Mode")
+	bool Scroll_SoldierClassMode = false;
+
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UI Settings | Vehicle Mode")
 	int32 NumOfViewableTypeButtons_VehicleMode = 0;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UI Settings | Vehicle Mode")
+	bool Scroll_VehicleMode = false;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Stage Settings")
 	TSubclassOf<ALoadoutPreviewStage> PreviewStageClass = nullptr;

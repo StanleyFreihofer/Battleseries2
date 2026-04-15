@@ -69,6 +69,8 @@ public:
 
 	//if we're gonna expand to not just be spawning vehicle but also regular weapons, need additional functions (consider interface)
 	UFUNCTION(BlueprintCallable)
+	void UpdateWeaponPreview(FName WeaponID);
+	UFUNCTION(BlueprintCallable)
 	void SetupNewPreviewVehicle(FTransform PreviewTransformOffset, FVehicleStartingData InputVehicleStartingData);
 	UFUNCTION(BlueprintCallable)
 	void CenterCameraOnVehicle();

@@ -4,6 +4,7 @@
 #include "LoadoutPreviewStage.h"
 #include "Vehicle_Base.h"
 #include "Data/Data_Customization.h"
+#include "Data/Weapons/Data_InfantryWeapon.h"
 #include "Camera/CameraActor.h"
 
 
@@ -59,6 +60,17 @@ void ALoadoutPreviewStage::BeginPlay()
 void ALoadoutPreviewStage::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+}
+
+void ALoadoutPreviewStage::UpdateWeaponPreview(FName WeaponID)
+{
+	//probably move this to some weapon logic comp later
+	const FInfantryWeaponData* WeaponData = GetGameInstance()->GetSubsystem<UDataManagerSubsystem>()->GetInfantryWeaponDataRow(WeaponID);
+	WeaponData->WeaponClassificationData.WeaponMesh.LoadSynchronous();
+	if (WeaponData->WeaponClassificationData.WeaponMesh)
+	{
+		PreviewGun->SetSkeletalMesh(WeaponData->WeaponClassificationData.WeaponMesh.Get());
+	}
 }
 
 void ALoadoutPreviewStage::SetupNewPreviewVehicle(FTransform PreviewTransformOffset, FVehicleStartingData InputVehicleStartingData)

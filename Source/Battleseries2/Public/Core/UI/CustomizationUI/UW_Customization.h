@@ -121,15 +121,15 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void ClearPreviousMode();
 	UFUNCTION(BlueprintCallable)
-	void Init_TypeScrollBox();
-	UFUNCTION(BlueprintCallable)
 	void Build_ClassTypeScrollbox();
 	UFUNCTION(BlueprintCallable)
 	void Build_VehicleTypeScrollbox();
 	UFUNCTION(BlueprintCallable)
-	void RepopulateTypeScrollBox(int32 VisibleLength);
+	void RepopulateTypeScrollBox(int32 NumOfVisibleButtons);
 	UFUNCTION(BlueprintCallable)
-	void RefreshTypeScrollBox(int32 VisibleLength);
+	void HandleRefreshTypeScrollBox(int32 NumOfVisibleButtons);
+	UFUNCTION(BlueprintCallable)
+	void RefreshTypeScrollBox(int32 NumOfVisibleButtons);
 
 	UFUNCTION(BlueprintCallable)
 	void Build_SoldierClassLoadoutPanel(int32 TypeEnumIndex);
@@ -145,6 +145,8 @@ public:
 	void Build_VehicleLoadoutData_Camo(const FVehicleData& VehicleData, int32 TypeEnumIndex);
 	UFUNCTION(BlueprintCallable)
 	UUW_LoadoutSlot* CreateNewLoadoutSlot();
+	UFUNCTION(BlueprintCallable)
+	void LoadCurrentSave_InfantryWeaponSlot(UUW_LoadoutSlot* NewSlotWidget, int32 WeaponIndex, int32 TypeEnumIndex);
 	UFUNCTION(BlueprintCallable)
 	void LoadCurrentSave_VehicleWeaponSlot(UUW_LoadoutSlot* NewSlotWidget, int32 SeatIndex, int32 WeaponIndex, int32 TypeEnumIndex);
 	UFUNCTION(BlueprintCallable)
@@ -174,6 +176,8 @@ public:
 	void UpdateSelectedClassType(int32 TypeEnumIndex);
 	UFUNCTION(BlueprintCallable)
 	void UpdateSelectedVehicleType(int32 TypeEnumIndex);
+	UFUNCTION(BlueprintCallable)
+	void HandleTypeSelection(int32 TypeEnumIndex);
 
 	UFUNCTION(BlueprintCallable)
 	void HandleSlotSelectionChanged(int32 SeatIndex, FCustomizationSlotConfig SlotConfig, FName SelectedItemID);

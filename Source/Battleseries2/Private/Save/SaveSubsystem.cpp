@@ -34,7 +34,7 @@ void USaveSubsystem::Deinitialize()
 	LoadoutSave = nullptr;
 }
 
-const FPlayerLoadoutConfig_Class& USaveSubsystem::GetClassLoadoutVehicle(EClassType ClassType)
+const FPlayerLoadoutConfig_Class& USaveSubsystem::GetClassLoadout(EClassType ClassType)
 {
 	if (const FPlayerLoadoutConfig_Class* ClassLoadout = LoadoutSave->ClassLoadoutConfigs.Find(ClassType))
 	{
