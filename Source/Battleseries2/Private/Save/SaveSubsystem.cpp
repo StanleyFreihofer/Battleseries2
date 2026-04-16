@@ -48,8 +48,6 @@ const FPlayerLoadoutConfig_Vehicle& USaveSubsystem::GetVehicleLoadout(EVehicleTy
 {
 	if (const FPlayerLoadoutConfig_Vehicle* LoadoutForVehicle = LoadoutSave->VehicleLoadoutConfigs.Find(VehicleType))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("[SaveSubsystem::GetVehicleLoadout] unknown crash here"));
-		//UE_LOG(LogTemp, Warning, TEXT("GetVehicleLoadout, Returning LoadoutForVehicle: %s"), *LoadoutSave->VehicleLoadoutConfigs.Find(VehicleType)->SeatLoadout.Find(0)->Weapons[0].ToString());
 		return *LoadoutForVehicle;
 	}
 	UE_LOG(LogTemp, Warning, TEXT("[SaveSubsystem::GetVehicleLoadout] returning empty loadout"));

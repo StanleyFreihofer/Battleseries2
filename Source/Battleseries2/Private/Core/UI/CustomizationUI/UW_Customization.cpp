@@ -73,6 +73,8 @@ void UUW_Customization::Init_Customization(ALoadoutPreviewStage* InputStageActor
 	}
 }
 
+#pragma region CustomizationModes
+
 void UUW_Customization::EnterVehicleMode(bool OverrideCheck, bool BlendView)
 {
 	if (!OverrideCheck)		//used to ensure hitting the same button repeatedly wont result in reinitialization, entervehiclemode logic should only occur on enter into customization for first time or enter from other customization mode
@@ -142,11 +144,15 @@ void UUW_Customization::ClearPreviousMode()
 	ScrollBox->ClearChildren();
 }
 
+#pragma endregion
+
+#pragma region ScrollBox
+
 void UUW_Customization::Build_ClassTypeScrollbox()
 {
 	for (EClassType SoldierClass : TEnumRange<EClassType>())
 	{
-		UUW_LoadoutTypeButton* NewLoadoutTypeButton = CreateWidget<UUW_LoadoutTypeButton>(GetWorld(), LoadoutTypeButton);
+		UUW_LoadoutTypeButton* NewLoadoutTypeButton = CreateWidget<UUW_LoadoutTypeButton>(GetWorld(), GetData_UUWCustomization()->GetCustomizationDefaults()->LoadoutTypeWidgetClass);
 		NewLoadoutTypeButton->SetSoldierClassType((int32)SoldierClass);
 		NewLoadoutTypeButton->OnLoadoutTypeClicked.AddDynamic(this, &UUW_Customization::UpdateSelectedClassType);
 		ScrollBox->AddChild(NewLoadoutTypeButton);
@@ -159,12 +165,50 @@ void UUW_Customization::Build_VehicleTypeScrollbox()
 	TArray<EVehicleType>& AvailableVehicleTypes = GetData_UUWCustomization()->GetCustomizationDefaults()->CustomizableVehicleTypes;
 	for (EVehicleType VehicleType : AvailableVehicleTypes)		
 	{
-		UUW_LoadoutTypeButton* NewLoadoutTypeButton = CreateWidget<UUW_LoadoutTypeButton>(GetWorld(), LoadoutTypeButton);
+		UUW_LoadoutTypeButton* NewLoadoutTypeButton = CreateWidget<UUW_LoadoutTypeButton>(GetWorld(), GetData_UUWCustomization()->GetCustomizationDefaults()->LoadoutTypeWidgetClass);
 		NewLoadoutTypeButton->SetVehicleType((int32)VehicleType);
-		NewLoadoutTypeButton->OnLoadoutTypeClicked.AddDynamic(this, &UUW_Customization::UpdateSelectedVehicleType);			
+		NewLoadoutTypeButton->OnLoadoutTypeClicked.AddDynamic(this, &UUW_Customization::UpdateSelectedVehicleType);
+		NewLoadoutTypeButton->OnLoadoutTypeHovered.AddDynamic(this, &UUW_Customization::ShowVehicleTypeOptions);
+
 		ScrollBox->AddChild(NewLoadoutTypeButton);
 		CustomizationUIState.TypeButtons.Add(NewLoadoutTypeButton);
 	}
+}
+
+void UUW_Customization::ShowVehicleTypeOptions(int32 TypeEnumIndex)
+{
+	//builds/shows the dropdown below the scroll box when a vehicle type is hovered
+	//if (CustomizationUIState.TypeEnumIndex == TypeEnumIndex)
+	//{
+		//return;
+	//}
+
+	VerticalBox_TypeDropdowns->ClearChildren();
+	
+	EVehicleType VehicleType = static_cast<EVehicleType>(CustomizationUIState.TypeEnumIndex);
+	UDataTable* VehicleDataTable = GetData_UUWCustomization()->GetVehicleDataTable();
+	TArray<FName> AllVehicleIDsOfType = FVehicleData::GetRowNamesOfType(VehicleDataTable, VehicleType);
+	for (int32 i = 0; i < AllVehicleIDsOfType.Num(); ++i)
+	{
+		FName& VehicleID = AllVehicleIDsOfType[i];
+		UUW_DropdownOption* NewVehicleOption = CreateWidget<UUW_DropdownOption>(this, GetData_UUWCustomization()->GetCustomizationDefaults()->DropdownOptionWidgetClass);
+		NewVehicleOption->Init_DropdownOption(VehicleID, GetData_UUWCustomization()->GetVehicleDataRow(VehicleID)->Vehicle_DisplayName, i, ESlateVisibility::Visible);
+		NewVehicleOption->OnOptionClicked.AddDynamic(this, &UUW_Customization::HandleVehicleSelected);
+		VerticalBox_TypeDropdowns->AddChild(NewVehicleOption);
+	}
+}
+
+void UUW_Customization::ClearVehicleTypeOptions()
+{
+	VerticalBox_TypeDropdowns->ClearChildren();
+	//VerticalBox_TypeDropdowns->SetVisibility(ESlateVisibility::Collapsed);
+}
+
+void UUW_Customization::HandleVehicleSelected(UUW_DropdownOption* DropdownOption)
+{
+	FName& VehicleID = DropdownOption->ItemID;
+	UpdateVehiclePreview(CustomizationUIState.TypeEnumIndex, VehicleID);
+	ClearVehicleTypeOptions();
 }
 
 void UUW_Customization::RepopulateTypeScrollBox(int32 NumOfVisibleButtons)
@@ -264,6 +308,12 @@ void UUW_Customization::RefreshTypeScrollBox(int32 NumOfVisibleButtons)
 	ScrollBox->SetScrollOffset(0);
 }
 
+#pragma endregion
+
+#pragma region LoadoutPanel
+
+#pragma region BuildLoadoutPanels
+
 void UUW_Customization::Build_SoldierClassLoadoutPanel(int32 TypeEnumIndex)
 {
 	//soldier class
@@ -277,7 +327,6 @@ void UUW_Customization::Build_SoldierClassLoadoutPanel(int32 TypeEnumIndex)
 	NewSlotWidget->Init_LoadoutSlot_Vehicle(NewSlotData, -1);			//CHANGE THIS
 
 	LoadCurrentSave_InfantryWeaponSlot(NewSlotWidget, 0, TypeEnumIndex);
-	//USaveSubsystem* SaveSubsystem = GetGameInstance()->GetSubsystem<USaveSubsystem>();
 }
 
 void UUW_Customization::Build_VehicleLoadoutPanel(int32 TypeEnumIndex)
@@ -359,9 +408,11 @@ void UUW_Customization::Build_VehicleLoadoutData_Camo(const FVehicleData& Vehicl
 	}
 }
 
+#pragma endregion
+
 UUW_LoadoutSlot* UUW_Customization::CreateNewLoadoutSlot()
 {
-	UUW_LoadoutSlot* NewSlotWidget = CreateWidget<UUW_LoadoutSlot>(GetWorld(), LoadoutSlot);
+	UUW_LoadoutSlot* NewSlotWidget = CreateWidget<UUW_LoadoutSlot>(GetWorld(), GetData_UUWCustomization()->GetCustomizationDefaults()->LoadoutSlotWidgetClass);
 	VerticalBox_LoadoutPanel->AddChild(NewSlotWidget);
 	CustomizationUIState.LoadoutSlots.Add(NewSlotWidget);
 	NewSlotWidget->OnSlotSelectionChanged.AddDynamic(this, &UUW_Customization::HandleSlotSelectionChanged);
@@ -370,6 +421,8 @@ UUW_LoadoutSlot* UUW_Customization::CreateNewLoadoutSlot()
 	NewSlotWidget->OnSlotDeselected.AddDynamic(this, &UUW_Customization::HideDetailsPanel);
 	return NewSlotWidget;
 }
+
+#pragma region LoadoutPanel_LoadSaves
 
 void UUW_Customization::LoadCurrentSave_InfantryWeaponSlot(UUW_LoadoutSlot* NewSlotWidget, int32 WeaponIndex, int32 TypeEnumIndex)
 {
@@ -453,6 +506,8 @@ void UUW_Customization::LoadCurrentSave_VehicleCamo(UUW_LoadoutSlot* NewSlotWidg
 	}
 }
 
+#pragma endregion
+
 void UUW_Customization::Clear_LoadoutPanel()
 {
 	VerticalBox_LoadoutPanel->ClearChildren();
@@ -464,6 +519,10 @@ void UUW_Customization::Clear_LoadoutPanel()
 
 	CustomizationUIState.LoadoutSlots.Empty();
 }
+
+#pragma endregion
+
+#pragma region DetailsPanel
 
 void UUW_Customization::FadeInOutDetailsPanel(bool FadeOut)
 {
@@ -549,8 +608,11 @@ void UUW_Customization::FillDetailsPanel_Camo(FName CamoID)
 	Img_Icon->SetBrushFromTexture(CamoData->CamoIcon.LoadSynchronous());
 }
 
-void UUW_Customization::UpdateVehiclePreview(int32 TypeEnumIndex)
+#pragma endregion
+
+void UUW_Customization::UpdateVehiclePreview(int32 TypeEnumIndex, FName VehicleID)
 {
+	USaveSubsystem* SaveSubsystem = GetGameInstance()->GetSubsystem<USaveSubsystem>();
 	EVehicleType VehicleType = static_cast<EVehicleType>(TypeEnumIndex);
 	//if you wanna add functionality for selecting specific vehicle for preview, create function add it here probably
 	//What happens when you make a static DataTable in a class ?
@@ -570,23 +632,34 @@ void UUW_Customization::UpdateVehiclePreview(int32 TypeEnumIndex)
 	}
 
 	//create new VehicleInstanceData (id, loadout, preview)
-
-	USaveSubsystem* SaveSubsystem = GetGameInstance()->GetSubsystem<USaveSubsystem>();
-	FString TypeName = StaticEnum<EVehicleType>()->GetNameStringByValue((int64)VehicleType);
-	UDataTable* VehicleDataTable = GetData_UUWCustomization()->GetVehicleDataTable();
-	TArray<FName> AllVehicleIDsOfType = FVehicleData::GetRowNamesOfType(VehicleDataTable, VehicleType);
-	FName RowName = FName(*StaticEnum<EVehicleType>()->GetNameStringByValue((int64)VehicleType));
-
 	FVehicleStartingData NewVehicleStartingData;
 	NewVehicleStartingData.PreviewVehicle = true;
+
+	if (VehicleID == NAME_None)
+	{
+		FString TypeName = StaticEnum<EVehicleType>()->GetNameStringByValue((int64)VehicleType);
+		UDataTable* VehicleDataTable = GetData_UUWCustomization()->GetVehicleDataTable();
+		TArray<FName> AllVehicleIDsOfType = FVehicleData::GetRowNamesOfType(VehicleDataTable, VehicleType);
+		FName RowName = FName(*StaticEnum<EVehicleType>()->GetNameStringByValue((int64)VehicleType));
+
+		NewVehicleStartingData.VehicleID = AllVehicleIDsOfType[0];
+	}
+	else
+	{
+		NewVehicleStartingData.VehicleID = VehicleID;
+	}
+
 	NewVehicleStartingData.StartingVehicleLoadout = SaveSubsystem->GetVehicleLoadout(VehicleType);
-	NewVehicleStartingData.VehicleID = AllVehicleIDsOfType[0];
 
 	FTransform PreviewTransform = GetData_UUWCustomization()->GetVehicleDataRow(NewVehicleStartingData.VehicleID)->CustomizationPosition;
 	UE_LOG(LogTemp, Warning, TEXT("location: %s"), *PreviewTransform.GetLocation().ToString());
 
 	PC->PreviewStageActor->SetupNewPreviewVehicle(PreviewTransform, NewVehicleStartingData);		//<--default selection
+
+	T_PreviewName->SetText(GetData_UUWCustomization()->GetVehicleDataRow(NewVehicleStartingData.VehicleID)->Vehicle_DisplayName);
 }
+
+#pragma region TypeUpdates
 
 void UUW_Customization::UpdateSelectedClassType(int32 TypeEnumIndex)
 {
@@ -610,12 +683,17 @@ void UUW_Customization::UpdateSelectedVehicleType(int32 TypeEnumIndex)
 		CustomizationUIState.TypeEnumIndex = TypeEnumIndex;
 
 		Clear_LoadoutPanel();
+
 		Build_VehicleLoadoutPanel(CustomizationUIState.TypeEnumIndex);
-		UpdateVehiclePreview(TypeEnumIndex);
+		UpdateVehiclePreview(TypeEnumIndex, NAME_None);
+
+		//CustomizationUIState.TypeButtons[TypeEnumIndex]->OnLoadoutTypeHovered.AddDynamic(this, &UUW_Customization::ShowVehicleTypeOptions);
 
 		HandleTypeSelection(TypeEnumIndex);
 
 		HandleRefreshTypeScrollBox(GetData_UUWCustomization()->GetCustomizationDefaults()->NumOfViewableTypeButtons_VehicleMode);
+
+		//ClearVehicleTypeOptions();
 	}
 }
 
@@ -628,7 +706,12 @@ void UUW_Customization::HandleTypeSelection(int32 TypeEnumIndex)
 			TypeButtonInQuestion->SetButtonDeselected();
 		}
 	}
+	//ClearVehicleTypeOptions();
 }
+
+#pragma endregion
+
+#pragma region SlotUpdates
 
 void UUW_Customization::HandleSlotSelectionChanged(int32 SeatIndex, FCustomizationSlotConfig SlotConfig, FName SelectedItemID)			//<--shouldnt this just be called update loadout
 {
@@ -685,6 +768,8 @@ void UUW_Customization::HandleSlotHovered(const TArray<UUW_DropdownOption*>& Opt
 		Option->SetVisibility(ESlateVisibility::Visible);
 	}
 }
+
+#pragma endregion
 
 void UUW_Customization::ExitCustomization()
 {

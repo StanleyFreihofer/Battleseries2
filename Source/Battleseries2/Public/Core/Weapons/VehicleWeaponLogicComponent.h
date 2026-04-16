@@ -242,7 +242,7 @@ public:
 	UFUNCTION(BlueprintCallable)
 	bool SwitchWeapon(int32 SeatIndex);
 	UFUNCTION(BlueprintCallable)
-	void SelectWeapon(int32 SeatIndex, int32 WeaponIndex);
+	void EquipWeapon(int32 SeatIndex, int32 WeaponIndex);
 	UFUNCTION(BlueprintCallable)
 	void UnequipWeapon(int32& SeatIndex, int32& WeaponIndex, bool& bWasFiring);
 	UFUNCTION(BlueprintCallable)

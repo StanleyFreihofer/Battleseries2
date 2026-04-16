@@ -217,7 +217,7 @@ struct FCharacterSeatContext
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (tooltip = "actual in-word HUD (worldspace widget), leave this blank if none"))
 	TSubclassOf<UUserWidget> SeatHUD = nullptr;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (tooltip = "relative transform within the vehicle of the widget component", EditCondition = "SeatHUD != nullptr", EditConditionHides = true))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (tooltip = "relative transform within the vehicle of the widget component", EditCondition = "SeatHUD != nullptr", EditConditionHides = true))
 	FTransform SeatHUDTransform = FTransform();
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (EditCondition = "SeatHUD != nullptr", EditConditionHides = true))
@@ -226,7 +226,7 @@ struct FCharacterSeatContext
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	class UInputMappingContext* InputMappingContext = nullptr;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FTransform SeatTransform = FTransform();
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)

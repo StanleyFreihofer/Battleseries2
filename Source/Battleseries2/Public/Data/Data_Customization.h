@@ -8,6 +8,9 @@
 enum class ECoreType : uint8;
 enum class EVehicleType : uint8;
 class UUW_Customization;
+class UUW_LoadoutSlot;
+class UUW_DropdownOption;
+class UUW_LoadoutTypeButton;
 class ALoadoutPreviewStage;
 
 /**
@@ -37,6 +40,15 @@ class BATTLESERIES2_API UDA_CustomizationDefaults : public UDataAsset
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UI Settings")
 	TSubclassOf<UUW_Customization> CustomizationWidgetClass = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UI Settings")
+	TSubclassOf<UUW_LoadoutSlot> LoadoutSlotWidgetClass = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UI Settings")
+	TSubclassOf<UUW_DropdownOption> DropdownOptionWidgetClass = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UI Settings")
+	TSubclassOf<UUW_LoadoutTypeButton> LoadoutTypeWidgetClass = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UI Settings | Soldier Class Mode")
 	int32 NumOfViewableTypeButtons_SoldierClassMode = 0;

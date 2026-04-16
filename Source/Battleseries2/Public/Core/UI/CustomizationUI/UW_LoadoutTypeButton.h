@@ -12,6 +12,8 @@
 class UDataManagerSubsystem;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnLoadoutTypeClicked, int32, TypeIndex);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnLoadoutTypeHovered, int32, TypeIndex);
+
 
 /**
  * 
@@ -35,6 +37,8 @@ public:
 
 	UPROPERTY(BlueprintAssignable)
 	FOnLoadoutTypeClicked OnLoadoutTypeClicked;
+	UPROPERTY(BlueprintAssignable)
+	FOnLoadoutTypeHovered OnLoadoutTypeHovered;
 
 	UFUNCTION(BlueprintCallable)
 	void SetSoldierClassType(int32 NewType);
@@ -47,7 +51,9 @@ public:
 	void SetButtonSelected();
 
 	UFUNCTION()
-	void HandleButtonClicked();
+	void HandleButton_Hovered();
+	UFUNCTION()
+	void HandleButton_Clicked();
 
 	virtual void NativeConstruct() override;
 

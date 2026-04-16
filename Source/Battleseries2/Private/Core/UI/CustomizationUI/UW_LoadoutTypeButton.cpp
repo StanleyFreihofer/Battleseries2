@@ -12,7 +12,8 @@ void UUW_LoadoutTypeButton::NativeConstruct()
 	
 	if (!isBound)
 	{
-		Btn_LoadoutType->OnClicked.AddDynamic(this, &UUW_LoadoutTypeButton::HandleButtonClicked);
+		Btn_LoadoutType->OnHovered.AddDynamic(this, &UUW_LoadoutTypeButton::HandleButton_Hovered);
+		Btn_LoadoutType->OnClicked.AddDynamic(this, &UUW_LoadoutTypeButton::HandleButton_Clicked);
 		isBound = true;
 	}
 };
@@ -34,9 +35,13 @@ void UUW_LoadoutTypeButton::SetVehicleType(int32 NewType)
     T_LoadoutTypeName->SetText(DisplayNameText);
 }
 
-void UUW_LoadoutTypeButton::HandleButtonClicked()
+void UUW_LoadoutTypeButton::HandleButton_Hovered()
 {
-	//SetButtonSelected();
+	OnLoadoutTypeHovered.Broadcast(TypeEnumIndex);
+}
+
+void UUW_LoadoutTypeButton::HandleButton_Clicked()
+{
 	OnLoadoutTypeClicked.Broadcast(TypeEnumIndex);
 }
 

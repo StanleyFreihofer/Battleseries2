@@ -67,12 +67,24 @@ struct FGroundVehicleState
 };
 
 USTRUCT(BlueprintType)
+struct FHelicopterState
+{
+	GENERATED_BODY()
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	TArray<float> RotorRPMs; //first 1 should be main rotor
+};
+
+USTRUCT(BlueprintType)
 struct FAircraftState
 {
 	GENERATED_BODY()
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	bool bLandingGearIsDown = true;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	FHelicopterState HelicopterState = FHelicopterState();
 };
 
 USTRUCT(BlueprintType)

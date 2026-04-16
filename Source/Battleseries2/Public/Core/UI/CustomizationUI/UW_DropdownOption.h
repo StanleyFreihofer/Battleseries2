@@ -24,8 +24,6 @@ public:
 
 	UPROPERTY(BlueprintAssignable)
 	FOnOptionClicked OnOptionClicked;
-	//UPROPERTY(BlueprintAssignable)
-	//FOnOptionHovered OnOptionHovered;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	int32 OptionIndex = 0;

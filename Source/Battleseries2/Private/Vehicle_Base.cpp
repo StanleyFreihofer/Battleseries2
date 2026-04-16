@@ -75,6 +75,7 @@ void AVehicle_Base::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 }
 
+#pragma region Initalization/Factory
 //GROUND VEHICLE FUNCTIONS
 void AVehicle_Base::Init_Wheels()
 {
@@ -333,7 +334,7 @@ void AVehicle_Base::Init_Vehicle()
 	}
 	ApplyCamoToVehicle(VehicleStartingData.StartingVehicleLoadout.VehicleCamo);
 
-	SpawnComponent->Init_SpawnData(FText::FromName(VehicleData->Vehicle_DisplayName), VehicleData->VehicleIcon.Get(), ESpawnType::Vehicle);
+	SpawnComponent->Init_SpawnData(VehicleData->Vehicle_DisplayName, VehicleData->VehicleIcon.Get(), ESpawnType::Vehicle);
 }
 
 void AVehicle_Base::Init_Horn(USoundBase* HornAudio)
@@ -347,18 +348,6 @@ void AVehicle_Base::Init_Horn(USoundBase* HornAudio)
 	VehicleCurrentState.GenericVehicleState.HornAudioComponent->RegisterComponent();
 	VehicleCurrentState.GenericVehicleState.HornAudioComponent->AttachToComponent(GetRootComponent(), FAttachmentTransformRules::KeepRelativeTransform);
 	VehicleCurrentState.GenericVehicleState.HornAudioComponent->SetSound(Cast<USoundBase>(HornAudio));
-}
-
-void AVehicle_Base::PlayHorn()
-{
-	VehicleCurrentState.GenericVehicleState.HornAudioComponent->Play(0.0f);
-	FTimerHandle TimerHandle;
-	GetWorldTimerManager().SetTimer(TimerHandle, this, &AVehicle_Base::StopHorn, 4.0f, false);
-}
-
-void AVehicle_Base::StopHorn()
-{
-	VehicleCurrentState.GenericVehicleState.HornAudioComponent->Stop();
 }
 
 void AVehicle_Base::Init_Vehicle_Preview()
@@ -376,6 +365,20 @@ void AVehicle_Base::SetVehicleAndInit(FVehicleStartingData InputVehicleStartingD
 	UE_LOG(LogTemp, Error, TEXT("VEHICLE REINIT STARTED, SEATS INITIALIZED NOW FALSE"));
 	VehicleStartingData = InputVehicleStartingData;
 	Init_VehicleData();
+}
+
+#pragma endregion
+
+void AVehicle_Base::PlayHorn()
+{
+	VehicleCurrentState.GenericVehicleState.HornAudioComponent->Play(0.0f);
+	FTimerHandle TimerHandle;
+	GetWorldTimerManager().SetTimer(TimerHandle, this, &AVehicle_Base::StopHorn, 4.0f, false);
+}
+
+void AVehicle_Base::StopHorn()
+{
+	VehicleCurrentState.GenericVehicleState.HornAudioComponent->Stop();
 }
 
 void AVehicle_Base::UpdateSeatList_AllOccupants()
@@ -400,6 +403,8 @@ void AVehicle_Base::UpdateSeatList_AllOccupants()
 		//this avoids hard coupling characters and vehicles
 	}
 }
+
+#pragma region LoadoutUpdates
 
 void AVehicle_Base::ApplyLoadoutToSeat(int32 SeatIndex)		//this functions applies everything in the loadout (weapons, optics, upgrades, camos (if applicable), etc)
 {
@@ -519,6 +524,8 @@ void AVehicle_Base::ClearEntireLoadoutFromVehicle()
 	VehicleCurrentState.GenericVehicleState.CurrentCamo = NAME_None;
 }
 
+#pragma endregion
+
 UCameraComponent* AVehicle_Base::SpawnAndAttachCamera(FName SocketToAttach, USkeletalMeshComponent* MeshToAttachTo)
 {
 	UCameraComponent* Cam = NewObject<UCameraComponent>(this);
@@ -526,6 +533,8 @@ UCameraComponent* AVehicle_Base::SpawnAndAttachCamera(FName SocketToAttach, USke
 	Cam->RegisterComponent();
 	return Cam;
 }
+
+#pragma region SeatManagement
 
 bool AVehicle_Base::CycleThroughSeats(ACharacter_Base* Character)
 {
@@ -682,6 +691,8 @@ void AVehicle_Base::SetupNewSeat(ACharacter_Base* Character)
 	}
 }
 
+#pragma region DriverSeats
+
 void AVehicle_Base::SetupDriver(ACharacter_Base* Character)
 {
 	//start engine
@@ -709,6 +720,10 @@ void AVehicle_Base::DropDriver()
 	UGameplayStatics::PlaySoundAtLocation(this, Cast<USoundBase>(VehicleData->GenericVehicleAudio.EngineShutdownAudio), GetActorLocation(), FRotator::ZeroRotator, 1.0f, 1.0f, 0.0f);
 }
 
+#pragma endregion
+
+#pragma region GunnerSeats
+
 void AVehicle_Base::SetupGunner(ACharacter_Base* Character)
 {
 	//called once on enter of a gunner seat, seat hud should already be on viewport
@@ -718,7 +733,7 @@ void AVehicle_Base::SetupGunner(ACharacter_Base* Character)
 		VehicleWeaponLogicComponent->WindowedRangefinder.AddDynamic(Character, &ACharacter_Base::UpdateRangefinder_WindowedVehicle);
 	}
 
-	VehicleWeaponLogicComponent->SelectWeapon(Character->GetCSI(), 0);
+	VehicleWeaponLogicComponent->EquipWeapon(Character->GetCSI(), 0);
 }
 
 void AVehicle_Base::DropGunner(TWeakObjectPtr<ACharacter_Base> Character, int32& SeatIndex)
@@ -726,6 +741,8 @@ void AVehicle_Base::DropGunner(TWeakObjectPtr<ACharacter_Base> Character, int32&
 	VehicleWeaponLogicComponent->WindowedRangefinder.RemoveDynamic(Character.Get(), &ACharacter_Base::UpdateRangefinder_WindowedVehicle);
 	VehicleWeaponLogicComponent->UnequipWeapon(SeatIndex, VehicleWeaponLogicComponent->GetCWIForSeat(SeatIndex), VehicleWeaponLogicComponent->GetEquippedWeaponInSeat(SeatIndex).VehicleWeaponState.BaseWeaponRuntimeData.WeaponState.isFiring);
 }
+
+#pragma endregion
 
 void AVehicle_Base::AttemptEnterVehicle(ACharacter_Base* Character)
 {
@@ -749,6 +766,8 @@ void AVehicle_Base::ChangeSeat(ACharacter_Base* Character)
 		SetupNewSeat(Character);
 	}
 }
+
+#pragma endregion
 
 void AVehicle_Base::UpdateSeatActiveCamera(int32 SeatIndex, UCameraComponent* NewActiveCamera)
 {
@@ -816,6 +835,8 @@ void AVehicle_Base::ApplySteering_GV(float SteeringValue, int32 SeatIndex)
 		GetHUDSystem()->UpdateCompassHUD_Vehicle(VehicleCurrentState.SeatStates[SeatIndex].ActiveCamera->GetComponentRotation().Yaw);
 	}
 }
+
+#pragma region Optics
 
 void AVehicle_Base::ToggleOptic(int32 SeatIndex)
 {
@@ -928,6 +949,8 @@ void AVehicle_Base::ToggleMagnificationOptic(int32 SeatIndex, float ZoomMagnific
 		}
 	}
 }
+
+#pragma endregion
 
 void AVehicle_Base::HandleThrottle(float ThrottleValue, int32 SeatIndex)
 {

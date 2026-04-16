@@ -1240,7 +1240,7 @@ bool UVehicleWeaponLogicComponent::SwitchWeapon(int32 SeatIndex)
 	if (PreviousCWI != CWI)
 	{
 		UnequipWeapon(SeatIndex, PreviousCWI, bWasFiring);
-		SelectWeapon(SeatIndex, CWI);
+		EquipWeapon(SeatIndex, CWI);
 		return true;
 	}
 	else
@@ -1249,9 +1249,8 @@ bool UVehicleWeaponLogicComponent::SwitchWeapon(int32 SeatIndex)
 	}
 }
 
-void UVehicleWeaponLogicComponent::SelectWeapon(int32 SeatIndex, int32 WeaponIndex)
+void UVehicleWeaponLogicComponent::EquipWeapon(int32 SeatIndex, int32 WeaponIndex)
 {
-	//equip weapon instead?
 	//assumes weapon index in array is valid
 	FVehicleWeaponSystem_Runtime& SeatWeaponSystem = *VehicleWeaponSystem.Find(SeatIndex);
 	SeatWeaponSystem.VehicleWeaponSystemState.EquippedWeaponState.CurrentWeaponIndex = WeaponIndex;
@@ -1391,6 +1390,8 @@ float UVehicleWeaponLogicComponent::GetTurretWorldYaw(int32 TurretIndex)
 	float HullWorldYaw = OwnerDataAccessor->GetVehicle().GetActorRotation().Yaw;
 
 	int32 SI = GetSeatIndexForTurret(TurretIndex);
+
+	UE_LOG(LogTemp, Warning, TEXT("[VWLC::GetTurretWorldYaw] SeatIndex = %d"), SI);
 
 	TWeakObjectPtr<USkeletalMeshComponent> TurretMesh = VehicleWeaponSystem.Find(SI)->VehicleWeaponSystemState.WeaponSystemMesh.Get();
 	FName SocketName = VehicleWeaponSystem.Find(SI)->Weapons[VehicleWeaponSystem.Find(SI)->VehicleWeaponSystemState.EquippedWeaponState.CurrentWeaponIndex].VehicleWeaponState.MuzzleSockets[0];

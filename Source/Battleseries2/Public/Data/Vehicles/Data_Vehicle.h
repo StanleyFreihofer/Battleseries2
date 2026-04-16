@@ -310,7 +310,7 @@ struct FVehicleData : public FTableRowBase			//<-- makes it accessible for data 
 	//generic stuff/things applied to all vehicles
 	//THE FOLLOWING DATA SHOULD NOT BE RUNTIME DATA
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	FName Vehicle_DisplayName = NAME_None;
+	FText Vehicle_DisplayName = FText();
 
 	//NOT VEHICLE TYPE, MOVEMENT TYPE (GROUNDVEHICLE, JET, HELICOPTER, BOAT)
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)

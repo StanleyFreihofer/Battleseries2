@@ -59,17 +59,19 @@ public:
 	class UScrollBox* ScrollBox = nullptr;
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta = (BindWidget))
 	class USizeBox* SizeBox_ScrollBox = nullptr;
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta = (BindWidget))
+	class UVerticalBox* VerticalBox_TypeDropdowns = nullptr;
 	UPROPERTY(meta = (BindWidget))
 	class UVerticalBox* VerticalBox_LoadoutPanel = nullptr;
 	UPROPERTY(meta = (BindWidget))
 	class UVerticalBox* VerticalBox_Dropdowns = nullptr;
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta = (BindWidget))
 	class UTextBlock* T_PreviewName = nullptr;
-	UPROPERTY(meta = (BindWidget))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (BindWidget))
 	UButton* Btn_WeaponMode = nullptr;
-	UPROPERTY(meta = (BindWidget))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (BindWidget))
 	UButton* Btn_VehicleMode = nullptr;
-	UPROPERTY(meta = (BindWidget))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (BindWidget))
 	UButton* Btn_CharacterMode = nullptr;
 
 
@@ -92,11 +94,6 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	TSubclassOf<UUW_LoadoutTypeButton> LoadoutTypeButton = nullptr;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-	TSubclassOf<UUW_LoadoutSlot> LoadoutSlot = nullptr;
-
-
 
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
@@ -124,6 +121,12 @@ public:
 	void Build_ClassTypeScrollbox();
 	UFUNCTION(BlueprintCallable)
 	void Build_VehicleTypeScrollbox();
+	UFUNCTION(BlueprintCallable)
+	void ShowVehicleTypeOptions(int32 TypeEnumIndex);
+	UFUNCTION(BlueprintCallable)
+	void ClearVehicleTypeOptions();
+	UFUNCTION(BlueprintCallable)
+	void HandleVehicleSelected(UUW_DropdownOption* DropdownOption);
 	UFUNCTION(BlueprintCallable)
 	void RepopulateTypeScrollBox(int32 NumOfVisibleButtons);
 	UFUNCTION(BlueprintCallable)
@@ -170,7 +173,7 @@ public:
 	void FillDetailsPanel_Camo(FName CamoID);
 
 	UFUNCTION(BlueprintCallable)
-	void UpdateVehiclePreview(int32 TypeEnumIndex);
+	void UpdateVehiclePreview(int32 TypeEnumIndex, FName VehicleID);
 
 	UFUNCTION(BlueprintType)
 	void UpdateSelectedClassType(int32 TypeEnumIndex);
