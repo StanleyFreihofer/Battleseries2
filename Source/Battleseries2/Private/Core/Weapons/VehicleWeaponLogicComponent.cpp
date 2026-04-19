@@ -1002,6 +1002,7 @@ void UVehicleWeaponLogicComponent::FireVehicleWeapon(int32 SeatIndex)
 				case EProjectileType::Rocket:			//contains own initial velocity
 				case EProjectileType::Missile:			//contains own initial velocity
 					//handle SHOOT projectileactor
+					TWeakObjectPtr<AProjectile_Base> FiredProjectile;
 					if (VehicleWeapon.VehicleWeaponInstanceData.bAreProjectilesMounted && VehicleWeaponState.CurrentMountedProjectiles.Num() > 0)
 					{
 						VehicleWeaponState.CurrentMountedProjectiles[0]->ProjectileMovementComponent->HomingTargetComponent = VehicleWeaponState.BaseWeaponRuntimeData.WeaponState.LockOnState.AcquiredTarget.Get()->GetRootComponent();
@@ -1009,10 +1010,22 @@ void UVehicleWeaponLogicComponent::FireVehicleWeapon(int32 SeatIndex)
 						//call some sort of "drop from rack" function on projectile?
 						if (VehicleWeaponState.CurrentMountedProjectiles[0].IsValid())
 						{
+							FiredProjectile = VehicleWeaponState.CurrentMountedProjectiles[0];
 							VehicleWeaponState.CurrentMountedProjectiles.RemoveAt(0, EAllowShrinking::Yes);
 						}
 					}
-					//add to some sort of projectiles list (would make updating lock on targets easier probably)?
+					else
+					{
+						FTransform MuzzleTransform;
+						int32& MuzzleIndex = VehicleWeaponState.CurrentMuzzleIndexes[0];		//hardcoded for now
+						FiredProjectile = ProjectileSubsystem->AcquireProjectileFromPool(StaticWeaponData.WeaponFireData.ProjectileID);
+						AActor* FiringVehicle = GetOwner();
+						FiredProjectile->MoveIgnoreActorAdd(FiringVehicle);
+						MuzzleTransform = GetMuzzleTransform(VehicleWeaponState, SeatWeaponSystem, MuzzleIndex);
+						FiredProjectile->SetActorTransform(MuzzleTransform);
+						FiredProjectile->FireProjectile();
+					}
+					VehicleWeapon.VehicleWeaponState.BaseWeaponRuntimeData.WeaponState.InFlightProjectiles.Add(FiredProjectile);
 					break;
 			}
 			break;
@@ -1021,13 +1034,16 @@ void UVehicleWeaponLogicComponent::FireVehicleWeapon(int32 SeatIndex)
 	ApplyWeaponRecoilJostle(SeatIndex, CWI);
 
 	//update muzzle
+	int32& ActiveIndex = VehicleWeaponState.CurrentMuzzleIndexes[0];
+	const int32& TotalMuzzles = VehicleWeaponState.MuzzleSockets.Num();
 	switch (VehicleWeapon.VehicleWeaponInstanceData.FireMethod)
 	{
 		case EFireMethod::FlipFlop:
-			for (int32& MuzzleIndex : VehicleWeaponState.CurrentMuzzleIndexes)
-			{
-				MuzzleIndex = (MuzzleIndex == 0) ? 1 : 0;
-			}
+			//for (int32& MuzzleIndex : VehicleWeaponState.CurrentMuzzleIndexes)
+			//{
+				//MuzzleIndex = (MuzzleIndex == 0) ? 1 : 0;
+			//}
+			ActiveIndex = (ActiveIndex + 1) % TotalMuzzles;
 			break;
 		case EFireMethod::Sequential:
 			break;
@@ -1039,14 +1055,7 @@ void UVehicleWeaponLogicComponent::FireVehicleWeapon(int32 SeatIndex)
 void UVehicleWeaponLogicComponent::HandleShootSimProjectile(FVehicleWeaponState& VehicleWeaponState, const FBaseWeaponData& StaticWeaponData, FVehicleWeaponSystem_Runtime& SeatWeaponSystem, const FProjectileData& ProjectileData)
 {
 	FVector MuzzleLocation = FVector::ForwardVector;
-	if (SeatWeaponSystem.VehicleWeaponSystemState.WeaponSystemMesh.IsValid())
-	{
-		MuzzleLocation = UWeaponFunctions::GetMuzzleTransform(VehicleWeaponState.MuzzleSockets[0], SeatWeaponSystem.VehicleWeaponSystemState.WeaponSystemMesh).GetLocation();
-	}
-	else
-	{
-		MuzzleLocation = UWeaponFunctions::GetMuzzleTransform(VehicleWeaponState.MuzzleSockets[0], OwnerDataAccessor->GetVehicleMesh()).GetLocation();
-	}
+	MuzzleLocation = GetMuzzleTransform(VehicleWeaponState, SeatWeaponSystem, 0).GetLocation();
 
 	UWeaponFunctions::CreateSimProjectile
 	(
@@ -1373,6 +1382,21 @@ void UVehicleWeaponLogicComponent::UpdateWeaponStatusUI(int32& SeatIndex, bool& 
 			VehicleHUD->UpdateWeaponStatusHUD(canFire);
 		}
 	}
+}
+
+FTransform UVehicleWeaponLogicComponent::GetMuzzleTransform(FVehicleWeaponState& VehicleWeaponState, FVehicleWeaponSystem_Runtime& SeatWeaponSystem, int32 MuzzleIndex)
+{
+	FTransform MuzzleTransform;
+	MuzzleTransform.SetLocation(FVector::ForwardVector);
+	if (SeatWeaponSystem.VehicleWeaponSystemState.WeaponSystemMesh.IsValid())
+	{
+		MuzzleTransform = UWeaponFunctions::GetMuzzleTransform(VehicleWeaponState.MuzzleSockets[MuzzleIndex], SeatWeaponSystem.VehicleWeaponSystemState.WeaponSystemMesh);
+	}
+	else
+	{
+		MuzzleTransform = UWeaponFunctions::GetMuzzleTransform(VehicleWeaponState.MuzzleSockets[MuzzleIndex], OwnerDataAccessor->GetVehicleMesh());
+	}
+	return MuzzleTransform;
 }
 
 const FBaseWeaponData& UVehicleWeaponLogicComponent::GetBaseWeaponDataInSlot(int32 SeatIndex, int32 WeaponIndex)

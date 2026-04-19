@@ -1031,9 +1031,9 @@ bool AVehicle_Base::GetIfCanLockOn_Implementation(const TArray<ETargetingCategor
 	{
 		case EHomingCapability::NoHoming:
 			return false;
-		case EHomingCapability::WireGuided:
-			//if this vehicle is lazed
+		case EHomingCapability::WireGuided1:
 			break;
+		case EHomingCapability::WireGuided2:	//(the 1 that allows for some form of homing)
 		case EHomingCapability::CanLockOn:
 		case EHomingCapability::RequireLockOn:
 			for (ETargetingCategory TargetingCategory : TargetingCategories)

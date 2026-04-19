@@ -51,7 +51,8 @@ struct FWeaponState
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
 	int32 CurrentReserveAmmo = 0;
 
-	//in flight projectiles? (actors mainly?)
+	UPROPERTY()
+	TArray<TWeakObjectPtr<AProjectile_Base>> InFlightProjectiles;
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
 	FLockOnState LockOnState = FLockOnState();
 };

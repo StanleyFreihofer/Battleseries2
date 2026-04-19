@@ -89,7 +89,7 @@ void UProjectilePoolSubsystem::ReturnProjectileToPool(TWeakObjectPtr<AProjectile
 	Projectile->SetActorHiddenInGame(true);
 	Projectile->SetActorEnableCollision(false);
 
-	FName ProjectileID = Projectile->ProjectileState.ProjectileID;
+	FName& ProjectileID = Projectile->ProjectileState.ProjectileID;
 	ProjectileObjectPools.FindOrAdd(ProjectileID).PooledProjectiles.Add(Projectile);
 
 	//move to world 0

@@ -31,12 +31,14 @@ struct FWeaponHomingData
 
 	//UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ToolTip = "whether or not weapon requires a lockon in order to fire"))
 	//bool RequiresLockOn = false;			
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ToolTip = "the parameters that dictate if/HOW a weapon can guide to a target"))
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ToolTip = "the parameters that dictate if/HOW a weapon can guide to a target"), Category = "PreFlight Conditions")
 	EHomingCapability HomingCapability = EHomingCapability::NoHoming;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ToolTip = "the parameters that dictate what a weapon can target/lock on to"))
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ToolTip = "the parameters that dictate what a weapon can target/lock on to"), Category = "PreFlight Conditions")
 	TArray<ETargetingCategory> CanTarget;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ToolTip = "time it takes to lockon/acquire a target"))
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ToolTip = "time it takes to lockon/acquire a target"), Category = "PreFlight Conditions")
 	float AcquireTime = 0.0f;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ToolTip = "Soft/Hard Lock. Does it require the player to keep crosshairs on target"), Category = "MidFlight Conditions")
+	bool ContinuousLockRequired = false;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	TSoftObjectPtr<USoundWave> LockOnAudio = nullptr;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)

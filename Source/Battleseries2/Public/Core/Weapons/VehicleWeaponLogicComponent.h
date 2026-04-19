@@ -252,6 +252,8 @@ public:
 
 	//GETTERS
 	UFUNCTION(BlueprintCallable, BlueprintPure)
+	FTransform GetMuzzleTransform(FVehicleWeaponState& VehicleWeaponState, FVehicleWeaponSystem_Runtime& SeatWeaponSystem, int32 MuzzleIndex);
+	UFUNCTION(BlueprintCallable, BlueprintPure)
 	const FBaseWeaponData& GetBaseWeaponDataInSlot(int32 SeatIndex, int32 WeaponIndex);
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	float GetTurretWorldYaw(int32 TurretIndex);

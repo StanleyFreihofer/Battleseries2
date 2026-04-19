@@ -35,7 +35,7 @@ enum class EVehicleType : uint8
 
 	//Attack Boat
 	//Multirole Jet
-	//CAS Jet
+	//CAS Jet (A10, SU25 Frogfoot, etc)
 	//Bomber
 	//VTOL
 	//stationary turret?

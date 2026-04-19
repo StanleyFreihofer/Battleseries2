@@ -224,6 +224,9 @@ void AProjectile_Base::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, U
 	{
 		UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), SelectedVFX, Hit.ImpactPoint, Hit.ImpactNormal.Rotation());
 	}
+	ProjectileMeshComponent->ClearMoveIgnoreActors();
+	ProjectileMeshComponent->OnComponentHit.RemoveDynamic(this, &AProjectile_Base::OnHit);
+	ProjectileState.FlightStageIndex = 0;
 	GetProjectileSystem()->ReturnProjectileToPool(this);
 }
 

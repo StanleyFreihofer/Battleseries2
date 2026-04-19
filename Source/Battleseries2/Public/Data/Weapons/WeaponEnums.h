@@ -36,11 +36,10 @@ UENUM(BlueprintType)		//The different behaviors of a weapon that dictates under 
 enum class EHomingCapability : uint8
 {
 	NoHoming			UMETA(DisplayName = "No Lock On", ToolTip = "Cannot lock on to a target"),		
-	WireGuided			UMETA(DisplayName = "Wire Guided", ToolTip = "TOW Missile, etc"),			
-	CanLockOn			UMETA(DisplayName = "Lock On", ToolTip = "Can lock on without target being lazed"),		
+	WireGuided1			UMETA(DisplayName = "Wire Guided (no lock on)", ToolTip = "A wire guided missile that CANNOT lock on to targets"),	
+	WireGuided2			UMETA(DisplayName = "Wire Guided (w/lock on", ToolTip = "A wire guided missile that CAN lock on to targets, TOW Missile, etc"),
+	CanLockOn			UMETA(DisplayName = "Lock On", ToolTip = "Passive lock on, does not require a lock to fire"),		
 	RequireLockOn		UMETA(DisplayName = "Require Lock On", ToolTip = "Requires lock on to fire")
-	//soft lockon
-	//CanHardLockOn		UMETA(DisplayName = "Hard Lock On"),		//Can only lock on if target is lazed (this can be covered by category)
 };
 
 
