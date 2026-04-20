@@ -103,7 +103,7 @@ void AProjectile_Base::SetRuntimeContext(UPrimitiveComponent* AttachComponent, F
 	}
 }
 
-void AProjectile_Base::FireProjectile()
+void AProjectile_Base::FireProjectile(FVector AimDirection)
 {
 	if (ProjectileState.PreFlightContext.AttachedComponent || GetParentComponent() != nullptr)
 	{
@@ -113,6 +113,8 @@ void AProjectile_Base::FireProjectile()
 		//add impulse or something idk
 	}
 
+	ProjectileState.AimDirection = AimDirection;
+
 	StartFlightPlan();
 	UpdateFlightPlan(0);
 }
@@ -120,8 +122,7 @@ void AProjectile_Base::FireProjectile()
 void AProjectile_Base::StartFlightPlan()
 {
 	ProjectileMeshComponent->OnComponentHit.AddDynamic(this, &AProjectile_Base::OnHit);		//should not explode if not in use yet (hanging on rack for example)
-	const FVector LaunchDir = GetActorForwardVector();
-	ProjectileMovementComponent->Velocity = LaunchDir * ProjectileData->ProjectileFlightPlan[0].GuidanceParams.InitialSpeed;
+	ProjectileMovementComponent->Velocity = ProjectileState.AimDirection * ProjectileData->ProjectileFlightPlan[0].GuidanceParams.InitialSpeed;
 	ProjectileMovementComponent->Activate();
 	NiagaraComponent->Activate();
 }
@@ -141,8 +142,8 @@ void AProjectile_Base::UpdateFlightPlan(int32 FlightStageIndex)
 	switch (FlightStage.BehaviorType)
 	{
 		case EProjectileGuidanceMethod::BallisticTrajectory:
-			const FVector LaunchDir = GetActorForwardVector();
-			ProjectileMovementComponent->Velocity = LaunchDir * FlightStage.GuidanceParams.InitialSpeed;
+			//const FVector LaunchDir = GetActorForwardVector();
+			ProjectileMovementComponent->Velocity = ProjectileState.AimDirection * FlightStage.GuidanceParams.InitialSpeed;
 			break;
 		case EProjectileGuidanceMethod::GuideToTarget:
 			ProjectileMovementComponent->bIsHomingProjectile = true;
@@ -227,6 +228,8 @@ void AProjectile_Base::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, U
 	ProjectileMeshComponent->ClearMoveIgnoreActors();
 	ProjectileMeshComponent->OnComponentHit.RemoveDynamic(this, &AProjectile_Base::OnHit);
 	ProjectileState.FlightStageIndex = 0;
+	ProjectileMovementComponent->Deactivate();
+	NiagaraComponent->Deactivate();
 	GetProjectileSystem()->ReturnProjectileToPool(this);
 }
 

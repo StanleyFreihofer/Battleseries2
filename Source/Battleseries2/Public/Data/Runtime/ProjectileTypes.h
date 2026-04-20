@@ -59,6 +59,9 @@ struct FActorProjectile_Runtime
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TWeakObjectPtr<class APlayerState> InstigatorPlayerState;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)     //the initial location of the projectile
+	FVector AimDirection = FVector();
+
 	//movement state (updated everytick)
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)     //the initial location of the projectile
 	FVector OriginLocation = FVector();

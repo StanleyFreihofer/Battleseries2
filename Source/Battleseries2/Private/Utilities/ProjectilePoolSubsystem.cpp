@@ -74,6 +74,8 @@ TWeakObjectPtr<AProjectile_Base> UProjectilePoolSubsystem::AcquireProjectileFrom
 
  	NewProjectile->SetActorHiddenInGame(false);
 	NewProjectile->SetActorEnableCollision(true);
+	NewProjectile->SetActorTickEnabled(true);
+	NewProjectile->ProjectileMovementComponent->SetComponentTickEnabled(true);
 	return NewProjectile; 
 }
 
@@ -88,6 +90,8 @@ void UProjectilePoolSubsystem::ReturnProjectileToPool(TWeakObjectPtr<AProjectile
 
 	Projectile->SetActorHiddenInGame(true);
 	Projectile->SetActorEnableCollision(false);
+	Projectile->SetActorTickEnabled(false);
+	Projectile->ProjectileMovementComponent->SetComponentTickEnabled(false);
 
 	FName& ProjectileID = Projectile->ProjectileState.ProjectileID;
 	ProjectileObjectPools.FindOrAdd(ProjectileID).PooledProjectiles.Add(Projectile);

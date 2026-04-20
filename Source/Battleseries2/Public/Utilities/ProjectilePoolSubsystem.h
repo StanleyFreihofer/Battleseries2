@@ -37,7 +37,7 @@ public:
 
     //default pool size per projectile type
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
-    int32 DefaultPoolSize = 20;
+    int32 DefaultPoolSize = 100;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
     TArray<FSimProjectile_Runtime> SimulatedProjectiles;

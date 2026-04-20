@@ -62,7 +62,7 @@ public:
 	void SetRuntimeContext(UPrimitiveComponent* AttachComponent, FName AttachSocket);
 
 	UFUNCTION(BlueprintCallable)
-	void FireProjectile();
+	void FireProjectile(FVector AimDirection);
 	UFUNCTION(BlueprintCallable)
 	void StartFlightPlan();
 	UFUNCTION(BlueprintCallable)
