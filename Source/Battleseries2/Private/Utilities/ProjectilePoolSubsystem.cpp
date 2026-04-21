@@ -26,12 +26,12 @@ TStatId UProjectilePoolSubsystem::GetStatId() const
 	RETURN_QUICK_DECLARE_CYCLE_STAT(UProjectilePoolSubsystem, STATGROUP_Tickables);
 }
 
-void UProjectilePoolSubsystem::SpawnPoolofProjectile(FName ProjectileID, int32 PoolSize)
+void UProjectilePoolSubsystem::SpawnPoolofProjectile(FName MunitionID, int32 PoolSize)
 {
 	FProjectilePoolEntry PoolEntry;
 	DataManager = GetWorld()->GetGameInstance()->GetSubsystem<UDataManagerSubsystem>();
 
-	const FProjectileData* ProjectileData = DataManager->GetProjectileDataRow(ProjectileID);
+	const FProjectileData* ProjectileData = DataManager->GetProjectileDataRow(MunitionID);
 	switch (ProjectileData->ProjectileClassificationData.ProjectileType)
 	{
 		case EProjectileType::Rocket:
@@ -39,31 +39,31 @@ void UProjectilePoolSubsystem::SpawnPoolofProjectile(FName ProjectileID, int32 P
 		case EProjectileType::Bomb:
 			for (int32 i = 0; i < PoolSize; i++)
 			{
-				UE_LOG(LogTemp, Warning, TEXT("[ProjectilePoolSubsystem::Initialize] Projectile ID = %s"), *ProjectileID.ToString());
+				UE_LOG(LogTemp, Warning, TEXT("[ProjectilePoolSubsystem::Initialize] Projectile ID = %s"), *MunitionID.ToString());
 
 				AProjectile_Base* NewProjectile = GetWorld()->SpawnActor<AProjectile_Base>(AProjectile_Base::StaticClass());
 				UE_LOG(LogTemp, Warning, TEXT("[ProjectilePoolSubsystem::Initialize] Projectile ActorName: %s"), *NewProjectile->GetName());
-				NewProjectile->SetProjectileAndInit(ProjectileID, false);
+				NewProjectile->SetProjectileAndInit(MunitionID, false);
 				NewProjectile->SetActorHiddenInGame(true);
 				NewProjectile->SetActorEnableCollision(false);
 				//Projectile->GetRootComponent()->SetActive(false);
 				PoolEntry.PooledProjectiles.Add(NewProjectile);
 				//Projectile->RuntimeContext = nullptr; // Clear runtime context
 			}
-			ProjectileObjectPools.Add(ProjectileID, PoolEntry);
+			ProjectileObjectPools.Add(MunitionID, PoolEntry);
 			break;
 	}
 }
 
-TWeakObjectPtr<AProjectile_Base> UProjectilePoolSubsystem::AcquireProjectileFromPool(FName ProjectileID)
+TWeakObjectPtr<AProjectile_Base> UProjectilePoolSubsystem::AcquireProjectileFromPool(FName MunitionID)
 {
-	if (!ProjectileObjectPools.Contains(ProjectileID))
+	if (!ProjectileObjectPools.Contains(MunitionID))
 	{
-		UE_LOG(LogTemp, Error, TEXT("[ProjectilePoolSubsystem::AcquireProjectileFromPool] Invalid ProjectileID: %s"), *ProjectileID.ToString());
+		UE_LOG(LogTemp, Error, TEXT("[ProjectilePoolSubsystem::AcquireProjectileFromPool] Invalid ProjectileID: %s"), *MunitionID.ToString());
 		return nullptr;
 	}
 
-	FProjectilePoolEntry& Pool = ProjectileObjectPools[ProjectileID];
+	FProjectilePoolEntry& Pool = ProjectileObjectPools[MunitionID];
 	TWeakObjectPtr<AProjectile_Base> NewProjectile = nullptr;
 
 	if (Pool.PooledProjectiles.Num() > 0)
@@ -93,8 +93,8 @@ void UProjectilePoolSubsystem::ReturnProjectileToPool(TWeakObjectPtr<AProjectile
 	Projectile->SetActorTickEnabled(false);
 	Projectile->ProjectileMovementComponent->SetComponentTickEnabled(false);
 
-	FName& ProjectileID = Projectile->ProjectileState.ProjectileID;
-	ProjectileObjectPools.FindOrAdd(ProjectileID).PooledProjectiles.Add(Projectile);
+	FName& MunitionID = Projectile->ProjectileState.MunitionID;
+	ProjectileObjectPools.FindOrAdd(MunitionID).PooledProjectiles.Add(Projectile);
 
 	//move to world 0
 	Projectile->SetActorLocation(FVector::ZeroVector);
@@ -137,13 +137,15 @@ void UProjectilePoolSubsystem::UpdateSimulatedProjectiles(float DeltaSeconds)
 			{
 				//apply damage, etc
 			}
-			UE_LOG(LogTemp, Error, TEXT("[ProjectilePoolSubsystem::UpdateSimulatedProjectiles] ProjectileID = %s"), *SimulatedProjectile.ProjectileID.ToString());
-			const FProjectileData* ProjectileData = DataManager->GetProjectileDataRow(SimulatedProjectile.ProjectileID);
+			UE_LOG(LogTemp, Error, TEXT("[ProjectilePoolSubsystem::UpdateSimulatedProjectiles] ProjectileID = %s"), *SimulatedProjectile.MunitionID.ToString());
+			/**
+			const FProjectileData* ProjectileData = DataManager->GetProjectileDataRow(SimulatedProjectile.MunitionID);
 			UNiagaraSystem* SelectedVFX = ProjectileData->ProjectileVisualData.ImpactVFX.LoadSynchronous();
 			if (SelectedVFX)
 			{
 				UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), SelectedVFX, OutHit.ImpactPoint, OutHit.ImpactNormal.Rotation());
 			}
+			**/
 			SimulatedProjectiles.RemoveAt(i);
 			continue;
 		}

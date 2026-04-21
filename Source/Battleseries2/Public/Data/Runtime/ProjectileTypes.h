@@ -23,7 +23,7 @@ struct FSimProjectile_Runtime
 	GENERATED_BODY()
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	FName ProjectileID = NAME_None;
+	FName MunitionID = NAME_None;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TWeakObjectPtr<class APlayerState> InstigatorPlayerState;
@@ -54,7 +54,7 @@ struct FActorProjectile_Runtime
 	GENERATED_BODY()
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	FName ProjectileID = NAME_None;
+	FName MunitionID = NAME_None;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TWeakObjectPtr<class APlayerState> InstigatorPlayerState;

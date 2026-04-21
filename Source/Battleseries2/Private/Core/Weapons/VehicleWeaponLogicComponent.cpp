@@ -209,8 +209,8 @@ void UVehicleWeaponLogicComponent::MountProjectiles(int32 SeatIndex, int32 Weapo
 	FWeapon_Runtime& WeaponDataToFill = SeatWeaponToFill.VehicleWeaponState.BaseWeaponRuntimeData;
 	const FVehicleWeaponData* VehicleWeaponRow = DataSubsystem->GetVehicleWeaponDataRow(WeaponDataToFill.WeaponID);
 	const int32& MagSize = FMath::Min(VehicleWeaponRow->WeaponData.AmmoData.MagSize, WeaponDataToFill.WeaponState.CurrentAmmoinMag);
-	const FName& ProjectileID = VehicleWeaponRow->WeaponData.WeaponFireData.ProjectileID;
-	if (!VehicleWeaponRow || ProjectileID.IsNone())
+	const FName& MunitionID = VehicleWeaponRow->WeaponData.WeaponFirePerformance.MunitionID;
+	if (!VehicleWeaponRow || MunitionID.IsNone())
 	{
 		return;
 	}
@@ -221,7 +221,7 @@ void UVehicleWeaponLogicComponent::MountProjectiles(int32 SeatIndex, int32 Weapo
 		FName SocketName = FName(*SocketNameString);
 
 		FTransform SocketTransform = VehicleMeshComponent->GetSocketTransform(SocketName, RTS_World);	//transform offset is data (is that needed?)
-		TWeakObjectPtr<AProjectile_Base> NewProjectile = ProjectileSubsystem->AcquireProjectileFromPool(ProjectileID);
+		TWeakObjectPtr<AProjectile_Base> NewProjectile = ProjectileSubsystem->AcquireProjectileFromPool(MunitionID);
 		NewProjectile->SetRuntimeContext(VehicleMeshComponent, SocketName);
 		SeatWeaponToFill.VehicleWeaponState.CurrentMountedProjectiles.Add(NewProjectile);
 		//DONT INITIALIZE, PROJECTILES SHOULD ALREADY BE INITIALIZED BY POOL SUBYSTEM
@@ -851,7 +851,7 @@ void UVehicleWeaponLogicComponent::SetupMuzzleSockets(TWeakObjectPtr<USkeletalMe
 		NewVFX->SetAutoActivate(false);
 		NewVFX->SetAsset(StaticWeaponData.WeaponFX.MuzzleFlashFX.LoadSynchronous());
 		NewVFX->Deactivate();
-		NewVFX->SetNiagaraVariableFloat(TEXT("User.RateOfFire"), UWeaponFunctions::GetFireRate(StaticWeaponData.WeaponPerformance.RateOfFire));
+		NewVFX->SetNiagaraVariableFloat(TEXT("User.RateOfFire"), UWeaponFunctions::GetFireRate(StaticWeaponData.WeaponFirePerformance.RateOfFire));
 		VehicleWeaponToFill.VehicleWeaponState.MuzzleVFXPool.Add(NewVFX);
 	}
 
@@ -950,7 +950,7 @@ void UVehicleWeaponLogicComponent::HandleStartFire(int32 SeatIndex)
 						FTimerDelegate FireDelegate;
 						FireDelegate.BindUFunction(this, FName("FireVehicleWeapon"), SeatIndex);
 
-						float FireRate = UWeaponFunctions::GetFireRate(StaticWeaponData.WeaponPerformance.RateOfFire);
+						float FireRate = UWeaponFunctions::GetFireRate(StaticWeaponData.WeaponFirePerformance.RateOfFire);
 						GetWorld()->GetTimerManager().SetTimer(TimerHandle_AutoFire, FireDelegate, FireRate, true);	//looping
 					}
 				}
@@ -989,23 +989,13 @@ void UVehicleWeaponLogicComponent::FireVehicleWeapon(int32 SeatIndex)
 	FVehicleWeaponState& VehicleWeaponState = VehicleWeapon.VehicleWeaponState;
 	const FBaseWeaponData& StaticWeaponData = GetBaseWeaponDataInSlot(SeatIndex, CWI);
 	FWeapon_Runtime& CurrentWeapon = VehicleWeaponState.BaseWeaponRuntimeData;
-	switch (StaticWeaponData.WeaponFireData.WeaponFireType)
+	switch (StaticWeaponData.WeaponFirePerformance.WeaponFireType)
 	{
-		case EWeaponFireType::Projectile:
-			//handle shoot projectile
-			const FProjectileData& ProjectileData = *DataSubsystem->GetProjectileDataRow(StaticWeaponData.WeaponFireData.ProjectileID);
-			switch (ProjectileData.ProjectileClassificationData.ProjectileType)
-			{
-				case EProjectileType::Bullet:
-				case EProjectileType::Pellet:
-				case EProjectileType::Shell:
-					HandleShootSimProjectile(VehicleWeaponState, StaticWeaponData, SeatWeaponSystem, ProjectileData);
-					break;
-				case EProjectileType::Rocket:			//contains own initial velocity
-				case EProjectileType::Missile:			//contains own initial velocity
-					HandleShootProjectileActor(SeatIndex, CWI);
-					break;
-			}
+		case EWeaponFireType::SimProjectile:
+			HandleShootSimProjectile(VehicleWeaponState, StaticWeaponData, SeatWeaponSystem);
+			break;
+		case EWeaponFireType::ActorProjectile:
+			HandleShootProjectileActor(SeatIndex, CWI);
 			break;
 	}
 
@@ -1022,7 +1012,7 @@ void UVehicleWeaponLogicComponent::FireVehicleWeapon(int32 SeatIndex)
 	HandleAmmoDepletion(StaticWeaponData, CurrentWeapon, SeatIndex);
 }
 
-void UVehicleWeaponLogicComponent::HandleShootSimProjectile(FVehicleWeaponState& VehicleWeaponState, const FBaseWeaponData& StaticWeaponData, FVehicleWeaponSystem_Runtime& SeatWeaponSystem, const FProjectileData& ProjectileData)
+void UVehicleWeaponLogicComponent::HandleShootSimProjectile(FVehicleWeaponState& VehicleWeaponState, const FBaseWeaponData& StaticWeaponData, FVehicleWeaponSystem_Runtime& SeatWeaponSystem)
 {
 	for (int32& MuzzleIndex : VehicleWeaponState.CurrentMuzzleIndexes)
 	{
@@ -1031,18 +1021,25 @@ void UVehicleWeaponLogicComponent::HandleShootSimProjectile(FVehicleWeaponState&
 
 		UWeaponFunctions::CreateSimProjectile
 		(
-			StaticWeaponData.WeaponFireData.ProjectileID,
+			StaticWeaponData.WeaponFirePerformance.MunitionID,
 			nullptr,
 			MuzzleLocation,
-			StaticWeaponData.WeaponPerformance.MuzzleVelocity,
-			ProjectileData.ProjectileFlightPlan[0].GuidanceParams.GravityScale,
+			StaticWeaponData.WeaponFirePerformance.MuzzleVelocity,
+			StaticWeaponData.WeaponFirePerformance.GravityScale,
 			SeatWeaponSystem.VehicleWeaponSystemState.EquippedWeaponState.RaycastData.MuzzleAimDirections[MuzzleIndex],
-			StaticWeaponData.WeaponPerformance.WeaponDamageData.BaseDamage,
-			StaticWeaponData.WeaponPerformance.WeaponDamageData.DamageDropoffCurve,
+			StaticWeaponData.WeaponFirePerformance.WeaponDamageData.BaseDamage,
+			StaticWeaponData.WeaponFirePerformance.WeaponDamageData.DamageDropoffCurve,
 			ProjectileSubsystem
 		);
+
+		TWeakObjectPtr<UNiagaraComponent> VFXComp = VehicleWeaponState.MuzzleVFXPool[MuzzleIndex];
+		if (UNiagaraComponent* VFX = VehicleWeaponState.MuzzleVFXPool[MuzzleIndex].Get())
+		{
+			VFX->Activate(true);
+		}
 	}
 	//VFX
+	/**
 	for (int32& MuzzleIndex : VehicleWeaponState.CurrentMuzzleIndexes)
 	{
 		TWeakObjectPtr<UNiagaraComponent> VFXComp = VehicleWeaponState.MuzzleVFXPool[MuzzleIndex];
@@ -1051,6 +1048,7 @@ void UVehicleWeaponLogicComponent::HandleShootSimProjectile(FVehicleWeaponState&
 			VFX->Activate(true);
 		}
 	}
+	**/
 }
 
 void UVehicleWeaponLogicComponent::HandleShootProjectileActor(int32 SeatIndex, int32 WeaponIndex)
@@ -1082,7 +1080,7 @@ void UVehicleWeaponLogicComponent::HandleShootProjectileActor(int32 SeatIndex, i
 			//pull from pool/spawn
 			FVector& AimDirection = SeatWeaponSystem.VehicleWeaponSystemState.EquippedWeaponState.RaycastData.MuzzleAimDirections[MuzzleIndex];
 			FTransform MuzzleTransform;
-			FiredProjectile = ProjectileSubsystem->AcquireProjectileFromPool(StaticWeaponData.WeaponFireData.ProjectileID);
+			FiredProjectile = ProjectileSubsystem->AcquireProjectileFromPool(StaticWeaponData.WeaponFirePerformance.MunitionID);
 			AActor* FiringVehicle = GetOwner();
 			FiredProjectile->MoveIgnoreActorAdd(FiringVehicle);
 			MuzzleTransform = GetMuzzleTransform(VehicleWeaponState, SeatWeaponSystem, MuzzleIndex);
@@ -1378,7 +1376,7 @@ void UVehicleWeaponLogicComponent::UpdateWeaponAudioCompData(int32 SeatIndex, in
 	const FBaseWeaponData& StaticData = GetBaseWeaponDataInSlot(SeatIndex, WeaponIndex);
 	TWeakObjectPtr<UAudioComponent> WAC = SeatWeaponSystem.VehicleWeaponSystemState.WeaponAudioComponent;
 
-	WAC->SetFloatParameter(FName("Data_RPM"), StaticData.WeaponPerformance.RateOfFire);
+	WAC->SetFloatParameter(FName("Data_RPM"), StaticData.WeaponFirePerformance.RateOfFire);
 	WAC->SetObjectParameter(FName("Data_StopFireAudio"), StaticData.WeaponAudio.FireStop.LoadSynchronous());
 
 	TArray<UObject*> LoadedWaves;

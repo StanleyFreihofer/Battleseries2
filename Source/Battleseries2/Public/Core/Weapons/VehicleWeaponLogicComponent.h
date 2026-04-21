@@ -224,7 +224,7 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void FireVehicleWeapon(int32 SeatIndex);
 	UFUNCTION(BlueprintCallable)
-	void HandleShootSimProjectile(FVehicleWeaponState& VehicleWeaponState, const FBaseWeaponData& StaticWeaponData, FVehicleWeaponSystem_Runtime& SeatWeaponSystem, const FProjectileData& ProjectileData);
+	void HandleShootSimProjectile(FVehicleWeaponState& VehicleWeaponState, const FBaseWeaponData& StaticWeaponData, FVehicleWeaponSystem_Runtime& SeatWeaponSystem);
 	UFUNCTION(BlueprintCallable)
 	void HandleShootProjectileActor(int32 SeatIndex, int32 WeaponIndex);
 	UFUNCTION(BlueprintCallable)

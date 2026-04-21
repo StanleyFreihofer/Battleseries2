@@ -49,11 +49,11 @@ public:
     virtual TStatId GetStatId() const override;
   
     UFUNCTION(BlueprintCallable)
-    void SpawnPoolofProjectile(FName ProjectileID, int32 PoolSize);
+    void SpawnPoolofProjectile(FName MunitionID, int32 PoolSize);
 
     //use this NOT TO FIRE OR MOUNT a projectile but to simply get/acquire it
     UFUNCTION()
-    TWeakObjectPtr<AProjectile_Base> AcquireProjectileFromPool(FName ProjectileID);
+    TWeakObjectPtr<AProjectile_Base> AcquireProjectileFromPool(FName MunitionID);
 
     UFUNCTION()
     void ReturnProjectileToPool(TWeakObjectPtr<AProjectile_Base> Projectile);

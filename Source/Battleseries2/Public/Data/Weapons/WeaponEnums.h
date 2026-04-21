@@ -19,9 +19,10 @@ enum class EWeaponType : uint8
 UENUM(BlueprintType)
 enum class EWeaponFireType : uint8
 {
-	Projectile		    UMETA(DisplayName = "Projectile (Sim or Actor)"),
-	VFX					UMETA(DisplayName = "VFX"),
-	Hitscan				UMETA(DisplayName = "Hitscan")		//soflam, lazer guided, etc
+	SimProjectile		    UMETA(DisplayName = "Simulated Projectile"),
+	ActorProjectile			UMETA(DisplayName = "Physical/Actor Projectile"),
+	VFX						UMETA(DisplayName = "VFX"),
+	Hitscan					UMETA(DisplayName = "Hitscan")		//soflam, lazer guided, etc
 };
 
 UENUM(BlueprintType)

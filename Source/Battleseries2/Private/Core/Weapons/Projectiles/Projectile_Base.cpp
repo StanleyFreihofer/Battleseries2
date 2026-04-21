@@ -30,14 +30,14 @@ void AProjectile_Base::BeginPlay()
 
 void AProjectile_Base::SetProjectileAndInit(FName InputProjectileID, bool ActivateImmediately)
 {
-	ProjectileState.ProjectileID = InputProjectileID;
+	ProjectileState.MunitionID = InputProjectileID;
 	Init_ProjectileData();
 }
 
 void AProjectile_Base::Init_ProjectileData()
 {
 	UDataManagerSubsystem* DataManager = GetDataManager();
-	const FProjectileData* ProjectileRow = DataManager->GetProjectileDataRow(ProjectileState.ProjectileID);
+	const FProjectileData* ProjectileRow = DataManager->GetProjectileDataRow(ProjectileState.MunitionID);
 	ProjectileData = ProjectileRow;
 
 	TArray<FSoftObjectPath> AssetsToLoad;

@@ -57,7 +57,7 @@ void UWeaponLogicComponent::StartFire()
 				if (!GetWorld()->GetTimerManager().IsTimerActive(TimerHandle_AutoFire))
 				{
 					FireWeapon();	//fire weapon immediately AND THEN fire rate every shot after
-					float FireRate = UWeaponFunctions::GetFireRate(StaticWeaponDataCache[WeaponSystem.BaseWeaponSystem.EquippedWeaponState.CurrentWeaponIndex]->WeaponPerformance.RateOfFire);
+					float FireRate = UWeaponFunctions::GetFireRate(StaticWeaponDataCache[WeaponSystem.BaseWeaponSystem.EquippedWeaponState.CurrentWeaponIndex]->WeaponFirePerformance.RateOfFire);
 					GetWorld()->GetTimerManager().SetTimer(TimerHandle_AutoFire, this, &UWeaponLogicComponent::FireWeapon, FireRate, true);	//looping
 				}
 				break;
@@ -97,10 +97,10 @@ void UWeaponLogicComponent::FireWeapon()
 	}
 	FTransform MuzzleTransform;
 	UpdateProjectileAimDirection();
-	//switch (StaticWeaponData->WeaponFireData.WeaponFireType)
+	//switch (StaticWeaponData->WeaponFirePerformance.WeaponFireType)
 	//{
 		//case EWeaponFireType::SimProjectile:
-			//const FProjectileData& ProjectileData = *DataManager->GetProjectileDataRow(StaticWeaponData->WeaponFireData.ProjectileID);
+			//const FProjectileData& ProjectileData = *DataManager->GetProjectileDataRow(StaticWeaponData->WeaponFirePerformance.MunitionID);
 			//MuzzleTransform = UWeaponFunctions::GetMuzzleTransform("Muzzle", WeaponSystem.WeaponMeshes[WeaponSystem.BaseWeaponSystem.EquippedWeaponState.CurrentWeaponIndex]);
 			//UWeaponFunctions::CreateSimProjectile(MuzzleTransform.GetLocation(), StaticWeaponData->WeaponPerformance.MuzzleVelocity, ProjectileData.ProjectileFlightPlan[0].GuidanceParams.GravityScale, WeaponSystem.BaseWeaponSystem.EquippedWeaponState.RaycastData.MuzzleAimDirections[0], ProjectileManager);
 			//break;

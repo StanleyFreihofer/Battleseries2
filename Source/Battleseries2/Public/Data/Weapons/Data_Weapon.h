@@ -81,33 +81,41 @@ struct FWeaponDamageData
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	UCurveFloat* DamageDropoffCurve = nullptr;
+
+	float GetDamageAtDistance(float Distance) const
+	{
+		if (DamageDropoffCurve)
+		{
+			// If the curve exists, it defines the Max/Min behavior entirely
+			return DamageDropoffCurve->GetFloatValue(Distance);
+		}
+		return BaseDamage;
+	}
 };
 
 USTRUCT(BlueprintType)
-struct FWeaponPerformanceData
+struct FWeaponFirePerformanceData
 {
 	GENERATED_BODY()
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)		//the initial velocity of whatever projectile when fired
-	float MuzzleVelocity = 0.0f;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	EWeaponFireType WeaponFireType = EWeaponFireType::SimProjectile;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (EditConition = "WeaponFireType == EWeaponFireType::ActorProjectile", EditConditionHides = true))
+	FName MunitionID = NAME_None;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	float RateOfFire = 0.0f;
 
+	// --- SIMULATED BALLISTICS (Visible only for Sim) ---
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (EditCondition = "WeaponFireType == EWeaponFireType::SimProjectile", EditConditionHides = true))
+	float MuzzleVelocity = 0.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (EditCondition = "WeaponFireType == EWeaponFireType::SimProjectile", EditConditionHides = true))
+	float GravityScale = 1.0f;
+
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	FWeaponDamageData WeaponDamageData = FWeaponDamageData();
-};
-
-USTRUCT(BlueprintType)
-struct FWeaponFireData
-{
-	GENERATED_BODY()
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	EWeaponFireType WeaponFireType = EWeaponFireType::Projectile;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	FName ProjectileID = NAME_None;
 };
 
 USTRUCT(BlueprintType)
@@ -186,10 +194,7 @@ struct FBaseWeaponData
 	FWeaponFunctionalityData WeaponFunctionality = FWeaponFunctionalityData();
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	FWeaponFireData WeaponFireData = FWeaponFireData();
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	FWeaponPerformanceData WeaponPerformance = FWeaponPerformanceData();
+	FWeaponFirePerformanceData WeaponFirePerformance = FWeaponFirePerformanceData();
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	FWeaponAudioData WeaponAudio = FWeaponAudioData();
