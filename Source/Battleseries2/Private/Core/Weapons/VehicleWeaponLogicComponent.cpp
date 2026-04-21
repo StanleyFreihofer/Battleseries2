@@ -858,10 +858,8 @@ void UVehicleWeaponLogicComponent::SetupMuzzleSockets(TWeakObjectPtr<USkeletalMe
 	switch (VehicleWeaponToFill.VehicleWeaponInstanceData.FireMethod)
 	{
 		case EFireMethod::Default:
-			VehicleWeaponToFill.VehicleWeaponState.CurrentMuzzleIndexes.SetNum(1);
-			VehicleWeaponToFill.VehicleWeaponState.CurrentMuzzleIndexes[0] = 0;
-			break;
-		case EFireMethod::FlipFlop:
+		case EFireMethod::Sequential:
+			//VehicleWeaponToFill.VehicleWeaponState.CurrentMuzzleIndexes.SetNum(VehicleWeaponToFill.VehicleWeaponState.MuzzleSockets.Num());
 			VehicleWeaponToFill.VehicleWeaponState.CurrentMuzzleIndexes.SetNum(1);
 			VehicleWeaponToFill.VehicleWeaponState.CurrentMuzzleIndexes[0] = 0;
 			break;
@@ -869,10 +867,6 @@ void UVehicleWeaponLogicComponent::SetupMuzzleSockets(TWeakObjectPtr<USkeletalMe
 			VehicleWeaponToFill.VehicleWeaponState.CurrentMuzzleIndexes.SetNum(2);
 			VehicleWeaponToFill.VehicleWeaponState.CurrentMuzzleIndexes[0] = 0;
 			VehicleWeaponToFill.VehicleWeaponState.CurrentMuzzleIndexes[1] = 1;
-			break;
-		case EFireMethod::Sequential:
-			VehicleWeaponToFill.VehicleWeaponState.CurrentMuzzleIndexes.SetNum(VehicleWeaponToFill.VehicleWeaponState.MuzzleSockets.Num());
-			VehicleWeaponToFill.VehicleWeaponState.CurrentMuzzleIndexes[0] = 0;
 			break;
 	}
 }
@@ -898,22 +892,31 @@ TArray<FName> UVehicleWeaponLogicComponent::GetMuzzleSocketsInOrder(TWeakObjectP
 void UVehicleWeaponLogicComponent::CalculateAimDirection(TWeakObjectPtr<USkeletalMeshComponent> Mesh, FHitResult HitResult, int32 WeaponIndex, int32 SeatIndex)
 {
 	FVehicleWeaponSystem_Runtime& SeatWeaponSystem = *VehicleWeaponSystem.Find(SeatIndex);
-	for (int32 MI = 0; MI < SeatWeaponSystem.Weapons[WeaponIndex].VehicleWeaponState.MuzzleSockets.Num(); MI++)
+	int32& CWI = GetCWIForSeat(SeatIndex);
+	FVehicleWeapon_Runtime& VehicleWeapon = SeatWeaponSystem.Weapons[CWI];
+	if (!VehicleWeapon.VehicleWeaponInstanceData.bAreProjectilesMounted)		//arent we already check this isnt true before calling this function?
 	{
-		//get muzzle socket location at muzzle index
-		if (!SeatWeaponSystem.Weapons[WeaponIndex].VehicleWeaponState.MuzzleSockets.IsValidIndex(MI))
+		for (int32 MI = 0; MI < SeatWeaponSystem.Weapons[WeaponIndex].VehicleWeaponState.MuzzleSockets.Num(); MI++)
 		{
-			return;
+			//get muzzle socket location at muzzle index
+			if (!SeatWeaponSystem.Weapons[WeaponIndex].VehicleWeaponState.MuzzleSockets.IsValidIndex(MI))
+			{
+				return;
+			}
+			FName MuzzleSocketName = SeatWeaponSystem.Weapons[WeaponIndex].VehicleWeaponState.MuzzleSockets[MI];
+			FVector MuzzleLocation = UWeaponFunctions::GetMuzzleTransform(MuzzleSocketName, Mesh).GetLocation();
+
+			//CALCULATE AIM DIRECTION
+			SeatWeaponSystem.VehicleWeaponSystemState.EquippedWeaponState.RaycastData.MuzzleAimDirections.SetNum(2);		//PROBABLY EVENTUALLY DO THIS IN WHATEVER EQUIP WEAPON FUNCTION
+			SeatWeaponSystem.VehicleWeaponSystemState.EquippedWeaponState.RaycastData.MuzzleAimDirections[MI] = UWeaponFunctions::CalculateAimDirection(HitResult, MuzzleLocation);
+
+			// DEBUG: Draw the convergence line
+			UWeaponFunctions::Debug_ProjectilePath(GetWorld(), MuzzleLocation, HitResult);
 		}
-		FName MuzzleSocketName = SeatWeaponSystem.Weapons[WeaponIndex].VehicleWeaponState.MuzzleSockets[MI];
-		FVector MuzzleLocation = UWeaponFunctions::GetMuzzleTransform(MuzzleSocketName, Mesh).GetLocation();
+	}
+	else
+	{
 
-		//CALCULATE AIM DIRECTION
-		SeatWeaponSystem.VehicleWeaponSystemState.EquippedWeaponState.RaycastData.MuzzleAimDirections.SetNum(2);		//PROBABLY EVENTUALLY DO THIS IN WHATEVER EQUIP WEAPON FUNCTION
-		SeatWeaponSystem.VehicleWeaponSystemState.EquippedWeaponState.RaycastData.MuzzleAimDirections[MI] = UWeaponFunctions::CalculateAimDirection(HitResult, MuzzleLocation);
-
-		// DEBUG: Draw the convergence line
-		UWeaponFunctions::Debug_ProjectilePath(GetWorld(), MuzzleLocation, HitResult);
 	}
 }
 
@@ -988,8 +991,8 @@ void UVehicleWeaponLogicComponent::FireVehicleWeapon(int32 SeatIndex)
 	FWeapon_Runtime& CurrentWeapon = VehicleWeaponState.BaseWeaponRuntimeData;
 	switch (StaticWeaponData.WeaponFireData.WeaponFireType)
 	{
-		//handle shoot projectile
 		case EWeaponFireType::Projectile:
+			//handle shoot projectile
 			const FProjectileData& ProjectileData = *DataSubsystem->GetProjectileDataRow(StaticWeaponData.WeaponFireData.ProjectileID);
 			switch (ProjectileData.ProjectileClassificationData.ProjectileType)
 			{
@@ -1003,32 +1006,36 @@ void UVehicleWeaponLogicComponent::FireVehicleWeapon(int32 SeatIndex)
 				case EProjectileType::Missile:			//contains own initial velocity
 					//handle SHOOT projectileactor
 					TWeakObjectPtr<AProjectile_Base> FiredProjectile;
-					int32& MuzzleIndex = VehicleWeaponState.CurrentMuzzleIndexes[0];		//hardcoded for now
-					FVector& AimDirection = SeatWeaponSystem.VehicleWeaponSystemState.EquippedWeaponState.RaycastData.MuzzleAimDirections[MuzzleIndex];
 					if (VehicleWeapon.VehicleWeaponInstanceData.bAreProjectilesMounted && VehicleWeaponState.CurrentMountedProjectiles.Num() > 0)
 					{
 						//dismount from rack
-						VehicleWeaponState.CurrentMountedProjectiles[0]->ProjectileMovementComponent->HomingTargetComponent = VehicleWeaponState.BaseWeaponRuntimeData.WeaponState.LockOnState.AcquiredTarget.Get()->GetRootComponent();
-						VehicleWeaponState.CurrentMountedProjectiles[0]->FireProjectile(AimDirection);
+						FiredProjectile = VehicleWeaponState.CurrentMountedProjectiles[0];
+						FiredProjectile->ProjectileMovementComponent->HomingTargetComponent = VehicleWeaponState.BaseWeaponRuntimeData.WeaponState.LockOnState.AcquiredTarget.Get()->GetRootComponent();
+						FiredProjectile->FireProjectile(FiredProjectile->GetActorForwardVector());		//doesnt use aim direction if mounted right now
 						//call some sort of "drop from rack" function on projectile?
-						if (VehicleWeaponState.CurrentMountedProjectiles[0].IsValid())
+						if (FiredProjectile.IsValid())
 						{
 							FiredProjectile = VehicleWeaponState.CurrentMountedProjectiles[0];
 							VehicleWeaponState.CurrentMountedProjectiles.RemoveAt(0, EAllowShrinking::Yes);
 						}
+						VehicleWeapon.VehicleWeaponState.BaseWeaponRuntimeData.WeaponState.InFlightProjectiles.Add(FiredProjectile);
 					}
 					else
 					{
-						//pull from pool/spawn
-						FTransform MuzzleTransform;
-						FiredProjectile = ProjectileSubsystem->AcquireProjectileFromPool(StaticWeaponData.WeaponFireData.ProjectileID);
-						AActor* FiringVehicle = GetOwner();
-						FiredProjectile->MoveIgnoreActorAdd(FiringVehicle);
-						MuzzleTransform = GetMuzzleTransform(VehicleWeaponState, SeatWeaponSystem, MuzzleIndex);
-						FiredProjectile->SetActorTransform(MuzzleTransform);
-						FiredProjectile->FireProjectile(AimDirection);
+						for (int32& MuzzleIndex : VehicleWeaponState.CurrentMuzzleIndexes)
+						{
+							//pull from pool/spawn
+							FVector& AimDirection = SeatWeaponSystem.VehicleWeaponSystemState.EquippedWeaponState.RaycastData.MuzzleAimDirections[MuzzleIndex];
+							FTransform MuzzleTransform;
+							FiredProjectile = ProjectileSubsystem->AcquireProjectileFromPool(StaticWeaponData.WeaponFireData.ProjectileID);
+							AActor* FiringVehicle = GetOwner();
+							FiredProjectile->MoveIgnoreActorAdd(FiringVehicle);
+							MuzzleTransform = GetMuzzleTransform(VehicleWeaponState, SeatWeaponSystem, MuzzleIndex);
+							FiredProjectile->SetActorTransform(MuzzleTransform);
+							FiredProjectile->FireProjectile(AimDirection);
+							VehicleWeapon.VehicleWeaponState.BaseWeaponRuntimeData.WeaponState.InFlightProjectiles.Add(FiredProjectile);
+						}
 					}
-					VehicleWeapon.VehicleWeaponState.BaseWeaponRuntimeData.WeaponState.InFlightProjectiles.Add(FiredProjectile);
 					break;
 			}
 			break;
@@ -1037,17 +1044,11 @@ void UVehicleWeaponLogicComponent::FireVehicleWeapon(int32 SeatIndex)
 	ApplyWeaponRecoilJostle(SeatIndex, CWI);
 
 	//update muzzle
-	int32& ActiveIndex = VehicleWeaponState.CurrentMuzzleIndexes[0];
-	const int32& TotalMuzzles = VehicleWeaponState.MuzzleSockets.Num();
-	switch (VehicleWeapon.VehicleWeaponInstanceData.FireMethod)
+	if (!VehicleWeapon.VehicleWeaponInstanceData.bAreProjectilesMounted && VehicleWeapon.VehicleWeaponInstanceData.FireMethod == EFireMethod::Sequential)
 	{
-		case EFireMethod::Dual:
-			break;
-		case EFireMethod::FlipFlop:
-			ActiveIndex = (ActiveIndex + 1) % TotalMuzzles;
-			break;
-		case EFireMethod::Sequential:
-			break;
+		int32& ActiveIndex = VehicleWeaponState.CurrentMuzzleIndexes[0];
+		const int32& TotalMuzzles = VehicleWeaponState.MuzzleSockets.Num();
+		ActiveIndex = (ActiveIndex + 1) % TotalMuzzles;
 	}
 
 	HandleAmmoDepletion(StaticWeaponData, CurrentWeapon, SeatIndex);
@@ -1055,23 +1056,26 @@ void UVehicleWeaponLogicComponent::FireVehicleWeapon(int32 SeatIndex)
 
 void UVehicleWeaponLogicComponent::HandleShootSimProjectile(FVehicleWeaponState& VehicleWeaponState, const FBaseWeaponData& StaticWeaponData, FVehicleWeaponSystem_Runtime& SeatWeaponSystem, const FProjectileData& ProjectileData)
 {
-	FVector MuzzleLocation = FVector::ForwardVector;
-	MuzzleLocation = GetMuzzleTransform(VehicleWeaponState, SeatWeaponSystem, 0).GetLocation();
+	for (int32& MuzzleIndex : VehicleWeaponState.CurrentMuzzleIndexes)
+	{
+		FVector MuzzleLocation = FVector::ForwardVector;
+		MuzzleLocation = GetMuzzleTransform(VehicleWeaponState, SeatWeaponSystem, MuzzleIndex).GetLocation();
 
-	UWeaponFunctions::CreateSimProjectile
-	(
-		StaticWeaponData.WeaponFireData.ProjectileID,
-		nullptr,
-		MuzzleLocation, 
-		StaticWeaponData.WeaponPerformance.MuzzleVelocity,
-		ProjectileData.ProjectileFlightPlan[0].GuidanceParams.GravityScale, 
-		SeatWeaponSystem.VehicleWeaponSystemState.EquippedWeaponState.RaycastData.MuzzleAimDirections[0], 
-		StaticWeaponData.WeaponPerformance.WeaponDamageData.BaseDamage,
-		StaticWeaponData.WeaponPerformance.WeaponDamageData.DamageDropoffCurve,
-		ProjectileSubsystem
-	);
+		UWeaponFunctions::CreateSimProjectile
+		(
+			StaticWeaponData.WeaponFireData.ProjectileID,
+			nullptr,
+			MuzzleLocation,
+			StaticWeaponData.WeaponPerformance.MuzzleVelocity,
+			ProjectileData.ProjectileFlightPlan[0].GuidanceParams.GravityScale,
+			SeatWeaponSystem.VehicleWeaponSystemState.EquippedWeaponState.RaycastData.MuzzleAimDirections[MuzzleIndex],
+			StaticWeaponData.WeaponPerformance.WeaponDamageData.BaseDamage,
+			StaticWeaponData.WeaponPerformance.WeaponDamageData.DamageDropoffCurve,
+			ProjectileSubsystem
+		);
+	}
 	//VFX
-	for (int32 MuzzleIndex : VehicleWeaponState.CurrentMuzzleIndexes)
+	for (int32& MuzzleIndex : VehicleWeaponState.CurrentMuzzleIndexes)
 	{
 		TWeakObjectPtr<UNiagaraComponent> VFXComp = VehicleWeaponState.MuzzleVFXPool[MuzzleIndex];
 		if (UNiagaraComponent* VFX = VehicleWeaponState.MuzzleVFXPool[MuzzleIndex].Get())
@@ -1155,11 +1159,18 @@ void UVehicleWeaponLogicComponent::AutoloadNewMag(int32 SeatIndex, int32 WeaponI
 	CurrentWeapon.WeaponState.canFire = true;
 	CurrentWeapon.WeaponState.isReloading = false;
 
+	//HMD
 	if (OwnerDataAccessor->GetVehicleState().SeatStates[SeatIndex].UpdateHUD && CurrentWeapon.WeaponState.isEquipped)
 	{
 		GetHUDSystem()->UpdateStatusHUD_CAMCount(NewCAM);
 		GetHUDSystem()->UpdateStatusHUD_CRACount(NewCRA);
 		GetHUDSystem()->UpdateWeaponStatusHUD_Vehicle(CurrentWeapon.WeaponState.canFire);
+	}
+	//HUD
+	if (OwnerDataAccessor->GetVehicleState().SeatStates[SeatIndex].SeatHUDComponent)
+	{
+		UUW_HUD_Vehicle_Base* VehicleHUD = Cast<UUW_HUD_Vehicle_Base>(OwnerDataAccessor->GetVehicleState().SeatStates[SeatIndex].SeatHUDComponent->GetUserWidgetObject());
+		VehicleHUD->UpdateWeaponStatusHUD(GetEquippedWeaponInSeat(SeatIndex).VehicleWeaponState.BaseWeaponRuntimeData.WeaponState.canFire);
 	}
 
 	if (CurrentWeapon.WeaponState.CurrentReserveAmmo < StaticWeaponData.AmmoData.MaxReserveAmmo && StaticWeaponData.AmmoData.AutoRefillReserve)

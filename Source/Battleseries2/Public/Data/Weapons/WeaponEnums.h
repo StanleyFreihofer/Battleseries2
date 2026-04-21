@@ -79,10 +79,9 @@ UENUM(BlueprintType)
 enum class EFireMethod : uint8
 {
 	Default			UMETA(DisplayName = "Default"),
-	FlipFlop		UMETA(DisplayName = "Flip Flop"),
-	//left right/right left instead?
+	Sequential		UMETA(DisplayName = "Sequential/Flip Flop"),
+	//sequential backwards?
 	Dual			UMETA(DisplayName = "Dual"),
-	Sequential		UMETA(DisplayName = "Sequential")
 };
 
 UENUM(BlueprintType)
