@@ -226,6 +226,8 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void HandleShootSimProjectile(FVehicleWeaponState& VehicleWeaponState, const FBaseWeaponData& StaticWeaponData, FVehicleWeaponSystem_Runtime& SeatWeaponSystem, const FProjectileData& ProjectileData);
 	UFUNCTION(BlueprintCallable)
+	void HandleShootProjectileActor(int32 SeatIndex, int32 WeaponIndex);
+	UFUNCTION(BlueprintCallable)
 	void HandleAmmoDepletion(const FBaseWeaponData& StaticWeaponData, FWeapon_Runtime& CurrentWeapon, int32 SeatIndex);
 	UFUNCTION(BlueprintCallable)
 	void HandleStartAutoload(int32 SeatIndex);

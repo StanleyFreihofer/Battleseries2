@@ -1001,41 +1001,9 @@ void UVehicleWeaponLogicComponent::FireVehicleWeapon(int32 SeatIndex)
 				case EProjectileType::Shell:
 					HandleShootSimProjectile(VehicleWeaponState, StaticWeaponData, SeatWeaponSystem, ProjectileData);
 					break;
-
 				case EProjectileType::Rocket:			//contains own initial velocity
 				case EProjectileType::Missile:			//contains own initial velocity
-					//handle SHOOT projectileactor
-					TWeakObjectPtr<AProjectile_Base> FiredProjectile;
-					if (VehicleWeapon.VehicleWeaponInstanceData.bAreProjectilesMounted && VehicleWeaponState.CurrentMountedProjectiles.Num() > 0)
-					{
-						//dismount from rack
-						FiredProjectile = VehicleWeaponState.CurrentMountedProjectiles[0];
-						FiredProjectile->ProjectileMovementComponent->HomingTargetComponent = VehicleWeaponState.BaseWeaponRuntimeData.WeaponState.LockOnState.AcquiredTarget.Get()->GetRootComponent();
-						FiredProjectile->FireProjectile(FiredProjectile->GetActorForwardVector());		//doesnt use aim direction if mounted right now
-						//call some sort of "drop from rack" function on projectile?
-						if (FiredProjectile.IsValid())
-						{
-							FiredProjectile = VehicleWeaponState.CurrentMountedProjectiles[0];
-							VehicleWeaponState.CurrentMountedProjectiles.RemoveAt(0, EAllowShrinking::Yes);
-						}
-						VehicleWeapon.VehicleWeaponState.BaseWeaponRuntimeData.WeaponState.InFlightProjectiles.Add(FiredProjectile);
-					}
-					else
-					{
-						for (int32& MuzzleIndex : VehicleWeaponState.CurrentMuzzleIndexes)
-						{
-							//pull from pool/spawn
-							FVector& AimDirection = SeatWeaponSystem.VehicleWeaponSystemState.EquippedWeaponState.RaycastData.MuzzleAimDirections[MuzzleIndex];
-							FTransform MuzzleTransform;
-							FiredProjectile = ProjectileSubsystem->AcquireProjectileFromPool(StaticWeaponData.WeaponFireData.ProjectileID);
-							AActor* FiringVehicle = GetOwner();
-							FiredProjectile->MoveIgnoreActorAdd(FiringVehicle);
-							MuzzleTransform = GetMuzzleTransform(VehicleWeaponState, SeatWeaponSystem, MuzzleIndex);
-							FiredProjectile->SetActorTransform(MuzzleTransform);
-							FiredProjectile->FireProjectile(AimDirection);
-							VehicleWeapon.VehicleWeaponState.BaseWeaponRuntimeData.WeaponState.InFlightProjectiles.Add(FiredProjectile);
-						}
-					}
+					HandleShootProjectileActor(SeatIndex, CWI);
 					break;
 			}
 			break;
@@ -1081,6 +1049,46 @@ void UVehicleWeaponLogicComponent::HandleShootSimProjectile(FVehicleWeaponState&
 		if (UNiagaraComponent* VFX = VehicleWeaponState.MuzzleVFXPool[MuzzleIndex].Get())
 		{
 			VFX->Activate(true);
+		}
+	}
+}
+
+void UVehicleWeaponLogicComponent::HandleShootProjectileActor(int32 SeatIndex, int32 WeaponIndex)
+{
+	FVehicleWeaponSystem_Runtime& SeatWeaponSystem = *VehicleWeaponSystem.Find(SeatIndex);
+	FVehicleWeapon_Runtime& VehicleWeapon = SeatWeaponSystem.Weapons[WeaponIndex];
+	FVehicleWeaponState& VehicleWeaponState = VehicleWeapon.VehicleWeaponState;
+	const FBaseWeaponData& StaticWeaponData = GetBaseWeaponDataInSlot(SeatIndex, WeaponIndex);
+
+	TWeakObjectPtr<AProjectile_Base> FiredProjectile;
+	if (VehicleWeapon.VehicleWeaponInstanceData.bAreProjectilesMounted && VehicleWeaponState.CurrentMountedProjectiles.Num() > 0)
+	{
+		//dismount from rack
+		FiredProjectile = VehicleWeaponState.CurrentMountedProjectiles[0];
+		FiredProjectile->ProjectileMovementComponent->HomingTargetComponent = VehicleWeaponState.BaseWeaponRuntimeData.WeaponState.LockOnState.AcquiredTarget.Get()->GetRootComponent();
+		FiredProjectile->FireProjectile(FiredProjectile->GetActorForwardVector());		//doesnt use aim direction if mounted right now
+		//call some sort of "drop from rack" function on projectile?
+		if (FiredProjectile.IsValid())
+		{
+			FiredProjectile = VehicleWeaponState.CurrentMountedProjectiles[0];
+			VehicleWeaponState.CurrentMountedProjectiles.RemoveAt(0, EAllowShrinking::Yes);
+		}
+		VehicleWeapon.VehicleWeaponState.BaseWeaponRuntimeData.WeaponState.InFlightProjectiles.Add(FiredProjectile);
+	}
+	else
+	{
+		for (int32& MuzzleIndex : VehicleWeaponState.CurrentMuzzleIndexes)
+		{
+			//pull from pool/spawn
+			FVector& AimDirection = SeatWeaponSystem.VehicleWeaponSystemState.EquippedWeaponState.RaycastData.MuzzleAimDirections[MuzzleIndex];
+			FTransform MuzzleTransform;
+			FiredProjectile = ProjectileSubsystem->AcquireProjectileFromPool(StaticWeaponData.WeaponFireData.ProjectileID);
+			AActor* FiringVehicle = GetOwner();
+			FiredProjectile->MoveIgnoreActorAdd(FiringVehicle);
+			MuzzleTransform = GetMuzzleTransform(VehicleWeaponState, SeatWeaponSystem, MuzzleIndex);
+			FiredProjectile->SetActorTransform(MuzzleTransform);
+			FiredProjectile->FireProjectile(AimDirection);
+			VehicleWeapon.VehicleWeaponState.BaseWeaponRuntimeData.WeaponState.InFlightProjectiles.Add(FiredProjectile);
 		}
 	}
 }
@@ -1191,7 +1199,8 @@ void UVehicleWeaponLogicComponent::ApplyWeaponRecoilJostle(int32 SeatIndex, int3
 		IAnims::Execute_OnFireWeapon_Vehicle(OwnerDataAccessor->GetVehicleMesh()->GetAnimInstance(), SeatIndex, WeaponIndex);
 	}
 
-	//jostle
+	//jostle 
+	//if mesh has simulate physics
 	AVehicle_Base& Vehicle = OwnerDataAccessor->GetVehicle();
 	UPrimitiveComponent* RootBody = Cast<UPrimitiveComponent>(Vehicle.GetRootComponent());
 	float RelativeYaw;

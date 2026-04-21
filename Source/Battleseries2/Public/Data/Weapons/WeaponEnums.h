@@ -29,7 +29,7 @@ enum class EFireMode : uint8
 {
 	Auto		UMETA(DisplayName = "Auto"),
 	Burst		UMETA(DisplayName = "Burst"),
-	Single		UMETA(DisplayName = "Single")
+	Single		UMETA(DisplayName = "Single/Semi-Auto")
 };
 
 UENUM(BlueprintType)		//The different behaviors of a weapon that dictates under what parameters can it lock on to someting
@@ -37,7 +37,7 @@ enum class EHomingCapability : uint8
 {
 	NoHoming			UMETA(DisplayName = "No Lock On", ToolTip = "Cannot lock on to a target"),		
 	WireGuided1			UMETA(DisplayName = "Wire Guided (no lock on)", ToolTip = "A wire guided missile that CANNOT lock on to targets"),	
-	WireGuided2			UMETA(DisplayName = "Wire Guided (w/lock on", ToolTip = "A wire guided missile that CAN lock on to targets, TOW Missile, etc"),
+	WireGuided2			UMETA(DisplayName = "Wire Guided (w/lock on)", ToolTip = "A wire guided missile that CAN lock on to targets, TOW Missile, etc"),
 	CanLockOn			UMETA(DisplayName = "Lock On", ToolTip = "Passive lock on, does not require a lock to fire"),		
 	RequireLockOn		UMETA(DisplayName = "Require Lock On", ToolTip = "Requires lock on to fire")
 };

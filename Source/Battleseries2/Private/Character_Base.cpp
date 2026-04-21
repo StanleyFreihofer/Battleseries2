@@ -306,33 +306,37 @@ FVector ACharacter_Base::CalculateSafeExitLocation(AActor* Vehicle)
 	ExitOffsets.Add(FVector(0, -250, 50));  // Left
 	ExitOffsets.Add(FVector(-300, 0, 50));  // Back
 
-	FVector BestLocation = Vehicle->GetActorLocation() + FVector(0, 0, 150); // Fallback: Above vehicle
+	FCollisionQueryParams Params;
+	Params.AddIgnoredActor(Vehicle);
+	Params.AddIgnoredActor(this);
 
-	for (FVector Offset : ExitOffsets)
+	// Use the actual capsule shape for the sweep
+	FCollisionShape GraduationCapsule = GetCapsuleComponent()->GetCollisionShape();
+	FVector VehicleLoc = Vehicle->GetActorLocation();
+
+	for (const FVector& Offset : ExitOffsets)
 	{
 		FVector TargetLocation = Vehicle->GetActorTransform().TransformPosition(Offset);
 
-		//trace to see if the capsule fits there
-		FHitResult Hit;
-		FCollisionQueryParams Params;
-		Params.AddIgnoredActor(Vehicle);
-		Params.AddIgnoredActor(this);
-		bool bHit = GetWorld()->SweepSingleByChannel
-		(
-			Hit,
-			TargetLocation + FVector(0, 0, 10),
-			TargetLocation,
-			FQuat::Identity,
-			ECC_Visibility,
-			GetCapsuleComponent()->GetCollisionShape(),
-			Params
-		);
-		if (!bHit)
+		// Ensure the exit point is on the ground (Project down)
+		FHitResult GroundHit;
+		FVector GroundCheckStart = TargetLocation + FVector(0, 0, 100);
+		FVector GroundCheckEnd = TargetLocation - FVector(0, 0, 500);
+
+		if (GetWorld()->LineTraceSingleByChannel(GroundHit, GroundCheckStart, GroundCheckEnd, ECC_WorldStatic, Params))
+		{
+			TargetLocation = GroundHit.ImpactPoint + FVector(0, 0, GraduationCapsule.GetCapsuleHalfHeight());
+		}
+
+		// Final check: Does the capsule actually fit here without overlapping?
+		if (!GetWorld()->OverlapBlockingTestByChannel(TargetLocation, FQuat::Identity, ECC_Pawn, GraduationCapsule, Params))
 		{
 			return TargetLocation;
 		}
 	}
-	return BestLocation;
+
+	// Fallback: If all else fails, try a point slightly further away or above
+	return Vehicle->GetActorLocation() + (Vehicle->GetActorUpVector() * 250.0f);
 }
 
 void ACharacter_Base::UpdateSeatIndexes(int32 NewLSI, int32 NewCSI, int32 NewNSI)
@@ -472,14 +476,19 @@ void ACharacter_Base::UpdateRangefinder_WindowedVehicle()
 			FTransform TraceTransform;
 			switch (CurrentWeapon.VehicleWeaponInstanceData.WindowedAimAnchor)
 			{
-				case EWindowedAimAnchor::Hull:
+				case EWindowedAimAnchor::FreeAim:
+					TraceTransform = Camera->GetComponentTransform();
+					break;
+				case EWindowedAimAnchor::FixedHead:
 					FVector StartLocation = GetMesh()->GetSocketLocation(FName("FixedCamera"));
 					FQuat FixedRotation = GetActorQuat();
 					TraceTransform = FTransform(FixedRotation, StartLocation);
 					break;
-				case EWindowedAimAnchor::Turret:
-				case EWindowedAimAnchor::FreeAim:
-					TraceTransform = Camera->GetComponentTransform();
+				case EWindowedAimAnchor::Hull:
+					//TraceTransform = FTransform(GetCurrentVehicle()->GetActorQuat(), GetCurrentVehicle()->GetActorLocation());
+					FVector HullStart = GetCurrentVehicle()->GetActorLocation() + (GetCurrentVehicle()->GetActorUpVector() * 100.0f); // Offset upward
+					FQuat HullRot = GetCurrentVehicle()->GetActorQuat();
+					TraceTransform = FTransform(HullRot, HullStart);
 					break;
 			}
 			VWLC->UpdateSeatRangefinder(GetCSI(), TraceTransform, Actors);
