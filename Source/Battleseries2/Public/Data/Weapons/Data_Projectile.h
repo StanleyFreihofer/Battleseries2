@@ -9,7 +9,7 @@
 #include "Data_Projectile.generated.h"
 
 /**
- * 
+ * actor projectiles only
  */
 
 USTRUCT(BlueprintType)

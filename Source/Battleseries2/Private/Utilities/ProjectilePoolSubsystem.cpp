@@ -96,7 +96,6 @@ void UProjectilePoolSubsystem::ReturnProjectileToPool(TWeakObjectPtr<AProjectile
 	FName& MunitionID = Projectile->ProjectileState.MunitionID;
 	ProjectileObjectPools.FindOrAdd(MunitionID).PooledProjectiles.Add(Projectile);
 
-	//move to world 0
 	Projectile->SetActorLocation(FVector::ZeroVector);
 }
 

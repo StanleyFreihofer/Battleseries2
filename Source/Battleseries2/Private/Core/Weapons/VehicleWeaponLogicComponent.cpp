@@ -461,7 +461,7 @@ void UVehicleWeaponLogicComponent::ClearEntireWeaponSystemFromVehicle()
 	const FVehicleData& VehicleData = OwnerDataAccessor->GetVehicleData();
 	for (auto& SeatWeaponSystem : VehicleWeaponSystem)	//for each weapon system in the vehicle
 	{
-		int32 SeatIndex = SeatWeaponSystem.Key;
+		int32& SeatIndex = SeatWeaponSystem.Key;
 		ClearWeaponSystemFromSeat(SeatIndex, false);
 	}
 
@@ -636,6 +636,7 @@ void UVehicleWeaponLogicComponent::HandleSeatRangefinders()
 			WindowedRangefinder.Broadcast();
 		}
 
+		//Handle Calculate Aim Direction
 		FHitResult& HitResult = SeatWeaponSystem.Value.VehicleWeaponSystemState.EquippedWeaponState.RaycastData.RangefinderData;
 		if (!SeatWeaponSystem.Value.Weapons[WeaponIndex].VehicleWeaponInstanceData.bAreProjectilesMounted)
 		{
@@ -684,9 +685,10 @@ void UVehicleWeaponLogicComponent::UpdateSeatRangefinder(int32 SeatIndex, FTrans
 
 void UVehicleWeaponLogicComponent::HandleLockOn(int32 SeatIndex, FTransform TraceTransform, TArray<AActor*> ActorsToIgnore)
 {
-	//remember, this gets called on tick
+	//remember, this gets called on tick by the rangefinder
 	FVehicleWeaponSystem_Runtime* SystemPtr = VehicleWeaponSystem.Find(SeatIndex);
 	const FBaseWeaponData& StaticWeaponData = GetBaseWeaponDataInSlot(SeatIndex, GetCWIForSeat(SeatIndex));
+	const FWeaponHomingData& StaticHomingData = StaticWeaponData.WeaponFunctionality.HomingFunctionality;
 	FVehicleWeapon_Runtime& CurrentWeapon = GetEquippedWeaponInSeat(SeatIndex);
 	FHitResult& HitResult = SystemPtr->VehicleWeaponSystemState.EquippedWeaponState.RaycastData.RangefinderData;
 
@@ -696,14 +698,14 @@ void UVehicleWeaponLogicComponent::HandleLockOn(int32 SeatIndex, FTransform Trac
 
 	if (HitResult.GetActor() && HitResult.GetActor()->GetClass()->ImplementsInterface(ULockOnTarget::StaticClass()))
 	{
-		bool canLockOn = ILockOnTarget::Execute_GetIfCanLockOn(HitResult.GetActor(), StaticWeaponData.WeaponFunctionality.HomingFunctionality.CanTarget, StaticWeaponData.WeaponFunctionality.HomingFunctionality.HomingCapability);
+		bool canLockOn = ILockOnTarget::Execute_GetIfCanLockOn(HitResult.GetActor(), StaticHomingData.CanTarget, StaticHomingData.HomingCapability);
 		if (canLockOn)
 		{
 			//anything from here on can be seen as a "promotion" of lock status 
 			switch (LockOnState.CurrentLockStatus)
 			{
 				case ELockOnState::NotLockingOn:
-					StartLockingOn(SeatIndex, CurrentWeapon, StaticWeaponData.WeaponFunctionality.HomingFunctionality, HitResult);
+					StartLockingOn(SeatIndex, CurrentWeapon, StaticHomingData, HitResult);
 					break;
 				case ELockOnState::IsLockingOn:
 				case ELockOnState::IsLockedOn:
@@ -723,7 +725,24 @@ void UVehicleWeaponLogicComponent::HandleLockOn(int32 SeatIndex, FTransform Trac
 		DemoteLockOnStatus(SeatIndex, LockOnState);
 	}
 
-	//update in flight projectiles here if require constant lock to target?
+	//update in flight missiles
+	CurrentWeapon.VehicleWeaponState.BaseWeaponRuntimeData.WeaponState.InFlightProjectiles.RemoveAll([](const TWeakObjectPtr<AProjectile_Base>& Projectile) 
+	{
+		return !Projectile.IsValid() || Projectile->IsHidden();
+	});
+
+	for (TWeakObjectPtr<AProjectile_Base> InFlightProjectile : CurrentWeapon.VehicleWeaponState.BaseWeaponRuntimeData.WeaponState.InFlightProjectiles)
+	{
+		AProjectile_Base* Projectile = InFlightProjectile.Get();
+
+		if (StaticHomingData.ContinuousLockRequired)
+		{
+			if (LockOnState.CurrentLockStatus != ELockOnState::IsLockedOn || !LockOnState.AcquiredTarget.IsValid())
+			{
+				//notify projectile that guidance is lost, missile goes dumb or something
+			}
+		}
+	}
 }
 
 void UVehicleWeaponLogicComponent::StartLockingOn(int32& SeatIndex, FVehicleWeapon_Runtime& CurrentWeapon, const FWeaponHomingData& HomingData, const FHitResult& HitResult)
@@ -859,7 +878,6 @@ void UVehicleWeaponLogicComponent::SetupMuzzleSockets(TWeakObjectPtr<USkeletalMe
 	{
 		case EFireMethod::Default:
 		case EFireMethod::Sequential:
-			//VehicleWeaponToFill.VehicleWeaponState.CurrentMuzzleIndexes.SetNum(VehicleWeaponToFill.VehicleWeaponState.MuzzleSockets.Num());
 			VehicleWeaponToFill.VehicleWeaponState.CurrentMuzzleIndexes.SetNum(1);
 			VehicleWeaponToFill.VehicleWeaponState.CurrentMuzzleIndexes[0] = 0;
 			break;
@@ -1089,6 +1107,8 @@ void UVehicleWeaponLogicComponent::HandleShootProjectileActor(int32 SeatIndex, i
 			VehicleWeapon.VehicleWeaponState.BaseWeaponRuntimeData.WeaponState.InFlightProjectiles.Add(FiredProjectile);
 		}
 	}
+
+	VehicleWeaponState.CurrentMountedProjectiles.Add(FiredProjectile);
 }
 
 void UVehicleWeaponLogicComponent::HandleAmmoDepletion(const FBaseWeaponData& StaticWeaponData, FWeapon_Runtime& CurrentWeapon, int32 SeatIndex)

@@ -25,6 +25,7 @@ enum class EVehicleType : uint8
 	ScoutHeli				UMETA(DisplayName = "Scout Helicopter"),
 	FighterJet				UMETA(DisplayName = "Fighter Jet"),
 	AttackJet				UMETA(DisplayName = "Attack Jet"),
+	CASJet					UMETA(DisplayName = "CAS Jet", ToolTip = "A10 Warthog, SU25 Frogfoot"),
 	LTV						UMETA(DisplayName = "LTV/Jeep", ToolTip = "Growler, Dune Buggy, VDV Buggy"),
 	APC						UMETA(DisplayName = "APC", ToolTip = "Humvee, Vodnik, MRAP"),
 	ATV						UMETA(DisplayName = "ATV"),
@@ -35,7 +36,6 @@ enum class EVehicleType : uint8
 
 	//Attack Boat
 	//Multirole Jet
-	//CAS Jet (A10, SU25 Frogfoot, etc)
 	//Bomber
 	//VTOL
 	//stationary turret?
