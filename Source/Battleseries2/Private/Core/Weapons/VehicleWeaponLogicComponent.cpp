@@ -666,7 +666,7 @@ void UVehicleWeaponLogicComponent::UpdateSeatRangefinder(int32 SeatIndex, FTrans
 
 	if (StaticWeaponData.WeaponFunctionality.HomingFunctionality.HomingCapability != EHomingCapability::NoHoming)
 	{
-		HandleLockOn(SeatIndex, TraceTransform, ActorsToIgnore);
+		HandleHoming(SeatIndex, TraceTransform, ActorsToIgnore);
 	}
 	else
 	{
@@ -683,7 +683,7 @@ void UVehicleWeaponLogicComponent::UpdateSeatRangefinder(int32 SeatIndex, FTrans
 	}
 }
 
-void UVehicleWeaponLogicComponent::HandleLockOn(int32 SeatIndex, FTransform TraceTransform, TArray<AActor*> ActorsToIgnore)
+void UVehicleWeaponLogicComponent::HandleHoming(int32 SeatIndex, FTransform TraceTransform, TArray<AActor*> ActorsToIgnore)
 {
 	//remember, this gets called on tick by the rangefinder
 	FVehicleWeaponSystem_Runtime* SystemPtr = VehicleWeaponSystem.Find(SeatIndex);
@@ -696,33 +696,49 @@ void UVehicleWeaponLogicComponent::HandleLockOn(int32 SeatIndex, FTransform Trac
 	bHit = UWeaponFunctions::PerformWeaponSphereTrace(this, TraceTransform, HitResult, ActorsToIgnore, 35.0f);
 	FLockOnState& LockOnState = CurrentWeapon.VehicleWeaponState.BaseWeaponRuntimeData.WeaponState.LockOnState;
 
-	if (HitResult.GetActor() && HitResult.GetActor()->GetClass()->ImplementsInterface(ULockOnTarget::StaticClass()))
+	switch (StaticHomingData.HomingCapability)
 	{
-		bool canLockOn = ILockOnTarget::Execute_GetIfCanLockOn(HitResult.GetActor(), StaticHomingData.CanTarget, StaticHomingData.HomingCapability);
-		if (canLockOn)
-		{
-			//anything from here on can be seen as a "promotion" of lock status 
-			switch (LockOnState.CurrentLockStatus)
+		case EHomingCapability::RequireLockOn:
+		case EHomingCapability::CanLockOn:
+			//Handle LockOn
+			if (HitResult.GetActor() && HitResult.GetActor()->GetClass()->ImplementsInterface(ULockOnTarget::StaticClass()))
 			{
-				case ELockOnState::NotLockingOn:
-					StartLockingOn(SeatIndex, CurrentWeapon, StaticHomingData, HitResult);
-					break;
-				case ELockOnState::IsLockingOn:
-				case ELockOnState::IsLockedOn:
-					UpdateLockOnIndicator(OwnerDataAccessor->GetVehicleState().SeatStates[SeatIndex].UpdateHUD, HitResult, LockOnState);
-					break;
-				case ELockOnState::IsLosingLock:
-					break;
+				bool canLockOn = ILockOnTarget::Execute_GetIfCanLockOn(HitResult.GetActor(), StaticHomingData.CanTarget, StaticHomingData.HomingCapability);
+				if (canLockOn)
+				{
+					//anything from here on can be seen as a "promotion" of lock status 
+					switch (LockOnState.CurrentLockStatus)
+					{
+						case ELockOnState::NotLockingOn:
+							StartLockingOn(SeatIndex, CurrentWeapon, StaticHomingData, HitResult);
+							break;
+						case ELockOnState::IsLockingOn:
+						case ELockOnState::IsLockedOn:
+							UpdateLockOnIndicator(OwnerDataAccessor->GetVehicleState().SeatStates[SeatIndex].UpdateHUD, HitResult, LockOnState);
+							break;
+						case ELockOnState::IsLosingLock:
+							break;
+					}
+				}
+				else
+				{
+					DemoteLockOnStatus(SeatIndex, LockOnState);
+				}
 			}
-		}
-		else
-		{
-			DemoteLockOnStatus(SeatIndex, LockOnState);
-		}
-	}
-	else
-	{
-		DemoteLockOnStatus(SeatIndex, LockOnState);
+			else
+			{
+				DemoteLockOnStatus(SeatIndex, LockOnState);
+			}
+			break;
+		case EHomingCapability::WireGuided1:
+		case EHomingCapability::WireGuided2:
+			if (LockOnState.AcquiredTargetComp.IsValid())		//assumes the lock on comp is in fact at trace end
+			{
+				FVector TargetLocation = HitResult.bBlockingHit ? HitResult.ImpactPoint : HitResult.TraceEnd;
+				LockOnState.AcquiredTargetComp->SetWorldLocation(TargetLocation);
+			}
+			break;
+
 	}
 
 	//update in flight missiles
@@ -737,7 +753,7 @@ void UVehicleWeaponLogicComponent::HandleLockOn(int32 SeatIndex, FTransform Trac
 
 		if (StaticHomingData.ContinuousLockRequired)
 		{
-			if (LockOnState.CurrentLockStatus != ELockOnState::IsLockedOn || !LockOnState.AcquiredTarget.IsValid())
+			if (LockOnState.CurrentLockStatus != ELockOnState::IsLockedOn || !LockOnState.AcquiredTargetComp.IsValid())
 			{
 				//notify projectile that guidance is lost, missile goes dumb or something
 			}
@@ -752,7 +768,7 @@ void UVehicleWeaponLogicComponent::StartLockingOn(int32& SeatIndex, FVehicleWeap
 	FTimerDelegate LockOnDelegate;
 	LockOnDelegate.BindUFunction(this, FName("LockOn"), SeatIndex, HomingData, HitResult);
 	GetWorld()->GetTimerManager().SetTimer(LockOnState.LockOnTimer, LockOnDelegate, HomingData.AcquireTime, false);	
-	LockOnState.AcquiredTarget = HitResult.GetActor();
+	LockOnState.AcquiredTargetComp = HitResult.GetActor()->GetRootComponent();
 	LockOnState.CurrentLockStatus = ELockOnState::IsLockingOn;
 	GetWAC(SeatIndex)->SetTriggerParameter(FName("Event_LockingOn"));
 	//interface to acquired target (locking on)
@@ -801,7 +817,7 @@ void UVehicleWeaponLogicComponent::CancelLockOn(int32 SeatIndex, int32 WeaponInd
 	const FWeaponHomingData& HomingData = GetBaseWeaponDataInSlot(SeatIndex, WeaponIndex).WeaponFunctionality.HomingFunctionality;
 	WeaponState.LockOnState.CurrentLockStatus = ELockOnState::NotLockingOn;
 	GetHUDSystem()->UpdateLockOnIndicatorStatus(WeaponState.LockOnState.CurrentLockStatus);
-	WeaponState.LockOnState.AcquiredTarget = nullptr;
+	WeaponState.LockOnState.AcquiredTargetComp = nullptr;
 	GetWorld()->GetTimerManager().ClearTimer(WeaponState.LockOnState.LockOnTimer);
 	GetWAC(SeatIndex)->SetTriggerParameter(FName("Event_StopLockingOn"));
 	if (OwnerDataAccessor->GetVehicleState().SeatStates[SeatIndex].UpdateHUD)
@@ -833,13 +849,32 @@ void UVehicleWeaponLogicComponent::DemoteLockOnStatus(int32 SeatIndex, FLockOnSt
 
 void UVehicleWeaponLogicComponent::UpdateLockOnIndicator(bool UpdateHUD, FHitResult& HitResult, FLockOnState& LockOnState)
 {
-	if (HitResult.GetActor() != LockOnState.AcquiredTarget)
+	if (HitResult.GetActor()->GetRootComponent() != LockOnState.AcquiredTargetComp)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("[VWLC::UpdateSeatRangefinder] DifferentTarget"));
 	}
 	if (UpdateHUD)
 	{
 		GetHUDSystem()->UpdateLockOnIndicatorPosition(HitResult.GetActor()->GetRootComponent()->GetSocketLocation(FName("LockOn")));
+	}
+}
+
+void UVehicleWeaponLogicComponent::SetupManualGuidance(TWeakObjectPtr<AProjectile_Base> FiredProjectile, FLockOnState& LockOnState)
+{
+	switch (FiredProjectile->ProjectileData->ProjectileFlightPlan[0].BehaviorType)
+	{
+		case EProjectileGuidanceMethod::WireGuided:
+			if (!LockOnState.AcquiredTargetComp.IsValid())
+			{
+				USceneComponent* NewAnchor = NewObject<USceneComponent>(GetOwner(), TEXT("WireGuidanceAnchor"));
+				NewAnchor->SetupAttachment(GetOwner()->GetRootComponent());
+				NewAnchor->RegisterComponent();
+				LockOnState.AcquiredTargetComp = NewAnchor;
+			}
+			FiredProjectile->ProjectileMovementComponent->HomingTargetComponent = LockOnState.AcquiredTargetComp.Get();
+			break;
+		case EProjectileGuidanceMethod::FullControl:
+			break;
 	}
 }
 
@@ -1074,6 +1109,7 @@ void UVehicleWeaponLogicComponent::HandleShootProjectileActor(int32 SeatIndex, i
 	FVehicleWeaponSystem_Runtime& SeatWeaponSystem = *VehicleWeaponSystem.Find(SeatIndex);
 	FVehicleWeapon_Runtime& VehicleWeapon = SeatWeaponSystem.Weapons[WeaponIndex];
 	FVehicleWeaponState& VehicleWeaponState = VehicleWeapon.VehicleWeaponState;
+	FLockOnState& LockOnState = VehicleWeaponState.BaseWeaponRuntimeData.WeaponState.LockOnState;
 	const FBaseWeaponData& StaticWeaponData = GetBaseWeaponDataInSlot(SeatIndex, WeaponIndex);
 
 	TWeakObjectPtr<AProjectile_Base> FiredProjectile;
@@ -1081,15 +1117,16 @@ void UVehicleWeaponLogicComponent::HandleShootProjectileActor(int32 SeatIndex, i
 	{
 		//dismount from rack
 		FiredProjectile = VehicleWeaponState.CurrentMountedProjectiles[0];
-		FiredProjectile->ProjectileMovementComponent->HomingTargetComponent = VehicleWeaponState.BaseWeaponRuntimeData.WeaponState.LockOnState.AcquiredTarget.Get()->GetRootComponent();
+		FiredProjectile->ProjectileMovementComponent->HomingTargetComponent = LockOnState.AcquiredTargetComp.Get();
 		FiredProjectile->FireProjectile(FiredProjectile->GetActorForwardVector());		//doesnt use aim direction if mounted right now
 		//call some sort of "drop from rack" function on projectile?
 		if (FiredProjectile.IsValid())
 		{
 			FiredProjectile = VehicleWeaponState.CurrentMountedProjectiles[0];
 			VehicleWeaponState.CurrentMountedProjectiles.RemoveAt(0, EAllowShrinking::Yes);
+			SetupManualGuidance(FiredProjectile, LockOnState);
+			VehicleWeapon.VehicleWeaponState.BaseWeaponRuntimeData.WeaponState.InFlightProjectiles.Add(FiredProjectile);
 		}
-		VehicleWeapon.VehicleWeaponState.BaseWeaponRuntimeData.WeaponState.InFlightProjectiles.Add(FiredProjectile);
 	}
 	else
 	{
@@ -1104,11 +1141,10 @@ void UVehicleWeaponLogicComponent::HandleShootProjectileActor(int32 SeatIndex, i
 			MuzzleTransform = GetMuzzleTransform(VehicleWeaponState, SeatWeaponSystem, MuzzleIndex);
 			FiredProjectile->SetActorTransform(MuzzleTransform);
 			FiredProjectile->FireProjectile(AimDirection);
+			SetupManualGuidance(FiredProjectile, LockOnState);
 			VehicleWeapon.VehicleWeaponState.BaseWeaponRuntimeData.WeaponState.InFlightProjectiles.Add(FiredProjectile);
 		}
 	}
-
-	VehicleWeaponState.CurrentMountedProjectiles.Add(FiredProjectile);
 }
 
 void UVehicleWeaponLogicComponent::HandleAmmoDepletion(const FBaseWeaponData& StaticWeaponData, FWeapon_Runtime& CurrentWeapon, int32 SeatIndex)
@@ -1410,16 +1446,14 @@ void UVehicleWeaponLogicComponent::UpdateWeaponAudioCompData(int32 SeatIndex, in
 
 void UVehicleWeaponLogicComponent::UpdateWeaponStatusUI(int32& SeatIndex, bool& canFire)
 {
-	if (OwnerDataAccessor->GetVehicleState().SeatStates[SeatIndex].UpdateHUD)
+	if (!OwnerDataAccessor->GetVehicleState().SeatStates[SeatIndex].UpdateHUD) { return;}
+	//HMD
+	GetHUDSystem()->UpdateWeaponStatusHUD_Vehicle(canFire);
+	//HUD Comp
+	if (OwnerDataAccessor->GetVehicleState().SeatStates[SeatIndex].SeatHUDComponent)
 	{
-		//HMD
-		GetHUDSystem()->UpdateWeaponStatusHUD_Vehicle(canFire);
-		//HUD Comp
-		if (OwnerDataAccessor->GetVehicleState().SeatStates[SeatIndex].SeatHUDComponent)
-		{
-			UUW_HUD_Vehicle_Base* VehicleHUD = Cast<UUW_HUD_Vehicle_Base>(OwnerDataAccessor->GetVehicleState().SeatStates[SeatIndex].SeatHUDComponent->GetUserWidgetObject());
-			VehicleHUD->UpdateWeaponStatusHUD(canFire);
-		}
+		UUW_HUD_Vehicle_Base* VehicleHUD = Cast<UUW_HUD_Vehicle_Base>(OwnerDataAccessor->GetVehicleState().SeatStates[SeatIndex].SeatHUDComponent->GetUserWidgetObject());
+		VehicleHUD->UpdateWeaponStatusHUD(canFire);
 	}
 }
 

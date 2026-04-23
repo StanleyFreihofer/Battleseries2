@@ -142,9 +142,9 @@ void AProjectile_Base::UpdateFlightPlan(int32 FlightStageIndex)
 	switch (FlightStage.BehaviorType)
 	{
 		case EProjectileGuidanceMethod::BallisticTrajectory:
-			//const FVector LaunchDir = GetActorForwardVector();
 			ProjectileMovementComponent->Velocity = ProjectileState.AimDirection * FlightStage.GuidanceParams.InitialSpeed;
 			break;
+		case EProjectileGuidanceMethod::WireGuided:	//guides to component at end of hit result
 		case EProjectileGuidanceMethod::GuideToTarget:
 			ProjectileMovementComponent->bIsHomingProjectile = true;
 			ProjectileMovementComponent->HomingAccelerationMagnitude = FlightStage.GuidanceParams.Acceleration;

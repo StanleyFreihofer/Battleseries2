@@ -15,7 +15,7 @@ struct FLockOnState
 	ELockOnState CurrentLockStatus = ELockOnState::NotLockingOn;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	TWeakObjectPtr<AActor> AcquiredTarget = nullptr;
+	TWeakObjectPtr<USceneComponent> AcquiredTargetComp = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)		//for laser-guided targets (JDAM's)
 	FVector DesignatedPoint = FVector::ZeroVector;

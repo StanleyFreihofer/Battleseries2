@@ -192,7 +192,7 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void UpdateSeatRangefinder(int32 SeatIndex, FTransform TraceTransform, TArray<AActor*> ActorsToIgnore);
 	UFUNCTION(BlueprintCallable)
-	void HandleLockOn(int32 SeatIndex, FTransform TraceTransform, TArray<AActor*> ActorsToIgnore);
+	void HandleHoming(int32 SeatIndex, FTransform TraceTransform, TArray<AActor*> ActorsToIgnore);
 	UFUNCTION(BlueprintCallable)
 	void StartLockingOn(int32& SeatIndex, FVehicleWeapon_Runtime& CurrentWeapon, const FWeaponHomingData& HomingData, const FHitResult& HitResult);
 	UFUNCTION(BlueprintCallable)
@@ -206,6 +206,9 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void UpdateLockOnIndicator(bool UpdateHUD, FHitResult& HitResult, FLockOnState& LockOnState);
+
+	UFUNCTION()
+	void SetupManualGuidance(TWeakObjectPtr<AProjectile_Base> FiredProjectile, FLockOnState& LockOnState);
 
 	UFUNCTION(BlueprintCallable)
 	FName BuildMuzzleName(FName SeatName, int32 WeaponIndex, EMuzzleType MuzzleType, int32 MuzzleIndex);
