@@ -56,7 +56,7 @@ UENUM(BlueprintType)							//what the munition does
 enum class EProjectileGuidanceMethod : uint8
 {
 	BallisticTrajectory         UMETA(DisplayName = "Default/Ballistic"),			//embedded actor data i guess
-	GuideToTarget				UMETA(DisplayName = "Guide To Target/Homing/Lock On"),
+	GuideToTarget				UMETA(DisplayName = "Guide To Target/Homing/Lock On"),		//(and wire guided)
 	PitchToAltitude				UMETA(DisplayName = "Pitch To Altitude"),
 	WireGuided                  UMETA(DisplayName = "Player Controlled: Wire Guided"),
 	FullControl					UMETA(DisplayName = "Player Controlled: Full Control"),

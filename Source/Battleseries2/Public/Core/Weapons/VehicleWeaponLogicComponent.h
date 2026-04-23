@@ -194,6 +194,8 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void HandleHoming(int32 SeatIndex, FTransform TraceTransform, TArray<AActor*> ActorsToIgnore);
 	UFUNCTION(BlueprintCallable)
+	void HandleLockOn(int32 SeatIndex, FHitResult& HitResult, FVehicleWeapon_Runtime& WeaponState, const FWeaponHomingData& StaticHomingData);
+	UFUNCTION(BlueprintCallable)
 	void StartLockingOn(int32& SeatIndex, FVehicleWeapon_Runtime& CurrentWeapon, const FWeaponHomingData& HomingData, const FHitResult& HitResult);
 	UFUNCTION(BlueprintCallable)
 	void LockOn(int32 SeatIndex, const FWeaponHomingData HomingData, const FHitResult HitResult);

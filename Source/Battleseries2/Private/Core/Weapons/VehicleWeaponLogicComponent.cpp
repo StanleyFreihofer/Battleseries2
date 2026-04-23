@@ -700,35 +700,7 @@ void UVehicleWeaponLogicComponent::HandleHoming(int32 SeatIndex, FTransform Trac
 	{
 		case EHomingCapability::RequireLockOn:
 		case EHomingCapability::CanLockOn:
-			//Handle LockOn
-			if (HitResult.GetActor() && HitResult.GetActor()->GetClass()->ImplementsInterface(ULockOnTarget::StaticClass()))
-			{
-				bool canLockOn = ILockOnTarget::Execute_GetIfCanLockOn(HitResult.GetActor(), StaticHomingData.CanTarget, StaticHomingData.HomingCapability);
-				if (canLockOn)
-				{
-					//anything from here on can be seen as a "promotion" of lock status 
-					switch (LockOnState.CurrentLockStatus)
-					{
-						case ELockOnState::NotLockingOn:
-							StartLockingOn(SeatIndex, CurrentWeapon, StaticHomingData, HitResult);
-							break;
-						case ELockOnState::IsLockingOn:
-						case ELockOnState::IsLockedOn:
-							UpdateLockOnIndicator(OwnerDataAccessor->GetVehicleState().SeatStates[SeatIndex].UpdateHUD, HitResult, LockOnState);
-							break;
-						case ELockOnState::IsLosingLock:
-							break;
-					}
-				}
-				else
-				{
-					DemoteLockOnStatus(SeatIndex, LockOnState);
-				}
-			}
-			else
-			{
-				DemoteLockOnStatus(SeatIndex, LockOnState);
-			}
+			HandleLockOn(SeatIndex, HitResult, CurrentWeapon, StaticHomingData);
 			break;
 		case EHomingCapability::WireGuided1:
 		case EHomingCapability::WireGuided2:
@@ -741,7 +713,7 @@ void UVehicleWeaponLogicComponent::HandleHoming(int32 SeatIndex, FTransform Trac
 
 	}
 
-	//update in flight missiles
+	//update/manage in flight missiles
 	CurrentWeapon.VehicleWeaponState.BaseWeaponRuntimeData.WeaponState.InFlightProjectiles.RemoveAll([](const TWeakObjectPtr<AProjectile_Base>& Projectile) 
 	{
 		return !Projectile.IsValid() || Projectile->IsHidden();
@@ -751,13 +723,44 @@ void UVehicleWeaponLogicComponent::HandleHoming(int32 SeatIndex, FTransform Trac
 	{
 		AProjectile_Base* Projectile = InFlightProjectile.Get();
 
-		if (StaticHomingData.ContinuousLockRequired)
+		if (!StaticHomingData.ContinuousLockRequired) { continue;  }
+		if (LockOnState.CurrentLockStatus != ELockOnState::IsLockedOn || !LockOnState.AcquiredTargetComp.IsValid())
 		{
-			if (LockOnState.CurrentLockStatus != ELockOnState::IsLockedOn || !LockOnState.AcquiredTargetComp.IsValid())
+			//notify projectile that guidance is lost, missile goes dumb or something
+		}
+	}
+}
+
+void UVehicleWeaponLogicComponent::HandleLockOn(int32 SeatIndex, FHitResult& HitResult, FVehicleWeapon_Runtime& WeaponState, const FWeaponHomingData& StaticHomingData)
+{
+	FLockOnState& LockOnState = WeaponState.VehicleWeaponState.BaseWeaponRuntimeData.WeaponState.LockOnState;
+	if (HitResult.GetActor() && HitResult.GetActor()->GetClass()->ImplementsInterface(ULockOnTarget::StaticClass()))
+	{
+		bool canLockOn = ILockOnTarget::Execute_GetIfCanLockOn(HitResult.GetActor(), StaticHomingData.CanTarget, StaticHomingData.HomingCapability);
+		if (canLockOn)
+		{
+			//anything from here on can be seen as a "promotion" of lock status 
+			switch (LockOnState.CurrentLockStatus)
 			{
-				//notify projectile that guidance is lost, missile goes dumb or something
+				case ELockOnState::NotLockingOn:
+					StartLockingOn(SeatIndex, WeaponState, StaticHomingData, HitResult);
+					break;
+				case ELockOnState::IsLockingOn:
+				case ELockOnState::IsLockedOn:
+					UpdateLockOnIndicator(OwnerDataAccessor->GetVehicleState().SeatStates[SeatIndex].UpdateHUD, HitResult, LockOnState);
+					break;
+				case ELockOnState::IsLosingLock:
+					break;
 			}
 		}
+		else
+		{
+			DemoteLockOnStatus(SeatIndex, LockOnState);
+		}
+	}
+	else
+	{
+		DemoteLockOnStatus(SeatIndex, LockOnState);
 	}
 }
 
@@ -861,6 +864,7 @@ void UVehicleWeaponLogicComponent::UpdateLockOnIndicator(bool UpdateHUD, FHitRes
 
 void UVehicleWeaponLogicComponent::SetupManualGuidance(TWeakObjectPtr<AProjectile_Base> FiredProjectile, FLockOnState& LockOnState)
 {
+	//change input/switch enum to weapon homing capability rather than projectile?
 	switch (FiredProjectile->ProjectileData->ProjectileFlightPlan[0].BehaviorType)
 	{
 		case EProjectileGuidanceMethod::WireGuided:

@@ -33,16 +33,16 @@ enum class EFireMode : uint8
 	Single		UMETA(DisplayName = "Single/Semi-Auto")
 };
 
-UENUM(BlueprintType)		//The different behaviors of a weapon that dictates under what parameters can it lock on to someting
+UENUM(BlueprintType)		//The different behaviors of a weapon that dictates under what parameters can it home, lock, or guide to someting
 enum class EHomingCapability : uint8
 {
-	NoHoming			UMETA(DisplayName = "No Lock On", ToolTip = "Cannot lock on to a target"),		
+	NoHoming			UMETA(DisplayName = "No Homing", ToolTip = "Cannot Homing Capability"),		
 	WireGuided1			UMETA(DisplayName = "Wire Guided (no lock on)", ToolTip = "A wire guided missile that CANNOT lock on to targets"),	
 	WireGuided2			UMETA(DisplayName = "Wire Guided (w/lock on)", ToolTip = "A wire guided missile that CAN lock on to targets, TOW Missile, etc"),
+	GPSGuidance			UMETA(DisplayName = "GPS Guidance", ToolTip = "Guides to a marked location that does not change (JDAM, etc)"),
 	CanLockOn			UMETA(DisplayName = "Lock On", ToolTip = "Passive lock on, does not require a lock to fire"),		
 	RequireLockOn		UMETA(DisplayName = "Require Lock On", ToolTip = "Requires lock on to fire")
 };
-
 
 UENUM(BlueprintType)		//what the weapon can target/lock on to
 enum class ETargetingCategory : uint8
