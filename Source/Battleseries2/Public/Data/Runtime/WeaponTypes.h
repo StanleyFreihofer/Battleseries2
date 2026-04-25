@@ -22,11 +22,6 @@ struct FLockOnState
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FTimerHandle LockOnTimer = FTimerHandle();
-
-	//projectile array (current homing projectiles in air?), 
-	// map with their own acquire target... no if they have an acquired target, the projectiles will have that cached
-
-	//potential lock on target? A thing acquired that can be locked on but hasn't actually been locked onto yet (should be a local var in whatever function)
 };
 
 USTRUCT(BlueprintType)		

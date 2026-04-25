@@ -1,30 +1,34 @@
 // Fill out your copyright notice in the Description page of Project Settings.
-
 #pragma once
-#include "CoreMinimal.h"
-#include "GameFramework/Pawn.h"							//base class is pawn
-#include "ChaosWheeledVehicleMovementComponent.h"		//included so we can access members & functions
-#include "Components/WidgetComponent.h"					//same as above
-#include "Camera/CameraComponent.h"
-#include "GameFramework/SpringArmComponent.h"
-#include "Data/Vehicles/Data_Vehicle.h"
-#include "Data/Core/CoreTypes.h"
-#include "Utilities/DataManagerSubsystem.h"
-#include "Engine/DataTable.h"
-#include "Utilities/I_VehicleDataAccessor.h"
-#include "Core/Weapons/I_LockOnTarget.h"
-#include "Core/SpawnComponent.h"
-#include "Data/Runtime/VehicleTypes.h"
 
+#include "CoreMinimal.h"
+#include "GameFramework/Pawn.h"
+// Interfaces MUST be included for inheritance
+#include "Utilities/I_VehicleDataAccessor.h"
+#include "Utilities/I_Anims.h"
+#include "Core/Weapons/I_LockOnTarget.h"
+// Structs used by VALUE must be included
+#include "Data/Vehicles/Data_Vehicle.h" 
+#include "Data/Core/CoreTypes.h"
+#include "Data/Runtime/VehicleTypes.h"
+// UBT/UHT requirements
+#include "Engine/DataTable.h" 
 #include "Vehicle_Base.generated.h"
 
-class ASeat_Base;
+class UChaosWheeledVehicleMovementComponent;
+class UWidgetComponent;
+class UCameraComponent;
+class USpawnComponent;
+class UVehicleWeaponLogicComponent;
+class USkeletalMeshComponent;
+class USkeletalMesh;
+class USoundBase;
 class ACharacter_Base;
 class USaveSubsystem;
-class UPlayerSave_Loadout;
-class UVehicleWeaponLogicComponent;
 class UHUDSubsystem;
-struct FSavedSeatLoadout;
+class UDataManagerSubsystem;
+class UAnimInstance;
+
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnSeatsInitialized);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnMeshReady);
 
@@ -62,7 +66,7 @@ struct FVehicleStartingData
 };
 
 UCLASS()
-class BATTLESERIES2_API AVehicle_Base : public APawn, public IVehicleDataAccessor, public ILockOnTarget
+class BATTLESERIES2_API AVehicle_Base : public APawn, public IVehicleDataAccessor, public ILockOnTarget, public IAnims
 {
 	GENERATED_BODY()
 
@@ -113,41 +117,30 @@ public:
 	//Ground Vehicle init functions
 	UFUNCTION(BlueprintCallable)
 	void Init_Wheels();
-
 	UFUNCTION(BlueprintCallable)
 	void HandleChaosMovement(bool turnon);
-
+	UFUNCTION(BlueprintCallable)
+	void Init_EngineAudio();
 	UFUNCTION(BlueprintCallable)
 	void Init_GroundVehicle();
-
-	//Helicopter INIT functions
 	UFUNCTION(BlueprintCallable)
 	void Init_Helicopter();
-
-	//Generic Vehicle INIT functions
-	//Seats INITIALIZATION
 	UFUNCTION(BlueprintCallable)
 	void Init_DefaultSeatRemoteCamera(int32 SeatIndex);
 	UFUNCTION(BlueprintCallable)
 	void Init_SeatHUDComp(int32& SeatIndex);
 	UFUNCTION(BlueprintCallable)
 	void Init_Seats();
-
 	UFUNCTION(BlueprintCallable)
 	void Init_VehicleMesh(USkeletalMesh* LoadedSkeletalMesh);
-
 	UFUNCTION(BlueprintCallable)
 	void Init_VehicleAnim(TSubclassOf<UAnimInstance> Anim_Class);
-	
 	UFUNCTION(BlueprintCallable)
 	void Init_VehicleData();
-
 	UFUNCTION(BlueprintCallable)
 	void Init_DetermineVehicleBuildBehavior();
-
 	UFUNCTION(BlueprintCallable)
 	void Init_Vehicle();
-
 	UFUNCTION(BlueprintCallable)
 	void Init_Horn(USoundBase* HornAudio);
 

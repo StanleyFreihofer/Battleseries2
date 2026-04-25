@@ -22,6 +22,9 @@ public:
 	void OnFireWeapon_Vehicle(int32 SeatIndex, int32 WeaponIndex);
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Anim Interface")
+	void OnEnterSeat_Vehicle(int32 SeatIndex);
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Anim Interface")
 	void OnUpdateHeadRotation(FRotator NewRotation);
 
 };

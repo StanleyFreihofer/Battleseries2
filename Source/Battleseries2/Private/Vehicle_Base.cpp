@@ -15,10 +15,12 @@
 #include "Core/Vehicles/ChaosWheel_Base.h"
 #include "Core/PlayerController_Base.h"
 #include "Core/UI/VehicleHUDs/UW_HUD_Vehicle_Base.h"
+#include "Core/SpawnComponent.h"
 #include "Save/PlayerSave_Loadout.h"
 #include "Save/SaveSubsystem.h"
 #include "Utilities/GameInstance_Base.h"
 #include "Utilities/HUDSubsystem.h"
+#include "Utilities/I_Anims.h"
 #include "InputAction.h"
 #include "Character_Base.h"							//need to access LSI, CSI, NSI... and probably other things
 #include "Kismet/GameplayStatics.h"
@@ -146,6 +148,14 @@ void AVehicle_Base::HandleChaosMovement(bool turnon)
 		ChaosVehicleMovement->Deactivate();
 		ChaosVehicleMovement->SetComponentTickEnabled(false);
 	}
+}
+
+void AVehicle_Base::Init_EngineAudio()
+{
+	VehicleCurrentState.GenericVehicleState.EngineAudioComponent = NewObject<UAudioComponent>(this, UAudioComponent::StaticClass());
+	VehicleCurrentState.GenericVehicleState.EngineAudioComponent->RegisterComponent();
+	VehicleCurrentState.GenericVehicleState.EngineAudioComponent->AttachToComponent(GetRootComponent(), FAttachmentTransformRules::KeepRelativeTransform);
+	VehicleCurrentState.GenericVehicleState.EngineAudioComponent->SetActive(true);
 }
 
 //HELICOPTER FUNCTIONS
@@ -312,6 +322,7 @@ void AVehicle_Base::Init_Vehicle()
 {
 	Init_VehicleMesh(VehicleData->Vehicle_Mesh.Get());
 	Init_VehicleAnim(VehicleData->Anim_Class.Get());
+	Init_EngineAudio();
 	VehicleWeaponLogicComponent->Init_VehicleWeaponSystem(VehicleStartingData.StartingVehicleLoadout.SeatLoadout);		//weapons and turrets
 	Init_Seats();
 	switch (VehicleData->Movement_Type)
@@ -636,13 +647,11 @@ void AVehicle_Base::DropSeat(ACharacter_Base* Character, int32& SeatIndex)
 	}
 	HandleSeatOccupationStatus(false, SeatIndex);
 
-	if (SeatData.ViewMethod == E_ViewMethod::Remote)
+	if (SeatData.ViewMethod == E_ViewMethod::Remote && VehicleCurrentState.SeatStates[SeatIndex].ActiveCamera)
 	{
-		if (VehicleCurrentState.SeatStates[SeatIndex].ActiveCamera)
-		{
-			VehicleCurrentState.SeatStates[SeatIndex].ActiveCamera->SetActive(false);
-		}
+		VehicleCurrentState.SeatStates[SeatIndex].ActiveCamera->SetActive(false);
 	}
+
 	switch (SeatData.SeatRole)
 	{
 		case E_SeatRole::Driver:
@@ -685,6 +694,8 @@ void AVehicle_Base::SetupNewSeat(ACharacter_Base* Character)
 	HandleViewMethod(Character, SeatData);
 
 	Character->CharacterEnterSeat(SeatData.DefaultCharacterContext);
+	IAnims::Execute_OnEnterSeat_Vehicle(VehicleMeshComponent->GetAnimInstance(), Character->GetCSI());
+
 	if (Character->IsLocallyControlled())
 	{
 		VehicleCurrentState.SeatStates[Character->GetCSI()].UpdateHUD = true;
@@ -697,19 +708,22 @@ void AVehicle_Base::SetupDriver(ACharacter_Base* Character)
 {
 	//start engine
 	UGameplayStatics::PlaySoundAtLocation(this, Cast<USoundBase>(VehicleData->GenericVehicleAudio.EngineStartupAudio), GetActorLocation(), FRotator::ZeroRotator, 1.0f, 1.0f, 0.0f);
-	if (!VehicleCurrentState.GenericVehicleState.EngineAudioComponent)
-	{
-		//setup engine audio (do in factory instead?)
-		VehicleCurrentState.GenericVehicleState.EngineAudioComponent = NewObject<UAudioComponent>(this, UAudioComponent::StaticClass());
-		VehicleCurrentState.GenericVehicleState.EngineAudioComponent->RegisterComponent();
-		VehicleCurrentState.GenericVehicleState.EngineAudioComponent->AttachToComponent(GetRootComponent(), FAttachmentTransformRules::KeepRelativeTransform);
-		VehicleCurrentState.GenericVehicleState.EngineAudioComponent->SetActive(true);
-	}
+
 	//update engine audio (do sound cue on a timer instead?)
 	VehicleCurrentState.GenericVehicleState.EngineAudioComponent->SetSound(Cast<USoundBase>(VehicleData->GenericVehicleAudio.EngineAudio));
 	GetWorldTimerManager().SetTimer(TimerHandle_AudioUpdate_Engine, this, &AVehicle_Base::UpdateEngineAudio, 0.05f, true);
 	VehicleCurrentState.GenericVehicleState.EngineAudioComponent->Play();
 	//engine/whatever else start up audio
+
+	switch (VehicleData->Movement_Type)
+	{
+		case E_MovementType::GroundVehicle:
+			break;
+		case E_MovementType::Helicopter:
+			break;
+		case E_MovementType::Jet:
+			break;
+	}
 }
 
 void AVehicle_Base::DropDriver()

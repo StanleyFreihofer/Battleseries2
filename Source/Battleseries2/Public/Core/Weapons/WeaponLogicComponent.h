@@ -8,6 +8,7 @@
 #include "WeaponLogicComponent.generated.h"
 
 class USkeletalMeshComponent;
+class UStaticMeshComponent;
 class AProjectile_Base;
 
 

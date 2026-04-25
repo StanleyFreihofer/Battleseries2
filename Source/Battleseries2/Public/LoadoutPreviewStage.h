@@ -6,10 +6,11 @@
 #include "GameFramework/Actor.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Camera/CameraComponent.h"
-#include "Vehicle_Base.h"
+#include "Data/Core/CoreEnums.h"
 #include "LoadoutPreviewStage.generated.h"
 
 struct FAttachmentState;
+class AVehicle_Base;
 
 USTRUCT(BlueprintType)
 struct FPreviewState
@@ -22,8 +23,8 @@ struct FPreviewState
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	AVehicle_Base* CurrentVehicle = nullptr;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)				//attachment state of preview gun
-	TArray<FAttachmentState> PreviewGun_AttachmentState;
+	//UPROPERTY(EditAnywhere, BlueprintReadWrite)				//attachment state of preview gun
+	//TArray<FAttachmentState> PreviewGun_AttachmentState;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	bool RotateObject = false;		//true = rotate object, false = orbit camera

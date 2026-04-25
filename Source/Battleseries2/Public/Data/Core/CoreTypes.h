@@ -1,10 +1,12 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Components/SpotLightComponent.h"
 #include "Engine/DataAsset.h"
 #include "Data/Core/CoreEnums.h"
 #include "CoreTypes.generated.h"
+
+class UStaticMeshComponent;
+class USpotLightComponent;
 
 /**
 ALL THE DIFFERENT ITEMS/THINGS THAT MAKE UP AN ENTITY (make up a character class, vehicle, weapon, etc)
