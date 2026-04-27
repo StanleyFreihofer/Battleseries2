@@ -95,6 +95,8 @@ struct FGenericVehicleState
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Audio")
 	class UAudioComponent* EngineAudioComponent = nullptr;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Audio")
+	class UAudioComponent* InteriorAudioComponent = nullptr;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Audio")
 	class UAudioComponent* HornAudioComponent = nullptr;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FName CurrentCamo = NAME_None;

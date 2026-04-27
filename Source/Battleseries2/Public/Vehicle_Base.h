@@ -212,6 +212,8 @@ public:
 	void UpdateRemoteCamPP(int32 SeatIndex, FPostProcessSettings PPSettings, float BlendWeight);
 	UFUNCTION(BlueprintCallable)
 	void UpdateEngineAudio();
+	UFUNCTION(BlueprintCallable)
+	void UpdateRotorRPM();
 
 	//Vehicle RUNTIME
 	
@@ -291,6 +293,7 @@ public:
 private:
 	//UDataManagerSubsystem* DataManager;
 	USaveSubsystem* SaveSubsystem;
-	struct FTimerHandle TimerHandle_AudioUpdate_Engine;
+	FTimerHandle TimerHandle_AudioUpdate_Engine;
 	FTimerHandle SpeedTimer;
+	FTimerHandle RotorUpdateTimer;
 };

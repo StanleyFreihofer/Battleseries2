@@ -161,7 +161,12 @@ void AVehicle_Base::Init_EngineAudio()
 //HELICOPTER FUNCTIONS
 void AVehicle_Base::Init_Helicopter()
 {
+	VehicleCurrentState.AircraftState.HelicopterState.RotorRPMs.Add(0.0f);
 
+	VehicleCurrentState.GenericVehicleState.InteriorAudioComponent = NewObject<UAudioComponent>(this, UAudioComponent::StaticClass());
+	VehicleCurrentState.GenericVehicleState.InteriorAudioComponent->RegisterComponent();
+	VehicleCurrentState.GenericVehicleState.InteriorAudioComponent->AttachToComponent(GetRootComponent(), FAttachmentTransformRules::KeepRelativeTransform);
+	VehicleCurrentState.GenericVehicleState.InteriorAudioComponent->SetActive(true);
 }
 
 //SEAT FUNCTIONS
@@ -335,6 +340,7 @@ void AVehicle_Base::Init_Vehicle()
 		case E_MovementType::Helicopter:
 			UE_LOG(LogTemp, Log, TEXT("HELICOPTER SETUP STARTED"));
 			HandleChaosMovement(false);
+			Init_Helicopter();
 			break;
 		case E_MovementType::Jet:
 			UE_LOG(LogTemp, Log, TEXT("JET SETUP STARTED"));
@@ -720,7 +726,10 @@ void AVehicle_Base::SetupDriver(ACharacter_Base* Character)
 		case E_MovementType::GroundVehicle:
 			break;
 		case E_MovementType::Helicopter:
+		{
+			GetWorld()->GetTimerManager().SetTimer(RotorUpdateTimer, this, &AVehicle_Base::UpdateRotorRPM, 0.016f, true);
 			break;
+		}
 		case E_MovementType::Jet:
 			break;
 	}
@@ -802,7 +811,38 @@ void AVehicle_Base::UpdateEngineAudio()
 			VehicleCurrentState.GenericVehicleState.EngineAudioComponent->SetFloatParameter(FName("RPM"), FMath::Abs(ChaosVehicleMovement->GetEngineRotationSpeed()));
 			VehicleCurrentState.GenericVehicleState.EngineAudioComponent->SetFloatParameter(FName("Speed"), FMath::Abs(ChaosVehicleMovement->GetForwardSpeed() * 0.036f));
 			break;
+		case E_MovementType::Helicopter:
+			//update rotor audio
+			VehicleCurrentState.GenericVehicleState.EngineAudioComponent->SetFloatParameter(FName("Volume"), VehicleCurrentState.AircraftState.HelicopterState.RotorRPMs[0]);			//GetVelocity().Size()
+			VehicleCurrentState.GenericVehicleState.InteriorAudioComponent->SetFloatParameter(FName("Pitch"), VehicleCurrentState.AircraftState.HelicopterState.RotorRPMs[0]);
+			break;
 	}
+}
+
+void AVehicle_Base::UpdateRotorRPM()
+{
+	const FHelicopterData& HeliData = VehicleData->Helicopter_Data;
+
+	float& RPM = VehicleCurrentState.AircraftState.HelicopterState.RotorRPMs[0];
+	float Alpha = FMath::Clamp(RPM / HeliData.RotorData.TargetRPM, 0.0f, 1.0f);
+
+	float SpeedMult = FMath::InterpEaseIn(
+		HeliData.RotorData.MinMaxAccelerationSpeed.GetLowerBoundValue(),
+		HeliData.RotorData.MinMaxAccelerationSpeed.GetUpperBoundValue(),
+		Alpha,
+		HeliData.RotorData.AccelerationCurve
+	);
+
+	RPM = FMath::FInterpConstantTo(RPM, HeliData.RotorData.TargetRPM, 0.016f, SpeedMult);
+
+	if (FMath::IsNearlyEqual(RPM, HeliData.RotorData.TargetRPM, 0.1f))
+	{
+		GetWorld()->GetTimerManager().ClearTimer(RotorUpdateTimer);
+	}
+
+	//audio
+	//VehicleCurrentState.GenericVehicleState.EngineAudioComponent->SetFloatParameter(FName("EngineRPM"), RPM);
+	//v
 }
 
 void AVehicle_Base::ApplyThrottle_GV(float InputValue, int32 SeatIndex)

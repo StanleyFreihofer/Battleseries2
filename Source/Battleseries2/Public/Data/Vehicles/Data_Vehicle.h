@@ -275,9 +275,27 @@ struct FGroundVehicleData
 };
 
 USTRUCT(BlueprintType)
+struct FRotorData
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	float TargetRPM = 2000.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	FFloatRange MinMaxAccelerationSpeed = FFloatRange(0.0f, 0.0f);
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	float AccelerationCurve = 0.0f;
+};
+
+USTRUCT(BlueprintType)
 struct FHelicopterData
 {
 	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	FRotorData RotorData = FRotorData();
 
 	//PITCH DATA
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
