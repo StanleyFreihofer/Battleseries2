@@ -73,6 +73,9 @@ struct FHelicopterState
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	TArray<float> RotorRPMs; //first 1 should be main rotor
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	float CurrentHoverVelocity = 0.0f;
 };
 
 USTRUCT(BlueprintType)

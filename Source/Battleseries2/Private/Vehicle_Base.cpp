@@ -845,7 +845,7 @@ void AVehicle_Base::UpdateRotorRPM()
 	//v
 }
 
-void AVehicle_Base::ApplyThrottle_GV(float InputValue, int32 SeatIndex)
+void AVehicle_Base::ApplyThrottle_GV(float InputValue)
 {
 	//if this doesnt work reference that 1 tutorial you did
 	if (InputValue > 0)
@@ -888,6 +888,26 @@ void AVehicle_Base::ApplySteering_GV(float SteeringValue, int32 SeatIndex)
 	{
 		GetHUDSystem()->UpdateCompassHUD_Vehicle(VehicleCurrentState.SeatStates[SeatIndex].ActiveCamera->GetComponentRotation().Yaw);
 	}
+}
+
+void AVehicle_Base::UpdateThrottle_Heli(float InputValue)
+{
+	float& CurrentHoverVelocity = VehicleCurrentState.AircraftState.HelicopterState.CurrentHoverVelocity;
+	const FHelicopterData& HeliData = VehicleData->Helicopter_Data;
+	float NewTargetValue;
+	FVector NewVelocity;
+	if (InputValue != 0.0f)
+	{
+		NewTargetValue = InputValue * HeliData.MaxThrust;
+		CurrentHoverVelocity = FMath::FInterpTo(CurrentHoverVelocity, NewTargetValue, GetWorld()->GetDeltaSeconds(), 2.0f);
+		NewVelocity = (CurrentHoverVelocity * GetActorUpVector()) * (GetWorld()->GetDeltaSeconds() * 100.0f);
+	}
+	else
+	{
+		CurrentHoverVelocity = FMath::FInterpTo(CurrentHoverVelocity, HeliData.ThrottlePower, GetWorld()->GetDeltaSeconds(), 4.0f);
+		NewVelocity = (CurrentHoverVelocity * GetActorUpVector()) * (GetWorld()->GetDeltaSeconds() * 100.0f);
+	}
+	VehicleMeshComponent->SetAllPhysicsLinearVelocity(NewVelocity, true);
 }
 
 #pragma region Optics
@@ -1006,24 +1026,27 @@ void AVehicle_Base::ToggleMagnificationOptic(int32 SeatIndex, float ZoomMagnific
 
 #pragma endregion
 
-void AVehicle_Base::HandleThrottle(float ThrottleValue, int32 SeatIndex)
+void AVehicle_Base::HandleThrottle(float ThrottleValue)
 {
-	E_MovementType VehicleType = VehicleData->Movement_Type;
-	switch (VehicleType)
+	const E_MovementType& MovementType = VehicleData->Movement_Type;
+	switch (MovementType)
 	{
 		case E_MovementType::GroundVehicle:
-			ApplyThrottle_GV(ThrottleValue, SeatIndex);
+			ApplyThrottle_GV(ThrottleValue);
+			break;
+		case E_MovementType::Helicopter:
+			UpdateThrottle_Heli(ThrottleValue);
 			break;
 	}
 }
 
-void AVehicle_Base::ReleaseThrottle(int32 SeatIndex)
+void AVehicle_Base::ReleaseThrottle()
 {
-	E_MovementType VehicleType = VehicleData->Movement_Type;
-	switch (VehicleType)
+	const E_MovementType& MovementType = VehicleData->Movement_Type;
+	switch (MovementType)
 	{
 		case E_MovementType::GroundVehicle:
-			ApplyThrottle_GV(0, SeatIndex);
+			ApplyThrottle_GV(0);
 			break;
 	}
 }

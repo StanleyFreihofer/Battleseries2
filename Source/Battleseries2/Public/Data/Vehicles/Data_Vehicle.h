@@ -297,6 +297,13 @@ struct FHelicopterData
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	FRotorData RotorData = FRotorData();
 
+	//THROTTLE/HOVER/THRUST DATA
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	float ThrottlePower = 0.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	float MaxThrust = 0.0f;
+
 	//PITCH DATA
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float PitchSpeed = 0.0f;

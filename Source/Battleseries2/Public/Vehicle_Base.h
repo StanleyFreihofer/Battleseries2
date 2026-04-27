@@ -221,14 +221,17 @@ public:
 
 	//Movement, Generic
 	UFUNCTION(BlueprintCallable)
-	void HandleThrottle(float ThrottleValue, int32 SeatIndex);		//called from seat
+	void HandleThrottle(float ThrottleValue);		//called from seat
 	UFUNCTION(BlueprintCallable)
-	void ReleaseThrottle(int32 SeatIndex);
+	void ReleaseThrottle();
 	//Movement, Ground Vehicle
 	UFUNCTION(BlueprintCallable)
-	void ApplyThrottle_GV(float InputValue, int32 SeatIndex);	
+	void ApplyThrottle_GV(float InputValue);	
 	UFUNCTION(BlueprintCallable)
 	void ApplySteering_GV(float SteeringValue, int32 SeatIndex);
+
+	UFUNCTION(BlueprintCallable)
+	void UpdateThrottle_Heli(float InputValue);
 
 
 	UFUNCTION(BlueprintCallable)
