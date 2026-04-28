@@ -198,6 +198,10 @@ void ACharacter_Base::CharacterEnterVehicle()
 	GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Vehicle, ECollisionResponse::ECR_Ignore);
 	GetCharacterMovement()->SetMovementMode(MOVE_None);
 	AttachToActor(GetCurrentVehicle(), FAttachmentTransformRules::KeepRelativeTransform);
+	CameraBoom->bInheritPitch = true;
+	CameraBoom->bInheritRoll = true;
+	CameraBoom->bInheritYaw = true;
+	CameraBoom->bUsePawnControlRotation = false;
 	Camera->bUsePawnControlRotation = false;
 	Camera->SetRelativeRotation(FRotator());
 	bUseControllerRotationYaw = false;
@@ -209,7 +213,7 @@ void ACharacter_Base::CharacterEnterVehicle()
 
 	TArray<UInputMappingContext*> ContextsToModify;
 
-	// 2. Iterate over the Map and fill the snapshot array
+	//Iterate over the Map and fill the snapshot array
 	for (auto& Pair : *MapPtr)
 	{
 		if (Pair.Value == 1)
@@ -218,7 +222,6 @@ void ACharacter_Base::CharacterEnterVehicle()
 		}
 	}
 
-	// 3. Now iterate over the copy to safely perform your logic
 	for (UInputMappingContext* IMC : ContextsToModify)
 	{
 		ManageIMC(IMC, nullptr, -1);

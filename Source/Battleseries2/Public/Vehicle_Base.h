@@ -232,6 +232,12 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void UpdateThrottle_Heli(float InputValue);
+	UFUNCTION(BlueprintCallable)
+	void UpdatePitch_Heli(float InputValue);
+	UFUNCTION(BlueprintCallable)
+	void UpdateYaw_Heli(float InputValue);
+	UFUNCTION(BlueprintCallable)
+	void UpdateRoll_Heli(float InputValue);
 
 
 	UFUNCTION(BlueprintCallable)

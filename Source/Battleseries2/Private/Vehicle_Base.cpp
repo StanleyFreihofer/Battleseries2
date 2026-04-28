@@ -910,6 +910,69 @@ void AVehicle_Base::UpdateThrottle_Heli(float InputValue)
 	VehicleMeshComponent->SetAllPhysicsLinearVelocity(NewVelocity, true);
 }
 
+void AVehicle_Base::UpdatePitch_Heli(float InputValue)
+{
+	float& CurrentPitchSpeed = VehicleCurrentState.AircraftState.HelicopterState.CurrentPitchSpeed;
+	const FHelicopterData& HeliData = VehicleData->Helicopter_Data;
+
+	// 1. Smooth the input (Degrees per second)
+	CurrentPitchSpeed = FMath::FInterpTo(CurrentPitchSpeed, InputValue * HeliData.MaxPitchSpeed, GetWorld()->GetDeltaSeconds(), 1.5f);
+
+	// 2. Convert "Degrees per second" to "Degrees this frame"
+	float PitchThisFrame = CurrentPitchSpeed * GetWorld()->GetDeltaSeconds();
+
+	// 3. Apply the rotation exactly like Blueprints, but with the Teleport flag
+	// FRotator(Pitch, Yaw, Roll)
+	FRotator DeltaRotation = FRotator(PitchThisFrame, 0.0f, 0.0f);
+
+	AddActorLocalRotation(
+		DeltaRotation,
+		false,                             // bSweep: Helps prevent clipping through walls
+		nullptr,                          // FHitResult: Not needed unless you want to detect what you hit
+		ETeleportType::TeleportPhysics    // THE SECRET SAUCE: Syncs physics with the new transform
+	);
+}
+
+void AVehicle_Base::UpdateYaw_Heli(float InputValue)
+{
+	float& CurrentYawSpeed = VehicleCurrentState.AircraftState.HelicopterState.CurrentYawSpeed;
+	const FHelicopterData& HeliData = VehicleData->Helicopter_Data;
+
+	// 1. Smooth the input. (Removed the * 100.0f trap!)
+	CurrentYawSpeed = FMath::FInterpTo(CurrentYawSpeed, InputValue * HeliData.MaxYawSpeed, GetWorld()->GetDeltaSeconds(), 2.0f);
+
+	// 2. Scale by DeltaSeconds to get "Degrees this frame"
+	float YawThisFrame = CurrentYawSpeed * GetWorld()->GetDeltaSeconds();
+
+	// 3. Use Local Rotation with Teleport (Matching your working Blueprint config)
+	AddActorLocalRotation(
+		FRotator(0.0f, YawThisFrame, 0.0f),
+		false,
+		nullptr,
+		ETeleportType::TeleportPhysics
+	);
+}
+
+void AVehicle_Base::UpdateRoll_Heli(float InputValue)
+{
+	float& CurrentRollSpeed = VehicleCurrentState.AircraftState.HelicopterState.CurrentRollSpeed;
+	const FHelicopterData& HeliData = VehicleData->Helicopter_Data;
+
+	// 1. Smooth the input
+	CurrentRollSpeed = FMath::FInterpTo(CurrentRollSpeed, InputValue * HeliData.MaxRollSpeed, GetWorld()->GetDeltaSeconds(), 1.5f);
+
+	// 2. Scale by DeltaSeconds
+	float RollThisFrame = CurrentRollSpeed * GetWorld()->GetDeltaSeconds();
+
+	// 3. Use Local Rotation with Teleport
+	AddActorLocalRotation(
+		FRotator(0.0f, 0.0f, RollThisFrame),
+		false,
+		nullptr,
+		ETeleportType::TeleportPhysics
+	);
+}
+
 #pragma region Optics
 
 void AVehicle_Base::ToggleOptic(int32 SeatIndex)

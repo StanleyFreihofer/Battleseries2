@@ -305,22 +305,16 @@ struct FHelicopterData
 	float MaxThrust = 0.0f;
 
 	//PITCH DATA
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float PitchSpeed = 0.0f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float MaxPitchSpeed = 0.0f;
 
 	//YAW DATA
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float YawSpeed = 0.0f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float MaxYawSpeed = 0.0f;
 
 	//ROLL DATA
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	float RollSpeed = 0.0f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	float MaxRollSpeed = 0.0f;

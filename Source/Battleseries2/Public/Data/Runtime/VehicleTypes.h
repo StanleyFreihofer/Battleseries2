@@ -76,6 +76,15 @@ struct FHelicopterState
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	float CurrentHoverVelocity = 0.0f;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	float CurrentPitchSpeed = 0.0f;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	float CurrentYawSpeed = 0.0f;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	float CurrentRollSpeed = 0.0f;
 };
 
 USTRUCT(BlueprintType)
