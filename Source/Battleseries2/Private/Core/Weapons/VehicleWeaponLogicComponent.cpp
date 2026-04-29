@@ -1058,7 +1058,7 @@ void UVehicleWeaponLogicComponent::FireVehicleWeapon(int32 SeatIndex)
 
 	ApplyWeaponRecoilJostle(SeatIndex, CWI);
 
-	//update muzzle
+	//update sequential muzzle
 	if (!VehicleWeapon.VehicleWeaponInstanceData.bAreProjectilesMounted && VehicleWeapon.VehicleWeaponInstanceData.FireMethod == EFireMethod::Sequential)
 	{
 		int32& ActiveIndex = VehicleWeaponState.CurrentMuzzleIndexes[0];
@@ -1126,7 +1126,6 @@ void UVehicleWeaponLogicComponent::HandleShootProjectileActor(int32 SeatIndex, i
 		//call some sort of "drop from rack" function on projectile?
 		if (FiredProjectile.IsValid())
 		{
-			FiredProjectile = VehicleWeaponState.CurrentMountedProjectiles[0];
 			VehicleWeaponState.CurrentMountedProjectiles.RemoveAt(0, EAllowShrinking::Yes);
 			SetupManualGuidance(FiredProjectile, LockOnState);
 			VehicleWeapon.VehicleWeaponState.BaseWeaponRuntimeData.WeaponState.InFlightProjectiles.Add(FiredProjectile);
