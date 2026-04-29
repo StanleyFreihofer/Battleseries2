@@ -16,7 +16,7 @@ class AProjectile_Base;
 //this class is used by on-foot weapons/characters
 
 USTRUCT(BlueprintType)
-struct FAttachmentState
+struct FWeaponAttachmentState
 {
 	GENERATED_BODY()
 
@@ -27,7 +27,22 @@ struct FAttachmentState
 	float CurrentRailOffset = 0.0f;		//tuning value
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	TObjectPtr<UStaticMeshComponent> SpawnedComponent = nullptr; // The actual mesh on the gun
+	TObjectPtr<UStaticMeshComponent> SpawnedAttachment = nullptr; // The actual mesh on the gun
+};
+
+USTRUCT(BlueprintType)
+struct FInfantryWeaponSystem
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TArray<FWeaponAttachmentState> WeaponAttachmentStates;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TArray<USkeletalMeshComponent*> WeaponMeshes_FP;			//the actual weapon mesh (gun model for example)
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TArray<USkeletalMeshComponent*> WeaponMeshes_TP;			//the actual weapon mesh (gun model for example)
 };
 
 USTRUCT(BlueprintType)
@@ -39,10 +54,10 @@ struct FOnFootWeaponSystem_Runtime
 	FBaseWeaponSystem_Runtime BaseWeaponSystem = FBaseWeaponSystem_Runtime();
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	TArray<FAttachmentState> AttachmentState;
+	FInfantryWeaponSystem InfantryWeaponSystem = FInfantryWeaponSystem();
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	TArray<USkeletalMeshComponent*> WeaponMeshes;			//the actual weapon mesh (gun model for example)
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	bool isAiming = false;
 
 };
 
@@ -61,6 +76,8 @@ class BATTLESERIES2_API UWeaponLogicComponent : public UActorComponent
 		UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Runtime")
 		FTimerHandle TimerHandle_AutoFire;
 
+		UFUNCTION(BlueprintCallable)
+		void Init_WeaponLoadout();
 		UFUNCTION(BlueprintCallable)
 		virtual bool Rangefinder(const FTransform& StartTransform, FHitResult& OutHit);
 		UFUNCTION(BlueprintCallable)			//calculates projectile velocity direction based on rangefinder (projectile should move toward cos, new SetProjectileSpawnTransform())

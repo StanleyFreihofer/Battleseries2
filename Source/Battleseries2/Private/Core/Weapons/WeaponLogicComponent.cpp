@@ -1,9 +1,11 @@
 
 #include "Core/Weapons/WeaponLogicComponent.h"
 #include "Core/Weapons/WeaponFunctions.h"
+#include "Data/Core/CoreTypes.h"
 #include "Data/Runtime/ProjectileTypes.h"
 #include "Data/Weapons/Data_Weapon.h"
 #include "Data/Weapons/Data_Projectile.h"
+#include "Save/SaveSubsystem.h"
 
 UWeaponLogicComponent::UWeaponLogicComponent()
 {
@@ -25,6 +27,13 @@ void UWeaponLogicComponent::TickComponent(float DeltaTime, ELevelTick TickType, 
 	//UpdateProjectileAimDirection();
 }
 
+void UWeaponLogicComponent::Init_WeaponLoadout()
+{
+	USaveSubsystem* SaveSys = GetWorld()->GetGameInstance()->GetSubsystem<USaveSubsystem>();
+	const FPlayerLoadoutConfig_Class& Loadout = SaveSys->GetClassLoadout(static_cast<EClassType>(0));
+	Loadout
+}
+
 bool UWeaponLogicComponent::Rangefinder(const FTransform& StartTransform, FHitResult& OutHit)
 {
 	bool bDidHit = false;
@@ -36,9 +45,9 @@ bool UWeaponLogicComponent::Rangefinder(const FTransform& StartTransform, FHitRe
 
 void UWeaponLogicComponent::UpdateProjectileAimDirection()
 {
-	FVector MuzzleLocation = UWeaponFunctions::GetMuzzleTransform("Muzzle", WeaponSystem.WeaponMeshes[WeaponSystem.BaseWeaponSystem.EquippedWeaponState.CurrentWeaponIndex]).GetLocation();
-	FVector RawAimDir = UWeaponFunctions::CalculateAimDirection(WeaponSystem.BaseWeaponSystem.EquippedWeaponState.RaycastData.RangefinderData, MuzzleLocation);
-	WeaponSystem.BaseWeaponSystem.EquippedWeaponState.RaycastData.MuzzleAimDirections[0] = RawAimDir;
+	//FVector MuzzleLocation = UWeaponFunctions::GetMuzzleTransform("Muzzle", WeaponSystem.WeaponMeshes[WeaponSystem.BaseWeaponSystem.EquippedWeaponState.CurrentWeaponIndex]).GetLocation();
+	//FVector RawAimDir = UWeaponFunctions::CalculateAimDirection(WeaponSystem.BaseWeaponSystem.EquippedWeaponState.RaycastData.RangefinderData, MuzzleLocation);
+	//WeaponSystem.BaseWeaponSystem.EquippedWeaponState.RaycastData.MuzzleAimDirections[0] = RawAimDir;
 }
 
 void UWeaponLogicComponent::StartFire()

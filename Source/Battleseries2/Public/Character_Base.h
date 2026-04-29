@@ -14,6 +14,7 @@
 
 class AVehicle_Base;
 class UDataManagerSubsystem;
+class UWeaponLogicComponent;
 struct FCharacterSeatContext;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnWeaponInputReleased_Vehicle, int32, SeatIndex);
@@ -32,6 +33,8 @@ public:
 	UCameraComponent* Camera = nullptr;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
 	USpringArmComponent* CameraBoom = nullptr;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
+	UWeaponLogicComponent* WeaponManager;
 
 	UPROPERTY(BlueprintAssignable, BlueprintCallable)
 	FOnWeaponInputReleased_Vehicle OnFireReleased_Vehicle;
@@ -49,6 +52,7 @@ public:
 	void Init_Character();
 	UFUNCTION(BlueprintCallable)
 	void Init_PlayerCharacter();
+
 	UFUNCTION(BlueprintCallable)
 	void Input_Look(FVector2D InputAxisValue);
 	UFUNCTION(BlueprintCallable)

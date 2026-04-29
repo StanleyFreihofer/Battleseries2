@@ -13,9 +13,23 @@ enum class ECharacterCurrentStance : uint8
 };
 
 UENUM(BlueprintType)
+enum class EMovementMode : uint8
+{
+	Walking				UMETA(DisplayName = "Walking"),
+	Sprinting			UMETA(DisplayName = "Sprinting"),
+};
+
+UENUM(BlueprintType)
 enum class EControlRotationMethod : uint8
 {
 	Default				UMETA(DisplayName = "Look Around Default"),
 	Freelook			UMETA(DisplayName = "Freelook/Look Around w/Head"),
 	None				UMETA(DisplayName = "None", ToolTip = "Cannot look around at all")
 };
+
+//swimming?
+//parachuting?
+//free falling?
+//tac sprinting?
+//sliding?
+//jumping

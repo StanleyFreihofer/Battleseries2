@@ -15,8 +15,6 @@ struct FCharacterVehicleState
 	bool inVehicle = false;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "State")
 	AVehicle_Base* CurrentVehicle = nullptr;		
-	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "State")
-	//UUW_HUD_Vehicle_Base* VehicleHUD = nullptr;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "State")
 	bool isFreeLooking = false;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "State")
