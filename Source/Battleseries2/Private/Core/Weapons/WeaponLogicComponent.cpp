@@ -31,7 +31,7 @@ void UWeaponLogicComponent::Init_WeaponLoadout()
 {
 	USaveSubsystem* SaveSys = GetWorld()->GetGameInstance()->GetSubsystem<USaveSubsystem>();
 	const FPlayerLoadoutConfig_Class& Loadout = SaveSys->GetClassLoadout(static_cast<EClassType>(0));
-	Loadout
+	//Loadout
 }
 
 bool UWeaponLogicComponent::Rangefinder(const FTransform& StartTransform, FHitResult& OutHit)
