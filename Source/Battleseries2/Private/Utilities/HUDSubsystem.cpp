@@ -210,6 +210,14 @@ void UHUDSubsystem::UpdateOpticMagnificationHUD_Vehicle(float OpticMagnification
 	}
 }
 
+void UHUDSubsystem::UpdateAltitudeHUD_Vehicle(float Pitch)
+{
+	if (CurrentVehicleHMD)
+	{
+		CurrentVehicleHMD->UpdateAltitudeGaugeHUD(Pitch);
+	}
+}
+
 void UHUDSubsystem::RemoveWidget(UUW_HUD_LockOnIndicator_Base* UserWidget)
 {
 	if (!UserWidget) return;

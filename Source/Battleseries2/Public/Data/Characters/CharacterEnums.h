@@ -13,7 +13,7 @@ enum class ECharacterCurrentStance : uint8
 };
 
 UENUM(BlueprintType)
-enum class EMovementMode : uint8
+enum class ECharacterMovementMode : uint8
 {
 	Walking				UMETA(DisplayName = "Walking"),
 	Sprinting			UMETA(DisplayName = "Sprinting"),

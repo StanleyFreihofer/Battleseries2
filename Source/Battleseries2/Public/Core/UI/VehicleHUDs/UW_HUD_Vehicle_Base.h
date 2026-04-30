@@ -13,6 +13,7 @@ class UUW_VehicleHUDComp_TurretElvGauge;
 class UUW_VehicleHUDComp_TurretPitchMeter;
 class UUW_VehicleHUDComp_Optic;
 class UUW_VehicleHUDComp_Speedometer;
+class UUW_VehicleHUDComp_AltitudeGauge;
 
 //can either be a vehicle HMD (player screen) or HUD (worldspace widget component)
 
@@ -44,6 +45,8 @@ public:
 	UUW_VehicleHUDComp_Speedometer* Speedometer = nullptr;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Vehicle HUD")
 	UUW_VehicleHUDComp_Optic* OpticStatus = nullptr;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Vehicle HUD")
+	UUW_VehicleHUDComp_AltitudeGauge* AltitudeGauge = nullptr;
 	//countermeasure status
 	//warning (health, mobility, lockon)
 	//altimeter/altimeter gauge
@@ -76,6 +79,8 @@ public:
 	void UpdateOpticNameHUD(FText OpticName);
 	UFUNCTION(BlueprintCallable)
 	void UpdateOpticMagnificationHUD(float OpticMagnification);
+	UFUNCTION(BlueprintCallable)
+	void UpdateAltitudeGaugeHUD(float Pitch);
 
 	//global component updates
 	UFUNCTION(BlueprintCallable)

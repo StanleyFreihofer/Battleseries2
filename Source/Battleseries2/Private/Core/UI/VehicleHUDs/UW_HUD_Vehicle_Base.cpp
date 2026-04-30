@@ -9,6 +9,7 @@
 #include "Core/UI/VehicleHUDs/UW_VehicleHUDComp_TurretPitchMeter.h"
 #include "Core/UI/VehicleHUDs/UW_VehicleHUDComp_Optic.h"
 #include "Core/UI/VehicleHUDs/UW_VehicleHUDComp_Speedometer.h"
+#include "Core/UI/VehicleHUDs/UW_VehicleHUDComp_AltitudeGauge.h"
 #include "Utilities/I_HUDUpdates.h"
 #include "Blueprint/WidgetTree.h"
 
@@ -57,6 +58,10 @@ void UUW_HUD_Vehicle_Base::BindComponents()
 		else if (UUW_VehicleHUDComp_Optic* OpticComp = Cast<UUW_VehicleHUDComp_Optic>(Widget))
 		{
 			OpticStatus = OpticComp;
+		}
+		else if (UUW_VehicleHUDComp_AltitudeGauge* AltitudeGaugeComp = Cast<UUW_VehicleHUDComp_AltitudeGauge>(Widget))
+		{
+			AltitudeGauge = AltitudeGaugeComp;
 		}
 	});
 }
@@ -151,6 +156,15 @@ void UUW_HUD_Vehicle_Base::UpdateOpticMagnificationHUD(float OpticMagnification)
 	if (OpticStatus)
 	{
 		OpticStatus->UpdateOpticMagnification(OpticMagnification);
+	}
+}
+
+void UUW_HUD_Vehicle_Base::UpdateAltitudeGaugeHUD(float Pitch)
+{
+	if (AltitudeGauge)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("AltitudeGauge"));
+		AltitudeGauge->UpdateAltitudeGaugePosition(Pitch);
 	}
 }
 

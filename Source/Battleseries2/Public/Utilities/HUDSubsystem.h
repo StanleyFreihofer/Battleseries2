@@ -84,6 +84,8 @@ public:
     void UpdaticOpticNameHUD_Vehicle(FText OpticDisplayName);
     UFUNCTION(BlueprintCallable)
     void UpdateOpticMagnificationHUD_Vehicle(float OpticMagnification);
+    UFUNCTION(BlueprintCallable)
+    void UpdateAltitudeHUD_Vehicle(float Pitch);
 
     UFUNCTION(BlueprintCallable)
     void RemoveWidget(UUW_HUD_LockOnIndicator_Base* UserWidget);
