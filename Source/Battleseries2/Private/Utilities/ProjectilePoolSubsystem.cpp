@@ -32,27 +32,21 @@ void UProjectilePoolSubsystem::SpawnPoolofProjectile(FName MunitionID, int32 Poo
 	DataManager = GetWorld()->GetGameInstance()->GetSubsystem<UDataManagerSubsystem>();
 
 	const FProjectileData* ProjectileData = DataManager->GetProjectileDataRow(MunitionID);
-	switch (ProjectileData->ProjectileClassificationData.ProjectileType)
-	{
-		case EProjectileType::Rocket:
-		case EProjectileType::Missile:
-		case EProjectileType::Bomb:
-			for (int32 i = 0; i < PoolSize; i++)
-			{
-				UE_LOG(LogTemp, Warning, TEXT("[ProjectilePoolSubsystem::Initialize] Projectile ID = %s"), *MunitionID.ToString());
 
-				AProjectile_Base* NewProjectile = GetWorld()->SpawnActor<AProjectile_Base>(AProjectile_Base::StaticClass());
-				UE_LOG(LogTemp, Warning, TEXT("[ProjectilePoolSubsystem::Initialize] Projectile ActorName: %s"), *NewProjectile->GetName());
-				NewProjectile->SetProjectileAndInit(MunitionID, false);
-				NewProjectile->SetActorHiddenInGame(true);
-				NewProjectile->SetActorEnableCollision(false);
-				//Projectile->GetRootComponent()->SetActive(false);
-				PoolEntry.PooledProjectiles.Add(NewProjectile);
-				//Projectile->RuntimeContext = nullptr; // Clear runtime context
-			}
-			ProjectileObjectPools.Add(MunitionID, PoolEntry);
-			break;
+	for (int32 i = 0; i < PoolSize; i++)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[ProjectilePoolSubsystem::Initialize] Projectile ID = %s"), *MunitionID.ToString());
+
+		AProjectile_Base* NewProjectile = GetWorld()->SpawnActor<AProjectile_Base>(AProjectile_Base::StaticClass());
+		UE_LOG(LogTemp, Warning, TEXT("[ProjectilePoolSubsystem::Initialize] Projectile ActorName: %s"), *NewProjectile->GetName());
+		NewProjectile->SetProjectileAndInit(MunitionID, false);
+		NewProjectile->SetActorHiddenInGame(true);
+		NewProjectile->SetActorEnableCollision(false);
+		//Projectile->GetRootComponent()->SetActive(false);
+		PoolEntry.PooledProjectiles.Add(NewProjectile);
+		//Projectile->RuntimeContext = nullptr; // Clear runtime context
 	}
+	ProjectileObjectPools.Add(MunitionID, PoolEntry);
 }
 
 TWeakObjectPtr<AProjectile_Base> UProjectilePoolSubsystem::AcquireProjectileFromPool(FName MunitionID)

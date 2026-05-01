@@ -16,6 +16,7 @@
 #include "Core/UI/GameplayHUDs/UW_HUD_Status_Base.h"
 #include "Core/PlayerController_Base.h"
 #include "Utilities/HUDSubsystem.h"
+#include "Utilities/DataManagerSubsystem.h"
 #include "Kismet/KismetMathLibrary.h"
 
 

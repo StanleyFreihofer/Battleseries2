@@ -11,6 +11,7 @@
 #include "Core/UI/VehicleHUDs/UW_VehicleHUDComp_TurretLines.h"
 #include "Core/UI/VehicleHUDs/UW_VehicleHUDComp_TurretElvGauge.h"
 #include "Core/UI/VehicleHUDs/UW_VehicleHUDComp_TurretPitchMeter.h"
+#include "Core/UI/VehicleHUDs/UW_VehicleHUDComp_TurretBox.h"
 #include "Core/UI/VehicleHUDs/UW_VehicleHUDComp_Speedometer.h"
 #include "Data/Weapons/VehicleWeapons/Data_VehicleWeapon.h"
 #include "Data/Weapons/WeaponEnums.h"
@@ -175,6 +176,10 @@ void UHUDSubsystem::UpdateTurretElevationHUD_Vehicle(float MinPitch, float MaxPi
 	{
 		CurrentVehicleHMD->TurretPitchMeter->UpdatePitchMeter(CurrentPitch);
 	}
+	if (CurrentVehicleHMD && CurrentVehicleHMD->TurretBox)
+	{
+		CurrentVehicleHMD->TurretBox->UpdateOrientationPosition(0.0f, CurrentPitch);
+	}
 }
 
 void UHUDSubsystem::HandleTurretRotationUpdate(float Yaw)
@@ -184,6 +189,11 @@ void UHUDSubsystem::HandleTurretRotationUpdate(float Yaw)
 	if (CurrentVehicleHMD && CurrentVehicleHMD->Compass)
 	{
 		UpdateCompassHUD_Vehicle(Yaw);
+	}
+
+	if (CurrentVehicleHMD && CurrentVehicleHMD->TurretBox)
+	{
+		CurrentVehicleHMD->TurretBox->UpdateOrientationPosition(Yaw, 0.0f);
 	}
 	// --- EVERYBODY UPDATES TURRET LINES HUD TO REFLECT CHANGE ---
 	UpdateTurretLinesHUD_Vehicle();

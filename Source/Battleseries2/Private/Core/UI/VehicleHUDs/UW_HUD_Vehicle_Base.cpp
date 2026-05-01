@@ -7,6 +7,7 @@
 #include "Core/UI/VehicleHUDs/UW_VehicleHUDComp_TurretLines.h"
 #include "Core/UI/VehicleHUDs/UW_VehicleHUDComp_TurretElvGauge.h"
 #include "Core/UI/VehicleHUDs/UW_VehicleHUDComp_TurretPitchMeter.h"
+#include "Core/UI/VehicleHUDs/UW_VehicleHUDComp_TurretBox.h"
 #include "Core/UI/VehicleHUDs/UW_VehicleHUDComp_Optic.h"
 #include "Core/UI/VehicleHUDs/UW_VehicleHUDComp_Speedometer.h"
 #include "Core/UI/VehicleHUDs/UW_VehicleHUDComp_AltitudeGauge.h"
@@ -50,6 +51,10 @@ void UUW_HUD_Vehicle_Base::BindComponents()
 		else if (UUW_VehicleHUDComp_TurretPitchMeter* TurretPitchMeterComp = Cast<UUW_VehicleHUDComp_TurretPitchMeter>(Widget))
 		{
 			TurretPitchMeter = TurretPitchMeterComp;
+		}
+		else if (UUW_VehicleHUDComp_TurretBox* TurretBoxComp = Cast<UUW_VehicleHUDComp_TurretBox>(Widget))
+		{
+			TurretBox = TurretBoxComp;
 		}
 		else if (UUW_VehicleHUDComp_Speedometer* SpeedometerComp = Cast<UUW_VehicleHUDComp_Speedometer>(Widget))
 		{

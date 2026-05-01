@@ -11,6 +11,7 @@ class UUW_VehicleHUDComp_Compass;
 class UUW_VehicleHUDComp_TurretLines;
 class UUW_VehicleHUDComp_TurretElvGauge;
 class UUW_VehicleHUDComp_TurretPitchMeter;
+class UUW_VehicleHUDComp_TurretBox;
 class UUW_VehicleHUDComp_Optic;
 class UUW_VehicleHUDComp_Speedometer;
 class UUW_VehicleHUDComp_AltitudeGauge;
@@ -41,6 +42,8 @@ public:
 	UUW_VehicleHUDComp_TurretElvGauge* TurretElvGauge = nullptr;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Vehicle HUD")
 	UUW_VehicleHUDComp_TurretPitchMeter* TurretPitchMeter = nullptr;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Vehicle HUD")
+	UUW_VehicleHUDComp_TurretBox* TurretBox = nullptr;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Vehicle HUD")
 	UUW_VehicleHUDComp_Speedometer* Speedometer = nullptr;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Vehicle HUD")

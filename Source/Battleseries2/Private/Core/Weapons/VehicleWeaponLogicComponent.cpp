@@ -1144,9 +1144,13 @@ void UVehicleWeaponLogicComponent::HandleShootProjectileActor(int32 SeatIndex, i
 			FVector& AimDirection = SeatWeaponSystem.VehicleWeaponSystemState.EquippedWeaponState.RaycastData.MuzzleAimDirections[MuzzleIndex];
 			FTransform MuzzleTransform;
 			FiredProjectile = ProjectileSubsystem->AcquireProjectileFromPool(StaticWeaponData.WeaponFirePerformance.MunitionID);
-			FiredProjectile->ProjectileMovementComponent->HomingTargetComponent = LockOnState.AcquiredTargetComp.Get();
+			if (LockOnState.AcquiredTargetComp.IsValid())
+			{
+				FiredProjectile->ProjectileMovementComponent->HomingTargetComponent = LockOnState.AcquiredTargetComp.Get();
+			}
 			AActor* FiringVehicle = GetOwner();
 			FiredProjectile->MoveIgnoreActorAdd(FiringVehicle);
+			UE_LOG(LogTemp, Error, TEXT("[VWLC::HandleShootProjectileActor] Muzzle Index = %d"), MuzzleIndex);
 			MuzzleTransform = GetMuzzleTransform(VehicleWeaponState, SeatWeaponSystem, MuzzleIndex);
 			FiredProjectile->SetActorTransform(MuzzleTransform);
 			FiredProjectile->FireProjectile(AimDirection);
@@ -1433,7 +1437,6 @@ void UVehicleWeaponLogicComponent::EquipWeapon(int32 SeatIndex, int32 WeaponInde
 		OwnerDataAccessor->GetVehicle().UpdateSeatActiveCamera(SeatIndex, SWS.Weapons[WeaponIndex].VehicleWeaponState.WeaponTurretCamera->GetCameraComponent());
 	}
 
-	//camera/view method
 	//set equipped weapon data (muzzle aim direction num)
 	//equip weapon audio
 	//equip weapon animation

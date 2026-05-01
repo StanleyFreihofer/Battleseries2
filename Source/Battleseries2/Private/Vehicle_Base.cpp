@@ -924,6 +924,8 @@ void AVehicle_Base::UpdatePitch_Heli(float InputValue)
 	float PitchThisFrame = CurrentPitchSpeed * GetWorld()->GetDeltaSeconds();
 	FRotator DeltaRotation = FRotator(PitchThisFrame, 0.0f, 0.0f);
 	AddActorLocalRotation(DeltaRotation, false, nullptr, ETeleportType::TeleportPhysics);
+
+	GetHUDSystem()->UpdateAltitudeHUD_Vehicle(GetActorRotation().Pitch);
 }
 
 void AVehicle_Base::UpdateYaw_Heli(float InputValue)
