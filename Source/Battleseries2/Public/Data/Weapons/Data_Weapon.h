@@ -35,6 +35,8 @@ struct FWeaponHomingData
 	EHomingCapability HomingCapability = EHomingCapability::NoHoming;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ToolTip = "the parameters that dictate what a weapon can target/lock on to"), Category = "PreFlight Conditions")
 	TArray<ETargetingCategory> CanTarget;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ToolTip = "the maximum distance a lock on target can be in order to get a lockon"), Category = "PreFlight Conditions")
+	float LockOnRange = 0.0f;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ToolTip = "time it takes to lockon/acquire a target"), Category = "PreFlight Conditions")
 	float AcquireTime = 0.0f;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ToolTip = "Soft/Hard Lock. Does it require the player to keep crosshairs on target"), Category = "MidFlight Conditions")

@@ -430,7 +430,7 @@ void AVehicle_Base::ApplyLoadoutToSeat(int32 SeatIndex)		//this functions applie
 	{
 		case E_SeatRole::DriverGunner:
 		case E_SeatRole::Gunner:
-			VehicleWeaponLogicComponent->HandleApplyWeaponsToSeat(SeatIndex);
+			VehicleWeaponLogicComponent->ApplySavedWeaponsToSeat(SeatIndex);
 			ApplyOpticToSeat(SeatIndex);
 			break;
 	}
@@ -848,18 +848,20 @@ void AVehicle_Base::UpdateRotorRPM()
 	//v
 }
 
-void AVehicle_Base::ApplyThrottle_GV(float InputValue)
+#pragma region MovementInput
+
+void AVehicle_Base::UpdateThrottle_GV(float InputValue)
 {
 	//if this doesnt work reference that 1 tutorial you did
 	if (InputValue > 0)
 	{
 		ChaosVehicleMovement->SetThrottleInput(InputValue);
-		GetHUDSystem()->UpdateSpeedHUD_Vehicle(GetVelocity().Size());
+		GetHUDSystem()->UpdateSpeedHUD_Vehicle(GetVelocity().Size());		//block behind updatehud check?
 	}
 	else if (InputValue < 0)
 	{
 		ChaosVehicleMovement->SetBrakeInput(FMath::Abs(InputValue));
-		GetHUDSystem()->UpdateSpeedHUD_Vehicle(GetVelocity().Size());
+		GetHUDSystem()->UpdateSpeedHUD_Vehicle(GetVelocity().Size());		//block behind updatehud check?
 	}
 	else if (InputValue == 0)
 	{
@@ -868,7 +870,7 @@ void AVehicle_Base::ApplyThrottle_GV(float InputValue)
 		
 		GetWorld()->GetTimerManager().SetTimer(SpeedTimer, [this]()
 		{
-			GetHUDSystem()->UpdateSpeedHUD_Vehicle(GetVelocity().Size());
+			GetHUDSystem()->UpdateSpeedHUD_Vehicle(GetVelocity().Size());		//block behind updatehud check?
 		}, 0.05f, true);
 		if (GetVelocity().Size() <= 0.0f)
 		{
@@ -877,7 +879,7 @@ void AVehicle_Base::ApplyThrottle_GV(float InputValue)
 	}
 }
 
-void AVehicle_Base::ApplySteering_GV(float SteeringValue, int32 SeatIndex)
+void AVehicle_Base::Input_UpdateSteering_GV(float SteeringValue, int32 SeatIndex)
 {
 	if (VehicleData->GroundVehicle_Data.canIdleTurn)
 	{
@@ -942,6 +944,33 @@ void AVehicle_Base::UpdateRoll_Heli(float InputValue)
 	float RollThisFrame = CurrentRollSpeed * GetWorld()->GetDeltaSeconds();
 	AddActorLocalRotation(FRotator(0.0f, 0.0f, RollThisFrame), false, nullptr, ETeleportType::TeleportPhysics);
 }
+
+void AVehicle_Base::Input_HandleThrottle(float ThrottleValue)
+{
+	const E_MovementType& MovementType = VehicleData->Movement_Type;
+	switch (MovementType)
+	{
+	case E_MovementType::GroundVehicle:
+		UpdateThrottle_GV(ThrottleValue);
+		break;
+	case E_MovementType::Helicopter:
+		UpdateThrottle_Heli(ThrottleValue);
+		break;
+	}
+}
+
+void AVehicle_Base::Input_ReleaseThrottle()
+{
+	const E_MovementType& MovementType = VehicleData->Movement_Type;
+	switch (MovementType)
+	{
+	case E_MovementType::GroundVehicle:
+		UpdateThrottle_GV(0);
+		break;
+	}
+}
+
+#pragma endregion
 
 #pragma region Optics
 
@@ -1058,31 +1087,6 @@ void AVehicle_Base::ToggleMagnificationOptic(int32 SeatIndex, float ZoomMagnific
 }
 
 #pragma endregion
-
-void AVehicle_Base::HandleThrottle(float ThrottleValue)
-{
-	const E_MovementType& MovementType = VehicleData->Movement_Type;
-	switch (MovementType)
-	{
-		case E_MovementType::GroundVehicle:
-			ApplyThrottle_GV(ThrottleValue);
-			break;
-		case E_MovementType::Helicopter:
-			UpdateThrottle_Heli(ThrottleValue);
-			break;
-	}
-}
-
-void AVehicle_Base::ReleaseThrottle()
-{
-	const E_MovementType& MovementType = VehicleData->Movement_Type;
-	switch (MovementType)
-	{
-		case E_MovementType::GroundVehicle:
-			ApplyThrottle_GV(0);
-			break;
-	}
-}
 
 int32 AVehicle_Base::GetControlledTurret(int32 SeatIndex)
 {

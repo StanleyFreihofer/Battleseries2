@@ -45,8 +45,10 @@ struct FWeaponState
 	int32 CurrentAmmoinMag = 0;
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
 	int32 CurrentReserveAmmo = 0;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FTimerHandle TimerHandle_Reload = FTimerHandle();
 
-	UPROPERTY()
+	UPROPERTY(VisibleAnywhere)
 	TArray<TWeakObjectPtr<AProjectile_Base>> InFlightProjectiles;
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
 	FLockOnState LockOnState = FLockOnState();

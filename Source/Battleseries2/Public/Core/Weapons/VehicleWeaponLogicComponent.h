@@ -144,7 +144,7 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void ApplyWeaponInstanceDataAtIndexToSeat(int32 SeatIndex, int32 WeaponIndex, FName WeaponID);
 	UFUNCTION(BlueprintCallable)
-	void HandleApplyWeaponsToSeat(int32 SeatIndex);
+	void ApplySavedWeaponsToSeat(int32 SeatIndex);
 	UFUNCTION(BlueprintCallable)
 	void ApplyWeaponsToSeat(int32 SeatIndex, TArray<FName> WeaponIDs);
 	UFUNCTION(BlueprintCallable)
@@ -233,7 +233,7 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void HandleShootProjectileActor(int32 SeatIndex, int32 WeaponIndex);
 	UFUNCTION(BlueprintCallable)
-	void HandleAmmoDepletion(const FBaseWeaponData& StaticWeaponData, FWeapon_Runtime& CurrentWeapon, int32 SeatIndex);
+	void HandleAmmoDepletion(int32 SeatIndex, int32 WeaponIndex);
 	UFUNCTION(BlueprintCallable)
 	void HandleStartAutoload(int32 SeatIndex);
 	UFUNCTION(BlueprintCallable)
@@ -287,6 +287,5 @@ private:
 	IVehicleDataAccessor* OwnerDataAccessor;
 
 	FTimerHandle TimerHandle_AutoFire;			//put into actual architecture/move somewhere else
-	FTimerHandle TimerHandle_Reload;			//put into actual architecture/move somewhere else (per weapon, weapons need to track their own progress)
 	FTimerHandle TimerHandle_ReserveResupply; //put into actual architecture/move somewhere else
 };
