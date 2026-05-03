@@ -57,7 +57,7 @@ void UDataManagerSubsystem::LoadDataTables()
     UE_LOG(LogTemp, Warning, TEXT("ProjectileDT: %s"), ProjectileDataTableAsset.IsValid() ? TEXT("Valid") : TEXT("Null"));
 
     InfantryWeaponDataTable = InfantryWeaponDataTableAsset.LoadSynchronous();
-    WeaponAttachmentDataTable = InfantryWeaponDataTableAsset.LoadSynchronous();
+    WeaponAttachmentDataTable = WeaponAttachmentDataTableAsset.LoadSynchronous();
     VehicleDataTable = VehicleDataTableAsset.LoadSynchronous();
     VehicleWeaponDataTable = VehicleWeaponDataTableAsset.LoadSynchronous();
     ProjectileDataTable = ProjectileDataTableAsset.LoadSynchronous();
