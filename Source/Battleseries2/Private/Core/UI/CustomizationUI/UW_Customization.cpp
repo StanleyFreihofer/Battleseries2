@@ -27,7 +27,7 @@
 #include "Core/Weapons/VehicleWeaponLogicComponent.h"
 #include "Core/PlayerController_Base.h"
 #include "Data/Weapons/WeaponEnums.h"
-#include "Data/Weapons/VehicleWeapons/Data_VehicleWeapon.h"
+#include "Data/Weapons/Data_VehicleWeapon.h"
 #include "Data/Data_Optics.h"
 #include "Data/Data_Camo.h"
 #include "Data/SoldierClassDefaults.h"

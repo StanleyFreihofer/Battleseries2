@@ -36,7 +36,7 @@ bool UWeaponFunctions::PerformWeaponLineTrace(const UObject* WorldContextObject,
 	FCollisionQueryParams Params;
 	Params.AddIgnoredActors(ActorsToIgnore);
 	bool bDidHit = World->LineTraceSingleByChannel(OutHit, Startpoint, Endpoint, ECC_Visibility, Params);
-	//DrawDebugLine(World, Startpoint, Endpoint, bDidHit ? FColor::Green : FColor::Red, false, 1.f, 0, 1.f);
+	DrawDebugLine(World, Startpoint, Endpoint, bDidHit ? FColor::Green : FColor::Red, false, 1.f, 0, 1.f);
 	return bDidHit;
 }
 
@@ -62,7 +62,7 @@ bool UWeaponFunctions::PerformWeaponSphereTrace(const UObject* WorldContextObjec
 		UEngineTypes::ConvertToTraceType(ECC_Visibility),
 		false,              // bTraceComplex
 		ActorsToIgnore,
-		EDrawDebugTrace::None,
+		EDrawDebugTrace::ForOneFrame,
 		OutHit,
 		true,               // bIgnoreSelf
 		FLinearColor::Red,  // Trace Color

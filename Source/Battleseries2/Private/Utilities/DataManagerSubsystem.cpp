@@ -9,7 +9,7 @@
 #include "Data/Weapons/Data_InfantryWeapon.h"
 #include "Data/Weapons/Data_WeaponAttachments.h"
 #include "Data/Vehicles/Data_Vehicle.h"
-#include "Data/Weapons/VehicleWeapons/Data_VehicleWeapon.h"
+#include "Data/Weapons/Data_VehicleWeapon.h"
 #include "Data/Weapons/Data_Projectile.h"
 #include "Data/Data_VehicleAttachments.h"
 #include "Data/Data_Optics.h"

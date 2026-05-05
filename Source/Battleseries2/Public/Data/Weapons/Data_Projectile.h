@@ -54,6 +54,9 @@ struct FProjectileFunctionalityData
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	bool UseProjectilePOV = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	bool ControlProjectile = false;
 };
 
 USTRUCT(BlueprintType)

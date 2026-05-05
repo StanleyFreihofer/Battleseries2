@@ -13,7 +13,7 @@
 #include "Core/UI/VehicleHUDs/UW_VehicleHUDComp_TurretPitchMeter.h"
 #include "Core/UI/VehicleHUDs/UW_VehicleHUDComp_TurretBox.h"
 #include "Core/UI/VehicleHUDs/UW_VehicleHUDComp_Speedometer.h"
-#include "Data/Weapons/VehicleWeapons/Data_VehicleWeapon.h"
+#include "Data/Weapons/Data_VehicleWeapon.h"
 #include "Data/Weapons/WeaponEnums.h"
 #include "Character_Base.h"
 #include "Vehicle_Base.h"

@@ -56,9 +56,6 @@ public:
 	void Init_RocketExhaustVFX();
 
 	UFUNCTION(BlueprintCallable)
-	void Init_ProjectileFlightData();
-
-	UFUNCTION(BlueprintCallable)
 	void SetRuntimeContext(UPrimitiveComponent* AttachComponent, FName AttachSocket);
 
 	UFUNCTION(BlueprintCallable)
@@ -77,6 +74,12 @@ public:
 	void HandleTransition_RangeToTarget();
 	UFUNCTION(BlueprintCallable)
 	void HandleTransition_Proximity2D();
+	UFUNCTION(BlueprintCallable)
+	FVector CalculateHomingToPoint(FVector TargetPoint);
+	UFUNCTION(BlueprintCallable)
+	void UpdateHomingPoint(FVector HomingPoint);
+	UFUNCTION(BlueprintCallable)
+	void UpdateManualHoming(FVector TargetPoint);
 	UFUNCTION()
 	void OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
 	UFUNCTION(BlueprintCallable)
