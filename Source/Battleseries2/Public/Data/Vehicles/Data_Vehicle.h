@@ -290,6 +290,57 @@ struct FRotorData
 };
 
 USTRUCT(BlueprintType)
+struct FJetKinematicsModel
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, Category = "Flight")
+	TObjectPtr<UCurveFloat> SpeedToTurnRateCurve;
+
+	UPROPERTY(EditAnywhere, Category = "Flight")
+	float MaxDegreesPerSecond = 45.0f;
+};
+
+USTRUCT(BlueprintType)
+struct FJetActuatorFlightModel
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	float InputLimit = 0.6f; // Clamps input to -0.6 to 0.6
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	float ThrottleSpeed = 6.0f; // Interp Speed
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	float ThrottleStrength = 45.0f; // Interp Speed
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	float PitchSpeed = 6.0f; //how fast we can pitch (weight)
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	float PitchStrength = 45.0f;	//at max pitch, how many degrees per sec does the plane pitch (agility)
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)	
+	TObjectPtr<UCurveFloat> PitchSensitivityCurve;		//the amount we can pitch at a cetain speed (flight envelope/handling profile)
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	float RollSpeed = 0.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	float YawSpeed = 0.0f;
+};
+
+USTRUCT(BlueprintType)
+struct FAircraftData
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere)
+	TArray<FChaosWheelSetup> LandingGear;
+};
+
+USTRUCT(BlueprintType)
 struct FHelicopterData
 {
 	GENERATED_BODY()
@@ -304,20 +355,26 @@ struct FHelicopterData
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	float MaxThrust = 0.0f;
 
-	//PITCH DATA
-
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float MaxPitchSpeed = 0.0f;
-
-	//YAW DATA
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float MaxYawSpeed = 0.0f;
 
-	//ROLL DATA
-
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	float MaxRollSpeed = 0.0f;
+};
+
+USTRUCT(BlueprintType)
+struct FJetData
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	float TakeoffVelocity = 0.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	struct FJetActuatorFlightModel JetActuatorFlightModel = FJetActuatorFlightModel();
 };
 
 //THE ONE THAT WE MAKE DATA TABLE OUT OF
@@ -372,6 +429,9 @@ struct FVehicleData : public FTableRowBase			//<-- makes it accessible for data 
 	//HELICOPTER SPECIFIC STUFF
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (EditCondition = "Movement_Type == E_MovementType::Helicopter", EditConditionHides))
 	FHelicopterData Helicopter_Data = FHelicopterData();
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (EditCondition = "Movement_Type == E_MovementType::Jet", EditConditionHides))
+	FJetData Jet_Data = FJetData();
 
 	// --- Static helper function to get row names by vehicle type ---
 	static TArray<FName> GetRowNamesOfType(UDataTable* VehicleDataTable, EVehicleType TypeToFilter)

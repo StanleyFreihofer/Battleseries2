@@ -239,6 +239,14 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void UpdateRoll_Heli(float InputValue);
 
+	UFUNCTION(BlueprintCallable)
+	void UpdateThrottle_Jet(float InputValue);
+	UFUNCTION(BlueprintCallable)
+	void UpdatePitch_Jet(float InputValue);
+	UFUNCTION(BlueprintCallable)
+	void UpdateRoll_Jet(float InputValue);
+	UFUNCTION(BlueprintCallable)
+	void UpdateYaw_Jet(float InputValue);
 
 	UFUNCTION(BlueprintCallable)
 	void ToggleOptic(int32 SeatIndex);

@@ -8,12 +8,12 @@
 UENUM(BlueprintType)
 enum class EProjectileType : uint8
 {
-	Bullet					UMETA(DisplayName = "Bullet"),		//sim		init velocity set by weapon muzzle velocity
-	Pellet					UMETA(DisplayName = "Pellet"),		//sim		init velocity set by weapon muzzle velocity
-	Shell					UMETA(DisplayName = "Shell"),		//sim		init velocity set by weapon muzzle velocity
-	Rocket					UMETA(DisplayName = "Rocket"),		//actor		init velocity comes from self
-	Missile					UMETA(DisplayName = "Missile"),		//actor		init velocity comes from self
-	Bomb					UMETA(DisplayName = "Bomb")			//actor
+	Bullet					UMETA(DisplayName = "Bullet"),		
+	Pellet					UMETA(DisplayName = "Pellet"),		
+	Shell					UMETA(DisplayName = "Shell"),	
+	Rocket					UMETA(DisplayName = "Rocket"),		
+	Missile					UMETA(DisplayName = "Missile"),	
+	Bomb					UMETA(DisplayName = "Bomb")		
 };
 
 UENUM(BlueprintType)

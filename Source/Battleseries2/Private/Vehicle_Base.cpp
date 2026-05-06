@@ -386,6 +386,8 @@ void AVehicle_Base::SetVehicleAndInit(FVehicleStartingData InputVehicleStartingD
 
 #pragma endregion
 
+#pragma region Horn
+
 void AVehicle_Base::PlayHorn()
 {
 	VehicleCurrentState.GenericVehicleState.HornAudioComponent->Play(0.0f);
@@ -397,6 +399,8 @@ void AVehicle_Base::StopHorn()
 {
 	VehicleCurrentState.GenericVehicleState.HornAudioComponent->Stop();
 }
+
+#pragma endregion
 
 void AVehicle_Base::UpdateSeatList_AllOccupants()
 {
@@ -760,12 +764,14 @@ void AVehicle_Base::SetupGunner(ACharacter_Base* Character)
 	}
 
 	VehicleWeaponLogicComponent->EquipWeapon(Character->GetCSI(), 0);
+	VehicleWeaponLogicComponent->GetWAC(Character->GetCSI())->Activate();
 }
 
 void AVehicle_Base::DropGunner(TWeakObjectPtr<ACharacter_Base> Character, int32& SeatIndex)
 {
 	VehicleWeaponLogicComponent->WindowedRangefinder.RemoveDynamic(Character.Get(), &ACharacter_Base::UpdateRangefinder_WindowedVehicle);
 	VehicleWeaponLogicComponent->UnequipWeapon(SeatIndex, VehicleWeaponLogicComponent->GetCWIForSeat(SeatIndex), VehicleWeaponLogicComponent->GetEquippedWeaponInSeat(SeatIndex).VehicleWeaponState.BaseWeaponRuntimeData.WeaponState.isFiring);
+	VehicleWeaponLogicComponent->GetWAC(Character->GetCSI())->Deactivate();
 }
 
 #pragma endregion
@@ -895,6 +901,8 @@ void AVehicle_Base::Input_UpdateSteering_GV(float SteeringValue, int32 SeatIndex
 	}
 }
 
+#pragma region HeliInput
+
 void AVehicle_Base::UpdateThrottle_Heli(float InputValue)
 {
 	float& CurrentHoverVelocity = VehicleCurrentState.AircraftState.HelicopterState.CurrentHoverVelocity;
@@ -913,6 +921,9 @@ void AVehicle_Base::UpdateThrottle_Heli(float InputValue)
 		NewVelocity = (CurrentHoverVelocity * GetActorUpVector()) * (GetWorld()->GetDeltaSeconds() * 100.0f);
 	}
 	VehicleMeshComponent->SetAllPhysicsLinearVelocity(NewVelocity, true);
+
+	//FVector ThrustForce = GetActorUpVector() * CurrentHoverVelocity * VehicleMeshComponent->GetMass();
+	//VehicleMeshComponent->AddForce(ThrustForce);
 }
 
 void AVehicle_Base::UpdatePitch_Heli(float InputValue)
@@ -947,17 +958,81 @@ void AVehicle_Base::UpdateRoll_Heli(float InputValue)
 	AddActorLocalRotation(FRotator(0.0f, 0.0f, RollThisFrame), false, nullptr, ETeleportType::TeleportPhysics);
 }
 
+#pragma endregion
+
+void AVehicle_Base::UpdateThrottle_Jet(float InputValue)
+{
+	const FJetData& JetData = VehicleData->Jet_Data;
+	FJetState& JetState = VehicleCurrentState.AircraftState.JetState;
+	
+	JetState.CurrentThrottle = FMath::FInterpTo(JetState.CurrentThrottle, InputValue, GetWorld()->GetDeltaSeconds(), JetData.JetActuatorFlightModel.ThrottleSpeed);
+	FVector NewVelocity = (JetState.CurrentThrottle * GetActorForwardVector()) * (GetWorld()->GetDeltaSeconds() * 100.0f);
+
+	float ThrustMagnitude = JetState.CurrentThrottle * JetData.JetActuatorFlightModel.ThrottleStrength;
+
+	// 3. Apply Force (Recommended over SetVelocity)
+	// This allows Unreal's physics to handle mass, gravity, and friction naturally
+	VehicleMeshComponent->AddForce(GetActorForwardVector() * ThrustMagnitude, NAME_None, true);
+
+	//VehicleMeshComponent->SetAllPhysicsLinearVelocity(NewVelocity, true);
+}
+
+void AVehicle_Base::UpdatePitch_Jet(float InputValue)
+{
+	const FJetData& JetData = VehicleData->Jet_Data;
+	FJetState& JetState = VehicleCurrentState.AircraftState.JetState;
+
+	float RawSpeed = GetVelocity().Size();
+	float SpeedInKMH = RawSpeed * 0.036f;
+	float ForwardSpeed = FVector::DotProduct(GetVelocity(), GetActorForwardVector());
+	float SpeedMultiplier = 1.0f;
+
+	if (JetData.JetActuatorFlightModel.PitchSensitivityCurve)
+	{
+		SpeedMultiplier = JetData.JetActuatorFlightModel.PitchSensitivityCurve->GetFloatValue(SpeedInKMH);
+	}
+
+	float DynamicLimit = JetData.JetActuatorFlightModel.InputLimit * SpeedMultiplier;
+	float TargetPitchPos = FMath::Clamp(InputValue, -DynamicLimit, DynamicLimit);
+
+	JetState.CurrentElevatorPitch = FMath::FInterpTo(JetState.CurrentElevatorPitch, TargetPitchPos, GetWorld()->GetDeltaSeconds(), JetData.JetActuatorFlightModel.PitchSpeed);
+
+	float PitchAmount = JetState.CurrentElevatorPitch * JetData.JetActuatorFlightModel.PitchStrength;
+
+	//AddActorLocalRotation(FRotator(PitchAmount * GetWorld()->GetDeltaSeconds(), 0.0f, 0.0f), false, nullptr, ETeleportType::TeleportPhysics);
+
+	float PitchTorque = JetState.CurrentElevatorPitch * JetData.JetActuatorFlightModel.PitchStrength;
+
+	// We apply torque around the Right Vector (Y-axis in local space is Pitch)
+	FVector TorqueVector = GetActorRightVector() * PitchTorque;
+
+	// Use 'true' for bAccelChange to ignore mass for easier tuning initially
+	VehicleMeshComponent->AddTorqueInDegrees(TorqueVector, NAME_None, true);
+}
+
+void AVehicle_Base::UpdateRoll_Jet(float InputValue)
+{
+}
+
+void AVehicle_Base::UpdateYaw_Jet(float InputValue)
+{
+
+}
+
 void AVehicle_Base::Input_HandleThrottle(float ThrottleValue)
 {
 	const E_MovementType& MovementType = VehicleData->Movement_Type;
 	switch (MovementType)
 	{
-	case E_MovementType::GroundVehicle:
-		UpdateThrottle_GV(ThrottleValue);
-		break;
-	case E_MovementType::Helicopter:
-		UpdateThrottle_Heli(ThrottleValue);
-		break;
+		case E_MovementType::GroundVehicle:
+			UpdateThrottle_GV(ThrottleValue);
+			break;
+		case E_MovementType::Helicopter:
+			UpdateThrottle_Heli(ThrottleValue);
+			break;
+		case E_MovementType::Jet:
+			UpdateThrottle_Jet(ThrottleValue);
+			break;
 	}
 }
 
@@ -971,8 +1046,6 @@ void AVehicle_Base::Input_ReleaseThrottle()
 		break;
 	}
 }
-
-#pragma endregion
 
 #pragma region Optics
 

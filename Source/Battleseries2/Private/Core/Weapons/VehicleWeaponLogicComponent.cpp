@@ -55,7 +55,7 @@ void UVehicleWeaponLogicComponent::Init_VehicleWeaponSystem(TMap<int32, FSavedSe
 			TSoftObjectPtr<UDA_WeaponDefaults> WeaponDefaults = DataSubsystem->WeaponDefaultsDAAsset;
 			NewAudioComp->SetSound(WeaponDefaults->WeaponDefaults.DefaultWeaponMetaSound.LoadSynchronous());
 			NewSystem.VehicleWeaponSystemState.WeaponAudioComponent = NewAudioComp;
-			NewSystem.VehicleWeaponSystemState.WeaponAudioComponent->Activate();
+			NewSystem.VehicleWeaponSystemState.WeaponAudioComponent->bAutoActivate = false;
 			VehicleWeaponSystem.Add(SeatIndex, NewSystem);
 
 			if (SeatLoadouts.Find(SeatIndex) && SeatLoadouts.Find(SeatIndex)->Weapons.Num() > 0)
@@ -671,6 +671,15 @@ void UVehicleWeaponLogicComponent::CalculateAimDirection(TWeakObjectPtr<USkeleta
 	FVehicleWeapon_Runtime& VehicleWeapon = SeatWeaponSystem.Weapons[CWI];
 	if (!VehicleWeapon.VehicleWeaponInstanceData.bAreProjectilesMounted)		//arent we already check this isnt true before calling this function?
 	{
+		auto& MuzzleSockets = VehicleWeapon.VehicleWeaponState.MuzzleSockets;
+		auto& AimDirections = SeatWeaponSystem.VehicleWeaponSystemState.EquippedWeaponState.RaycastData.MuzzleAimDirections;
+
+		// CRITICAL: Ensure the AimDirections array matches the Sockets array
+		if (AimDirections.Num() != MuzzleSockets.Num())
+		{
+			AimDirections.SetNum(MuzzleSockets.Num());
+		}
+
 		for (int32 MI = 0; MI < SeatWeaponSystem.Weapons[WeaponIndex].VehicleWeaponState.MuzzleSockets.Num(); MI++)
 		{
 			//get muzzle socket location at muzzle index
@@ -682,8 +691,7 @@ void UVehicleWeaponLogicComponent::CalculateAimDirection(TWeakObjectPtr<USkeleta
 			FVector MuzzleLocation = UWeaponFunctions::GetMuzzleTransform(MuzzleSocketName, Mesh).GetLocation();
 
 			//CALCULATE AIM DIRECTION
-			SeatWeaponSystem.VehicleWeaponSystemState.EquippedWeaponState.RaycastData.MuzzleAimDirections.SetNum(2);		//PROBABLY EVENTUALLY DO THIS IN WHATEVER EQUIP WEAPON FUNCTION
-			SeatWeaponSystem.VehicleWeaponSystemState.EquippedWeaponState.RaycastData.MuzzleAimDirections[MI] = UWeaponFunctions::CalculateAimDirection(HitResult, MuzzleLocation);
+			AimDirections[MI] = UWeaponFunctions::CalculateAimDirection(HitResult, MuzzleLocation);
 
 			// DEBUG: Draw the convergence line
 			UWeaponFunctions::Debug_ProjectilePath(GetWorld(), MuzzleLocation, HitResult);
@@ -967,6 +975,9 @@ TArray<FName> UVehicleWeaponLogicComponent::GetMuzzleSocketsInOrder(TWeakObjectP
 	return FoundSockets;
 }
 
+#pragma region WeaponFire
+
+#pragma region StartFire
 void UVehicleWeaponLogicComponent::HandleStartFire(int32 SeatIndex)
 {
 	//UE_LOG(LogTemp, Warning, TEXT("[VWLC::HandleStartFire"));
@@ -1027,6 +1038,8 @@ void UVehicleWeaponLogicComponent::StartWeaponFireAudio(int32 SeatIndex)
 	WAC->SetTriggerParameter(FName("Event_StartFire"));
 }
 
+#pragma endregion
+
 void UVehicleWeaponLogicComponent::FireVehicleWeapon(int32 SeatIndex)
 {
 	FVehicleWeaponSystem_Runtime& SeatWeaponSystem = *VehicleWeaponSystem.Find(SeatIndex);
@@ -1061,6 +1074,8 @@ void UVehicleWeaponLogicComponent::FireVehicleWeapon(int32 SeatIndex)
 
 	HandleAmmoDepletion(SeatIndex, CWI);
 }
+
+#pragma region HandleShootProjectiles
 
 void UVehicleWeaponLogicComponent::HandleShootSimProjectile(FVehicleWeaponState& VehicleWeaponState, const FBaseWeaponData& StaticWeaponData, FVehicleWeaponSystem_Runtime& SeatWeaponSystem)
 {
@@ -1134,6 +1149,10 @@ void UVehicleWeaponLogicComponent::HandleShootProjectileActor(int32 SeatIndex, i
 		}
 	}
 }
+
+#pragma endregion
+
+#pragma endregion
 
 #pragma region Ammo
 
@@ -1356,6 +1375,10 @@ void UVehicleWeaponLogicComponent::EquipWeapon(int32 SeatIndex, int32 WeaponInde
 	FVehicleWeaponSystem_Runtime& SeatWeaponSystem = *VehicleWeaponSystem.Find(SeatIndex);
 	SeatWeaponSystem.VehicleWeaponSystemState.EquippedWeaponState.CurrentWeaponIndex = WeaponIndex;
 	const FBaseWeaponData& StaticWeaponData = GetBaseWeaponDataInSlot(SeatIndex, WeaponIndex);
+	FVehicleWeapon_Runtime& CurrentVehicleWeapon = GetEquippedWeaponInSeat(SeatIndex);
+	FWeapon_Runtime& CurrentWeapon = CurrentVehicleWeapon.VehicleWeaponState.BaseWeaponRuntimeData;
+	const FVehicleWeaponInstanceData& VWID = GetWeaponInstanceDataAtSlotInSeat(SeatIndex, WeaponIndex, CurrentWeapon.WeaponID);
+
 	UpdateWeaponAudioCompData(SeatIndex, WeaponIndex);
 
 	GetWorld()->GetTimerManager().SetTimerForNextTick([this, SeatIndex, WeaponIndex]()
@@ -1406,13 +1429,12 @@ void UVehicleWeaponLogicComponent::EquipWeapon(int32 SeatIndex, int32 WeaponInde
 			//how handle that without the hud system switchboard
 		}
 	});
+
 	SeatWeaponSystem.Weapons[WeaponIndex].VehicleWeaponState.BaseWeaponRuntimeData.WeaponState.isEquipped = true;
 
 	if (StaticWeaponData.WeaponFunctionality.HomingFunctionality.HomingCapability == EHomingCapability::RequireLockOn)
 	{
-		//cant fire unless theres a lock on
 		GetEquippedWeaponInSeat(SeatIndex).VehicleWeaponState.BaseWeaponRuntimeData.WeaponState.canFire = false;
-		//make update canfire function?
 	}
 
 	FVehicleWeaponSystem_Runtime& SWS = *VehicleWeaponSystem.Find(SeatIndex);
@@ -1422,7 +1444,8 @@ void UVehicleWeaponLogicComponent::EquipWeapon(int32 SeatIndex, int32 WeaponInde
 		OwnerDataAccessor->GetVehicle().UpdateSeatActiveCamera(SeatIndex, SWS.Weapons[WeaponIndex].VehicleWeaponState.WeaponTurretCamera->GetCameraComponent());
 	}
 
-	//set equipped weapon data (muzzle aim direction num)
+	int32 MuzzleCount = SeatWeaponSystem.Weapons[WeaponIndex].VehicleWeaponState.MuzzleSockets.Num();
+	SeatWeaponSystem.VehicleWeaponSystemState.EquippedWeaponState.RaycastData.MuzzleAimDirections.SetNum(MuzzleCount);
 	//equip weapon audio
 	//equip weapon animation
 }

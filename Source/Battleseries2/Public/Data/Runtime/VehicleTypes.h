@@ -88,6 +88,24 @@ struct FHelicopterState
 };
 
 USTRUCT(BlueprintType)
+struct FJetState
+{
+	GENERATED_BODY()
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	float CurrentElevatorPitch = 0.0f;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	float CurrentAileronRoll = 0.0f;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	float CurrentRudderYaw = 0.0f;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	float CurrentThrottle = 0.0f;
+};
+
+USTRUCT(BlueprintType)
 struct FAircraftState
 {
 	GENERATED_BODY()
@@ -97,6 +115,9 @@ struct FAircraftState
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	FHelicopterState HelicopterState = FHelicopterState();
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	FJetState JetState = FJetState();
 };
 
 USTRUCT(BlueprintType)
