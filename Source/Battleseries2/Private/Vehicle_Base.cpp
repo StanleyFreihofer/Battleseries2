@@ -482,6 +482,8 @@ void AVehicle_Base::ApplyLoadoutToVehicle()
 	}
 }
 
+#pragma region ApplyCamo
+
 void AVehicle_Base::ApplyCamoToVehicle(FName CamoID)
 {
 	for (int32 i = 0; i < VehicleMeshComponent->GetNumMaterials(); i++)
@@ -546,6 +548,10 @@ void AVehicle_Base::ApplyCamoToAttachment(TWeakObjectPtr<UMeshComponent> Mesh, F
 	}
 }
 
+#pragma endregion
+
+#pragma region ClearLoadout
+
 void AVehicle_Base::ClearLoadoutFromSeat(int32 SeatIndex)
 {
 	VehicleWeaponLogicComponent->ClearWeaponSystemFromSeat(SeatIndex, true);
@@ -560,6 +566,8 @@ void AVehicle_Base::ClearEntireLoadoutFromVehicle()
 	//clear camo
 	VehicleCurrentState.GenericVehicleState.CurrentCamo = NAME_None;
 }
+
+#pragma endregion
 
 #pragma endregion
 
@@ -1062,11 +1070,46 @@ void AVehicle_Base::UpdatePitch_Jet(float InputValue)
 
 void AVehicle_Base::UpdateRoll_Jet(float InputValue)
 {
+	const FJetData& JetData = VehicleData->Jet_Data;
+	const FRollFlightModel& RollConfig = JetData.FlightModel.Roll;
+	FJetState& JetState = VehicleCurrentState.AircraftState.JetState;
+
+	JetState.CurrentAileronRoll = FMath::FInterpTo(JetState.CurrentAileronRoll, InputValue, GetWorld()->GetDeltaSeconds(), JetData.FlightModel.Roll.RollSpeed);
+
+	switch (JetData.FlightModelType)
+	{
+		case EFlightModelType::Kinematic:
+		{
+			float RollDegrees = JetState.CurrentAileronRoll * RollConfig.RollStrength * GetWorld()->GetDeltaSeconds();
+			AddActorLocalRotation(FRotator(0.0f, 0.0f, RollDegrees), false, nullptr, ETeleportType::TeleportPhysics);
+			break;
+		}
+		case EFlightModelType::LinearChaos:
+			ChaosVehicleMovement->SetRollInput(JetState.CurrentAileronRoll);
+			break;
+	}
 }
 
 void AVehicle_Base::UpdateYaw_Jet(float InputValue)
 {
+	const FJetData& JetData = VehicleData->Jet_Data;
+	const FYawFlightModel& YawConfig = JetData.FlightModel.Yaw;
+	FJetState& JetState = VehicleCurrentState.AircraftState.JetState;
 
+	JetState.CurrentRudderYaw = JetState.CurrentRudderYaw = FMath::FInterpTo(JetState.CurrentRudderYaw, InputValue, GetWorld()->GetDeltaSeconds(),YawConfig.YawSpeed);
+
+	switch (JetData.FlightModelType)
+	{
+		case EFlightModelType::Kinematic:
+		{
+			float YawDegrees = JetState.CurrentRudderYaw * YawConfig.YawStrength * GetWorld()->GetDeltaSeconds();
+			AddActorLocalRotation(FRotator(0.0f, YawDegrees, 0.0f), false, nullptr, ETeleportType::TeleportPhysics);
+			break;
+		}
+		case EFlightModelType::LinearChaos:
+			ChaosVehicleMovement->SetYawInput(JetState.CurrentRudderYaw);
+			break;
+	}
 }
 
 void AVehicle_Base::Input_HandleThrottle(float ThrottleValue)

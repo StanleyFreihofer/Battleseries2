@@ -467,51 +467,71 @@ void ACharacter_Base::UpdateCharacterMeshVisibility(bool ShowMesh)
 void ACharacter_Base::UpdateRangefinder_WindowedVehicle()
 {
 	//free looking? (make sure its correctly managed this time)
-	if (CharacterState.CharacterVehicleState.inVehicle)
+	if (!CharacterState.CharacterVehicleState.inVehicle || !GetCurrentVehicle())
 	{
-		const FSeatData& OccupiedSeatData = GetCurrentVehicle()->VehicleData->Seats[GetCSI()];
-		if (OccupiedSeatData.ViewMethod == E_ViewMethod::Windowed)
+		return;
+	}
+
+	const FSeatData& OccupiedSeatData = GetCurrentVehicle()->VehicleData->Seats[GetCSI()];
+	if (OccupiedSeatData.ViewMethod != E_ViewMethod::Windowed)
+	{
+		return;
+	}
+
+	TWeakObjectPtr<UVehicleWeaponLogicComponent> VWLC = GetCurrentVehicle()->VehicleWeaponLogicComponent;
+	FVehicleWeapon_Runtime& CurrentWeapon = VWLC->GetEquippedWeaponInSeat(GetCSI());
+	TArray<AActor*> IgnoreActors = { GetCurrentVehicle() };
+	FTransform TraceTransform;
+
+	switch (CurrentWeapon.VehicleWeaponInstanceData.WindowedAimAnchor)
+	{
+		case EWindowedAimAnchor::FreeAim:
+			TraceTransform = Camera->GetComponentTransform();
+			break;
+
+		case EWindowedAimAnchor::FixedHead:
 		{
-			TArray<AActor*> Actors;
-			Actors.Add(GetCurrentVehicle());
-			TWeakObjectPtr<UVehicleWeaponLogicComponent> VWLC = GetCurrentVehicle()->VehicleWeaponLogicComponent;
-			const FBaseWeaponData& StaticWeaponData = VWLC->GetBaseWeaponDataInSlot(GetCSI(), VWLC->GetCWIForSeat(GetCSI()));
-			FVehicleWeapon_Runtime& CurrentWeapon = VWLC->GetEquippedWeaponInSeat(GetCSI());
-			FTransform TraceTransform;
-			switch (CurrentWeapon.VehicleWeaponInstanceData.WindowedAimAnchor)
-			{
-				case EWindowedAimAnchor::FreeAim:
-					TraceTransform = Camera->GetComponentTransform();
-					break;
-				case EWindowedAimAnchor::FixedHead:
-					FVector StartLocation = GetMesh()->GetSocketLocation(FName("FixedCamera"));
-					FQuat FixedRotation = GetActorQuat();
-					TraceTransform = FTransform(FixedRotation, StartLocation);
-					break;
-				case EWindowedAimAnchor::Hull:
-					//TraceTransform = FTransform(GetCurrentVehicle()->GetActorQuat(), GetCurrentVehicle()->GetActorLocation());
-					FVector HullStart = GetCurrentVehicle()->GetActorLocation() + (GetCurrentVehicle()->GetActorUpVector() * 100.0f); // Offset upward
-					FQuat HullRot = GetCurrentVehicle()->GetActorQuat();
-					TraceTransform = FTransform(HullRot, HullStart);
-					break;
-			}
-			VWLC->UpdateSeatRangefinder(GetCSI(), TraceTransform, Actors);
-			if (IsLocallyControlled())
-			{
-				//update HMD reticle
-				FHitResult& HitResult = VWLC->VehicleWeaponSystem.Find(GetCSI())->VehicleWeaponSystemState.EquippedWeaponState.RaycastData.RangefinderData;
-				UWidgetComponent* SeatHUDComp = GetCurrentVehicle()->VehicleCurrentState.SeatStates[GetCSI()].SeatHUDComponent;
-				if (SeatHUDComp)
-				{
-					UStaticMeshComponent* Quad = VWLC->VehicleWeaponSystem.Find(GetCSI())->VehicleWeaponSystemState.ReticleQuad.Get();
-					USceneComponent* HUDGlass = Quad->GetAttachParent();
-					FVector EyePos = Camera->GetComponentLocation();
-					FVector TargetPos = HitResult.bBlockingHit ? HitResult.ImpactPoint : TraceTransform.GetLocation() + (TraceTransform.GetUnitAxis(EAxis::X) * 100000.0f);
-					FVector IntersectionPoint = FMath::LinePlaneIntersection(EyePos, TargetPos, SeatHUDComp->GetComponentLocation(), SeatHUDComp->GetForwardVector());
-					Quad->SetWorldLocation(IntersectionPoint);
-				}
-			}
+			FVector StartLocation = GetMesh()->GetSocketLocation(FName("FixedCamera"));
+			TraceTransform = FTransform(GetActorQuat(), StartLocation);
+			break;
 		}
+
+		case EWindowedAimAnchor::Hull:
+		{
+			FVector HullStart = GetCurrentVehicle()->GetActorLocation() + (GetCurrentVehicle()->GetActorUpVector() * 100.0f);
+			TraceTransform = FTransform(GetCurrentVehicle()->GetActorQuat(), HullStart);
+			break;
+		}
+	}
+
+	VWLC->UpdateSeatRangefinder(GetCSI(), TraceTransform, IgnoreActors);
+
+	if (!IsLocallyControlled())
+	{
+		return;
+	}
+
+	UWidgetComponent* SeatHUDComp = GetCurrentVehicle()->VehicleCurrentState.SeatStates[GetCSI()].SeatHUDComponent;
+	if (!SeatHUDComp)
+	{
+		return;
+	}
+
+	// Retrieve Hit and Component Data
+	auto* WeaponSystem = VWLC->VehicleWeaponSystem.Find(GetCSI());
+
+	FHitResult& HitResult = WeaponSystem->VehicleWeaponSystemState.EquippedWeaponState.RaycastData.RangefinderData;
+	UStaticMeshComponent* Quad = WeaponSystem->VehicleWeaponSystemState.ReticleQuad.Get();
+
+	if (Quad)
+	{
+		FVector EyePos = Camera->GetComponentLocation();
+		FVector TargetPos = HitResult.bBlockingHit ? HitResult.ImpactPoint : TraceTransform.GetLocation() + (TraceTransform.GetUnitAxis(EAxis::X) * 100000.0f);
+
+		// Calculate where the eye-to-target line hits the HUD glass plane
+		FVector IntersectionPoint = FMath::LinePlaneIntersection(EyePos, TargetPos, SeatHUDComp->GetComponentLocation(), SeatHUDComp->GetForwardVector());
+
+		Quad->SetWorldLocation(IntersectionPoint);
 	}
 }
 

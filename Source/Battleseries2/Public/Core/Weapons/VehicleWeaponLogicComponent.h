@@ -139,6 +139,8 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void Init_VehicleWeaponSystem(TMap<int32, FSavedSeatLoadout> SeatLoadouts);
 	UFUNCTION(BlueprintCallable)
+	void Init_WAC(int32 SeatIndex);
+	UFUNCTION(BlueprintCallable)
 	void Init_Turrets(int32 NumOfTurrets);
 
 	UFUNCTION(BlueprintCallable)

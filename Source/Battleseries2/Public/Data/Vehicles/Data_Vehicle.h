@@ -448,6 +448,31 @@ struct FPitchFlightModel
 };
 
 USTRUCT(BlueprintType)
+struct FRollFlightModel
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	float RollSpeed = 0.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	float RollStrength = 0.0f;
+};
+
+USTRUCT(BlueprintType)
+struct FYawFlightModel
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	float YawSpeed = 0.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	float YawStrength = 0.0f;
+};
+
+
+USTRUCT(BlueprintType)
 struct FFlightModel_Chaos
 {
 	GENERATED_BODY()
@@ -485,12 +510,11 @@ struct FJetFlightModel
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Pitch")
 	FPitchFlightModel Pitch = FPitchFlightModel();
 
-	// Future-proofing for Roll/Yaw
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Roll")
-	float RollStrength = 120.0f;
+	FRollFlightModel Roll = FRollFlightModel();
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Yaw")
-	float YawStrength = 45.0f;
+	FYawFlightModel Yaw = FYawFlightModel();
 };
 
 USTRUCT(BlueprintType)

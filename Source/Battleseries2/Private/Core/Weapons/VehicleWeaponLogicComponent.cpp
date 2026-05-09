@@ -38,7 +38,7 @@ void UVehicleWeaponLogicComponent::TickComponent(float DeltaTime, ELevelTick Tic
 	HandleSeatRangefinders();
 }
 
-//FACTORY FUNCTIONS
+#pragma region Factory/Initialization
 void UVehicleWeaponLogicComponent::Init_VehicleWeaponSystem(TMap<int32, FSavedSeatLoadout> SeatLoadouts)
 {
 	const FVehicleData& VehicleData = OwnerDataAccessor->GetVehicleData();
@@ -46,17 +46,7 @@ void UVehicleWeaponLogicComponent::Init_VehicleWeaponSystem(TMap<int32, FSavedSe
 	{
 		if (VehicleData.Seats[SeatIndex].SeatRole == E_SeatRole::DriverGunner || VehicleData.Seats[SeatIndex].SeatRole == E_SeatRole::Gunner)
 		{
-			FVehicleWeaponSystem_Runtime NewSystem;
-
-			//spawn/create WAC
-			TWeakObjectPtr<UAudioComponent> NewAudioComp = NewObject<UAudioComponent>(GetOwner());
-			NewAudioComp->SetupAttachment(OwnerDataAccessor->GetVehicleMesh());
-			NewAudioComp->RegisterComponent();
-			TSoftObjectPtr<UDA_WeaponDefaults> WeaponDefaults = DataSubsystem->WeaponDefaultsDAAsset;
-			NewAudioComp->SetSound(WeaponDefaults->WeaponDefaults.DefaultWeaponMetaSound.LoadSynchronous());
-			NewSystem.VehicleWeaponSystemState.WeaponAudioComponent = NewAudioComp;
-			NewSystem.VehicleWeaponSystemState.WeaponAudioComponent->bAutoActivate = false;
-			VehicleWeaponSystem.Add(SeatIndex, NewSystem);
+			Init_WAC(SeatIndex);
 
 			if (SeatLoadouts.Find(SeatIndex) && SeatLoadouts.Find(SeatIndex)->Weapons.Num() > 0)
 			{
@@ -75,10 +65,26 @@ void UVehicleWeaponLogicComponent::Init_VehicleWeaponSystem(TMap<int32, FSavedSe
 	Init_Turrets(VehicleData.Turrets.Num());
 }
 
+void UVehicleWeaponLogicComponent::Init_WAC(int32 SeatIndex)
+{
+	//Initialize Weapon Audio Component
+	FVehicleWeaponSystem_Runtime NewSystem;
+	TWeakObjectPtr<UAudioComponent> NewAudioComp = NewObject<UAudioComponent>(GetOwner());
+	NewAudioComp->SetupAttachment(OwnerDataAccessor->GetVehicleMesh());
+	NewAudioComp->RegisterComponent();
+	TSoftObjectPtr<UDA_WeaponDefaults> WeaponDefaults = DataSubsystem->WeaponDefaultsDAAsset;
+	NewAudioComp->SetSound(WeaponDefaults->WeaponDefaults.DefaultWeaponMetaSound.LoadSynchronous());
+	NewSystem.VehicleWeaponSystemState.WeaponAudioComponent = NewAudioComp;
+	NewSystem.VehicleWeaponSystemState.WeaponAudioComponent->bAutoActivate = false;		//important so that we dont get the nasty concurrent audio bug (if not firing/in use this doesnt need to be on)
+	VehicleWeaponSystem.Add(SeatIndex, NewSystem);
+}
+
 void UVehicleWeaponLogicComponent::Init_Turrets(int32 NumOfTurrets)
 {
 	TurretStates.SetNum(NumOfTurrets);
 }
+
+#pragma endregion
 
 #pragma region ApplyWeapons
 
