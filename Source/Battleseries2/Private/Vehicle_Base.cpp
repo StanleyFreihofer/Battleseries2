@@ -79,11 +79,8 @@ void AVehicle_Base::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
 
 #pragma region Initalization/Factory
 //GROUND VEHICLE FUNCTIONS
-void AVehicle_Base::Init_Wheels()
+void AVehicle_Base::Init_Wheels(const TArray<FChaosWheelSetup>& WheelData)
 {
-	const TArray <FChaosWheelSetup>& WheelData = VehicleData->GroundVehicle_Data.WheelData;
-	const TArray <FBaseWheelData>& BaseWheelData = VehicleData->GroundVehicle_Data.BaseWheelData;
-
 	ChaosVehicleMovement->WheelSetups.Empty();
 	ChaosVehicleMovement->Wheels.Empty();
 
@@ -93,14 +90,6 @@ void AVehicle_Base::Init_Wheels()
 		const FChaosWheelSetup& SourceData = WheelData[i];				//the data we are pulling from
 		FChaosWheelSetup& Setup = ChaosVehicleMovement->WheelSetups[i];	//the properties we are applying to
 		Setup.WheelClass = SourceData.WheelClass;
-		
-		if (SourceData.WheelClass && SourceData.WheelClass->IsChildOf(UChaosWheel_Base::StaticClass()))
-		{
-			//Setup.WheelClass = SourceData.WheelClass;
-			UChaosWheel_Base* WheelDefault = Setup.WheelClass->GetDefaultObject<UChaosWheel_Base>();		//WHEEL CLASS MUST BE THIS TYPE
-			WheelDefault->Init_Wheel(BaseWheelData[i]);
-		}	
-	
 		Setup.BoneName = SourceData.BoneName;							//set bone name
 		Setup.AdditionalOffset = SourceData.AdditionalOffset;			//set additional offset
 	}
@@ -111,7 +100,7 @@ void AVehicle_Base::Init_GroundVehicle()
 	VehicleMeshComponent->RecreatePhysicsState();
 	ChaosVehicleMovement->UnregisterComponent();
 	ChaosVehicleMovement->SetUpdatedComponent(VehicleMeshComponent);
-	Init_Wheels();
+	Init_Wheels(VehicleData->GroundVehicle_Data.WheelData);
 
 	//Mechanical Setup
 	ChaosVehicleMovement->EnableMechanicalSim(true);	//true by default, not in DTs
@@ -121,8 +110,7 @@ void AVehicle_Base::Init_GroundVehicle()
 	ChaosVehicleMovement->SteeringSetup = VehicleData->GroundVehicle_Data.SteeringData;
 	
 	//Vehicle Setup
-	ChaosVehicleMovement->Mass = VehicleData->GroundVehicle_Data.Mass;
-	ChaosVehicleMovement->CenterOfMassOverride = VehicleData->GroundVehicle_Data.Center_Of_Mass_Override;
+	Init_Chaos_VehicleSetup(VehicleData->GroundVehicle_Data.VehicleSetup);
 
 	//Vehicle Input
 	//Yaw Input Rate
@@ -148,6 +136,22 @@ void AVehicle_Base::HandleChaosMovement(bool turnon)
 		ChaosVehicleMovement->Deactivate();
 		ChaosVehicleMovement->SetComponentTickEnabled(false);
 	}
+}
+
+void AVehicle_Base::Init_Chaos_VehicleSetup(const FVehicleSetup& VehicleSetup)
+{
+	//inputs custom made data struct of chaos property values into actual chaos properties under "Vehicle Setup" tab
+	ChaosVehicleMovement->bReverseAsBrake = VehicleSetup.bReverseAsBrake;
+	ChaosVehicleMovement->bThrottleAsBrake = VehicleSetup.bThrottleAsBrake;
+	ChaosVehicleMovement->Mass = VehicleSetup.Mass;
+	ChaosVehicleMovement->CenterOfMassOverride = VehicleSetup.CenterOfMassOverride;
+	ChaosVehicleMovement->ChassisWidth = VehicleSetup.ChassisWidth;
+	ChaosVehicleMovement->ChassisHeight = VehicleSetup.ChassisHeight;
+	ChaosVehicleMovement->DragCoefficient = VehicleSetup.DragCoefficient;
+	ChaosVehicleMovement->DownforceCoefficient = VehicleSetup.DownforceCoefficient;
+	ChaosVehicleMovement->InertiaTensorScale = VehicleSetup.InertiaTensorScale;
+	ChaosVehicleMovement->SleepThreshold = VehicleSetup.SleepThreshold;
+	ChaosVehicleMovement->SleepSlopeLimit = VehicleSetup.SleepSlopeLimit;
 }
 
 void AVehicle_Base::Init_EngineAudio()
@@ -344,6 +348,18 @@ void AVehicle_Base::Init_Vehicle()
 			break;
 		case E_MovementType::Jet:
 			UE_LOG(LogTemp, Log, TEXT("JET SETUP STARTED"));
+			Init_Wheels(VehicleData->Aircraft_Data.LandingGear);
+			HandleChaosMovement(true);
+			ChaosVehicleMovement->SetUpdatedComponent(VehicleMeshComponent);
+			ChaosVehicleMovement->Aerofoils = VehicleData->Jet_Data.ChaosFlightModel.Aerofoils;
+			ChaosVehicleMovement->Thrusters = VehicleData->Jet_Data.ChaosFlightModel.Thrusters;
+			ChaosVehicleMovement->TorqueControl = VehicleData->Jet_Data.ChaosFlightModel.TorqueControl;
+			ChaosVehicleMovement->TargetRotationControl = VehicleData->Jet_Data.ChaosFlightModel.TargetRotationControl;
+			ChaosVehicleMovement->StabilizeControl = VehicleData->Jet_Data.ChaosFlightModel.StabilizeControl;
+			Init_Chaos_VehicleSetup(VehicleData->Jet_Data.VehicleSetup);
+			ChaosVehicleMovement->RegisterComponent();
+			ChaosVehicleMovement->RecreatePhysicsState();;
+			VehicleMeshComponent->InitAnim(true);
 			break;
 		case E_MovementType::Boat:
 			UE_LOG(LogTemp, Log, TEXT("BOAT SETUP STARTED"));
@@ -963,51 +979,91 @@ void AVehicle_Base::UpdateRoll_Heli(float InputValue)
 void AVehicle_Base::UpdateThrottle_Jet(float InputValue)
 {
 	const FJetData& JetData = VehicleData->Jet_Data;
+	const FThrottleFlightModel& ThrottleConfig = JetData.FlightModel.Throttle;
 	FJetState& JetState = VehicleCurrentState.AircraftState.JetState;
-	
-	JetState.CurrentThrottle = FMath::FInterpTo(JetState.CurrentThrottle, InputValue, GetWorld()->GetDeltaSeconds(), JetData.JetActuatorFlightModel.ThrottleSpeed);
-	FVector NewVelocity = (JetState.CurrentThrottle * GetActorForwardVector()) * (GetWorld()->GetDeltaSeconds() * 100.0f);
 
-	float ThrustMagnitude = JetState.CurrentThrottle * JetData.JetActuatorFlightModel.ThrottleStrength;
+	// 1. Landing Gear Power Limiter
+	// Reduces max thrust when gear is down to simulate drag/safety
+	//float GearModifier = VehicleCurrentState. ? ThrottleConfig.GearDownSpeedScalar : 1.0f;
+	float TargetInput = InputValue;
 
-	// 3. Apply Force (Recommended over SetVelocity)
-	// This allows Unreal's physics to handle mass, gravity, and friction naturally
-	VehicleMeshComponent->AddForce(GetActorForwardVector() * ThrustMagnitude, NAME_None, true);
+	// 2. Actuator Spool (The Timeline Replacement)
+	JetState.CurrentThrottle = FMath::FInterpTo(JetState.CurrentThrottle, TargetInput, GetWorld()->GetDeltaSeconds(), ThrottleConfig.ThrottleSpeed);
 
-	//VehicleMeshComponent->SetAllPhysicsLinearVelocity(NewVelocity, true);
+	// 3. Execute Physics Model
+	switch (JetData.FlightModelType)
+	{
+		case EFlightModelType::Kinematic:
+		{
+			// Direct Velocity: ThrustStrength acts as Max Speed (cm/s)
+			FVector TargetVelocity = GetActorForwardVector() * (JetState.CurrentThrottle * ThrottleConfig.ThrustStrength);
+			VehicleMeshComponent->SetAllPhysicsLinearVelocity(TargetVelocity, false);
+			break;
+		}
+		case EFlightModelType::Dynamic:
+		{
+			// Force-Based: Apply thrust to the Center of Mass
+			FVector ThrustForce = GetActorForwardVector() * (JetState.CurrentThrottle * ThrottleConfig.ThrustStrength);
+
+			// bAccelChange = true ignores mass for easier tuning
+			VehicleMeshComponent->AddForce(ThrustForce, NAME_None, true);
+			break;
+		}
+		case EFlightModelType::LinearChaos:
+		{
+			ChaosVehicleMovement->SetThrottleInput(JetState.CurrentThrottle);
+			break;
+		}
+	}
 }
 
 void AVehicle_Base::UpdatePitch_Jet(float InputValue)
 {
 	const FJetData& JetData = VehicleData->Jet_Data;
+	const FPitchFlightModel& PitchConfig = JetData.FlightModel.Pitch;
 	FJetState& JetState = VehicleCurrentState.AircraftState.JetState;
 
-	float RawSpeed = GetVelocity().Size();
-	float SpeedInKMH = RawSpeed * 0.036f;
-	float ForwardSpeed = FVector::DotProduct(GetVelocity(), GetActorForwardVector());
-	float SpeedMultiplier = 1.0f;
-
-	if (JetData.JetActuatorFlightModel.PitchSensitivityCurve)
+	// 1. Calculate Speed Sensitivity
+	float SpeedInKMH = GetVelocity().Size() * 0.036f;
+	float Sensitivity = 1.0f;
+	if (PitchConfig.PitchSensitivityCurve)
 	{
-		SpeedMultiplier = JetData.JetActuatorFlightModel.PitchSensitivityCurve->GetFloatValue(SpeedInKMH);
+		Sensitivity = PitchConfig.PitchSensitivityCurve->GetFloatValue(SpeedInKMH);
 	}
 
-	float DynamicLimit = JetData.JetActuatorFlightModel.InputLimit * SpeedMultiplier;
-	float TargetPitchPos = FMath::Clamp(InputValue, -DynamicLimit, DynamicLimit);
+	// 2. Actuator (Elevator Movement)
+	// Stiffens controls based on speed sensitivity
+	float DynamicLimit = PitchConfig.InputLimit * Sensitivity;
+	float TargetElevatorPos = FMath::Clamp(InputValue, -DynamicLimit, DynamicLimit);
 
-	JetState.CurrentElevatorPitch = FMath::FInterpTo(JetState.CurrentElevatorPitch, TargetPitchPos, GetWorld()->GetDeltaSeconds(), JetData.JetActuatorFlightModel.PitchSpeed);
+	JetState.CurrentElevatorPitch = FMath::FInterpTo(JetState.CurrentElevatorPitch,TargetElevatorPos, GetWorld()->GetDeltaSeconds(), PitchConfig.PitchSpeed);
 
-	float PitchAmount = JetState.CurrentElevatorPitch * JetData.JetActuatorFlightModel.PitchStrength;
+	// 3. Execute Physics Model
+	switch (JetData.FlightModelType)
+	{
+		case EFlightModelType::Kinematic:
+		{
+			// Arcade: Rotate by Degrees Per Second
+			float PitchAmount = JetState.CurrentElevatorPitch * PitchConfig.PitchStrength;
+			float DeltaRot = PitchAmount * GetWorld()->GetDeltaSeconds();
 
-	//AddActorLocalRotation(FRotator(PitchAmount * GetWorld()->GetDeltaSeconds(), 0.0f, 0.0f), false, nullptr, ETeleportType::TeleportPhysics);
+			AddActorLocalRotation(FRotator(DeltaRot, 0.0f, 0.0f), false, nullptr, ETeleportType::TeleportPhysics);
+			break;
+		}
 
-	float PitchTorque = JetState.CurrentElevatorPitch * JetData.JetActuatorFlightModel.PitchStrength;
+		case EFlightModelType::Dynamic:
+		{
+			FVector TorqueVector = GetActorRightVector() * (JetState.CurrentElevatorPitch * PitchConfig.PitchStrength);
+			VehicleMeshComponent->AddTorqueInDegrees(TorqueVector, NAME_None, true);
+			break;
+		}
 
-	// We apply torque around the Right Vector (Y-axis in local space is Pitch)
-	FVector TorqueVector = GetActorRightVector() * PitchTorque;
-
-	// Use 'true' for bAccelChange to ignore mass for easier tuning initially
-	VehicleMeshComponent->AddTorqueInDegrees(TorqueVector, NAME_None, true);
+		case EFlightModelType::LinearChaos:
+		{
+			ChaosVehicleMovement->SetPitchInput(JetState.CurrentElevatorPitch);
+			break;
+		}
+	}
 }
 
 void AVehicle_Base::UpdateRoll_Jet(float InputValue)

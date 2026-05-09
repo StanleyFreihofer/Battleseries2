@@ -115,10 +115,12 @@ public:
 
 	//INITALIZATION FUNCTIONS
 	//Ground Vehicle init functions
-	UFUNCTION(BlueprintCallable)
-	void Init_Wheels();
+	UFUNCTION()
+	void Init_Wheels(const TArray<FChaosWheelSetup>& WheelData);
 	UFUNCTION(BlueprintCallable)
 	void HandleChaosMovement(bool turnon);
+	UFUNCTION()
+	void Init_Chaos_VehicleSetup(const FVehicleSetup& VehicleSetup);
 	UFUNCTION(BlueprintCallable)
 	void Init_EngineAudio();
 	UFUNCTION(BlueprintCallable)

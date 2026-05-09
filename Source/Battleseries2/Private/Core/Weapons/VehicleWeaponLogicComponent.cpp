@@ -279,20 +279,6 @@ void UVehicleWeaponLogicComponent::ApplySavedWeaponsToSeat(int32 SeatIndex)
 	const FSavedSeatLoadout& SeatLoadoutSave = SaveSys->GetSeatLoadout(VehicleData.Vehicle_Type, SeatIndex);
 
 	ApplyWeaponsToSeat(SeatIndex, SeatLoadoutSave.Weapons);
-	//there's kind of no point to this check
-	//save subsystem GetSeatLoadout() generates default save
-	/**
-	if (SeatLoadoutSave.Weapons.Num() > 0 && !SeatLoadoutSave.Weapons[0].IsNone())
-	{
-
-	}
-	else
-	{
-		//DEFAULTS SHOULD ALREADY BE APPLIED RIGHT?
-		//TArray<FName> DefaultWeaponIDs = VehicleData.Seats[SeatIndex].AvailableItems.GetDefaultWeaponIDs();
-		//ApplyWeaponsToSeat(SeatIndex, DefaultWeaponIDs);
-	}
-	**/
 }
 
 USkeletalMeshComponent* UVehicleWeaponLogicComponent::ApplyWeaponMeshToVehicle(USkeletalMesh* Mesh, int32 SeatIndex, FTransform MeshTransform)

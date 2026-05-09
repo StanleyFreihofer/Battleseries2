@@ -43,6 +43,14 @@ enum class EVehicleType : uint8
 ENUM_RANGE_BY_COUNT(EVehicleType, EVehicleType::MAX);
 
 UENUM(BlueprintType)
+enum class EFlightModelType : uint8
+{
+	Kinematic    UMETA(DisplayName = "Kinematic (Direct Velocity)"),
+	Dynamic      UMETA(DisplayName = "Dynamic (Forces)"),
+	LinearChaos  UMETA(DisplayName = "Linear Chaos (Velocity Impulse)")
+};
+
+UENUM(BlueprintType)
 enum class E_SeatRole : uint8
 {
 	Driver			UMETA(DisplayName = "Driver"),

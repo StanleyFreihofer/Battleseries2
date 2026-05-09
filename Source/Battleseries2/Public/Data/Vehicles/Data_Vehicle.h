@@ -18,13 +18,13 @@ struct FGenericVehicleAudio
 	GENERATED_BODY()
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Audio")
-	class USoundCue* EngineAudio = nullptr;
+	TObjectPtr<USoundCue> EngineAudio = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Audio")
-	class USoundCue* EngineStartupAudio = nullptr;
+	TObjectPtr<USoundCue> EngineStartupAudio = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Audio")
-	class USoundCue* EngineShutdownAudio = nullptr;
+	TObjectPtr<USoundCue> EngineShutdownAudio = nullptr;
 
 	//interior audio?
 	//wheel audio?
@@ -224,6 +224,73 @@ struct FBaseWheelData
 };
 
 USTRUCT(BlueprintType)
+struct FVehicleSetup
+{
+	//STRUCT THAT LIFTS/COPIES PROPERTIES FROM CHAOS "VEHICLE SETUP" section
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, Category = VehicleSetup)
+	bool bReverseAsBrake = false;
+
+	/** If true, when reversing the throttle will behave like a brake while the vehicle moving in a backwards direction - requires bReverseAsBrake to be enabled for operation */
+	UPROPERTY(EditAnywhere, Category = VehicleSetup, meta = (EditCondition = "bReverseAsBrake"))
+	bool bThrottleAsBrake = false;
+
+	/** Mass to set the vehicle chassis to. It's much easier to tweak vehicle settings when
+	 * the mass doesn't change due to tweaks with the physics asset. [kg] */
+	UPROPERTY(EditAnywhere, Category = VehicleSetup, meta = (ClampMin = "0.01", UIMin = "0.01"))
+	float Mass = 0.0f;
+
+	/**
+	 * Enable to override the calculated COM position with your own fixed value - this prevents the vehicle handling changing when the asset changes
+	 */
+	UPROPERTY(EditAnywhere, Category = VehicleSetup)
+	bool bEnableCenterOfMassOverride = false;
+
+	/**
+	 * The center of mass override value, this value overrides the calculated COM and the COM offset value in the mesh is also ignored.
+	 */
+	UPROPERTY(EditAnywhere, Category = VehicleSetup, meta = (EditCondition = "bEnableCenterOfMassOverride"))
+	FVector CenterOfMassOverride = FVector();
+
+	/** Chassis width used for drag force computation (cm)*/
+	UPROPERTY(EditAnywhere, Category = VehicleSetup, meta = (ClampMin = "0.01", UIMin = "0.01"))
+	float ChassisWidth = 0.0f;
+
+	/** Chassis height used for drag force computation (cm)*/
+	UPROPERTY(EditAnywhere, Category = VehicleSetup, meta = (ClampMin = "0.01", UIMin = "0.01"))
+	float ChassisHeight = 0.0f;
+
+	/** DragCoefficient of the vehicle chassis - force resisting forward motion at speed */
+	UPROPERTY(EditAnywhere, Category = VehicleSetup)
+	float DragCoefficient = 0.0f;
+
+	/** DownforceCoefficient of the vehicle chassis - force pressing vehicle into ground at speed */
+	UPROPERTY(EditAnywhere, Category = VehicleSetup)
+	float DownforceCoefficient = 0.0f;
+
+	// Drag area in Meters^2
+	UPROPERTY(transient)
+	float DragArea = 0.0f;
+
+	// Debug drag magnitude last applied
+	UPROPERTY(transient)
+	float DebugDragMagnitude = 0.0f;
+
+	/** Scales the vehicle's inertia in each direction (forward, right, up) */
+	UPROPERTY(EditAnywhere, Category = VehicleSetup, AdvancedDisplay)
+	FVector InertiaTensorScale = FVector();
+
+	/** Option to apply some aggressive sleep logic, larger number is more agressive, 0 disables */
+	UPROPERTY(EditAnywhere, Category = VehicleSetup)
+	float SleepThreshold = 0.0f;
+
+	/** Option to apply some aggressive sleep logic if slopes up Z is less than this value, i.e value = Cos(SlopeAngle) so 0.866 will sleep up to 30 degree slopes */
+	UPROPERTY(EditAnywhere, Category = VehicleSetup, meta = (ClampMin = "0.01", UIMin = "0.01", ClampMax = "1.0", UIMax = "1.0"))
+	float SleepSlopeLimit = 0.0f;
+};
+
+USTRUCT(BlueprintType)
 struct FGroundVehicleData
 {
 	GENERATED_BODY()
@@ -251,9 +318,8 @@ struct FGroundVehicleData
 	UPROPERTY(EditAnywhere)
 	FVehicleSteeringConfig SteeringData = FVehicleSteeringConfig();
 
-	//Vehicle Setup
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	float Mass = 0.0f;
+	FVehicleSetup VehicleSetup = FVehicleSetup();
 
 	//Vehicle Input
 	//Yaw
@@ -261,9 +327,6 @@ struct FGroundVehicleData
 	float Yaw_Input_Rise_Rate = 0.0f;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	float Yaw_Input_Fall_Rate = 0.0f;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	FVector Center_Of_Mass_Override = FVector();
 
 	//other
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
@@ -287,48 +350,6 @@ struct FRotorData
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	float AccelerationCurve = 0.0f;
-};
-
-USTRUCT(BlueprintType)
-struct FJetKinematicsModel
-{
-	GENERATED_BODY()
-
-	UPROPERTY(EditAnywhere, Category = "Flight")
-	TObjectPtr<UCurveFloat> SpeedToTurnRateCurve;
-
-	UPROPERTY(EditAnywhere, Category = "Flight")
-	float MaxDegreesPerSecond = 45.0f;
-};
-
-USTRUCT(BlueprintType)
-struct FJetActuatorFlightModel
-{
-	GENERATED_BODY()
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	float InputLimit = 0.6f; // Clamps input to -0.6 to 0.6
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	float ThrottleSpeed = 6.0f; // Interp Speed
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	float ThrottleStrength = 45.0f; // Interp Speed
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	float PitchSpeed = 6.0f; //how fast we can pitch (weight)
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	float PitchStrength = 45.0f;	//at max pitch, how many degrees per sec does the plane pitch (agility)
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)	
-	TObjectPtr<UCurveFloat> PitchSensitivityCurve;		//the amount we can pitch at a cetain speed (flight envelope/handling profile)
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	float RollSpeed = 0.0f;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	float YawSpeed = 0.0f;
 };
 
 USTRUCT(BlueprintType)
@@ -366,15 +387,129 @@ struct FHelicopterData
 };
 
 USTRUCT(BlueprintType)
+struct FThrottleFlightModel
+{
+	GENERATED_BODY()
+
+	// --- Actuator / Spool Settings ---
+
+	// How fast the engine responds to input (Spool Speed)
+	UPROPERTY(EditAnywhere, Category = "Actuator", meta = (ClampMin = "0.1"))
+	float ThrottleSpeed = 3.0f;
+
+	// --- Power Settings ---
+
+	// The "Power" of the engine. 
+	// Kinematic: Max speed in cm/s | Dynamic: Thrust force/accel
+	UPROPERTY(EditAnywhere, Category = "Power")
+	float ThrustStrength = 5000.0f;
+
+	// --- Landing & Takeoff ---
+
+	// Speed (KMH) required before the nose can lift
+	UPROPERTY(EditAnywhere, Category = "Limits")
+	float TakeoffVelocity = 180.0f;
+
+	// Power multiplier when landing gear is out (0.5 = 50% power)
+	UPROPERTY(EditAnywhere, Category = "Limits", meta = (ClampMin = "0.0", ClampMax = "1.0"))
+	float GearDownSpeedScalar = 0.5f;
+};
+
+USTRUCT(BlueprintType)
+struct FPitchFlightModel
+{
+	GENERATED_BODY()
+
+	// --- Actuator / Response Settings ---
+
+	// How fast the elevator flaps move to target
+	UPROPERTY(EditAnywhere, Category = "Actuator")
+	float PitchSpeed = 5.0f;
+
+	// Maximum deflection of the elevators (0.0 to 1.0)
+	UPROPERTY(EditAnywhere, Category = "Actuator")
+	float InputLimit = 1.0f;
+
+	// --- Power Settings ---
+
+	// The "Agility" of the pitch.
+	// Kinematic: Degrees/sec | Dynamic: Torque force
+	UPROPERTY(EditAnywhere, Category = "Power")
+	float PitchStrength = 90.0f;
+
+	// --- Sensitivity ---
+
+	// X: Speed in KMH, Y: Multiplier (0.0 - 1.0)
+	//kinematic: FinalDegreesPerSecond = PitchStrength * SensitivityCurve
+	//dynamic: AppliedTorque = TorqueStrength * SensitivityCurve
+	//chaos input: ChaosPitchInput = RawInput * SensitivityCurve
+	UPROPERTY(EditAnywhere, Category = "Sensitivity")
+	TObjectPtr<UCurveFloat> PitchSensitivityCurve;
+};
+
+USTRUCT(BlueprintType)
+struct FFlightModel_Chaos
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, Category = AerofoilSetup)
+	TArray<FVehicleAerofoilConfig> Aerofoils;
+
+	/** Optional thruster setup, use one or more as your main engine or as supplementary booster */
+	UPROPERTY(EditAnywhere, Category = ThrusterSetup)
+	TArray<FVehicleThrustConfig> Thrusters;
+
+	/** Arcade style direct control of vehicle rotation via torque force */
+	UPROPERTY(EditAnywhere, Category = ArcadeControl)
+	FVehicleTorqueControlConfig TorqueControl = FVehicleTorqueControlConfig();
+	/** Arcade style direct control of vehicle rotation via torque force */
+	UPROPERTY(EditAnywhere, Category = ArcadeControl)
+	FVehicleTargetRotationControlConfig TargetRotationControl = FVehicleTargetRotationControlConfig();
+
+	/** Arcade style control of vehicle */
+	UPROPERTY(EditAnywhere, Category = ArcadeControl)
+	FVehicleStabilizeControlConfig StabilizeControl = FVehicleStabilizeControlConfig();
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	FVehicleSetup VehicleSetup = FVehicleSetup();
+};
+
+USTRUCT(BlueprintType)
+struct FJetFlightModel
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Throttle")
+	FThrottleFlightModel Throttle = FThrottleFlightModel();
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Pitch")
+	FPitchFlightModel Pitch = FPitchFlightModel();
+
+	// Future-proofing for Roll/Yaw
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Roll")
+	float RollStrength = 120.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Yaw")
+	float YawStrength = 45.0f;
+};
+
+USTRUCT(BlueprintType)
 struct FJetData
 {
 	GENERATED_BODY()
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	float TakeoffVelocity = 0.0f;
+	// The "Master Switch" for the whole aircraft's logic
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "General")
+	EFlightModelType FlightModelType = EFlightModelType::Dynamic;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Flight Model")
+	FJetFlightModel FlightModel = FJetFlightModel();
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	struct FJetActuatorFlightModel JetActuatorFlightModel = FJetActuatorFlightModel();
+	FFlightModel_Chaos ChaosFlightModel = FFlightModel_Chaos();
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	FVehicleSetup VehicleSetup = FVehicleSetup();
 };
 
 //THE ONE THAT WE MAKE DATA TABLE OUT OF
@@ -432,6 +567,9 @@ struct FVehicleData : public FTableRowBase			//<-- makes it accessible for data 
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (EditCondition = "Movement_Type == E_MovementType::Jet", EditConditionHides))
 	FJetData Jet_Data = FJetData();
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (EditCondition = "Movement_Type == E_MovementType::Helicopter || Movement_Type == E_MovementType::Jet", EditConditionHides))
+	FAircraftData Aircraft_Data = FAircraftData();
 
 	// --- Static helper function to get row names by vehicle type ---
 	static TArray<FName> GetRowNamesOfType(UDataTable* VehicleDataTable, EVehicleType TypeToFilter)
