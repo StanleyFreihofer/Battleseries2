@@ -451,12 +451,12 @@ void AVehicle_Base::ApplyLoadoutToSeat(int32 SeatIndex)		//this functions applie
 		case E_SeatRole::DriverGunner:
 		case E_SeatRole::Gunner:
 			VehicleWeaponLogicComponent->ApplySavedWeaponsToSeat(SeatIndex);
-			ApplyOpticToSeat(SeatIndex);
+			ApplySavedOpticToSeat(SeatIndex);
 			break;
 	}
 }
 
-void AVehicle_Base::ApplyOpticToSeat(int32 SeatIndex)
+void AVehicle_Base::ApplySavedOpticToSeat(int32 SeatIndex)
 {
 	USaveSubsystem* SaveSys = GetWorld()->GetGameInstance()->GetSubsystem<USaveSubsystem>();
 	const FSavedSeatLoadout& SeatLoadoutSave = SaveSys->GetSeatLoadout(VehicleData->Vehicle_Type, SeatIndex);
@@ -822,12 +822,6 @@ void AVehicle_Base::UpdateSeatActiveCamera(int32 SeatIndex, UCameraComponent* Ne
 	VehicleCurrentState.SeatStates[SeatIndex].ActiveCamera = NewActiveCamera;
 }
 
-void AVehicle_Base::UpdateRemoteCamPP(int32 SeatIndex, FPostProcessSettings PPSettings, float BlendWeight)
-{
-	GetRemoteActiveCam(SeatIndex)->PostProcessSettings = PPSettings;
-	GetRemoteActiveCam(SeatIndex)->PostProcessBlendWeight = BlendWeight;
-}
-
 void AVehicle_Base::UpdateEngineAudio()
 {
 	switch (VehicleData->Movement_Type)
@@ -1110,40 +1104,28 @@ void AVehicle_Base::ToggleOptic(int32 SeatIndex)
 	FOpticState& OpticState = VehicleCurrentState.SeatStates[SeatIndex].OpticState;
 	int32 PreviousOpticIndex = OpticState.CurrentOpticIndex;
 	OpticState.CurrentOpticIndex = (OpticState.CurrentOpticIndex + 1) % OpticState.CurrentAvailableOptics.Num();
-	if (PreviousOpticIndex != OpticState.CurrentOpticIndex)
+	if (PreviousOpticIndex == OpticState.CurrentOpticIndex) { return;  }
+
+	const FOpticData& CurrentOpticData = *GetDataManager()->GetOpticDataRow(OpticState.CurrentAvailableOptics[OpticState.CurrentOpticIndex]);
+	const FOpticData& PreviousOpticData = *GetDataManager()->GetOpticDataRow(OpticState.CurrentAvailableOptics[PreviousOpticIndex]);
+	//HandleTogglePPOptic
+	if (CurrentOpticData.OpticPPSettings.WeightedBlendables.Array.Num() > 0)
 	{
-		const FOpticData& CurrentOpticData = *GetDataManager()->GetOpticDataRow(OpticState.CurrentAvailableOptics[OpticState.CurrentOpticIndex]);
-		const FOpticData& PreviousOpticData = *GetDataManager()->GetOpticDataRow(OpticState.CurrentAvailableOptics[PreviousOpticIndex]);
-		//HandleTogglePPOptic
-		if (CurrentOpticData.OpticPPSettings.WeightedBlendables.Array.Num() > 0)
-		{
-
-			UpdateRemoteCamPP(SeatIndex, GetDataManager()->GetOpticDataRow(OpticState.CurrentAvailableOptics[OpticState.CurrentOpticIndex])->OpticPPSettings, 1.0f);
-			if (OpticState.isOn)
-			{
-				//what to do if optic was already on
-			}
-			else
-			{
-				TurnOnPPOptic(SeatIndex);
-			}
-		}
-		else
-		{
-			if (OpticState.isOn)
-			{
-				TurnOffPPOptic(SeatIndex, PreviousOpticIndex);
-			}
-		}
-
-		ToggleMagnificationOptic(SeatIndex, CurrentOpticData.ZoomMagnification);
+		TurnOnPPOptic(SeatIndex);
 	}
+	else if (OpticState.isOn)
+	{
+		TurnOffPPOptic(SeatIndex, PreviousOpticIndex);
+	}
+
+	ToggleMagnificationOptic(SeatIndex, CurrentOpticData.ZoomMagnification);
 }
 
 void AVehicle_Base::TurnOnPPOptic(int32 SeatIndex)
 {
 	FOpticState& OpticState = VehicleCurrentState.SeatStates[SeatIndex].OpticState;
 	const FOpticData& CurrentOpticData = *GetDataManager()->GetOpticDataRow(OpticState.CurrentAvailableOptics[OpticState.CurrentOpticIndex]);
+	UpdateRemoteCamPP(SeatIndex, GetDataManager()->GetOpticDataRow(OpticState.CurrentAvailableOptics[OpticState.CurrentOpticIndex])->OpticPPSettings, 1.0f);
 	OpticState.isOn = true;
 	UGameplayStatics::PlaySound2D(GetWorld(), CurrentOpticData.PowerOnSound);
 	if (VehicleCurrentState.SeatStates[SeatIndex].UpdateHUD)
@@ -1215,6 +1197,12 @@ void AVehicle_Base::ToggleMagnificationOptic(int32 SeatIndex, float ZoomMagnific
 			}
 		}
 	}
+}
+
+void AVehicle_Base::UpdateRemoteCamPP(int32 SeatIndex, FPostProcessSettings PPSettings, float BlendWeight)
+{
+	GetRemoteActiveCam(SeatIndex)->PostProcessSettings = PPSettings;
+	GetRemoteActiveCam(SeatIndex)->PostProcessBlendWeight = BlendWeight;
 }
 
 #pragma endregion

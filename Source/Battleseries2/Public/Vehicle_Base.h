@@ -175,7 +175,7 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void ApplyLoadoutToSeat(int32 SeatIndex);
 	UFUNCTION(BlueprintCallable)
-	void ApplyOpticToSeat(int32 SeatIndex);
+	void ApplySavedOpticToSeat(int32 SeatIndex);
 	UFUNCTION(BlueprintCallable)
 	void ApplyLoadoutToVehicle();
 	UFUNCTION(BlueprintCallable)
