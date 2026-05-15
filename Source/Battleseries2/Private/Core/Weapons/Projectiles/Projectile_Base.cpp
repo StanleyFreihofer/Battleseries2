@@ -17,7 +17,7 @@ AProjectile_Base::AProjectile_Base()
 	ProjectileMovementComponent->SetAutoActivate(false);				//<---should this really be in the constructor????
 	NiagaraComponent->SetAutoActivate(false);
 	RootComponent = ProjectileMeshComponent;
-
+	ProjectileMeshComponent->SetNotifyRigidBodyCollision(true);
 	ProjectileMovementComponent->bRotationFollowsVelocity = true;
 	ProjectileMovementComponent->bInitialVelocityInLocalSpace = true;
 
@@ -126,6 +126,12 @@ void AProjectile_Base::UpdateFlightPlan(int32 FlightStageIndex)
 			case EProjectileGuidanceMethod::GuideToTarget:
 				ProjectileMovementComponent->bIsHomingProjectile = false;
 				break;
+			case EProjectileGuidanceMethod::AutoGuideToPoint:
+				GetWorld()->GetTimerManager().ClearTimer(ManualGuidanceTimerHandle);
+				break;
+			case EProjectileGuidanceMethod::Drop:
+				ProjectileMeshComponent->SetSimulatePhysics(false);
+				break;
 		}
 	}
 
@@ -140,21 +146,31 @@ void AProjectile_Base::UpdateFlightPlan(int32 FlightStageIndex)
 		case EProjectileGuidanceMethod::BallisticTrajectory:
 			ProjectileMovementComponent->Velocity = ProjectileState.Origin * FlightStage.GuidanceParams.InitialSpeed;
 			break;
-		case EProjectileGuidanceMethod::WireGuided:	
+		case EProjectileGuidanceMethod::PitchToAltitude:
+			FVector UpwardPitch = FVector::UpVector * FlightStage.GuidanceParams.PitchForce;
+			ProjectileMovementComponent->Velocity += UpwardPitch;
+			break;
+		case EProjectileGuidanceMethod::ManualGuideToPoint:	
 			ProjectileMovementComponent->bIsHomingProjectile = false;		//does not guide toward an actor/component (uses custom function to guide towards a point)
 			ProjectileMovementComponent->HomingAccelerationMagnitude = FlightStage.GuidanceParams.Acceleration;
+			break;
+		case EProjectileGuidanceMethod::AutoGuideToPoint:
+			ProjectileMovementComponent->bIsHomingProjectile = false;
+			ProjectileMovementComponent->HomingAccelerationMagnitude = FlightStage.GuidanceParams.Acceleration;
+			StartGPSGuidance();
 			break;
 		case EProjectileGuidanceMethod::GuideToTarget:
 			ProjectileMovementComponent->bIsHomingProjectile = true;
 			ProjectileMovementComponent->HomingAccelerationMagnitude = FlightStage.GuidanceParams.Acceleration;
 			break;
-		case EProjectileGuidanceMethod::PitchToAltitude:
-			FVector UpwardPitch = FVector::UpVector * FlightStage.GuidanceParams.PitchForce;
-			ProjectileMovementComponent->Velocity += UpwardPitch;
+		case EProjectileGuidanceMethod::Drop:
+			ProjectileMeshComponent->SetSimulatePhysics(true);
 			break;
 	}
 	HandleFlightStageTransition(FlightStage);
 }
+
+#pragma region HandleStageTransition
 
 void AProjectile_Base::HandleFlightStageTransition(const FProjectileFlightStage& FlightStage)
 {
@@ -217,6 +233,10 @@ void AProjectile_Base::HandleTransition_Proximity2D()
 	}
 }
 
+#pragma endregion
+
+#pragma region Manual/GPSHoming
+
 FVector AProjectile_Base::CalculateHomingToPoint(FVector TargetPoint)
 {
 	//home/guide to a POINT (no actor/component needed)
@@ -231,12 +251,25 @@ void AProjectile_Base::UpdateHomingPoint(FVector HomingPoint)
 
 void AProjectile_Base::UpdateManualHoming(FVector TargetPoint)
 {
-	FVector DesiredDirection = (TargetPoint - GetActorLocation()).GetSafeNormal();
+	UpdateHomingPoint(TargetPoint);
+	FVector DesiredDirection = (ProjectileState.HomingTargetPoint - GetActorLocation()).GetSafeNormal();
 	FVector DeltaVelocity = CalculateHomingToPoint(TargetPoint);
 	ProjectileMovementComponent->Velocity += DeltaVelocity * GetWorld()->GetDeltaSeconds();		//delta velocity
 	ProjectileMovementComponent->Velocity = ProjectileMovementComponent->Velocity.GetSafeNormal() * ProjectileMovementComponent->MaxSpeed;
 	SetActorRotation(ProjectileMovementComponent->Velocity.Rotation());
 }
+
+void AProjectile_Base::UpdateManualHoming_GPS()
+{
+	UpdateManualHoming(ProjectileState.HomingTargetPoint);
+}
+
+void AProjectile_Base::StartGPSGuidance()
+{
+	GetWorldTimerManager().SetTimer(ManualGuidanceTimerHandle, this, &AProjectile_Base::UpdateManualHoming_GPS, GetWorld()->GetDeltaSeconds(), true);
+}
+
+#pragma endregion
 
 void AProjectile_Base::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
@@ -248,6 +281,10 @@ void AProjectile_Base::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, U
 
 	ProjectileMeshComponent->ClearMoveIgnoreActors();
 	ProjectileMeshComponent->OnComponentHit.RemoveDynamic(this, &AProjectile_Base::OnHit);
+	if (GetWorld()->GetTimerManager().IsTimerActive(ManualGuidanceTimerHandle))
+	{
+		GetWorld()->GetTimerManager().ClearTimer(ManualGuidanceTimerHandle);
+	}
 	ProjectileState.FlightStageIndex = 0;
 	ProjectileMovementComponent->Deactivate();
 	NiagaraComponent->Deactivate();

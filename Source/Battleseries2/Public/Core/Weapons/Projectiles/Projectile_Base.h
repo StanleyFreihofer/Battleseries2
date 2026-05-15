@@ -80,6 +80,10 @@ public:
 	void UpdateHomingPoint(FVector HomingPoint);
 	UFUNCTION(BlueprintCallable)
 	void UpdateManualHoming(FVector TargetPoint);
+	UFUNCTION(BlueprintCallable)
+	void UpdateManualHoming_GPS();
+	UFUNCTION(BlueprintCallable)
+	void StartGPSGuidance();
 	UFUNCTION()
 	void OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
 	UFUNCTION(BlueprintCallable)
@@ -91,6 +95,7 @@ public:
 
 protected:
 	FTimerHandle StageTimerHandle;
+	FTimerHandle ManualGuidanceTimerHandle;
 
 };
 

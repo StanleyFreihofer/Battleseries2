@@ -84,7 +84,7 @@ struct FVehicleWeaponInstanceData
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	bool bAreProjectilesMounted = false;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)		//muzzle type doesnt matter if projectiles are mounted
 	EMuzzleType MuzzleType = EMuzzleType::Gun;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ToolTip = "determines what part of the vehicle's hierarchy determines the forward direction for this weapon, only matters for windowed seats"))

@@ -139,6 +139,8 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void Init_VehicleWeaponSystem(TMap<int32, FSavedSeatLoadout> SeatLoadouts);
 	UFUNCTION(BlueprintCallable)
+	void Init_HUDReticleQuad(int32 SeatIndex);
+	UFUNCTION(BlueprintCallable)
 	void Init_WAC(int32 SeatIndex);
 	UFUNCTION(BlueprintCallable)
 	void Init_Turrets(int32 NumOfTurrets);
@@ -183,6 +185,8 @@ public:
 	void ControlTurret(FVector2D InputValue, int32 SeatIndex);
 	UFUNCTION(BlueprintCallable)
 	void UpdateTurretMesh(int32 SeatIndex, float TurretRotation, float TurretPitch);
+	UFUNCTION(BlueprintCallable)
+	void UpdateTurretCam(int32 SeatIndex, float TurretRotation, float TurretPitch);
 
 	UFUNCTION(BlueprintCallable)
 	const FVehicleWeaponInstanceData& GetWeaponInstanceDataAtSlotInSeat(int32 SeatIndex, int32 WeaponIndex, FName WeaponID);
@@ -234,6 +238,8 @@ public:
 	void HandleShootSimProjectile(FVehicleWeaponState& VehicleWeaponState, const FBaseWeaponData& StaticWeaponData, FVehicleWeaponSystem_Runtime& SeatWeaponSystem);
 	UFUNCTION(BlueprintCallable)
 	void HandleShootProjectileActor(int32 SeatIndex, int32 WeaponIndex);
+	UFUNCTION()
+	void SetupProjectileGuidance(TWeakObjectPtr<AProjectile_Base> FiredProjectile, EHomingCapability HomingCapability, FLockOnState& LockOnState, FHitResult& HitResult);
 	UFUNCTION(BlueprintCallable)
 	void HandleAmmoDepletion(int32 SeatIndex, int32 WeaponIndex);
 	UFUNCTION(BlueprintCallable)

@@ -7,7 +7,9 @@
 #include "Data/Runtime/ProjectileTypes.h"
 #include "Data/Weapons/Data_VehicleWeapon.h"
 #include "Data/Weapons/WeaponDefaults.h"
+#include "Data/Vehicles/VehicleDefaults.h"
 #include "Data/Data_VehicleAttachments.h"
+#include "Data/Data_Optics.h"
 #include "Core/Weapons/WeaponFunctions.h"
 #include "Core/UI/VehicleHUDs/UW_HUD_Vehicle_Base.h"
 #include "Utilities/HUDSubsystem.h"
@@ -47,6 +49,7 @@ void UVehicleWeaponLogicComponent::Init_VehicleWeaponSystem(TMap<int32, FSavedSe
 		if (VehicleData.Seats[SeatIndex].SeatRole == E_SeatRole::DriverGunner || VehicleData.Seats[SeatIndex].SeatRole == E_SeatRole::Gunner)
 		{
 			Init_WAC(SeatIndex);
+			Init_HUDReticleQuad(SeatIndex);
 
 			if (SeatLoadouts.Find(SeatIndex) && SeatLoadouts.Find(SeatIndex)->Weapons.Num() > 0)
 			{
@@ -63,6 +66,30 @@ void UVehicleWeaponLogicComponent::Init_VehicleWeaponSystem(TMap<int32, FSavedSe
 		}
 	}
 	Init_Turrets(VehicleData.Turrets.Num());
+}
+
+void UVehicleWeaponLogicComponent::Init_HUDReticleQuad(int32 SeatIndex)
+{
+	if (!OwnerDataAccessor->GetVehicleData().Seats[SeatIndex].DefaultCharacterContext.SeatHUD)
+	{
+		return;
+	}
+	UStaticMesh* DefaultPlane = LoadObject<UStaticMesh>(nullptr, TEXT("/Engine/BasicShapes/Plane.Plane"));
+	TWeakObjectPtr<UStaticMeshComponent> NewQuad = NewObject<UStaticMeshComponent>(this);
+	NewQuad->RegisterComponent();
+	NewQuad->AttachToComponent(OwnerDataAccessor->GetVehicleState().SeatStates[SeatIndex].SeatHUDComponent, FAttachmentTransformRules::SnapToTargetIncludingScale);
+	NewQuad->SetStaticMesh(DefaultPlane);
+	NewQuad->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	NewQuad->SetCastShadow(false);
+	NewQuad->SetReceivesDecals(false);
+	NewQuad->SetRelativeRotation(FRotator(0.f, -90.f, 90.f));
+	NewQuad->SetRelativeLocation(FVector(0.1f, 0.f, 0.f));
+
+	UMaterialInterface* MasterMat = DataSubsystem->GetVehicleDefaults()->HUDMasterMaterial.LoadSynchronous();
+	UMaterialInstanceDynamic* DynMat = NewQuad->CreateDynamicMaterialInstance(0, MasterMat);		//both creates and assigns
+
+	FVehicleWeaponSystem_Runtime& SWS = *VehicleWeaponSystem.Find(SeatIndex);
+	SWS.VehicleWeaponSystemState.ReticleQuad = NewQuad;
 }
 
 void UVehicleWeaponLogicComponent::Init_WAC(int32 SeatIndex)
@@ -356,11 +383,13 @@ void UVehicleWeaponLogicComponent::ConfigureWeaponCam(int32 SeatIndex, int32 Wea
 	WeaponCameraActor->GetCameraComponent()->SetHiddenInGame(false);
 
 	AVehicle_Base& Vehicle = OwnerDataAccessor->GetVehicle();
-	if (WeaponIndex == VehicleWeaponSystem.Find(SeatIndex)->VehicleWeaponSystemState.EquippedWeaponState.CurrentWeaponIndex)		
+	if (WeaponIndex == GetCWIForSeat(SeatIndex))		
 	{
 		//NOT THE DEFAULT CAM, NO SPECIAL WEAPON CAM SHOULD BE THE DEFAULT CAM
 		//if weapon index = currentweaponindex, we make this the active cam
-		Vehicle.UpdateSeatActiveCamera(SeatIndex, WeaponCameraActor->GetCameraComponent());		//how is this gonna work with Init_SeatCamera on vehicle (fighting for active cam?)
+		Vehicle.UpdateSeatActiveCamera(SeatIndex, WeaponCameraActor->GetCameraComponent());		
+
+		Vehicle.UpdateRemoteActiveCamPP(SeatIndex, DataSubsystem->GetOpticDataRow(OwnerDataAccessor->GetVehicleState().SeatStates[SeatIndex].OpticState.CurrentAvailableOptics[OwnerDataAccessor->GetVehicleState().SeatStates[SeatIndex].OpticState.CurrentOpticIndex])->OpticPPSettings, 1.0f, WeaponCameraActor->GetCameraComponent());
 	}
 }
 
@@ -545,6 +574,8 @@ void UVehicleWeaponLogicComponent::ControlTurret(FVector2D InputValue, int32 Sea
 	//if separate mesh, update mesh/mesh's anim bp
 	UpdateTurretMesh(SeatIndex, NewTurretRotation, NewTurretPitch);
 
+	UpdateTurretCam(SeatIndex, NewTurretRotation, NewTurretPitch);
+
 	//Update UI
 	if (PreviousTurretRotation != NewTurretRotation)
 	{
@@ -568,7 +599,7 @@ void UVehicleWeaponLogicComponent::ControlTurret(FVector2D InputValue, int32 Sea
 void UVehicleWeaponLogicComponent::UpdateTurretMesh(int32 SeatIndex, float TurretRotation, float TurretPitch)
 {
 	//this should only be called if the equipped weapon for the seat is a separate mesh
-	int32& CWI = VehicleWeaponSystem.Find(SeatIndex)->VehicleWeaponSystemState.EquippedWeaponState.CurrentWeaponIndex;
+	int32& CWI = GetCWIForSeat(SeatIndex); 
 	if (VehicleWeaponSystem.Find(SeatIndex)->Weapons[CWI].VehicleWeaponInstanceData.bHasSeparateMesh)
 	{
 		UAnimInstance* AnimInst = VehicleWeaponSystem.Find(SeatIndex)->VehicleWeaponSystemState.WeaponSystemMesh->GetAnimInstance();
@@ -576,6 +607,22 @@ void UVehicleWeaponLogicComponent::UpdateTurretMesh(int32 SeatIndex, float Turre
 		{
 			IAnims::Execute_OnUpdateTurret(AnimInst, TurretRotation, TurretPitch);
 		}
+	}
+}
+
+void UVehicleWeaponLogicComponent::UpdateTurretCam(int32 SeatIndex, float TurretRotation, float TurretPitch)
+{
+	int32& CWI = GetCWIForSeat(SeatIndex);
+	FVehicleWeapon_Runtime& CurrentVehicleWeapon = GetEquippedWeaponInSeat(SeatIndex);
+	FWeapon_Runtime& CurrentWeapon = CurrentVehicleWeapon.VehicleWeaponState.BaseWeaponRuntimeData;
+	const FVehicleWeaponInstanceData& VWID = GetWeaponInstanceDataAtSlotInSeat(SeatIndex, CWI, CurrentWeapon.WeaponID);
+	FVehicleWeaponSystem_Runtime& SWS = *VehicleWeaponSystem.Find(SeatIndex);
+
+	//only works for a special weapon cam thats not on an attacment and is mounted to the vehicle mesh
+	if (!VWID.bHasSeparateMesh && VWID.bHasSpecialCam && VWID.WeaponCamBehavior.MountMethod == EVehicleWeaponCamMountMethod::VehicleMesh)
+	{
+		UCameraComponent* ActiveCam = OwnerDataAccessor->GetVehicle().GetRemoteActiveCam(SeatIndex);
+		ActiveCam->SetRelativeRotation(FRotator(TurretPitch, TurretRotation, 0.0f));
 	}
 }
 
@@ -731,9 +778,6 @@ void UVehicleWeaponLogicComponent::HandleHoming(int32 SeatIndex, FTransform Trac
 				InFlightProjectile->UpdateManualHoming(TargetLocation);
 			}
 			break;
-		case EHomingCapability::GPSGuidance:
-			break;
-
 	}
 }
 
@@ -883,6 +927,7 @@ void UVehicleWeaponLogicComponent::UpdateLockOnIndicator(bool UpdateHUD, FHitRes
 
 void UVehicleWeaponLogicComponent::UpdateManualGuidance(TWeakObjectPtr<AProjectile_Base> FiredProjectile, int32 SeatIndex, int32 WeaponIndex)
 {
+	//remember, called on tick by rangefinder
 	FVehicleWeaponSystem_Runtime& SeatWeaponSystem = *VehicleWeaponSystem.Find(SeatIndex);
 	FVehicleWeapon_Runtime& VehicleWeapon = SeatWeaponSystem.Weapons[WeaponIndex];
 	FVehicleWeaponState& VehicleWeaponState = VehicleWeapon.VehicleWeaponState;
@@ -895,8 +940,6 @@ void UVehicleWeaponLogicComponent::UpdateManualGuidance(TWeakObjectPtr<AProjecti
 		case EHomingCapability::WireGuided2:
 			FVector TargetLocation = HitResult.bBlockingHit ? HitResult.ImpactPoint : HitResult.TraceEnd;
 			FiredProjectile->UpdateManualHoming(TargetLocation);
-			break;
-		case EHomingCapability::GPSGuidance:
 			break;
 	}
 }
@@ -1099,18 +1142,21 @@ void UVehicleWeaponLogicComponent::HandleShootSimProjectile(FVehicleWeaponState&
 
 void UVehicleWeaponLogicComponent::HandleShootProjectileActor(int32 SeatIndex, int32 WeaponIndex)
 {
+	//not called on tick
 	FVehicleWeaponSystem_Runtime& SeatWeaponSystem = *VehicleWeaponSystem.Find(SeatIndex);
 	FVehicleWeapon_Runtime& VehicleWeapon = SeatWeaponSystem.Weapons[WeaponIndex];
 	FVehicleWeaponState& VehicleWeaponState = VehicleWeapon.VehicleWeaponState;
 	FLockOnState& LockOnState = VehicleWeaponState.BaseWeaponRuntimeData.WeaponState.LockOnState;
 	const FBaseWeaponData& StaticWeaponData = GetBaseWeaponDataInSlot(SeatIndex, WeaponIndex);
+	FHitResult& HitResult = SeatWeaponSystem.VehicleWeaponSystemState.EquippedWeaponState.RaycastData.RangefinderData;
 
 	TWeakObjectPtr<AProjectile_Base> FiredProjectile;
 	if (VehicleWeapon.VehicleWeaponInstanceData.bAreProjectilesMounted && VehicleWeaponState.CurrentMountedProjectiles.Num() > 0)
 	{
-		//dismount from rack
 		FiredProjectile = VehicleWeaponState.CurrentMountedProjectiles[0];
-		FiredProjectile->ProjectileMovementComponent->HomingTargetComponent = LockOnState.AcquiredTargetComp.Get();
+
+		SetupProjectileGuidance(FiredProjectile, StaticWeaponData.WeaponFunctionality.HomingFunctionality.HomingCapability, LockOnState, HitResult);
+
 		FiredProjectile->FireProjectile(FiredProjectile->GetActorForwardVector());		//doesnt use aim direction if mounted right now
 		//call some sort of "drop from rack" function on projectile?
 		if (FiredProjectile.IsValid())
@@ -1127,10 +1173,7 @@ void UVehicleWeaponLogicComponent::HandleShootProjectileActor(int32 SeatIndex, i
 			FVector& AimDirection = SeatWeaponSystem.VehicleWeaponSystemState.EquippedWeaponState.RaycastData.MuzzleAimDirections[MuzzleIndex];
 			FTransform MuzzleTransform;
 			FiredProjectile = ProjectileSubsystem->AcquireProjectileFromPool(StaticWeaponData.WeaponFirePerformance.MunitionID);
-			if (LockOnState.AcquiredTargetComp.IsValid())
-			{
-				FiredProjectile->ProjectileMovementComponent->HomingTargetComponent = LockOnState.AcquiredTargetComp.Get();
-			}
+			SetupProjectileGuidance(FiredProjectile, StaticWeaponData.WeaponFunctionality.HomingFunctionality.HomingCapability, LockOnState, HitResult);
 			AActor* FiringVehicle = GetOwner();
 			FiredProjectile->MoveIgnoreActorAdd(FiringVehicle);
 			UE_LOG(LogTemp, Error, TEXT("[VWLC::HandleShootProjectileActor] Muzzle Index = %d"), MuzzleIndex);
@@ -1139,6 +1182,21 @@ void UVehicleWeaponLogicComponent::HandleShootProjectileActor(int32 SeatIndex, i
 			FiredProjectile->FireProjectile(AimDirection);
 			VehicleWeapon.VehicleWeaponState.BaseWeaponRuntimeData.WeaponState.InFlightProjectiles.Add(FiredProjectile);
 		}
+	}
+}
+
+void UVehicleWeaponLogicComponent::SetupProjectileGuidance(TWeakObjectPtr<AProjectile_Base> FiredProjectile, EHomingCapability HomingCapability, FLockOnState& LockOnState, FHitResult& HitResult)
+{
+	switch (HomingCapability)
+	{
+		case EHomingCapability::GPSGuidance:
+			FVector TargetLocation = HitResult.bBlockingHit ? HitResult.ImpactPoint : HitResult.TraceEnd;
+			FiredProjectile.Get()->UpdateHomingPoint(TargetLocation);
+			break;
+	}
+	if (LockOnState.AcquiredTargetComp.IsValid())
+	{
+		FiredProjectile->ProjectileMovementComponent->HomingTargetComponent = LockOnState.AcquiredTargetComp.Get();
 	}
 }
 

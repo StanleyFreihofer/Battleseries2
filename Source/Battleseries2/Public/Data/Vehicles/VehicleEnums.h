@@ -39,6 +39,7 @@ enum class EVehicleType : uint8
 	//Bomber
 	//VTOL
 	//stationary turret?
+	//other
 };
 ENUM_RANGE_BY_COUNT(EVehicleType, EVehicleType::MAX);
 

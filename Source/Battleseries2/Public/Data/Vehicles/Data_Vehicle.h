@@ -47,11 +47,11 @@ struct FTurretData
 {
 	GENERATED_BODY()
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	bool TurretMeshIsSeparateWeaponMesh = false;
+	//UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	//bool TurretMeshIsSeparateWeaponMesh = false;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (EditCondition = "TurretMeshIsSeparateWeaponMesh == false", EditConditionHides))
-	FName TurretSocket = NAME_None;
+	//UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (EditCondition = "TurretMeshIsSeparateWeaponMesh == false", EditConditionHides))
+	//FName TurretSocket = NAME_None;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	FTurretData_PitchAndRotation TurretPitch = FTurretData_PitchAndRotation();

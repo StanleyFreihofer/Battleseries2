@@ -56,11 +56,12 @@ UENUM(BlueprintType)							//what the munition does
 enum class EProjectileGuidanceMethod : uint8
 {
 	BallisticTrajectory         UMETA(DisplayName = "Default/Ballistic"),			//embedded actor data i guess
-	GuideToTarget				UMETA(DisplayName = "Guide To Target/Homing/Lock On"),		//(and wire guided)
 	PitchToAltitude				UMETA(DisplayName = "Pitch To Altitude"),
-	WireGuided                  UMETA(DisplayName = "Player Controlled: Wire Guided"),
-	FullControl					UMETA(DisplayName = "Player Controlled: Full Control"),
-	//drop
+	GuideToTarget				UMETA(DisplayName = "Guide To Target/Homing/Lock On"),		
+	ManualGuideToPoint          UMETA(DisplayName = "Manual Guide to Point", ToolTip = "Guides to a vector point via manual guidance/wire guided (TOW)"),
+	AutoGuideToPoint			UMETA(DisplayName = "Auto Guide to Point", ToolTip = "Guides to a point via auto/self-guidance"),
+	FullControl					UMETA(DisplayName = "Player Controlled"),
+	Drop						UMETA(DisplayName = "Drop", ToolTip = "Dumb drop, uses sim physics on projectile mesh, projectile movement comp turned off"),
 
 	// Terminal Behavior
 	SelfDestruct                UMETA(DisplayName = "Self-Destruct")

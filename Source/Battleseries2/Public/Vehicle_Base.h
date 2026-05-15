@@ -22,6 +22,7 @@ class USpawnComponent;
 class UVehicleWeaponLogicComponent;
 class USkeletalMeshComponent;
 class USkeletalMesh;
+class USplineComponent;
 class USoundBase;
 class ACharacter_Base;
 class USaveSubsystem;
@@ -49,6 +50,9 @@ struct FVehicleStartingData
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Instance")
 	bool PreviewVehicle = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadwrite, Category = "Instance", meta = (tooltip = "if placed, vehicle will automatically follow this spline track"))
+	USplineComponent* SplineTrack = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Instance", meta = (tooltip = "use to permanently occupy certain seats for lifetime of vehicle"))			
 	TArray<int32> OccupiedSeats;
@@ -127,6 +131,8 @@ public:
 	void Init_GroundVehicle();
 	UFUNCTION(BlueprintCallable)
 	void Init_Helicopter();
+	UFUNCTION(BlueprintCallable)
+	void Init_Optic(int32 SeatIndex);
 	UFUNCTION(BlueprintCallable)
 	void Init_DefaultSeatRemoteCamera(int32 SeatIndex);
 	UFUNCTION(BlueprintCallable)
@@ -211,7 +217,7 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void UpdateSeatActiveCamera(int32 SeatIndex, UCameraComponent* NewActiveCamera);
 	UFUNCTION(BlueprintCallable)
-	void UpdateRemoteCamPP(int32 SeatIndex, FPostProcessSettings PPSettings, float BlendWeight);
+	void UpdateRemoteActiveCamPP(int32 SeatIndex, FPostProcessSettings PPSettings, float BlendWeight, UCameraComponent* Cam);
 	UFUNCTION(BlueprintCallable)
 	void UpdateEngineAudio();
 	UFUNCTION(BlueprintCallable)

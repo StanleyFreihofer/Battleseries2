@@ -78,7 +78,7 @@ void AVehicle_Base::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
 }
 
 #pragma region Initalization/Factory
-//GROUND VEHICLE FUNCTIONS
+
 void AVehicle_Base::Init_Wheels(const TArray<FChaosWheelSetup>& WheelData)
 {
 	ChaosVehicleMovement->WheelSetups.Empty();
@@ -162,7 +162,6 @@ void AVehicle_Base::Init_EngineAudio()
 	VehicleCurrentState.GenericVehicleState.EngineAudioComponent->SetActive(true);
 }
 
-//HELICOPTER FUNCTIONS
 void AVehicle_Base::Init_Helicopter()
 {
 	VehicleCurrentState.AircraftState.HelicopterState.RotorRPMs.Add(0.0f);
@@ -173,7 +172,20 @@ void AVehicle_Base::Init_Helicopter()
 	VehicleCurrentState.GenericVehicleState.InteriorAudioComponent->SetActive(true);
 }
 
-//SEAT FUNCTIONS
+void AVehicle_Base::Init_Optic(int32 SeatIndex)
+{
+	if (VehicleStartingData.StartingVehicleLoadout.SeatLoadout.Find(SeatIndex) && !VehicleStartingData.StartingVehicleLoadout.SeatLoadout.Find(SeatIndex)->Optic.IsNone())
+	{
+		VehicleCurrentState.SeatStates[SeatIndex].OpticState.CurrentAvailableOptics.Init(VehicleStartingData.StartingVehicleLoadout.SeatLoadout.Find(SeatIndex)->Optic, 1);
+	}
+	else
+	{
+		VehicleCurrentState.SeatStates[SeatIndex].OpticState.CurrentAvailableOptics.Init(VehicleData->Seats[SeatIndex].DefaultOptic, 1);
+	}
+}
+
+#pragma region SeatInitialization
+
 void AVehicle_Base::Init_DefaultSeatRemoteCamera(int32 SeatIndex)
 {
 	//init default seat camera
@@ -189,16 +201,8 @@ void AVehicle_Base::Init_DefaultSeatRemoteCamera(int32 SeatIndex)
 			NewCamera = SpawnAndAttachCamera(CameraSocketName, VehicleMeshComponent);
 			VehicleCurrentState.SeatStates[SeatIndex].DefaultCamera = NewCamera;
 			UpdateSeatActiveCamera(SeatIndex, NewCamera);
-			//optic
-			if (VehicleStartingData.StartingVehicleLoadout.SeatLoadout.Find(SeatIndex) && !VehicleStartingData.StartingVehicleLoadout.SeatLoadout.Find(SeatIndex)->Optic.IsNone())
-			{
-				VehicleCurrentState.SeatStates[SeatIndex].OpticState.CurrentAvailableOptics.Init(VehicleStartingData.StartingVehicleLoadout.SeatLoadout.Find(SeatIndex)->Optic, 1);
-			}
-			else
-			{
-				VehicleCurrentState.SeatStates[SeatIndex].OpticState.CurrentAvailableOptics.Init(VehicleData->Seats[SeatIndex].DefaultOptic, 1);
-			}
-			UpdateRemoteCamPP(SeatIndex, GetDataManager()->GetOpticDataRow(VehicleCurrentState.SeatStates[SeatIndex].OpticState.CurrentAvailableOptics[VehicleCurrentState.SeatStates[SeatIndex].OpticState.CurrentOpticIndex])->OpticPPSettings, 1.0f);
+
+			UpdateRemoteActiveCamPP(SeatIndex, GetDataManager()->GetOpticDataRow(VehicleCurrentState.SeatStates[SeatIndex].OpticState.CurrentAvailableOptics[VehicleCurrentState.SeatStates[SeatIndex].OpticState.CurrentOpticIndex])->OpticPPSettings, 1.0f, GetRemoteActiveCam(SeatIndex));
 			break;
 	}
 }
@@ -215,27 +219,6 @@ void AVehicle_Base::Init_SeatHUDComp(int32& SeatIndex)
 	CockpitHUDComponent->SetPivot(FVector2D(0.5f, 0.5f));
 	CockpitHUDComponent->SetOwnerNoSee(false);
 	VehicleCurrentState.SeatStates[SeatIndex].SeatHUDComponent = CockpitHUDComponent;
-
-	//reticle quad
-	UStaticMesh* DefaultPlane = LoadObject<UStaticMesh>(nullptr, TEXT("/Engine/BasicShapes/Plane.Plane"));
-	TWeakObjectPtr<UStaticMeshComponent> NewQuad = NewObject<UStaticMeshComponent>(this);
-	NewQuad->RegisterComponent();
-	NewQuad->AttachToComponent(CockpitHUDComponent, FAttachmentTransformRules::SnapToTargetIncludingScale);
-	NewQuad->SetStaticMesh(DefaultPlane);
-	NewQuad->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	NewQuad->SetCastShadow(false);
-	NewQuad->SetReceivesDecals(false);
-	NewQuad->SetRelativeRotation(FRotator(0.f, -90.f, 90.f));
-	NewQuad->SetRelativeLocation(FVector(0.1f, 0.f, 0.f));
-
-	UMaterialInterface* MasterMat = GetDataManager()->GetVehicleDefaults()->HUDMasterMaterial.LoadSynchronous();
-	UMaterialInstanceDynamic* DynMat = NewQuad->CreateDynamicMaterialInstance(0, MasterMat);		//both creates and assigns
-
-	FVehicleWeaponSystem_Runtime* VWS = VehicleWeaponLogicComponent->VehicleWeaponSystem.Find(SeatIndex);
-	if (VWS)
-	{
-		VWS->VehicleWeaponSystemState.ReticleQuad = NewQuad;
-	}
 }
 
 void AVehicle_Base::Init_Seats()
@@ -245,6 +228,7 @@ void AVehicle_Base::Init_Seats()
 	{
 		const FSeatData& SeatInfo = VehicleData->Seats[SI];
 
+		Init_Optic(SI);
 		Init_DefaultSeatRemoteCamera(SI);	
 
 		if (SeatInfo.DefaultCharacterContext.SeatHUD)
@@ -266,7 +250,8 @@ void AVehicle_Base::Init_Seats()
 	UE_LOG(LogTemp, Error, TEXT("[Vehicle_Base::Init_Seats] STEP 2B FINISHED (end of Init_Seats). old seats destroyed. new seats spawned in, VehicleID = %s"), *VehicleStartingData.VehicleID.ToString());
 }
 
-//GENERIC FUNCTIONS
+#pragma endregion
+
 void AVehicle_Base::Init_VehicleMesh(USkeletalMesh* LoadedSkeletalMesh)
 {
 	//assumes the mesh loaded correctly/is valid
@@ -332,8 +317,8 @@ void AVehicle_Base::Init_Vehicle()
 	Init_VehicleMesh(VehicleData->Vehicle_Mesh.Get());
 	Init_VehicleAnim(VehicleData->Anim_Class.Get());
 	Init_EngineAudio();
-	VehicleWeaponLogicComponent->Init_VehicleWeaponSystem(VehicleStartingData.StartingVehicleLoadout.SeatLoadout);		//weapons and turrets
 	Init_Seats();
+	VehicleWeaponLogicComponent->Init_VehicleWeaponSystem(VehicleStartingData.StartingVehicleLoadout.SeatLoadout);		//weapons and turrets
 	switch (VehicleData->Movement_Type)
 	{
 		case E_MovementType::GroundVehicle:
@@ -978,6 +963,8 @@ void AVehicle_Base::UpdateRoll_Heli(float InputValue)
 
 #pragma endregion
 
+#pragma region JetInput
+
 void AVehicle_Base::UpdateThrottle_Jet(float InputValue)
 {
 	const FJetData& JetData = VehicleData->Jet_Data;
@@ -1112,6 +1099,8 @@ void AVehicle_Base::UpdateYaw_Jet(float InputValue)
 	}
 }
 
+#pragma endregion
+
 void AVehicle_Base::Input_HandleThrottle(float ThrottleValue)
 {
 	const E_MovementType& MovementType = VehicleData->Movement_Type;
@@ -1139,6 +1128,8 @@ void AVehicle_Base::Input_ReleaseThrottle()
 		break;
 	}
 }
+
+#pragma endregion
 
 #pragma region Optics
 
@@ -1168,7 +1159,7 @@ void AVehicle_Base::TurnOnPPOptic(int32 SeatIndex)
 {
 	FOpticState& OpticState = VehicleCurrentState.SeatStates[SeatIndex].OpticState;
 	const FOpticData& CurrentOpticData = *GetDataManager()->GetOpticDataRow(OpticState.CurrentAvailableOptics[OpticState.CurrentOpticIndex]);
-	UpdateRemoteCamPP(SeatIndex, GetDataManager()->GetOpticDataRow(OpticState.CurrentAvailableOptics[OpticState.CurrentOpticIndex])->OpticPPSettings, 1.0f);
+	UpdateRemoteActiveCamPP(SeatIndex, GetDataManager()->GetOpticDataRow(OpticState.CurrentAvailableOptics[OpticState.CurrentOpticIndex])->OpticPPSettings, 1.0f, GetRemoteActiveCam(SeatIndex));
 	OpticState.isOn = true;
 	UGameplayStatics::PlaySound2D(GetWorld(), CurrentOpticData.PowerOnSound);
 	if (VehicleCurrentState.SeatStates[SeatIndex].UpdateHUD)
@@ -1186,7 +1177,7 @@ void AVehicle_Base::TurnOffPPOptic(int32 SeatIndex, int32 PreviousOpticIndex)
 	FOpticState& OpticState = VehicleCurrentState.SeatStates[SeatIndex].OpticState;
 	const FOpticData& CurrentOpticData = *GetDataManager()->GetOpticDataRow(OpticState.CurrentAvailableOptics[OpticState.CurrentOpticIndex]);
 	const FOpticData& PreviousOpticData = *GetDataManager()->GetOpticDataRow(OpticState.CurrentAvailableOptics[PreviousOpticIndex]);
-	UpdateRemoteCamPP(SeatIndex, FPostProcessSettings(), 0.0f);
+	UpdateRemoteActiveCamPP(SeatIndex, FPostProcessSettings(), 0.0f, GetRemoteActiveCam(SeatIndex));
 	OpticState.isOn = false;
 	UGameplayStatics::PlaySound2D(GetWorld(), PreviousOpticData.PowerOffSound);
 	if (VehicleCurrentState.SeatStates[SeatIndex].UpdateHUD)
@@ -1242,10 +1233,10 @@ void AVehicle_Base::ToggleMagnificationOptic(int32 SeatIndex, float ZoomMagnific
 	}
 }
 
-void AVehicle_Base::UpdateRemoteCamPP(int32 SeatIndex, FPostProcessSettings PPSettings, float BlendWeight)
+void AVehicle_Base::UpdateRemoteActiveCamPP(int32 SeatIndex, FPostProcessSettings PPSettings, float BlendWeight, UCameraComponent* Cam)
 {
-	GetRemoteActiveCam(SeatIndex)->PostProcessSettings = PPSettings;
-	GetRemoteActiveCam(SeatIndex)->PostProcessBlendWeight = BlendWeight;
+	Cam->PostProcessSettings = PPSettings;
+	Cam->PostProcessBlendWeight = BlendWeight;
 }
 
 #pragma endregion
