@@ -31,12 +31,18 @@ enum class ECharacterItemType : uint8
 UENUM(BlueprintType)
 enum class EAttachmentSlot : uint8
 {
+	FrontSight		UMETA(DisplayName = "Front Sight"),
+	RearSight		UMETA(DisplayName = "Rear Sight"),
+	Barrel			UMETA(DisplayName = "Barrel"),
+	Handguard		UMETA(DisplayName = "Handguard"),
 	Optic			UMETA(DisplayName = "Optic"),
+	OpticAccessory	UMETA(DisplayName = "Optic Accessory"),
 	Muzzle			UMETA(DisplayName = "Muzzle"),
 	Underbarrel		UMETA(DisplayName = "Underbarrel"),		//grip?
-	SideRailLeft	UMETA(DisplayName = "Side Rail Left"),
-	SideRailRight	UMETA(DisplayName = "Side Rail Rght"),
-	TopRailFront	UMETA(DisplayName = "Top Rail Front"),
+	LeftRail		UMETA(DisplayName = "Side Rail Left"),
+	RightRail		UMETA(DisplayName = "Side Rail Rght"),
+	TopRail			UMETA(DisplayName = "Top Rail Front"),
+	PistolGrip		UMETA(DisplayName = "PistolGrip"),
 	Stock			UMETA(DisplayName = "Stock"),
 	Magazine		UMETA(DisplayName = "Magazine")
 
@@ -44,9 +50,6 @@ enum class EAttachmentSlot : uint8
 	//grip?
 	//bottom rail?
 	//charm?
-	//front sight
-	//rear sight?
-	//optic accessory?
 };
 
 UENUM(BlueprintType)

@@ -27,55 +27,67 @@ void UWeaponLogicComponent::TickComponent(float DeltaTime, ELevelTick TickType, 
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 }
 
-void UWeaponLogicComponent::Init_WeaponLoadout(FPlayerLoadoutConfig_Class Loadout)
+void UWeaponLogicComponent::Init_WeaponLoadout(FPlayerLoadoutConfig_Class ClassLoadout, TArray<FPlayerLoadoutConfig_Weapon> WeaponLoadouts)
 {
-	TArray<FName>& Weapons = Loadout.Weapons;
+	TArray<FName>& Weapons = ClassLoadout.Weapons;
 	for (int32 i = 0; i < Weapons.Num(); i++)
 	{
+		WeaponSystem.BaseWeaponSystem.Weapons[i].WeaponID = Weapons[i];
 		FInfantryWeaponState NewFPState;
+
 		//Create Weapon Mesh
 		TWeakObjectPtr<USkeletalMeshComponent> NewWeapon = NewObject<USkeletalMeshComponent>(GetOwner());
 		NewWeapon->RegisterComponent();
+
 		//Update Mesh
 		const FInfantryWeaponData& WeaponData = *GetDataManager()->GetInfantryWeaponDataRow(Weapons[i]);
 		TWeakObjectPtr<USkeletalMesh> WeaponMesh = WeaponData.WeaponClassificationData.WeaponMesh.LoadSynchronous();
 		NewWeapon->SetSkeletalMesh(WeaponMesh.Get());
 		NewFPState.WeaponMesh = NewWeapon;
-		//apply saved attachments
-		USaveSubsystem* SaveSys = GetWorld()->GetGameInstance()->GetSubsystem<USaveSubsystem>();
-		const FPlayerLoadoutConfig_Weapon& CustomWeapon = SaveSys->GetWeaponLoadout(Weapons[i]);
-		ApplyAttachments(CustomWeapon, NewFPState);
-		//NewWeapon->SetHiddenInGame(true);
+
+		//attach and cache
 		WeaponSystem.InfantryWeaponSystem.WeaponState_FP.Add(NewFPState);
 		NewWeapon->AttachToComponent(Cast<ACharacter_Base>(GetOwner())->GetMesh(), FAttachmentTransformRules(EAttachmentRule::SnapToTarget, EAttachmentRule::SnapToTarget, EAttachmentRule::KeepRelative, true));
+
+		//apply saved attachments
+		const FPlayerLoadoutConfig_Weapon& CustomWeapon = WeaponLoadouts[i];				
+		ApplyAttachments(CustomWeapon, i);
+		//NewWeapon->SetHiddenInGame(true);
 	}
 
 }
 
-void UWeaponLogicComponent::ApplyAttachments(const FPlayerLoadoutConfig_Weapon& AttachmentsToApply, FInfantryWeaponState WeaponToApplyTo)
+void UWeaponLogicComponent::ApplyAttachments(const FPlayerLoadoutConfig_Weapon& AttachmentsToApply, int32 WeaponIndex)
 {
+	FInfantryWeaponState& WeaponToApplyTo = WeaponSystem.InfantryWeaponSystem.WeaponState_FP[WeaponIndex];
 	for (auto& Slot : AttachmentsToApply.WeaponAttachments)
 	{
 		const EAttachmentSlot& SlotType = Slot.Key;
 		const FPlayerLoadoutConfig_WeaponAttachment& AttachmentConfig = Slot.Value;
+
 		//create Attachment
 		TWeakObjectPtr<UStaticMeshComponent> NewAttachment = NewObject<UStaticMeshComponent>(GetOwner());
 		NewAttachment->RegisterComponent();
+
 		//update attachment mesh
-		const FWeaponAttachmentData& AttachmentData = *GetDataManager()->GetWeaponAttachmentDataRow(TEXT("A_Holo_1"));
+		const FWeaponAttachmentData& AttachmentData = *GetDataManager()->GetWeaponAttachmentDataRow(AttachmentConfig.AttachmentID);			//hardcoded for now
 		TWeakObjectPtr<UStaticMesh> AttachmentMesh = AttachmentData.AttachmentClassification.AttachmentMesh.LoadSynchronous();
 		NewAttachment->SetStaticMesh(AttachmentMesh.Get());
-		//attach to gun
-		NewAttachment->AttachToComponent
-		(
-			WeaponToApplyTo.WeaponMesh.Get(),
-			FAttachmentTransformRules(EAttachmentRule::SnapToTarget, EAttachmentRule::SnapToTarget, EAttachmentRule::KeepRelative, true), 
-			GetSocketNameForSlot(SlotType)
-		);
+
 		//cache runtime state data
 		FWeaponAttachmentState& RuntimeSlotState = WeaponToApplyTo.WeaponAttachmentStates.FindOrAdd(SlotType);
 		RuntimeSlotState.BaseAttachmentState.AttachmentID = AttachmentConfig.AttachmentID;
 		RuntimeSlotState.SpawnedAttachment = NewAttachment;
+
+		//attach to gun
+		NewAttachment->AttachToComponent
+		(
+			WeaponToApplyTo.WeaponMesh.Get(),
+			FAttachmentTransformRules::SnapToTargetIncludingScale, 
+			GetSocketNameForSlot(SlotType)
+		);
+		const FVector& AttachmentOffset = GetDataManager()->GetInfantryWeaponDataRow(WeaponSystem.BaseWeaponSystem.Weapons[WeaponIndex].WeaponID)->AvailableAttachmentSlots.Find(SlotType)->Attachments.Find(AttachmentConfig.AttachmentID)->LocationOffset;
+		NewAttachment->SetRelativeLocation(AttachmentOffset);
 	}
 }
 
@@ -166,16 +178,24 @@ FName UWeaponLogicComponent::GetSocketNameForSlot(EAttachmentSlot Slot)
 {
 	switch (Slot)
 	{
+		case EAttachmentSlot::FrontSight:
+			return TEXT("S_FrontSight");
+		case EAttachmentSlot::RearSight:
+			return TEXT("S_RearSight");
 		case EAttachmentSlot::Optic:       
 			return TEXT("S_Optic");
+		case EAttachmentSlot::Handguard:
+			return TEXT("S_Handguard");
 		case EAttachmentSlot::Muzzle:			
 			return TEXT("S_Muzzle");
 		case EAttachmentSlot::Underbarrel:		
 			return TEXT("S_Underbarrel");
-		case EAttachmentSlot::SideRailLeft:	    
+		case EAttachmentSlot::LeftRail:	    
 			return TEXT("S_Rail_L");
-		case EAttachmentSlot::SideRailRight:   
+		case EAttachmentSlot::RightRail:   
 			return TEXT("S_Rail_R");
+		case EAttachmentSlot::PistolGrip:
+			return TEXT("S_PistolGrip");
 		case EAttachmentSlot::Magazine:    
 			return TEXT("S_Mag");
 		case EAttachmentSlot::Stock:       

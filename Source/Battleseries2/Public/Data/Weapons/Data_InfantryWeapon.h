@@ -38,12 +38,22 @@ struct FInfantryWeaponAmmoData
 };
 
 USTRUCT(BlueprintType)
+struct FAttachmentOffset
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)				//data needed to move attachment to correct central/base location
+	FVector LocationOffset = FVector::ZeroVector;
+};
+
+USTRUCT(BlueprintType)
 struct FAvailableAttachments
 {
 	GENERATED_BODY()
 
+	//attachmentID->instance
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	TArray<FName> Attachments;
+	TMap<FName, FAttachmentOffset> Attachments;
 };
 
 USTRUCT(BlueprintType)

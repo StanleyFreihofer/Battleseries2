@@ -87,9 +87,9 @@ class BATTLESERIES2_API UWeaponLogicComponent : public UActorComponent
 		FTimerHandle TimerHandle_AutoFire;
 
 		UFUNCTION(BlueprintCallable)
-		void Init_WeaponLoadout(FPlayerLoadoutConfig_Class Loadout);
+		void Init_WeaponLoadout(FPlayerLoadoutConfig_Class ClassLoadout, TArray<FPlayerLoadoutConfig_Weapon> WeaponLoadouts);
 		UFUNCTION(BlueprintCallable)
-		void ApplyAttachments(const FPlayerLoadoutConfig_Weapon& AttachmentsToApply, FInfantryWeaponState WeaponToApplyTo);
+		void ApplyAttachments(const FPlayerLoadoutConfig_Weapon& AttachmentsToApply, int32 WeaponIndex);
 		UFUNCTION(BlueprintCallable)
 		virtual bool Rangefinder(const FTransform& StartTransform, FHitResult& OutHit);
 		UFUNCTION(BlueprintCallable)			//calculates projectile velocity direction based on rangefinder (projectile should move toward cos, new SetProjectileSpawnTransform())
