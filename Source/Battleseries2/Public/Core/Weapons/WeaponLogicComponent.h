@@ -5,11 +5,14 @@
 #include "Utilities/ProjectilePoolSubsystem.h"
 #include "Utilities/DataManagerSubsystem.h"
 #include "Data/Runtime/WeaponTypes.h"
+#include "Data/Core/CoreTypes.h"
+#include "Data/Core/CoreEnums.h"
 #include "WeaponLogicComponent.generated.h"
 
 class USkeletalMeshComponent;
 class UStaticMeshComponent;
 class AProjectile_Base;
+struct FPlayerLoadoutConfig_Class;
 
 
 //the base component class for handling runtime weapon data and logic
@@ -21,28 +24,35 @@ struct FWeaponAttachmentState
 	GENERATED_BODY()
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	FName AttachmentID = NAME_None;
+	FPlayerLoadoutConfig_WeaponAttachment BaseAttachmentState = FPlayerLoadoutConfig_WeaponAttachment();
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float CurrentRailOffset = 0.0f;		//tuning value
+	TWeakObjectPtr<UStaticMeshComponent> SpawnedAttachment = nullptr; // The actual mesh on the gun
+};
+
+USTRUCT(BlueprintType)
+struct FInfantryWeaponState
+{
+	GENERATED_BODY()
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	TObjectPtr<UStaticMeshComponent> SpawnedAttachment = nullptr; // The actual mesh on the gun
+	TMap<EAttachmentSlot, FWeaponAttachmentState> WeaponAttachmentStates;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TWeakObjectPtr<USkeletalMeshComponent> WeaponMesh = nullptr;
 };
 
 USTRUCT(BlueprintType)
 struct FInfantryWeaponSystem
 {
+	//each array item corresponds to weapon index
 	GENERATED_BODY()
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	TArray<FWeaponAttachmentState> WeaponAttachmentStates;
+	TArray<FInfantryWeaponState> WeaponState_FP;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	TArray<USkeletalMeshComponent*> WeaponMeshes_FP;			//the actual weapon mesh (gun model for example)
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	TArray<USkeletalMeshComponent*> WeaponMeshes_TP;			//the actual weapon mesh (gun model for example)
+	TArray<FInfantryWeaponState> WeaponState_TP;
 };
 
 USTRUCT(BlueprintType)
@@ -77,7 +87,9 @@ class BATTLESERIES2_API UWeaponLogicComponent : public UActorComponent
 		FTimerHandle TimerHandle_AutoFire;
 
 		UFUNCTION(BlueprintCallable)
-		void Init_WeaponLoadout();
+		void Init_WeaponLoadout(FPlayerLoadoutConfig_Class Loadout);
+		UFUNCTION(BlueprintCallable)
+		void ApplyAttachments(const FPlayerLoadoutConfig_Weapon& AttachmentsToApply, FInfantryWeaponState WeaponToApplyTo);
 		UFUNCTION(BlueprintCallable)
 		virtual bool Rangefinder(const FTransform& StartTransform, FHitResult& OutHit);
 		UFUNCTION(BlueprintCallable)			//calculates projectile velocity direction based on rangefinder (projectile should move toward cos, new SetProjectileSpawnTransform())
@@ -91,6 +103,11 @@ class BATTLESERIES2_API UWeaponLogicComponent : public UActorComponent
 		UFUNCTION(BlueprintCallable)
 		void FireWeapon();
 
+		UFUNCTION(BlueprintCallable, BlueprintPure)
+		FName GetSocketNameForSlot(EAttachmentSlot Slot);
+		UFUNCTION()
+		UDataManagerSubsystem* GetDataManager();
+
 	protected:
 		TArray<FBaseWeaponData*> StaticWeaponDataCache;
 
@@ -98,6 +115,5 @@ class BATTLESERIES2_API UWeaponLogicComponent : public UActorComponent
 		const FBaseWeaponData* GetCurrentWeaponStaticData() const;
 
 	private:
-		UDataManagerSubsystem* DataManager;
 		UProjectilePoolSubsystem* ProjectileManager;
 };

@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "Engine/DataTable.h"
 #include "Data/Weapons/WeaponEnums.h"
+#include "Data/Core/CoreEnums.h"
 #include "Data/Weapons/Data_Weapon.h"
 #include "Data_InfantryWeapon.generated.h"
 
@@ -42,25 +43,7 @@ struct FAvailableAttachments
 	GENERATED_BODY()
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	TArray<FName> AvailableScopes;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	TArray<FName> AvailableForegrips;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	TArray<FName> AvailablePistolGrips;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	TArray<FName> AvailableMuzzles;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	TArray<FName> AvailableHandguards;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	TArray<FName> AvailableStocks;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	TArray<FName> AvailableMags;
+	TArray<FName> Attachments;
 };
 
 USTRUCT(BlueprintType)
@@ -78,6 +61,6 @@ struct FInfantryWeaponData : public FTableRowBase
 	FInfantryWeaponAmmoData InfantryWeaponAmmoData = FInfantryWeaponAmmoData();
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	FAvailableAttachments AvailableAttachments;
+	TMap<EAttachmentSlot, FAvailableAttachments> AvailableAttachmentSlots;
 };
 

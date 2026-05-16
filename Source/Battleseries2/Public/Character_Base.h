@@ -9,15 +9,33 @@
 #include "InputMappingContext.h"
 #include "InputAction.h"
 #include "Data/Runtime/CharacterTypes.h"
+#include "Data/Core/CoreTypes.h"
 #include "Utilities/I_Anims.h"
 #include "Character_Base.generated.h"
 
+class USaveSubsystem;
 class AVehicle_Base;
 class UDataManagerSubsystem;
 class UWeaponLogicComponent;
 struct FCharacterSeatContext;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnWeaponInputReleased_Vehicle, int32, SeatIndex);
+
+USTRUCT(BlueprintType)
+struct FCharacterStartingData
+{
+	GENERATED_BODY()
+
+	//what this vehicle is on start
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Instance")
+	FName CharacterID = NAME_None;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Instance")
+	FPlayerLoadoutConfig_Class StartingLoadout = FPlayerLoadoutConfig_Class();
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Instance")
+	float StartingHealth = 100.0f;
+};
 
 UCLASS()
 class BATTLESERIES2_API ACharacter_Base : public ACharacter
@@ -33,6 +51,8 @@ public:
 	UCameraComponent* Camera = nullptr;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
 	USpringArmComponent* CameraBoom = nullptr;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
+	USkeletalMeshComponent* FPArms = nullptr;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
 	UWeaponLogicComponent* WeaponManager;
 

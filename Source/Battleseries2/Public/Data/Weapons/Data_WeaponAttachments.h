@@ -3,43 +3,13 @@
 #include "CoreMinimal.h"
 #include "Engine/DataTable.h"
 #include "Data/Core/CoreTypes.h"
+#include "Data/Weapons/WeaponEnums.h"
 #include "Data_WeaponAttachments.generated.h"
 
 /**
 * all static data related to weapon attachments
 **/
 
-UENUM(BlueprintType)
-enum class EWeaponAttachmentType : uint8
-{
-	Sight			UMETA(DisplayName = "Sight/Optic/Scope"),
-	LaserLight		UMETA(DisplayName = "Laser/Light"),
-	Handguard		UMETA(DisplayName = "Handguard"),
-	Foregrip		UMETA(DisplayName = "Foregrip"),
-	PistolGrip		UMETA(DisplayName = "Pistol Grip"),
-	Underbarrel		UMETA(DisplayName = "Underbarrel"),
-	Muzzle			UMETA(DisplayName = "Muzzle/Suppressor"),
-	Stock			UMETA(DisplayName = "Stock"),
-	RailCover		UMETA(DisplayName = "RailCover"),
-	Mag				UMETA(DisplayName = "Magazine")
-};
-
-UENUM(BlueprintType)
-enum class ESightSlot : uint8
-{
-	FrontSight		UMETA(DisplayName = "Front Sight"),
-	RearSight		UMETA(DisplayName = "Rear Sight"),
-	Scope			UMETA(DisplayName = "Optic/Scope"),
-	Canted			UMETA(DisplayName = "Canted/Flip/Hybrid")
-};
-
-UENUM(BlueprintType)
-enum class ETuningCapability : uint8
-{
-	NoTuning	UMETA(DisplayName = "No tuning"),
-	StatOnly	UMETA(DisplayName = "Stat Only/No Visual"),
-	Visual		UMETA(DisplayName = "Visual & Stat Affected")
-};
 
 /**
 * STATIC

@@ -9,6 +9,7 @@
 
 class UPlayerSave_Loadout;
 enum class EClassType : uint8;
+struct FPlayerLoadoutConfig_Weapon;
 struct FPlayerLoadoutConfig_Class;
 
 /**
@@ -27,6 +28,8 @@ class BATTLESERIES2_API USaveSubsystem : public UGameInstanceSubsystem
 		class UPlayerSave_Loadout* LoadoutSave;
 		UFUNCTION(BlueprintCallable)
 		UPlayerSave_Loadout* GetLoadoutSave() const { return LoadoutSave; }
+		UFUNCTION(BlueprintCallable)
+		const FPlayerLoadoutConfig_Weapon& GetWeaponLoadout(FName WeaponID);
 		UFUNCTION(BlueprintCallable)
 		const FPlayerLoadoutConfig_Class& GetClassLoadout(EClassType ClassType);
 		UFUNCTION(BlueprintCallable)

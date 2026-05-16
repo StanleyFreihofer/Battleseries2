@@ -37,19 +37,19 @@ struct FVehicleWeaponState
 {
 	GENERATED_BODY()
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)			//cached for quick access, contains ID, base State
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)			//cached for quick access, contains ID, base State
 	FWeapon_Runtime BaseWeaponRuntimeData = FWeapon_Runtime();
-	UPROPERTY(BlueprintReadWrite, EditAnywhere)			//more than 1 muzzle (think of M142, any multi-barrel weapon)
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)			//more than 1 muzzle (think of M142, any multi-barrel weapon)
 	TArray<int32> CurrentMuzzleIndexes;
-	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	TArray<FName> MuzzleSockets;
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(VisibleAnywhere)
 	TArray<TWeakObjectPtr<UNiagaraComponent>> MuzzleVFXPool;
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(VisibleAnywhere)
 	TArray<TWeakObjectPtr<AProjectile_Base>> CurrentMountedProjectiles;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	USpringArmComponent* WeaponTurretSpringArm = nullptr;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	ACameraActor* WeaponTurretCamera = nullptr;
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
@@ -61,10 +61,10 @@ struct FVehicleWeapon_Runtime						//defines an entire weapon on the vehicle
 {
 	GENERATED_BODY()
 
-	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	FVehicleWeaponState VehicleWeaponState = FVehicleWeaponState();
 
-	UPROPERTY(BlueprintReadWrite, EditAnywhere)			//cached for quick access, contains data that defines weapon context on vehicle
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)			//cached for quick access, contains data that defines weapon context on vehicle
 	FVehicleWeaponInstanceData VehicleWeaponInstanceData = FVehicleWeaponInstanceData();
 };
 
@@ -84,19 +84,21 @@ struct FVehicleWeaponSystemState
 {
 	GENERATED_BODY()
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	FEquippedWeaponState EquippedWeaponState = FEquippedWeaponState();
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)		//weapon mesh/separate turret
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)		//weapon mesh/separate turret
 	TWeakObjectPtr<USkeletalMeshComponent> WeaponSystemMesh = nullptr;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	//move weapon cam here (1 per weapon system/seat?)?
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	TWeakObjectPtr<UAudioComponent> WeaponAudioComponent = nullptr; // Persistent audio slot per seat
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	TWeakObjectPtr<UStaticMeshComponent> ReticleQuad = nullptr;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	FName WSAttachmentID = NAME_None;
 };
 
@@ -105,10 +107,10 @@ struct FVehicleWeaponSystem_Runtime
 {
 	GENERATED_BODY()
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	TArray<FVehicleWeapon_Runtime> Weapons;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	FVehicleWeaponSystemState VehicleWeaponSystemState = FVehicleWeaponSystemState();
 };
 
@@ -146,7 +148,7 @@ public:
 	void Init_Turrets(int32 NumOfTurrets);
 
 	UFUNCTION(BlueprintCallable)
-	void ApplyWeaponInstanceDataAtIndexToSeat(int32 SeatIndex, int32 WeaponIndex, FName WeaponID);
+	void ApplyVWID(int32 SeatIndex, int32 WeaponIndex, FName WeaponID);
 	UFUNCTION(BlueprintCallable)
 	void ApplySavedWeaponsToSeat(int32 SeatIndex);
 	UFUNCTION(BlueprintCallable)
@@ -189,7 +191,7 @@ public:
 	void UpdateTurretCam(int32 SeatIndex, float TurretRotation, float TurretPitch);
 
 	UFUNCTION(BlueprintCallable)
-	const FVehicleWeaponInstanceData& GetWeaponInstanceDataAtSlotInSeat(int32 SeatIndex, int32 WeaponIndex, FName WeaponID);
+	const FVehicleWeaponInstanceData& GetVWID(int32 SeatIndex, int32 WeaponIndex, FName WeaponID);
 	UFUNCTION()
 	TWeakObjectPtr<AActor> GetCurrentViewTargetAtSeatIndex(int32 SeatIndex);
 
@@ -226,18 +228,18 @@ public:
 	TArray<FName> GetMuzzleSocketsInOrder(TWeakObjectPtr<USkeletalMeshComponent> Mesh, FName SeatName, int32 WeaponIndex, EMuzzleType MuzzleType);
 	UFUNCTION()
 	void CalculateAimDirection(TWeakObjectPtr<USkeletalMeshComponent> Mesh, FHitResult HitResult, int32 WeaponIndex, int32 SeatIndex);
-	UFUNCTION(BlueprintCallable)
-	void HandleStartFire(int32 SeatIndex);
-	UFUNCTION(BlueprintCallable)
-	void StartFire(int32 SeatIndex);
+	UFUNCTION()
+	TWeakObjectPtr<AProjectile_Base> HandleStartFire(int32 SeatIndex);
+	UFUNCTION()
+	TWeakObjectPtr<AProjectile_Base> StartFire(int32 SeatIndex);
 	UFUNCTION(BlueprintCallable)
 	void StartWeaponFireAudio(int32 SeatIndex);
-	UFUNCTION(BlueprintCallable)
-	void FireVehicleWeapon(int32 SeatIndex);
+	UFUNCTION()
+	TWeakObjectPtr<AProjectile_Base> FireVehicleWeapon(int32 SeatIndex);
 	UFUNCTION(BlueprintCallable)
 	void HandleShootSimProjectile(FVehicleWeaponState& VehicleWeaponState, const FBaseWeaponData& StaticWeaponData, FVehicleWeaponSystem_Runtime& SeatWeaponSystem);
-	UFUNCTION(BlueprintCallable)
-	void HandleShootProjectileActor(int32 SeatIndex, int32 WeaponIndex);
+	UFUNCTION()
+	TWeakObjectPtr<AProjectile_Base> HandleShootProjectileActor(int32 SeatIndex, int32 WeaponIndex);
 	UFUNCTION()
 	void SetupProjectileGuidance(TWeakObjectPtr<AProjectile_Base> FiredProjectile, EHomingCapability HomingCapability, FLockOnState& LockOnState, FHitResult& HitResult);
 	UFUNCTION(BlueprintCallable)

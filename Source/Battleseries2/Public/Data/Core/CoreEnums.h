@@ -28,7 +28,26 @@ enum class ECharacterItemType : uint8
 	//camo
 };
 
+UENUM(BlueprintType)
+enum class EAttachmentSlot : uint8
+{
+	Optic			UMETA(DisplayName = "Optic"),
+	Muzzle			UMETA(DisplayName = "Muzzle"),
+	Underbarrel		UMETA(DisplayName = "Underbarrel"),		//grip?
+	SideRailLeft	UMETA(DisplayName = "Side Rail Left"),
+	SideRailRight	UMETA(DisplayName = "Side Rail Rght"),
+	TopRailFront	UMETA(DisplayName = "Top Rail Front"),
+	Stock			UMETA(DisplayName = "Stock"),
+	Magazine		UMETA(DisplayName = "Magazine")
 
+	//top rail rear?
+	//grip?
+	//bottom rail?
+	//charm?
+	//front sight
+	//rear sight?
+	//optic accessory?
+};
 
 UENUM(BlueprintType)
 enum class ECoreType : uint8
@@ -91,8 +110,9 @@ enum class EStatToAffect : uint8
 UENUM(BlueprintType)
 enum class EModifierOp : uint8
 {
-	Add,
-	Subtract,
-	Multiply,
-	Divide
+	Add				UMETA(DisplyName = "Add"),
+	Subtract		UMETA(DisplayName = "Subtract"),
+	Multiply		UMETA(DisplayName = "Multiply"),
+	Divide			UMETA(DisplayName = "Divide"),
+	Set				UMETA(DisplayName = "Set/Override")
 };

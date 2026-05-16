@@ -1,9 +1,12 @@
 
 #include "Core/Weapons/WeaponLogicComponent.h"
 #include "Core/Weapons/WeaponFunctions.h"
+#include "Character_Base.h"
 #include "Data/Core/CoreTypes.h"
 #include "Data/Runtime/ProjectileTypes.h"
 #include "Data/Weapons/Data_Weapon.h"
+#include "Data/Weapons/Data_InfantryWeapon.h"
+#include "Data/Weapons/Data_WeaponAttachments.h"
 #include "Data/Weapons/Data_Projectile.h"
 #include "Save/SaveSubsystem.h"
 
@@ -15,23 +18,65 @@ UWeaponLogicComponent::UWeaponLogicComponent()
 void UWeaponLogicComponent::BeginPlay()
 {
 	Super::BeginPlay();
-	DataManager = GetWorld()->GetGameInstance()->GetSubsystem<UDataManagerSubsystem>();
+
 	ProjectileManager = GetWorld()->GetSubsystem<UProjectilePoolSubsystem>();
 }
 
 void UWeaponLogicComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-	//the rangefinder gets called on tick by the owner in its context and sets the weaponsystem.rangefinder data
-	//that data (OutHit) is then used here to calculate the projectile spawn transform (how projectile move towards COS is done)
-	//UpdateProjectileAimDirection();
 }
 
-void UWeaponLogicComponent::Init_WeaponLoadout()
+void UWeaponLogicComponent::Init_WeaponLoadout(FPlayerLoadoutConfig_Class Loadout)
 {
-	USaveSubsystem* SaveSys = GetWorld()->GetGameInstance()->GetSubsystem<USaveSubsystem>();
-	const FPlayerLoadoutConfig_Class& Loadout = SaveSys->GetClassLoadout(static_cast<EClassType>(0));
-	//Loadout
+	TArray<FName>& Weapons = Loadout.Weapons;
+	for (int32 i = 0; i < Weapons.Num(); i++)
+	{
+		FInfantryWeaponState NewFPState;
+		//Create Weapon Mesh
+		TWeakObjectPtr<USkeletalMeshComponent> NewWeapon = NewObject<USkeletalMeshComponent>(GetOwner());
+		NewWeapon->RegisterComponent();
+		//Update Mesh
+		const FInfantryWeaponData& WeaponData = *GetDataManager()->GetInfantryWeaponDataRow(Weapons[i]);
+		TWeakObjectPtr<USkeletalMesh> WeaponMesh = WeaponData.WeaponClassificationData.WeaponMesh.LoadSynchronous();
+		NewWeapon->SetSkeletalMesh(WeaponMesh.Get());
+		NewFPState.WeaponMesh = NewWeapon;
+		//apply saved attachments
+		USaveSubsystem* SaveSys = GetWorld()->GetGameInstance()->GetSubsystem<USaveSubsystem>();
+		const FPlayerLoadoutConfig_Weapon& CustomWeapon = SaveSys->GetWeaponLoadout(Weapons[i]);
+		ApplyAttachments(CustomWeapon, NewFPState);
+		//NewWeapon->SetHiddenInGame(true);
+		WeaponSystem.InfantryWeaponSystem.WeaponState_FP.Add(NewFPState);
+		NewWeapon->AttachToComponent(Cast<ACharacter_Base>(GetOwner())->GetMesh(), FAttachmentTransformRules(EAttachmentRule::SnapToTarget, EAttachmentRule::SnapToTarget, EAttachmentRule::KeepRelative, true));
+	}
+
+}
+
+void UWeaponLogicComponent::ApplyAttachments(const FPlayerLoadoutConfig_Weapon& AttachmentsToApply, FInfantryWeaponState WeaponToApplyTo)
+{
+	for (auto& Slot : AttachmentsToApply.WeaponAttachments)
+	{
+		const EAttachmentSlot& SlotType = Slot.Key;
+		const FPlayerLoadoutConfig_WeaponAttachment& AttachmentConfig = Slot.Value;
+		//create Attachment
+		TWeakObjectPtr<UStaticMeshComponent> NewAttachment = NewObject<UStaticMeshComponent>(GetOwner());
+		NewAttachment->RegisterComponent();
+		//update attachment mesh
+		const FWeaponAttachmentData& AttachmentData = *GetDataManager()->GetWeaponAttachmentDataRow(TEXT("A_Holo_1"));
+		TWeakObjectPtr<UStaticMesh> AttachmentMesh = AttachmentData.AttachmentClassification.AttachmentMesh.LoadSynchronous();
+		NewAttachment->SetStaticMesh(AttachmentMesh.Get());
+		//attach to gun
+		NewAttachment->AttachToComponent
+		(
+			WeaponToApplyTo.WeaponMesh.Get(),
+			FAttachmentTransformRules(EAttachmentRule::SnapToTarget, EAttachmentRule::SnapToTarget, EAttachmentRule::KeepRelative, true), 
+			GetSocketNameForSlot(SlotType)
+		);
+		//cache runtime state data
+		FWeaponAttachmentState& RuntimeSlotState = WeaponToApplyTo.WeaponAttachmentStates.FindOrAdd(SlotType);
+		RuntimeSlotState.BaseAttachmentState.AttachmentID = AttachmentConfig.AttachmentID;
+		RuntimeSlotState.SpawnedAttachment = NewAttachment;
+	}
 }
 
 bool UWeaponLogicComponent::Rangefinder(const FTransform& StartTransform, FHitResult& OutHit)
@@ -115,6 +160,33 @@ void UWeaponLogicComponent::FireWeapon()
 			//break;
 	//}
 	//handle/manage ammo
+}
+
+FName UWeaponLogicComponent::GetSocketNameForSlot(EAttachmentSlot Slot)
+{
+	switch (Slot)
+	{
+		case EAttachmentSlot::Optic:       
+			return TEXT("S_Optic");
+		case EAttachmentSlot::Muzzle:			
+			return TEXT("S_Muzzle");
+		case EAttachmentSlot::Underbarrel:		
+			return TEXT("S_Underbarrel");
+		case EAttachmentSlot::SideRailLeft:	    
+			return TEXT("S_Rail_L");
+		case EAttachmentSlot::SideRailRight:   
+			return TEXT("S_Rail_R");
+		case EAttachmentSlot::Magazine:    
+			return TEXT("S_Mag");
+		case EAttachmentSlot::Stock:       
+			return TEXT("S_Stock");
+	}
+	return NAME_None;
+}
+
+UDataManagerSubsystem* UWeaponLogicComponent::GetDataManager()
+{
+	return GetWorld()->GetGameInstance()->GetSubsystem<UDataManagerSubsystem>();
 }
 
 FWeapon_Runtime* UWeaponLogicComponent::GetCurrentWeaponRuntime()

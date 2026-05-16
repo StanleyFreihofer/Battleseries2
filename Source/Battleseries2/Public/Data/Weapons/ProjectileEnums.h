@@ -62,7 +62,4 @@ enum class EProjectileGuidanceMethod : uint8
 	AutoGuideToPoint			UMETA(DisplayName = "Auto Guide to Point", ToolTip = "Guides to a point via auto/self-guidance"),
 	FullControl					UMETA(DisplayName = "Player Controlled"),
 	Drop						UMETA(DisplayName = "Drop", ToolTip = "Dumb drop, uses sim physics on projectile mesh, projectile movement comp turned off"),
-
-	// Terminal Behavior
-	SelfDestruct                UMETA(DisplayName = "Self-Destruct")
 };

@@ -34,6 +34,16 @@ void USaveSubsystem::Deinitialize()
 	LoadoutSave = nullptr;
 }
 
+const FPlayerLoadoutConfig_Weapon& USaveSubsystem::GetWeaponLoadout(FName WeaponID)
+{
+	if (const FPlayerLoadoutConfig_Weapon* WeaponLoadout = LoadoutSave->WeaponConfigs.Find(WeaponID))
+	{
+		return *WeaponLoadout;
+	}
+	static FPlayerLoadoutConfig_Weapon Empty;
+	return Empty;
+}
+
 const FPlayerLoadoutConfig_Class& USaveSubsystem::GetClassLoadout(EClassType ClassType)
 {
 	if (const FPlayerLoadoutConfig_Class* ClassLoadout = LoadoutSave->ClassLoadoutConfigs.Find(ClassType))

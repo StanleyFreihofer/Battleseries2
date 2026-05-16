@@ -181,6 +181,19 @@ struct FAmmoData
 	float RefillReserveSpeed = 0.0f;
 };
 
+USTRUCT(BlueprintType)
+struct FWeaponFlags
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	bool Lazes = false;
+
+	//repairs vehicles
+	//heals players
+	//etc
+};
+
 //culmnination of everything in this data container
 //data/properties that ALL weapons get
 //NOT THE DATA Table, onfoot weapon and vehicle weapon data containers wil have that

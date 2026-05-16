@@ -9,12 +9,15 @@
 /**
 * SaveGame class storing players choices for vehicles, weapons, etc
 */
-UCLASS()
+UCLASS(Blueprintable, BlueprintType)
 class BATTLESERIES2_API UPlayerSave_Loadout : public USaveGame
 {
 	GENERATED_BODY()
 
 	public:
+		//WeaponID-> player saved attachments
+		UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		TMap<FName, FPlayerLoadoutConfig_Weapon> WeaponConfigs;
 
 		UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		TMap<EClassType, FPlayerLoadoutConfig_Class> ClassLoadoutConfigs;

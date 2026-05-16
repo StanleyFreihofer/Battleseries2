@@ -42,6 +42,29 @@ struct FSavedSeatLoadout
 };
 
 USTRUCT(BlueprintType)
+struct FPlayerLoadoutConfig_WeaponAttachment
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FName AttachmentID = NAME_None;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float CurrentRailOffset = 0.0f;		//tuning value
+};
+
+#pragma region LoadoutConfigData
+
+USTRUCT(BlueprintType)
+struct FPlayerLoadoutConfig_Weapon
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TMap<EAttachmentSlot, FPlayerLoadoutConfig_WeaponAttachment> WeaponAttachments;
+};
+
+USTRUCT(BlueprintType)
 struct FPlayerLoadoutConfig_Class
 {
 	GENERATED_BODY()
@@ -68,6 +91,8 @@ struct FPlayerLoadoutConfig_Vehicle
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FName VehicleCamo = NAME_None;
 };
+
+#pragma endregion
 
 USTRUCT(BlueprintType)
 struct FStatModifier

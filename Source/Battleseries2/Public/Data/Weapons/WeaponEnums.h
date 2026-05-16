@@ -33,6 +33,42 @@ enum class EFireMode : uint8
 	Single		UMETA(DisplayName = "Single/Semi-Auto")
 };
 
+#pragma region WeaponAttachments
+
+UENUM(BlueprintType)
+enum class EWeaponAttachmentType : uint8
+{
+	Sight			UMETA(DisplayName = "Sight/Optic/Scope"),
+	LaserLight		UMETA(DisplayName = "Laser/Light"),
+	Handguard		UMETA(DisplayName = "Handguard"),
+	Foregrip		UMETA(DisplayName = "Foregrip"),
+	PistolGrip		UMETA(DisplayName = "Pistol Grip"),
+	Underbarrel		UMETA(DisplayName = "Underbarrel"),
+	Muzzle			UMETA(DisplayName = "Muzzle/Suppressor"),
+	Stock			UMETA(DisplayName = "Stock"),
+	RailCover		UMETA(DisplayName = "RailCover"),
+	Mag				UMETA(DisplayName = "Magazine")
+};
+
+UENUM(BlueprintType)
+enum class ESightSlot : uint8
+{
+	FrontSight		UMETA(DisplayName = "Front Sight"),
+	RearSight		UMETA(DisplayName = "Rear Sight"),
+	Scope			UMETA(DisplayName = "Optic/Scope"),
+	Canted			UMETA(DisplayName = "Canted/Flip/Hybrid")
+};
+
+#pragma endregion
+
+UENUM(BlueprintType)
+enum class ETuningCapability : uint8
+{
+	NoTuning	UMETA(DisplayName = "No tuning"),
+	StatOnly	UMETA(DisplayName = "Stat Only/No Visual"),
+	Visual		UMETA(DisplayName = "Visual & Stat Affected")
+};
+
 UENUM(BlueprintType)		//The different behaviors of a weapon that dictates under what parameters can it home, lock, or guide to someting
 enum class EHomingCapability : uint8
 {

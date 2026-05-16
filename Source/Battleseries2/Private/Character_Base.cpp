@@ -15,6 +15,7 @@
 #include "Core/UI/VehicleHUDs/UW_HUD_Vehicle_Base.h"
 #include "Core/UI/GameplayHUDs/UW_HUD_Status_Base.h"
 #include "Core/PlayerController_Base.h"
+#include "Core/Weapons/Projectiles/Projectile_Base.h"
 #include "Utilities/HUDSubsystem.h"
 #include "Utilities/DataManagerSubsystem.h"
 #include "Kismet/KismetMathLibrary.h"
@@ -27,8 +28,12 @@ ACharacter_Base::ACharacter_Base()
 	PrimaryActorTick.bCanEverTick = true;
 	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("CameraComponent"));
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
+	FPArms = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("FPArms"));
+	WeaponManager = CreateDefaultSubobject<UWeaponLogicComponent>(TEXT("WeaponManager"));
+	FPArms->SetupAttachment(GetCapsuleComponent());
 	CameraBoom->SetupAttachment(GetMesh(), FName("Camera"));
 	Camera->SetupAttachment(CameraBoom, FName("SpringEndpoint"));
+	GetMesh()->bOwnerNoSee = true;
 }
 
 // Called when the game starts or when spawned
@@ -94,6 +99,8 @@ void ACharacter_Base::Init_PlayerCharacter()
 	GetLocalPlayerHUDSystem()->SpawnStatusHUD(GetDataSystem_Character()->GetCharacterDefaults()->StatusHUDClass.Get());
 }
 
+#pragma region Input
+
 void ACharacter_Base::Input_Look(FVector2D InputAxisValue)
 {
 	if (!CharacterState.CharacterVehicleState.inVehicle)
@@ -124,12 +131,19 @@ void ACharacter_Base::Input_Move(FVector2D InputAxisValue)
 
 void ACharacter_Base::Input_ShootWeapon_Vehicle()
 {
+	TWeakObjectPtr<AProjectile_Base> FiredProjectile;
 	switch (GetCurrentVehicle()->VehicleData->Seats[GetCSI()].SeatRole)
 	{
 		case E_SeatRole::DriverGunner:
 		case E_SeatRole::Gunner:
-			GetCurrentVehicle()->VehicleWeaponLogicComponent->HandleStartFire(GetCSI());
+			FiredProjectile = GetCurrentVehicle()->VehicleWeaponLogicComponent->HandleStartFire(GetCSI());
 			break;
+	}
+
+	if (FiredProjectile.IsValid())
+	{
+		//check whatever data to see if we use projectile as view target and or control it (TV Missile)
+		//set as controlled whatever, update state to route input to projectile rather than vehicle
 	}
 }
 
@@ -143,6 +157,8 @@ void ACharacter_Base::Input_SwitchWeapon_Vehicle()
 	const FSeatData& SeatData = GetCurrentVehicle()->VehicleData->Seats[GetCSI()];
 	GetCurrentVehicle()->HandleViewMethod(this, SeatData);
 }
+
+#pragma endregion
 
 void ACharacter_Base::Freelook(FVector2D InputAxisValue)
 {
@@ -162,6 +178,8 @@ void ACharacter_Base::UpdateHeadRotation(FRotator HeadRotation)
 		IAnims::Execute_OnUpdateHeadRotation(AnimInst, HeadRotation);
 	}
 }
+
+#pragma region Vehicle
 
 void ACharacter_Base::ManageinVehicleStatus(AVehicle_Base* Vehicle, bool In_Vehicle)
 {
@@ -264,7 +282,7 @@ void ACharacter_Base::CharacterEnterSeat(const FCharacterSeatContext& SeatContex
 		case E_SeatRole::DriverGunner:
 		case E_SeatRole::Gunner:
 			UVehicleWeaponLogicComponent* VWLC = GetCurrentVehicle()->VehicleWeaponLogicComponent;
-			const FVehicleWeaponInstanceData& VWID = VWLC->GetWeaponInstanceDataAtSlotInSeat(GetCSI(), VWLC->GetCWIForSeat(GetCSI()), VWLC->GetEquippedWeaponInSeat(GetCSI()).VehicleWeaponState.BaseWeaponRuntimeData.WeaponID);
+			const FVehicleWeaponInstanceData& VWID = VWLC->GetVWID(GetCSI(), VWLC->GetCWIForSeat(GetCSI()), VWLC->GetEquippedWeaponInSeat(GetCSI()).VehicleWeaponState.BaseWeaponRuntimeData.WeaponID);
 			if (VWID.AttachmentInstanceData.bAttachCharacter)
 			{
 				TWeakObjectPtr<USkeletalMeshComponent> WeaponMesh = VWLC->VehicleWeaponSystem.Find(GetCSI())->VehicleWeaponSystemState.WeaponSystemMesh;
@@ -385,6 +403,8 @@ void ACharacter_Base::UpdateUI_EnterSeat()
 			break;
 	}
 }
+
+#pragma endregion
 
 void ACharacter_Base::UpdateCharacterStance(ECharacterCurrentStance NewStance)
 {

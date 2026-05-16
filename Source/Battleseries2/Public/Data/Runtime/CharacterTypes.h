@@ -31,7 +31,7 @@ struct FInteractionState
 	GENERATED_BODY()
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "State")
-	AActor* HitInteractable = nullptr;
+	TWeakObjectPtr<AActor> HitInteractable = nullptr;
 
 	//interacttimer
 };
@@ -46,6 +46,8 @@ struct FCharacterState
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "State")
 	FCharacterVehicleState CharacterVehicleState = FCharacterVehicleState();
+
+	//current controlled projectile?
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "State")
 	FVector2D CurrentHeadDelta = FVector2D();
