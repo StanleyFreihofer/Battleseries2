@@ -31,7 +31,7 @@ ACharacter_Base::ACharacter_Base()
 	FPArms = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("FPArms"));
 	WeaponManager = CreateDefaultSubobject<UWeaponLogicComponent>(TEXT("WeaponManager"));
 	FPArms->SetupAttachment(GetCapsuleComponent());
-	CameraBoom->SetupAttachment(GetMesh(), FName("Camera"));
+	CameraBoom->SetupAttachment(FPArms, FName("Camera"));
 	Camera->SetupAttachment(CameraBoom, FName("SpringEndpoint"));
 	GetMesh()->bOwnerNoSee = true;
 }

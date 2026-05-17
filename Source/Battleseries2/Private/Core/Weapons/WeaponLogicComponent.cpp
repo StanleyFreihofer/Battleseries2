@@ -57,6 +57,16 @@ void UWeaponLogicComponent::Init_WeaponLoadout(FPlayerLoadoutConfig_Class ClassL
 
 }
 
+void UWeaponLogicComponent::Init_Attachment(FWeaponAttachmentState& RuntimeSlotState, FInfantryWeaponState& WeaponToApplyTo, EAttachmentSlot AttachmentSlot)
+{
+	//Initialize/Create Attachment, attach to gun, cache
+
+	TWeakObjectPtr<UStaticMeshComponent> NewAttachment = NewObject<UStaticMeshComponent>(GetOwner());
+	NewAttachment->RegisterComponent();
+	NewAttachment->AttachToComponent(WeaponToApplyTo.WeaponMesh.Get(), FAttachmentTransformRules::SnapToTargetIncludingScale, GetSocketNameForSlot(AttachmentSlot));
+	RuntimeSlotState.SpawnedAttachment = NewAttachment;
+}
+
 void UWeaponLogicComponent::ApplyAttachments(const FPlayerLoadoutConfig_Weapon& AttachmentsToApply, int32 WeaponIndex)
 {
 	FInfantryWeaponState& WeaponToApplyTo = WeaponSystem.InfantryWeaponSystem.WeaponState_FP[WeaponIndex];
@@ -64,31 +74,24 @@ void UWeaponLogicComponent::ApplyAttachments(const FPlayerLoadoutConfig_Weapon& 
 	{
 		const EAttachmentSlot& SlotType = Slot.Key;
 		const FPlayerLoadoutConfig_WeaponAttachment& AttachmentConfig = Slot.Value;
+		FWeaponAttachmentState& RuntimeSlotState = WeaponToApplyTo.WeaponAttachmentStates.FindOrAdd(SlotType);
 
-		//create Attachment
-		TWeakObjectPtr<UStaticMeshComponent> NewAttachment = NewObject<UStaticMeshComponent>(GetOwner());
-		NewAttachment->RegisterComponent();
+		Init_Attachment(RuntimeSlotState, WeaponToApplyTo, SlotType);
 
 		//update attachment mesh
 		const FWeaponAttachmentData& AttachmentData = *GetDataManager()->GetWeaponAttachmentDataRow(AttachmentConfig.AttachmentID);			//hardcoded for now
 		TWeakObjectPtr<UStaticMesh> AttachmentMesh = AttachmentData.AttachmentClassification.AttachmentMesh.LoadSynchronous();
-		NewAttachment->SetStaticMesh(AttachmentMesh.Get());
+		const FVector& AttachmentOffset = GetAttachmentDefaultOffset(GetBaseWeaponState(WeaponIndex).WeaponID, SlotType, AttachmentConfig.AttachmentID);
 
-		//cache runtime state data
-		FWeaponAttachmentState& RuntimeSlotState = WeaponToApplyTo.WeaponAttachmentStates.FindOrAdd(SlotType);
-		RuntimeSlotState.BaseAttachmentState.AttachmentID = AttachmentConfig.AttachmentID;
-		RuntimeSlotState.SpawnedAttachment = NewAttachment;
-
-		//attach to gun
-		NewAttachment->AttachToComponent
-		(
-			WeaponToApplyTo.WeaponMesh.Get(),
-			FAttachmentTransformRules::SnapToTargetIncludingScale, 
-			GetSocketNameForSlot(SlotType)
-		);
-		const FVector& AttachmentOffset = GetDataManager()->GetInfantryWeaponDataRow(WeaponSystem.BaseWeaponSystem.Weapons[WeaponIndex].WeaponID)->AvailableAttachmentSlots.Find(SlotType)->Attachments.Find(AttachmentConfig.AttachmentID)->LocationOffset;
-		NewAttachment->SetRelativeLocation(AttachmentOffset);
+		UpdateAttachment(RuntimeSlotState, AttachmentMesh, AttachmentConfig.AttachmentID, AttachmentOffset);
 	}
+}
+
+void UWeaponLogicComponent::UpdateAttachment(FWeaponAttachmentState& RuntimeSlotState, TWeakObjectPtr<UStaticMesh> AttachmentMesh, FName AttachmentID, FVector Offset)
+{
+	RuntimeSlotState.SpawnedAttachment->SetStaticMesh(AttachmentMesh.Get());
+	RuntimeSlotState.SpawnedAttachment->SetRelativeLocation(Offset);
+	RuntimeSlotState.BaseAttachmentState.AttachmentID = AttachmentID;
 }
 
 bool UWeaponLogicComponent::Rangefinder(const FTransform& StartTransform, FHitResult& OutHit)
@@ -202,6 +205,16 @@ FName UWeaponLogicComponent::GetSocketNameForSlot(EAttachmentSlot Slot)
 			return TEXT("S_Stock");
 	}
 	return NAME_None;
+}
+
+FWeapon_Runtime& UWeaponLogicComponent::GetBaseWeaponState(int32 WeaponIndex)
+{
+	return WeaponSystem.BaseWeaponSystem.Weapons[WeaponIndex];
+}
+
+FVector UWeaponLogicComponent::GetAttachmentDefaultOffset(FName WeaponID, EAttachmentSlot Slot, FName AttachmentID)
+{
+	return GetDataManager()->GetInfantryWeaponDataRow(WeaponID)->AvailableAttachmentSlots.Find(Slot)->Attachments.Find(AttachmentID)->LocationOffset;
 }
 
 UDataManagerSubsystem* UWeaponLogicComponent::GetDataManager()

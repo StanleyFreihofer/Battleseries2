@@ -89,7 +89,11 @@ class BATTLESERIES2_API UWeaponLogicComponent : public UActorComponent
 		UFUNCTION(BlueprintCallable)
 		void Init_WeaponLoadout(FPlayerLoadoutConfig_Class ClassLoadout, TArray<FPlayerLoadoutConfig_Weapon> WeaponLoadouts);
 		UFUNCTION(BlueprintCallable)
+		void Init_Attachment(FWeaponAttachmentState& RuntimeSlotState, FInfantryWeaponState& WeaponToApplyTo, EAttachmentSlot AttachmentSlot);
+		UFUNCTION(BlueprintCallable)
 		void ApplyAttachments(const FPlayerLoadoutConfig_Weapon& AttachmentsToApply, int32 WeaponIndex);
+		UFUNCTION()
+		void UpdateAttachment(FWeaponAttachmentState& RuntimeSlotState, TWeakObjectPtr<UStaticMesh> AttachmentMesh, FName AttachmentID, FVector Offset);
 		UFUNCTION(BlueprintCallable)
 		virtual bool Rangefinder(const FTransform& StartTransform, FHitResult& OutHit);
 		UFUNCTION(BlueprintCallable)			//calculates projectile velocity direction based on rangefinder (projectile should move toward cos, new SetProjectileSpawnTransform())
@@ -105,6 +109,10 @@ class BATTLESERIES2_API UWeaponLogicComponent : public UActorComponent
 
 		UFUNCTION(BlueprintCallable, BlueprintPure)
 		FName GetSocketNameForSlot(EAttachmentSlot Slot);
+		UFUNCTION(BlueprintCallable, BlueprintPure)
+		FWeapon_Runtime& GetBaseWeaponState(int32 WeaponIndex);
+		UFUNCTION(BlueprintCallable, BlueprintPure)
+		FVector GetAttachmentDefaultOffset(FName WeaponID, EAttachmentSlot Slot, FName AttachmentID);
 		UFUNCTION()
 		UDataManagerSubsystem* GetDataManager();
 
