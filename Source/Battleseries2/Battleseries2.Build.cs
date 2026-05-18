@@ -21,6 +21,8 @@ public class Battleseries2 : ModuleRules
 				"MetasoundEngine",
 				"Niagara",
 				"UMG",
+				"Slate",
+				"SlateCore",
 				"Renderer",
 				"RenderCore"
 			});

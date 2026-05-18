@@ -292,8 +292,6 @@ protected:
 
 
 private:
-	UDataManagerSubsystem* DataSubsystem;
-	UProjectilePoolSubsystem* ProjectileSubsystem;
 	IVehicleDataAccessor* OwnerDataAccessor;
 
 	FTimerHandle TimerHandle_AutoFire;			//put into actual architecture/move somewhere else

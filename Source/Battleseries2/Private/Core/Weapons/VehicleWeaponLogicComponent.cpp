@@ -14,6 +14,7 @@
 #include "Core/UI/VehicleHUDs/UW_HUD_Vehicle_Base.h"
 #include "Utilities/HUDSubsystem.h"
 #include "Utilities/I_Anims.h"
+#include "Utilities/BS2FunctionLibrary.h"
 #include "Camera/CameraActor.h"
 #include "Components/AudioComponent.h"
 #include "NiagaraComponent.h"
@@ -29,8 +30,6 @@ UVehicleWeaponLogicComponent::UVehicleWeaponLogicComponent()
 void UVehicleWeaponLogicComponent::BeginPlay()
 {
 	Super::BeginPlay();
-	DataSubsystem = GetWorld()->GetGameInstance()->GetSubsystem<UDataManagerSubsystem>();
-	ProjectileSubsystem = GetWorld()->GetSubsystem<UProjectilePoolSubsystem>();
 	OwnerDataAccessor = Cast<IVehicleDataAccessor>(GetOwner());
 }
 
@@ -85,7 +84,7 @@ void UVehicleWeaponLogicComponent::Init_HUDReticleQuad(int32 SeatIndex)
 	NewQuad->SetRelativeRotation(FRotator(0.f, -90.f, 90.f));
 	NewQuad->SetRelativeLocation(FVector(0.1f, 0.f, 0.f));
 
-	UMaterialInterface* MasterMat = DataSubsystem->GetVehicleDefaults()->HUDMasterMaterial.LoadSynchronous();
+	UMaterialInterface* MasterMat = UBS2FunctionLibrary::GetDataSubsystem(this)->GetVehicleDefaults()->HUDMasterMaterial.LoadSynchronous();
 	UMaterialInstanceDynamic* DynMat = NewQuad->CreateDynamicMaterialInstance(0, MasterMat);		//both creates and assigns
 
 	FVehicleWeaponSystem_Runtime& SWS = *VehicleWeaponSystem.Find(SeatIndex);
@@ -99,7 +98,7 @@ void UVehicleWeaponLogicComponent::Init_WAC(int32 SeatIndex)
 	TWeakObjectPtr<UAudioComponent> NewAudioComp = NewObject<UAudioComponent>(GetOwner());
 	NewAudioComp->SetupAttachment(OwnerDataAccessor->GetVehicleMesh());
 	NewAudioComp->RegisterComponent();
-	TSoftObjectPtr<UDA_WeaponDefaults> WeaponDefaults = DataSubsystem->WeaponDefaultsDAAsset;
+	TSoftObjectPtr<UDA_WeaponDefaults> WeaponDefaults = UBS2FunctionLibrary::GetDataSubsystem(this)->WeaponDefaultsDAAsset;
 	NewAudioComp->SetSound(WeaponDefaults->WeaponDefaults.DefaultWeaponMetaSound.LoadSynchronous());
 	NewSystem.VehicleWeaponSystemState.WeaponAudioComponent = NewAudioComp;
 	NewSystem.VehicleWeaponSystemState.WeaponAudioComponent->bAutoActivate = false;		//important so that we dont get the nasty concurrent audio bug (if not firing/in use this doesnt need to be on)
@@ -186,7 +185,7 @@ void UVehicleWeaponLogicComponent::ApplyWeaponAtIndexToSeat(int32 SeatIndex, int
 
 	//initialize state on weapon side
 	//make apply WeaponStateToSeat function?
-	const FVehicleWeaponData& VehicleWeaponDataToUse = *DataSubsystem->GetVehicleWeaponDataRow(WeaponID);
+	const FVehicleWeaponData& VehicleWeaponDataToUse = *UBS2FunctionLibrary::GetDataSubsystem(this)->GetVehicleWeaponDataRow(WeaponID);
 	DefaultWeaponDataToFill.WeaponState.CurrentFireMode = VehicleWeaponDataToUse.WeaponData.WeaponFunctionality.DefaultFireMode;
 	DefaultWeaponDataToFill.WeaponState.CurrentAmmoinMag = VehicleWeaponDataToUse.WeaponData.AmmoData.MagSize;
 	DefaultWeaponDataToFill.WeaponState.CurrentReserveAmmo = VehicleWeaponDataToUse.WeaponData.AmmoData.MaxReserveAmmo;
@@ -196,7 +195,7 @@ void UVehicleWeaponLogicComponent::ApplyWeaponAtIndexToSeat(int32 SeatIndex, int
 
 void UVehicleWeaponLogicComponent::ApplyStaticWeaponData(int32 SeatIndex, int32 WeaponIndex, FName WeaponID)
 {
-	const FVehicleWeaponData& VehicleWeaponDataToUse = *DataSubsystem->GetVehicleWeaponDataRow(WeaponID);
+	const FVehicleWeaponData& VehicleWeaponDataToUse = *UBS2FunctionLibrary::GetDataSubsystem(this)->GetVehicleWeaponDataRow(WeaponID);
 	const FBaseWeaponData* BaseWeaponData = &VehicleWeaponDataToUse.WeaponData;
 	TArray<const FBaseWeaponData*>& BaseWeaponDataArray = CurrentVehicleBaseWeaponData.FindOrAdd(SeatIndex);
 	if (!BaseWeaponDataArray.IsValidIndex(WeaponIndex))
@@ -212,7 +211,7 @@ void UVehicleWeaponLogicComponent::HandleApplyWeaponMesh(int32 SeatIndex, int32 
 	FVehicleWeapon_Runtime& VehicleWeaponToFill = WeaponSystem->Weapons[WeaponIndex];
 	if (VehicleWeaponToFill.VehicleWeaponInstanceData.bHasSeparateMesh && WeaponIndex == OwnerDataAccessor->GetVehicleData().Seats[SeatIndex].AvailableItems.WeaponMeshDriverSlotIndex)
 	{
-		const FVehicleAttachmentData& AttachmentData = *DataSubsystem->GetVehicleAttachmentDataRow(VehicleWeaponToFill.VehicleWeaponInstanceData.AttachmentInstanceData.AttachmentID);
+		const FVehicleAttachmentData& AttachmentData = *UBS2FunctionLibrary::GetDataSubsystem(this)->GetVehicleAttachmentDataRow(VehicleWeaponToFill.VehicleWeaponInstanceData.AttachmentInstanceData.AttachmentID);
 		TWeakObjectPtr<USkeletalMesh> LoadedMesh = AttachmentData.Attachment_SKM.LoadSynchronous();
 		UClass* LoadedAnimClass = AttachmentData.Attachment_AnimClass.LoadSynchronous();
 		if (!WeaponSystem->VehicleWeaponSystemState.WeaponSystemMesh.IsValid())
@@ -242,7 +241,7 @@ void UVehicleWeaponLogicComponent::MountProjectiles(int32 SeatIndex, int32 Weapo
 	USkeletalMeshComponent* VehicleMeshComponent = OwnerDataAccessor->GetVehicleMesh();
 	FVehicleWeapon_Runtime& SeatWeaponToFill = VehicleWeaponSystem.Find(SeatIndex)->Weapons[WeaponIndex];
 	FWeapon_Runtime& WeaponDataToFill = SeatWeaponToFill.VehicleWeaponState.BaseWeaponRuntimeData;
-	const FVehicleWeaponData* VehicleWeaponRow = DataSubsystem->GetVehicleWeaponDataRow(WeaponDataToFill.WeaponID);
+	const FVehicleWeaponData* VehicleWeaponRow = UBS2FunctionLibrary::GetDataSubsystem(this)->GetVehicleWeaponDataRow(WeaponDataToFill.WeaponID);
 	const int32& MagSize = FMath::Min(VehicleWeaponRow->WeaponData.AmmoData.MagSize, WeaponDataToFill.WeaponState.CurrentAmmoinMag);
 	const FName& MunitionID = VehicleWeaponRow->WeaponData.WeaponFirePerformance.MunitionID;
 	if (!VehicleWeaponRow || MunitionID.IsNone())
@@ -256,7 +255,7 @@ void UVehicleWeaponLogicComponent::MountProjectiles(int32 SeatIndex, int32 Weapo
 		FName SocketName = FName(*SocketNameString);
 
 		FTransform SocketTransform = VehicleMeshComponent->GetSocketTransform(SocketName, RTS_World);	//transform offset is data (is that needed?)
-		TWeakObjectPtr<AProjectile_Base> NewProjectile = ProjectileSubsystem->AcquireProjectileFromPool(MunitionID);
+		TWeakObjectPtr<AProjectile_Base> NewProjectile = UBS2FunctionLibrary::GetProjectileSystem(this)->AcquireProjectileFromPool(MunitionID);
 		NewProjectile->SetRuntimeContext(VehicleMeshComponent, SocketName);
 		SeatWeaponToFill.VehicleWeaponState.CurrentMountedProjectiles.Add(NewProjectile);
 		//DONT INITIALIZE, PROJECTILES SHOULD ALREADY BE INITIALIZED BY POOL SUBYSTEM
@@ -271,7 +270,7 @@ void UVehicleWeaponLogicComponent::ApplyWeaponDecoratives(const TArray<FDecorati
 		const FDecorative& WeaponDecorative = WeaponDecoratives[i];
 		if (WeaponDecorative.AttachmentID != NAME_None)
 		{
-			const FVehicleAttachmentData& AttachmentData = *DataSubsystem->GetVehicleAttachmentDataRow(WeaponDecorative.AttachmentID);
+			const FVehicleAttachmentData& AttachmentData = *UBS2FunctionLibrary::GetDataSubsystem(this)->GetVehicleAttachmentDataRow(WeaponDecorative.AttachmentID);
 			TWeakObjectPtr<UStaticMesh> LoadedMesh = AttachmentData.Attachment_SM.LoadSynchronous();
 			TWeakObjectPtr<UStaticMeshComponent> SMComp = NewObject<UStaticMeshComponent>(GetOwner());
 			SMComp->SetStaticMesh(LoadedMesh.Get());
@@ -389,7 +388,7 @@ void UVehicleWeaponLogicComponent::ConfigureWeaponCam(int32 SeatIndex, int32 Wea
 		//if weapon index = currentweaponindex, we make this the active cam
 		Vehicle.UpdateSeatActiveCamera(SeatIndex, WeaponCameraActor->GetCameraComponent());		
 
-		Vehicle.UpdateRemoteActiveCamPP(SeatIndex, DataSubsystem->GetOpticDataRow(OwnerDataAccessor->GetVehicleState().SeatStates[SeatIndex].OpticState.CurrentAvailableOptics[OwnerDataAccessor->GetVehicleState().SeatStates[SeatIndex].OpticState.CurrentOpticIndex])->OpticPPSettings, 1.0f, WeaponCameraActor->GetCameraComponent());
+		Vehicle.UpdateRemoteActiveCamPP(SeatIndex, UBS2FunctionLibrary::GetDataSubsystem(this)->GetOpticDataRow(OwnerDataAccessor->GetVehicleState().SeatStates[SeatIndex].OpticState.CurrentAvailableOptics[OwnerDataAccessor->GetVehicleState().SeatStates[SeatIndex].OpticState.CurrentOpticIndex])->OpticPPSettings, 1.0f, WeaponCameraActor->GetCameraComponent());
 	}
 }
 
@@ -450,7 +449,7 @@ void UVehicleWeaponLogicComponent::ClearWeaponSlotFromSeat(int32 SeatIndex, int3
 		for (int32 i = 0; i < WeaponSlotToClear.VehicleWeaponState.CurrentMountedProjectiles.Num(); i++)
 		{
 			TWeakObjectPtr<AProjectile_Base> Projectile = WeaponSlotToClear.VehicleWeaponState.CurrentMountedProjectiles[i];
-			ProjectileSubsystem->ReturnProjectileToPool(WeaponSlotToClear.VehicleWeaponState.CurrentMountedProjectiles[i]);
+			UBS2FunctionLibrary::GetProjectileSystem(this)->ReturnProjectileToPool(WeaponSlotToClear.VehicleWeaponState.CurrentMountedProjectiles[i]);
 			WeaponSlotToClear.VehicleWeaponState.CurrentMountedProjectiles[i]->SetRuntimeContext(nullptr, FName());
 			WeaponSlotToClear.VehicleWeaponState.CurrentMountedProjectiles[i] = nullptr;
 		}
@@ -464,6 +463,7 @@ void UVehicleWeaponLogicComponent::ClearWeaponSlotFromSeat(int32 SeatIndex, int3
 
 void UVehicleWeaponLogicComponent::ClearWeaponSystemFromSeat(int32 SeatIndex, bool RemoveFromMap)
 {
+
 	FVehicleWeaponSystem_Runtime* WeaponSystemToClear = VehicleWeaponSystem.Find(SeatIndex);
 	if (!WeaponSystemToClear || WeaponSystemToClear->Weapons.Num() == 0)
 	{
@@ -489,6 +489,11 @@ void UVehicleWeaponLogicComponent::ClearWeaponSystemFromSeat(int32 SeatIndex, bo
 
 void UVehicleWeaponLogicComponent::ClearEntireWeaponSystemFromVehicle()
 {
+	if (!OwnerDataAccessor)
+	{
+		// Try to recover the interface from the owner of this component
+		OwnerDataAccessor = Cast<IVehicleDataAccessor>(GetOwner());
+	}
 	const FVehicleData& VehicleData = OwnerDataAccessor->GetVehicleData();
 	for (auto& SeatWeaponSystem : VehicleWeaponSystem)	//for each weapon system in the vehicle
 	{
@@ -1046,11 +1051,17 @@ TWeakObjectPtr<AProjectile_Base> UVehicleWeaponLogicComponent::HandleStartFire(i
 				//autofire
 				if (CurrentWeapon.WeaponState.canFire)	//if here so if the first fire changed this state
 				{
-					FTimerDelegate FireDelegate;
-					FireDelegate.BindUFunction(this, FName("FireVehicleWeapon"), SeatIndex);
-
 					float FireRate = UWeaponFunctions::GetFireRate(StaticWeaponData.WeaponFirePerformance.RateOfFire);
-					GetWorld()->GetTimerManager().SetTimer(TimerHandle_AutoFire, FireDelegate, FireRate, true);	//looping
+
+					// Create a Weak Lambda
+					FTimerDelegate FireDelegate;
+					FireDelegate.BindWeakLambda(this, [this, SeatIndex]()
+					{
+						// This code ONLY runs if 'this' is still a valid, non-null pointer
+						this->FireVehicleWeapon(SeatIndex);
+					});
+
+					GetWorld()->GetTimerManager().SetTimer(TimerHandle_AutoFire, FireDelegate, FireRate, true);
 				}
 			}
 			break;
@@ -1143,7 +1154,7 @@ void UVehicleWeaponLogicComponent::HandleShootSimProjectile(FVehicleWeaponState&
 			SeatWeaponSystem.VehicleWeaponSystemState.EquippedWeaponState.RaycastData.MuzzleAimDirections[MuzzleIndex],
 			StaticWeaponData.WeaponFirePerformance.WeaponDamageData.BaseDamage,
 			StaticWeaponData.WeaponFirePerformance.WeaponDamageData.DamageDropoffCurve,
-			ProjectileSubsystem
+			UBS2FunctionLibrary::GetProjectileSystem(this)
 		);
 
 		TWeakObjectPtr<UNiagaraComponent> VFXComp = VehicleWeaponState.MuzzleVFXPool[MuzzleIndex];
@@ -1186,7 +1197,7 @@ TWeakObjectPtr<AProjectile_Base> UVehicleWeaponLogicComponent::HandleShootProjec
 			//pull from pool/spawn
 			FVector& AimDirection = SeatWeaponSystem.VehicleWeaponSystemState.EquippedWeaponState.RaycastData.MuzzleAimDirections[MuzzleIndex];
 			FTransform MuzzleTransform;
-			FiredProjectile = ProjectileSubsystem->AcquireProjectileFromPool(StaticWeaponData.WeaponFirePerformance.MunitionID);
+			FiredProjectile = UBS2FunctionLibrary::GetProjectileSystem(this)->AcquireProjectileFromPool(StaticWeaponData.WeaponFirePerformance.MunitionID);
 			SetupProjectileGuidance(FiredProjectile, StaticWeaponData.WeaponFunctionality.HomingFunctionality.HomingCapability, LockOnState, HitResult);
 			AActor* FiringVehicle = GetOwner();
 			FiredProjectile->MoveIgnoreActorAdd(FiringVehicle);

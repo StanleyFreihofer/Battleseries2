@@ -3,7 +3,7 @@
 #include "Engine/DataTable.h"
 #include "Engine/StreamableManager.h"
 #include "Engine/AssetManager.h"
-#include "Data/Core/CoreTypes.h"
+#include "Data/Core/CoreDefaults.h"
 #include "Data/Vehicles/Data_Seat.h"
 #include "Data/Weapons/Data_Weapon.h"
 #include "Data/Weapons/Data_InfantryWeapon.h"
@@ -65,7 +65,7 @@ void UDataManagerSubsystem::LoadDataTables()
     VehicleAttachmentDataTable = VehicleAttachmentDataTableAsset.LoadSynchronous();
     CamoDataTable = CamoDataTableAsset.LoadSynchronous();
 
-    CoreTypeDefinitionsDataAsset = CoreTypeDefinitionsDAAsset.LoadSynchronous();
+    CoreDefaultsDefinitionsDataAsset = CoreDefaultsDefinitionsDAAsset.LoadSynchronous();
     CustomizationDefaultsDataAsset = CustomizationDefaultsDAAsset.LoadSynchronous();
     CharacterDefaultsDataAsset = CharacterDefaultsDAAsset.LoadSynchronous();
     SoldierClassDefaultsDataAsset = SoldierClassDefaultsDAAsset.LoadSynchronous();

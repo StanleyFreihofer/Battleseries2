@@ -225,7 +225,9 @@ void ACharacter_Base::CharacterEnterVehicle()
 	Camera->SetRelativeRotation(FRotator());
 	bUseControllerRotationYaw = false;
 
-	APlayerController* PC = GetController<APlayerController>();
+	ManageIMC(GetDataSystem_Character()->GetCharacterDefaults()->DefaultGameplayIMC.Get(), nullptr, -1);
+
+	/**
 	static FProperty* ContextsProp = UEnhancedPlayerInput::StaticClass()->FindPropertyByName(FName("AppliedInputContexts"));
 	void* ValuePtr = ContextsProp->ContainerPtrToValuePtr<void>(PC->PlayerInput);
 	auto* MapPtr = static_cast<TMap<TObjectPtr<const UInputMappingContext>, int32>*>(ValuePtr);
@@ -245,6 +247,7 @@ void ACharacter_Base::CharacterEnterVehicle()
 	{
 		ManageIMC(IMC, nullptr, -1);
 	}
+	**/
 }
 
 void ACharacter_Base::CharacterExitVehicle()

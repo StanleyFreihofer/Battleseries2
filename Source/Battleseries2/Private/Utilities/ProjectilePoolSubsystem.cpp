@@ -5,7 +5,7 @@
 #include "NiagaraFunctionLibrary.h"
 #include "NiagaraComponent.h"
 #include "Engine/StaticMeshActor.h"
-#include "Utilities/DataManagerSubsystem.h"
+#include "Utilities/BS2FunctionLibrary.h"
 #include "Core/Weapons/Projectiles/Projectile_Base.h"
 #include "Data/Weapons/Data_Projectile.h"
 
@@ -29,9 +29,8 @@ TStatId UProjectilePoolSubsystem::GetStatId() const
 void UProjectilePoolSubsystem::SpawnPoolofProjectile(FName MunitionID, int32 PoolSize)
 {
 	FProjectilePoolEntry PoolEntry;
-	DataManager = GetWorld()->GetGameInstance()->GetSubsystem<UDataManagerSubsystem>();
 
-	const FProjectileData* ProjectileData = DataManager->GetProjectileDataRow(MunitionID);
+	const FProjectileData* ProjectileData = UBS2FunctionLibrary::GetDataSubsystem(this)->GetProjectileDataRow(MunitionID);
 
 	for (int32 i = 0; i < PoolSize; i++)
 	{
@@ -103,44 +102,48 @@ void UProjectilePoolSubsystem::UpdateSimulatedProjectiles(float DeltaSeconds)
 	FVector NewLocation;
 	FVector NewVelocity;
 	FCollisionQueryParams Params;
-	bool bDidHit;
 	FHitResult OutHit;
+	Params.bTraceComplex = true;
 
-	for (int32 i = 0; i < SimulatedProjectiles.Num(); i++)
+	for (int32 i = SimulatedProjectiles.Num() - 1; i >= 0; i--)
 	{
-		FSimProjectile_Runtime& SimulatedProjectile = SimulatedProjectiles[i];
-		NewVelocity = CalculateDrop(SimulatedProjectile.CurrentVelocity, SimulatedProjectile.GravityScale, DeltaSeconds);
-		NewLocation = SimulatedProjectile.CurrentLocation + NewVelocity * DeltaSeconds;
+		// 1. Get a COPY or be very careful with the reference
+		FSimProjectile_Runtime& Sim = SimulatedProjectiles[i];
 
-		bDidHit = GetWorld()->LineTraceSingleByChannel(OutHit, SimulatedProjectile.CurrentLocation, NewLocation, ECC_Visibility, Params);
-		DrawDebugLine(GetWorld(), SimulatedProjectile.CurrentLocation, NewLocation, bDidHit ? FColor::Yellow : FColor::Red, false, -1.f, 0, 1.f);
+		NewVelocity = CalculateDrop(Sim.CurrentVelocity, Sim.GravityScale, DeltaSeconds);
+		NewLocation = Sim.CurrentLocation + (NewVelocity * DeltaSeconds);
 
-		SimulatedProjectile.CurrentLocation = NewLocation;
-		SimulatedProjectile.CurrentVelocity = NewVelocity;
-		DrawDebugSphere(GetWorld(), NewLocation, 10.f, 8, FColor::Blue, false, -1.f);
-		if (SimulatedProjectile.ProjectileMesh.Get())
+		bool bDidHit = GetWorld()->LineTraceSingleByChannel(OutHit, Sim.CurrentLocation, NewLocation, ECC_Visibility, Params);
+
+		// 2. Only update the struct if we AREN'T about to delete it
+		if (!bDidHit)
 		{
-			SimulatedProjectile.ProjectileMesh->SetActorLocation(NewLocation);
+			Sim.CurrentLocation = NewLocation;
+			Sim.CurrentVelocity = NewVelocity;
+
+			if (Sim.ProjectileMesh.IsValid())
+			{
+				Sim.ProjectileMesh->SetActorLocation(NewLocation);
+			}
+
+			// Debugging only for active projectiles
+			DrawDebugLine(GetWorld(), Sim.CurrentLocation, NewLocation, FColor::Red, false, -1.f, 0, 1.f);
 		}
-
-		if (bDidHit)
+		else
 		{
-			AActor* HitActor = OutHit.GetActor();
-			if (HitActor)
+			// 3. Handle the hit
+			DrawDebugLine(GetWorld(), Sim.CurrentLocation, NewLocation, FColor::Yellow, false, -1.f, 0, 1.f);
+
+			if (AActor* HitActor = OutHit.GetActor())
 			{
-				//apply damage, etc
+				// Trigger damage here
 			}
-			UE_LOG(LogTemp, Error, TEXT("[ProjectilePoolSubsystem::UpdateSimulatedProjectiles] ProjectileID = %s"), *SimulatedProjectile.MunitionID.ToString());
-			/**
-			const FProjectileData* ProjectileData = DataManager->GetProjectileDataRow(SimulatedProjectile.MunitionID);
-			UNiagaraSystem* SelectedVFX = ProjectileData->ProjectileVisualData.ImpactVFX.LoadSynchronous();
-			if (SelectedVFX)
-			{
-				UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), SelectedVFX, OutHit.ImpactPoint, OutHit.ImpactNormal.Rotation());
-			}
-			**/
+
+			// 4. Final log before the memory is freed
+			UE_LOG(LogTemp, Warning, TEXT("Projectile Hit: %s"), *Sim.MunitionID.ToString());
+
+			// 5. Remove and IMMEDIATELY move to next iteration
 			SimulatedProjectiles.RemoveAt(i);
-			continue;
 		}
 	}
 }

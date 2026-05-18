@@ -22,7 +22,7 @@ class UDA_VehicleDefaults;
 class UDA_SoldierClassDefaults;
 class UDA_WeaponDefaults;
 class UDA_CustomizationDefaults;
-class UDA_CoreTypes;
+class UDA_CoreDefaults;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnDataReady);
 
@@ -73,7 +73,7 @@ public:
     TSoftObjectPtr<UDA_CustomizationDefaults> CustomizationDefaultsDAAsset;
 
     UPROPERTY(EditAnywhere, Category = "Data Assets")
-    TSoftObjectPtr<UDA_CoreTypes> CoreTypeDefinitionsDAAsset;
+    TSoftObjectPtr<UDA_CoreDefaults> CoreDefaultsDefinitionsDAAsset;
 
 
 
@@ -114,7 +114,7 @@ public:
     UDataTable* GetWeaponDataTable() const { return WeaponDataTable; }
 
     UFUNCTION(BlueprintCallable, Category = "Data")
-    UDA_CoreTypes* GetCoreTypeDefinitions() const { return CoreTypeDefinitionsDataAsset;  }
+    UDA_CoreDefaults* GetCoreDefaultsDefinitions() const { return CoreDefaultsDefinitionsDataAsset;  }
 
     UFUNCTION(BlueprintCallable, Category = "Data")
     UDA_CharacterDefaults* GetCharacterDefaults() const { return CharacterDefaultsDataAsset; }
@@ -205,7 +205,7 @@ private:
     UDataTable* CamoDataTable;
 
     UPROPERTY()
-    UDA_CoreTypes* CoreTypeDefinitionsDataAsset;
+    UDA_CoreDefaults* CoreDefaultsDefinitionsDataAsset;
 
     UPROPERTY()
     UDA_CharacterDefaults* CharacterDefaultsDataAsset;

@@ -8,8 +8,13 @@ public class Battleseries2EditorTarget : TargetRules
 	public Battleseries2EditorTarget(TargetInfo Target) : base(Target)
 	{
 		Type = TargetType.Editor;
-		DefaultBuildSettings = BuildSettingsVersion.V5;
+		DefaultBuildSettings = BuildSettingsVersion.V6;
 
-		ExtraModuleNames.AddRange( new string[] { "Battleseries2" } );
+        IncludeOrderVersion = EngineIncludeOrderVersion.Latest;
+        BuildEnvironment = TargetBuildEnvironment.Shared;
+
+        bOverrideBuildEnvironment = true;
+
+        ExtraModuleNames.AddRange( new string[] { "Battleseries2" } );
 	}
 }

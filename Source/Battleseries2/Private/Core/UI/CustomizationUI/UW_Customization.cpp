@@ -22,7 +22,7 @@
 #include "Engine/World.h"
 #include "Engine/GameViewportClient.h"
 #include "Math/UnrealMathUtility.h"
-#include "Utilities/HelperFunctions_Vehicle.h"
+#include "Utilities/BS2FunctionLibrary.h"
 #include "Data/Core/CoreTypes.h"
 #include "Core/Weapons/VehicleWeaponLogicComponent.h"
 #include "Core/PlayerController_Base.h"
@@ -152,7 +152,7 @@ void UUW_Customization::Build_ClassTypeScrollbox()
 {
 	for (EClassType SoldierClass : TEnumRange<EClassType>())
 	{
-		UUW_LoadoutTypeButton* NewLoadoutTypeButton = CreateWidget<UUW_LoadoutTypeButton>(GetWorld(), GetData_UUWCustomization()->GetCustomizationDefaults()->LoadoutTypeWidgetClass);
+		UUW_LoadoutTypeButton* NewLoadoutTypeButton = CreateWidget<UUW_LoadoutTypeButton>(GetWorld(), UBS2FunctionLibrary::GetDataSubsystem(this)->GetCustomizationDefaults()->LoadoutTypeWidgetClass);
 		NewLoadoutTypeButton->SetSoldierClassType((int32)SoldierClass);
 		NewLoadoutTypeButton->OnLoadoutTypeClicked.AddDynamic(this, &UUW_Customization::UpdateSelectedClassType);
 		ScrollBox->AddChild(NewLoadoutTypeButton);
@@ -162,10 +162,10 @@ void UUW_Customization::Build_ClassTypeScrollbox()
 
 void UUW_Customization::Build_VehicleTypeScrollbox()				
 {
-	TArray<EVehicleType>& AvailableVehicleTypes = GetData_UUWCustomization()->GetCustomizationDefaults()->CustomizableVehicleTypes;
+	TArray<EVehicleType>& AvailableVehicleTypes = UBS2FunctionLibrary::GetDataSubsystem(this)->GetCustomizationDefaults()->CustomizableVehicleTypes;
 	for (EVehicleType VehicleType : AvailableVehicleTypes)		
 	{
-		UUW_LoadoutTypeButton* NewLoadoutTypeButton = CreateWidget<UUW_LoadoutTypeButton>(GetWorld(), GetData_UUWCustomization()->GetCustomizationDefaults()->LoadoutTypeWidgetClass);
+		UUW_LoadoutTypeButton* NewLoadoutTypeButton = CreateWidget<UUW_LoadoutTypeButton>(GetWorld(), UBS2FunctionLibrary::GetDataSubsystem(this)->GetCustomizationDefaults()->LoadoutTypeWidgetClass);
 		NewLoadoutTypeButton->SetVehicleType((int32)VehicleType);
 		NewLoadoutTypeButton->OnLoadoutTypeClicked.AddDynamic(this, &UUW_Customization::UpdateSelectedVehicleType);
 		NewLoadoutTypeButton->OnLoadoutTypeHovered.AddDynamic(this, &UUW_Customization::ShowVehicleTypeOptions);
@@ -186,13 +186,13 @@ void UUW_Customization::ShowVehicleTypeOptions(int32 TypeEnumIndex)
 	VerticalBox_TypeDropdowns->ClearChildren();
 	
 	EVehicleType VehicleType = static_cast<EVehicleType>(CustomizationUIState.TypeEnumIndex);
-	UDataTable* VehicleDataTable = GetData_UUWCustomization()->GetVehicleDataTable();
+	UDataTable* VehicleDataTable = UBS2FunctionLibrary::GetDataSubsystem(this)->GetVehicleDataTable();
 	TArray<FName> AllVehicleIDsOfType = FVehicleData::GetRowNamesOfType(VehicleDataTable, VehicleType);
 	for (int32 i = 0; i < AllVehicleIDsOfType.Num(); ++i)
 	{
 		FName& VehicleID = AllVehicleIDsOfType[i];
-		UUW_DropdownOption* NewVehicleOption = CreateWidget<UUW_DropdownOption>(this, GetData_UUWCustomization()->GetCustomizationDefaults()->DropdownOptionWidgetClass);
-		NewVehicleOption->Init_DropdownOption(VehicleID, GetData_UUWCustomization()->GetVehicleDataRow(VehicleID)->Vehicle_DisplayName, i, ESlateVisibility::Visible);
+		UUW_DropdownOption* NewVehicleOption = CreateWidget<UUW_DropdownOption>(this, UBS2FunctionLibrary::GetDataSubsystem(this)->GetCustomizationDefaults()->DropdownOptionWidgetClass);
+		NewVehicleOption->Init_DropdownOption(VehicleID, UBS2FunctionLibrary::GetDataSubsystem(this)->GetVehicleDataRow(VehicleID)->Vehicle_DisplayName, i, ESlateVisibility::Visible);
 		NewVehicleOption->OnOptionClicked.AddDynamic(this, &UUW_Customization::HandleVehicleSelected);
 		VerticalBox_TypeDropdowns->AddChild(NewVehicleOption);
 	}
@@ -239,10 +239,10 @@ void UUW_Customization::HandleRefreshTypeScrollBox(int32 NumOFVisibleButtons)
 	switch (CustomizationUIState.CurrentCustomizationMode)
 	{
 		case ECoreType::Class:
-			bShouldScroll = GetData_UUWCustomization()->GetCustomizationDefaults()->Scroll_SoldierClassMode;
+			bShouldScroll = UBS2FunctionLibrary::GetDataSubsystem(this)->GetCustomizationDefaults()->Scroll_SoldierClassMode;
 			break;
 		case ECoreType::Vehicle:
-			bShouldScroll = GetData_UUWCustomization()->GetCustomizationDefaults()->Scroll_VehicleMode;
+			bShouldScroll = UBS2FunctionLibrary::GetDataSubsystem(this)->GetCustomizationDefaults()->Scroll_VehicleMode;
 			break;
 	}
 
@@ -318,10 +318,10 @@ void UUW_Customization::Build_SoldierClassLoadoutPanel(int32 TypeEnumIndex)
 {
 	//soldier class
 	EClassType SoldierClassType = static_cast<EClassType>(TypeEnumIndex);
-	EWeaponType DefaultWeaponCategory = GetData_UUWCustomization()->GetSoldierClassDefaults()->SoldierClassDefinitions.Find(SoldierClassType)->AvailableWeaponCategories[0];
+	EWeaponType DefaultWeaponCategory = UBS2FunctionLibrary::GetDataSubsystem(this)->GetSoldierClassDefaults()->SoldierClassDefinitions.Find(SoldierClassType)->AvailableWeaponCategories[0];
 
 	//Build_SoldierClassLoadoutData_WeaponData
-	const TArray<FName>& WeaponTypeIDs = GetData_UUWCustomization()->GetAllInfantryWeaponIDsOfType(DefaultWeaponCategory);
+	const TArray<FName>& WeaponTypeIDs = UBS2FunctionLibrary::GetDataSubsystem(this)->GetAllInfantryWeaponIDsOfType(DefaultWeaponCategory);
 	FCustomizationSlotConfig NewSlotData = Build_LoadoutSlotData(WeaponTypeIDs, ECoreItemType::CharacterWeapon, 0, FText::GetEmpty());
 	UUW_LoadoutSlot* NewSlotWidget = CreateNewLoadoutSlot();
 	NewSlotWidget->Init_LoadoutSlot_Vehicle(NewSlotData, -1);			//CHANGE THIS
@@ -332,8 +332,8 @@ void UUW_Customization::Build_SoldierClassLoadoutPanel(int32 TypeEnumIndex)
 void UUW_Customization::Build_VehicleLoadoutPanel(int32 TypeEnumIndex)
 {
 	EVehicleType VehicleType = static_cast<EVehicleType>(TypeEnumIndex);
-	FName VehicleID = GetData_UUWCustomization()->GetFirstVehicleIDOfType(VehicleType);
-	const FVehicleData& VehicleData = *GetData_UUWCustomization()->GetVehicleDataRow(VehicleID);
+	FName VehicleID = UBS2FunctionLibrary::GetDataSubsystem(this)->GetFirstVehicleIDOfType(VehicleType);
+	const FVehicleData& VehicleData = *UBS2FunctionLibrary::GetDataSubsystem(this)->GetVehicleDataRow(VehicleID);
 
 	//TMap<int32, FAvailableItems*> CustomizableSeatOptions;			//option list to be built out
 	for (int32 SI = 0; SI < VehicleData.Seats.Num(); SI++)
@@ -412,7 +412,7 @@ void UUW_Customization::Build_VehicleLoadoutData_Camo(const FVehicleData& Vehicl
 
 UUW_LoadoutSlot* UUW_Customization::CreateNewLoadoutSlot()
 {
-	UUW_LoadoutSlot* NewSlotWidget = CreateWidget<UUW_LoadoutSlot>(GetWorld(), GetData_UUWCustomization()->GetCustomizationDefaults()->LoadoutSlotWidgetClass);
+	UUW_LoadoutSlot* NewSlotWidget = CreateWidget<UUW_LoadoutSlot>(GetWorld(), UBS2FunctionLibrary::GetDataSubsystem(this)->GetCustomizationDefaults()->LoadoutSlotWidgetClass);
 	VerticalBox_LoadoutPanel->AddChild(NewSlotWidget);
 	CustomizationUIState.LoadoutSlots.Add(NewSlotWidget);
 	NewSlotWidget->OnSlotSelectionChanged.AddDynamic(this, &UUW_Customization::HandleSlotSelectionChanged);
@@ -588,21 +588,21 @@ void UUW_Customization::FillDetailsPanel_VehicleWeapon(FName WeaponID)
 		return;
 	}
 	UE_LOG(LogTemp, Error, TEXT("[UW_Customization::FillDetailsPanel_VehicleWeapon] WeaponID = %s"), *WeaponID.ToString());
-	const FVehicleWeaponData* VehicleWeaponData = GetData_UUWCustomization()->GetVehicleWeaponDataRow(WeaponID);
+	const FVehicleWeaponData* VehicleWeaponData = UBS2FunctionLibrary::GetDataSubsystem(this)->GetVehicleWeaponDataRow(WeaponID);
 	T_ItemName->SetText(VehicleWeaponData->WeaponData.WeaponClassification.WeaponDisplayName);
 	T_Description->SetText(VehicleWeaponData->WeaponData.WeaponClassification.WeaponDescription);
 }
 
 void UUW_Customization::FillDetailsPanel_Optic(FName OpticID)
 {
-	const FOpticData* OpticData = GetData_UUWCustomization()->GetOpticDataRow(OpticID);
+	const FOpticData* OpticData = UBS2FunctionLibrary::GetDataSubsystem(this)->GetOpticDataRow(OpticID);
 	T_ItemName->SetText(OpticData->OpticDisplayName);
 	T_Description->SetText(OpticData->OpticDescription);
 }
 
 void UUW_Customization::FillDetailsPanel_Camo(FName CamoID)
 {
-	const FCamoData* CamoData = GetData_UUWCustomization()->GetCamoDataRow(CamoID);
+	const FCamoData* CamoData = UBS2FunctionLibrary::GetDataSubsystem(this)->GetCamoDataRow(CamoID);
 	T_ItemName->SetText(CamoData->CamoDisplayName);
 	T_Description->SetText(CamoData->CamoDescription);
 	Img_Icon->SetBrushFromTexture(CamoData->CamoIcon.LoadSynchronous());
@@ -638,7 +638,7 @@ void UUW_Customization::UpdateVehiclePreview(int32 TypeEnumIndex, FName VehicleI
 	if (VehicleID == NAME_None)
 	{
 		FString TypeName = StaticEnum<EVehicleType>()->GetNameStringByValue((int64)VehicleType);
-		UDataTable* VehicleDataTable = GetData_UUWCustomization()->GetVehicleDataTable();
+		UDataTable* VehicleDataTable = UBS2FunctionLibrary::GetDataSubsystem(this)->GetVehicleDataTable();
 		TArray<FName> AllVehicleIDsOfType = FVehicleData::GetRowNamesOfType(VehicleDataTable, VehicleType);
 		FName RowName = FName(*StaticEnum<EVehicleType>()->GetNameStringByValue((int64)VehicleType));
 
@@ -651,12 +651,12 @@ void UUW_Customization::UpdateVehiclePreview(int32 TypeEnumIndex, FName VehicleI
 
 	NewVehicleStartingData.StartingVehicleLoadout = SaveSubsystem->GetVehicleLoadout(VehicleType);
 
-	FTransform PreviewTransform = GetData_UUWCustomization()->GetVehicleDataRow(NewVehicleStartingData.VehicleID)->CustomizationPosition;
+	FTransform PreviewTransform = UBS2FunctionLibrary::GetDataSubsystem(this)->GetVehicleDataRow(NewVehicleStartingData.VehicleID)->CustomizationPosition;
 	UE_LOG(LogTemp, Warning, TEXT("location: %s"), *PreviewTransform.GetLocation().ToString());
 
 	PC->PreviewStageActor->SetupNewPreviewVehicle(PreviewTransform, NewVehicleStartingData);		//<--default selection
 
-	T_PreviewName->SetText(GetData_UUWCustomization()->GetVehicleDataRow(NewVehicleStartingData.VehicleID)->Vehicle_DisplayName);
+	T_PreviewName->SetText(UBS2FunctionLibrary::GetDataSubsystem(this)->GetVehicleDataRow(NewVehicleStartingData.VehicleID)->Vehicle_DisplayName);
 }
 
 #pragma region TypeUpdates
@@ -672,7 +672,7 @@ void UUW_Customization::UpdateSelectedClassType(int32 TypeEnumIndex)
 
 		HandleTypeSelection(TypeEnumIndex);
 
-		HandleRefreshTypeScrollBox(GetData_UUWCustomization()->GetCustomizationDefaults()->NumOfViewableTypeButtons_SoldierClassMode);
+		HandleRefreshTypeScrollBox(UBS2FunctionLibrary::GetDataSubsystem(this)->GetCustomizationDefaults()->NumOfViewableTypeButtons_SoldierClassMode);
 	}
 }
 
@@ -691,7 +691,7 @@ void UUW_Customization::UpdateSelectedVehicleType(int32 TypeEnumIndex)
 
 		HandleTypeSelection(TypeEnumIndex);
 
-		HandleRefreshTypeScrollBox(GetData_UUWCustomization()->GetCustomizationDefaults()->NumOfViewableTypeButtons_VehicleMode);
+		HandleRefreshTypeScrollBox(UBS2FunctionLibrary::GetDataSubsystem(this)->GetCustomizationDefaults()->NumOfViewableTypeButtons_VehicleMode);
 
 		//ClearVehicleTypeOptions();
 	}
@@ -784,11 +784,6 @@ void UUW_Customization::OnVehicleModeBtnClicked()
 void UUW_Customization::OnWeaponModeBtnClicked()
 {
 	EnterLoadoutMode(false, true);
-}
-
-UDataManagerSubsystem* UUW_Customization::GetData_UUWCustomization()
-{
-	return GetGameInstance()->GetSubsystem<UDataManagerSubsystem>();;
 }
 
 FReply UUW_Customization::NativeOnMouseWheel(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)

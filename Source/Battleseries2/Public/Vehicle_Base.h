@@ -280,11 +280,6 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	UCameraComponent* GetRemoteActiveCam(int32 SeatIndex);
 
-	UFUNCTION()
-	TWeakObjectPtr<UHUDSubsystem> GetHUDSystem();
-	UFUNCTION()
-	UDataManagerSubsystem* GetDataManager();
-
 	//Interfaces
 	virtual USkeletalMeshComponent* GetVehicleMesh() const override;
 	virtual FName GetVehicleID() const override;

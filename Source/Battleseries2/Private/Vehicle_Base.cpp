@@ -9,7 +9,7 @@
 #include "Data/Data_Optics.h"
 #include "Data/Vehicles/VehicleDefaults.h"
 #include "Utilities/ProjectilePoolSubsystem.h"
-#include "Utilities/HelperFunctions_Vehicle.h"
+#include "Utilities/BS2FunctionLibrary.h"
 #include "Core/Weapons/Projectiles/Projectile_Base.h"
 #include "Core/Weapons/VehicleWeaponLogicComponent.h"
 #include "Core/Vehicles/ChaosWheel_Base.h"
@@ -20,6 +20,7 @@
 #include "Save/SaveSubsystem.h"
 #include "Utilities/GameInstance_Base.h"
 #include "Utilities/HUDSubsystem.h"
+#include "Utilities/BS2FunctionLibrary.h"
 #include "Utilities/I_Anims.h"
 #include "InputAction.h"
 #include "Character_Base.h"							//need to access LSI, CSI, NSI... and probably other things
@@ -54,13 +55,13 @@ void AVehicle_Base::BeginPlay()
 
 	if (!VehicleStartingData.VehicleID.IsNone())
 	{
-		if (GetDataManager()->IsDataReady())
+		if (UBS2FunctionLibrary::GetDataSubsystem(this)->IsDataReady())
 		{
 			Init_VehicleData();
 		}
 		else
 		{
-			GetDataManager()->OnDataReady.AddDynamic(this, &AVehicle_Base::Init_VehicleData);
+			UBS2FunctionLibrary::GetDataSubsystem(this)->OnDataReady.AddDynamic(this, &AVehicle_Base::Init_VehicleData);
 		}
 	}
 }
@@ -202,7 +203,7 @@ void AVehicle_Base::Init_DefaultSeatRemoteCamera(int32 SeatIndex)
 			VehicleCurrentState.SeatStates[SeatIndex].DefaultCamera = NewCamera;
 			UpdateSeatActiveCamera(SeatIndex, NewCamera);
 
-			UpdateRemoteActiveCamPP(SeatIndex, GetDataManager()->GetOpticDataRow(VehicleCurrentState.SeatStates[SeatIndex].OpticState.CurrentAvailableOptics[VehicleCurrentState.SeatStates[SeatIndex].OpticState.CurrentOpticIndex])->OpticPPSettings, 1.0f, GetRemoteActiveCam(SeatIndex));
+			UpdateRemoteActiveCamPP(SeatIndex, UBS2FunctionLibrary::GetDataSubsystem(this)->GetOpticDataRow(VehicleCurrentState.SeatStates[SeatIndex].OpticState.CurrentAvailableOptics[VehicleCurrentState.SeatStates[SeatIndex].OpticState.CurrentOpticIndex])->OpticPPSettings, 1.0f, GetRemoteActiveCam(SeatIndex));
 			break;
 	}
 }
@@ -289,7 +290,7 @@ void AVehicle_Base::Init_VehicleAnim(TSubclassOf<UAnimInstance> Anim_Class)
 void AVehicle_Base::Init_VehicleData()			//(load vehicle data)
 {
 	//1. load base vehicle data row
-	VehicleData = GetDataManager()->GetVehicleDataRow(VehicleStartingData.VehicleID);
+	VehicleData = UBS2FunctionLibrary::GetDataSubsystem(this)->GetVehicleDataRow(VehicleStartingData.VehicleID);
 
 	//2. Asynchronously load assets (mesh, anim class)
 	TArray<FSoftObjectPath> AssetsToLoad;
@@ -520,7 +521,7 @@ void AVehicle_Base::ApplyCamoToAttachment(TWeakObjectPtr<UMeshComponent> Mesh, F
 {
 	if (!Mesh.IsValid() || AttachmentID == NAME_None || CamoID == NAME_None) return;
 
-	const FVehicleAttachmentData& AttachmentData = *GetDataManager()->GetVehicleAttachmentDataRow(AttachmentID);
+	const FVehicleAttachmentData& AttachmentData = *UBS2FunctionLibrary::GetDataSubsystem(this)->GetVehicleAttachmentDataRow(AttachmentID);
 	const FAttachmentCamoData* CamoData = AttachmentData.AvailableCamos.Find(CamoID);
 	if (!CamoData)
 	{
@@ -865,12 +866,12 @@ void AVehicle_Base::UpdateThrottle_GV(float InputValue)
 	if (InputValue > 0)
 	{
 		ChaosVehicleMovement->SetThrottleInput(InputValue);
-		GetHUDSystem()->UpdateSpeedHUD_Vehicle(GetVelocity().Size());		//block behind updatehud check?
+		UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateSpeedHUD_Vehicle(GetVelocity().Size());		//block behind updatehud check?
 	}
 	else if (InputValue < 0)
 	{
 		ChaosVehicleMovement->SetBrakeInput(FMath::Abs(InputValue));
-		GetHUDSystem()->UpdateSpeedHUD_Vehicle(GetVelocity().Size());		//block behind updatehud check?
+		UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateSpeedHUD_Vehicle(GetVelocity().Size());		//block behind updatehud check?
 	}
 	else if (InputValue == 0)
 	{
@@ -879,7 +880,7 @@ void AVehicle_Base::UpdateThrottle_GV(float InputValue)
 		
 		GetWorld()->GetTimerManager().SetTimer(SpeedTimer, [this]()
 		{
-			GetHUDSystem()->UpdateSpeedHUD_Vehicle(GetVelocity().Size());		//block behind updatehud check?
+			UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateSpeedHUD_Vehicle(GetVelocity().Size());		//block behind updatehud check?
 		}, 0.05f, true);
 		if (GetVelocity().Size() <= 0.0f)
 		{
@@ -900,7 +901,7 @@ void AVehicle_Base::Input_UpdateSteering_GV(float SteeringValue, int32 SeatIndex
 	}
 	if (VehicleCurrentState.SeatStates[SeatIndex].ActiveCamera)
 	{
-		GetHUDSystem()->UpdateCompassHUD_Vehicle(VehicleCurrentState.SeatStates[SeatIndex].ActiveCamera->GetComponentRotation().Yaw);
+		UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateCompassHUD_Vehicle(VehicleCurrentState.SeatStates[SeatIndex].ActiveCamera->GetComponentRotation().Yaw);
 	}
 }
 
@@ -939,7 +940,7 @@ void AVehicle_Base::UpdatePitch_Heli(float InputValue)
 	FRotator DeltaRotation = FRotator(PitchThisFrame, 0.0f, 0.0f);
 	AddActorLocalRotation(DeltaRotation, false, nullptr, ETeleportType::TeleportPhysics);
 
-	GetHUDSystem()->UpdateAltitudeHUD_Vehicle(GetActorRotation().Pitch);
+	UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateAltitudeHUD_Vehicle(GetActorRotation().Pitch);
 }
 
 void AVehicle_Base::UpdateYaw_Heli(float InputValue)
@@ -1140,8 +1141,8 @@ void AVehicle_Base::ToggleOptic(int32 SeatIndex)
 	OpticState.CurrentOpticIndex = (OpticState.CurrentOpticIndex + 1) % OpticState.CurrentAvailableOptics.Num();
 	if (PreviousOpticIndex == OpticState.CurrentOpticIndex) { return;  }
 
-	const FOpticData& CurrentOpticData = *GetDataManager()->GetOpticDataRow(OpticState.CurrentAvailableOptics[OpticState.CurrentOpticIndex]);
-	const FOpticData& PreviousOpticData = *GetDataManager()->GetOpticDataRow(OpticState.CurrentAvailableOptics[PreviousOpticIndex]);
+	const FOpticData& CurrentOpticData = *UBS2FunctionLibrary::GetDataSubsystem(this)->GetOpticDataRow(OpticState.CurrentAvailableOptics[OpticState.CurrentOpticIndex]);
+	const FOpticData& PreviousOpticData = *UBS2FunctionLibrary::GetDataSubsystem(this)->GetOpticDataRow(OpticState.CurrentAvailableOptics[PreviousOpticIndex]);
 	//HandleTogglePPOptic
 	if (CurrentOpticData.OpticPPSettings.WeightedBlendables.Array.Num() > 0)
 	{
@@ -1158,16 +1159,16 @@ void AVehicle_Base::ToggleOptic(int32 SeatIndex)
 void AVehicle_Base::TurnOnPPOptic(int32 SeatIndex)
 {
 	FOpticState& OpticState = VehicleCurrentState.SeatStates[SeatIndex].OpticState;
-	const FOpticData& CurrentOpticData = *GetDataManager()->GetOpticDataRow(OpticState.CurrentAvailableOptics[OpticState.CurrentOpticIndex]);
-	UpdateRemoteActiveCamPP(SeatIndex, GetDataManager()->GetOpticDataRow(OpticState.CurrentAvailableOptics[OpticState.CurrentOpticIndex])->OpticPPSettings, 1.0f, GetRemoteActiveCam(SeatIndex));
+	const FOpticData& CurrentOpticData = *UBS2FunctionLibrary::GetDataSubsystem(this)->GetOpticDataRow(OpticState.CurrentAvailableOptics[OpticState.CurrentOpticIndex]);
+	UpdateRemoteActiveCamPP(SeatIndex, UBS2FunctionLibrary::GetDataSubsystem(this)->GetOpticDataRow(OpticState.CurrentAvailableOptics[OpticState.CurrentOpticIndex])->OpticPPSettings, 1.0f, GetRemoteActiveCam(SeatIndex));
 	OpticState.isOn = true;
 	UGameplayStatics::PlaySound2D(GetWorld(), CurrentOpticData.PowerOnSound);
 	if (VehicleCurrentState.SeatStates[SeatIndex].UpdateHUD)
 	{
-		GetHUDSystem()->UpdaticOpticNameHUD_Vehicle(CurrentOpticData.OpticDisplayNameAbrev);
+		UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdaticOpticNameHUD_Vehicle(CurrentOpticData.OpticDisplayNameAbrev);
 		if (CurrentOpticData.InverseUIColor.A > 0)
 		{
-			GetHUDSystem()->UpdateVehicleHUD_Color(CurrentOpticData.InverseUIColor);
+			UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateVehicleHUD_Color(CurrentOpticData.InverseUIColor);
 		}
 	}
 }
@@ -1175,21 +1176,21 @@ void AVehicle_Base::TurnOnPPOptic(int32 SeatIndex)
 void AVehicle_Base::TurnOffPPOptic(int32 SeatIndex, int32 PreviousOpticIndex)
 {
 	FOpticState& OpticState = VehicleCurrentState.SeatStates[SeatIndex].OpticState;
-	const FOpticData& CurrentOpticData = *GetDataManager()->GetOpticDataRow(OpticState.CurrentAvailableOptics[OpticState.CurrentOpticIndex]);
-	const FOpticData& PreviousOpticData = *GetDataManager()->GetOpticDataRow(OpticState.CurrentAvailableOptics[PreviousOpticIndex]);
+	const FOpticData& CurrentOpticData = *UBS2FunctionLibrary::GetDataSubsystem(this)->GetOpticDataRow(OpticState.CurrentAvailableOptics[OpticState.CurrentOpticIndex]);
+	const FOpticData& PreviousOpticData = *UBS2FunctionLibrary::GetDataSubsystem(this)->GetOpticDataRow(OpticState.CurrentAvailableOptics[PreviousOpticIndex]);
 	UpdateRemoteActiveCamPP(SeatIndex, FPostProcessSettings(), 0.0f, GetRemoteActiveCam(SeatIndex));
 	OpticState.isOn = false;
 	UGameplayStatics::PlaySound2D(GetWorld(), PreviousOpticData.PowerOffSound);
 	if (VehicleCurrentState.SeatStates[SeatIndex].UpdateHUD)
 	{
-		GetHUDSystem()->UpdaticOpticNameHUD_Vehicle(CurrentOpticData.OpticDisplayNameAbrev);
+		UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdaticOpticNameHUD_Vehicle(CurrentOpticData.OpticDisplayNameAbrev);
 		if (PreviousOpticData.InverseUIColor.A > 0)
 		{
 
 		}
 		if (CurrentOpticData.InverseUIColor.A == 0)
 		{
-			GetHUDSystem()->UpdateVehicleHUD_Color(FLinearColor(0.0f, 1.0f, 0.036889f, 1.0f));		//HARD CODED FOR NOW, CHANGE TO BE TAKEN FROM HUD/UI SETTINGS
+			UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateVehicleHUD_Color(FLinearColor(0.0f, 1.0f, 0.036889f, 1.0f));		//HARD CODED FOR NOW, CHANGE TO BE TAKEN FROM HUD/UI SETTINGS
 		}
 	}
 }
@@ -1205,13 +1206,13 @@ void AVehicle_Base::ToggleMagnificationOptic(int32 SeatIndex, float ZoomMagnific
 		float NewFOV = CurrentFOV / ZoomMagnification;			//CHANGE TO DEFAULT DATA 	
 		if (!OpticState.isMagnified)
 		{
-			const FOpticData& CurrentOpticData = *GetDataManager()->GetOpticDataRow(OpticState.CurrentAvailableOptics[OpticState.CurrentOpticIndex]);
+			const FOpticData& CurrentOpticData = *UBS2FunctionLibrary::GetDataSubsystem(this)->GetOpticDataRow(OpticState.CurrentAvailableOptics[OpticState.CurrentOpticIndex]);
 			CurrentFOV = NewFOV;
 			OpticState.isMagnified = true;
 			UGameplayStatics::PlaySound2D(GetWorld(), CurrentOpticData.PowerOnSound);
 			if (VehicleCurrentState.SeatStates[SeatIndex].UpdateHUD)
 			{
-				GetHUDSystem()->UpdateOpticMagnificationHUD_Vehicle(ZoomMagnification);
+				UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateOpticMagnificationHUD_Vehicle(ZoomMagnification);
 			}
 		}
 	}
@@ -1221,13 +1222,13 @@ void AVehicle_Base::ToggleMagnificationOptic(int32 SeatIndex, float ZoomMagnific
 		//WORK ON THIS
 		if (!OpticState.isOn)
 		{
-			const FOpticData& CurrentOpticData = *GetDataManager()->GetOpticDataRow(OpticState.CurrentAvailableOptics[OpticState.CurrentOpticIndex]);
+			const FOpticData& CurrentOpticData = *UBS2FunctionLibrary::GetDataSubsystem(this)->GetOpticDataRow(OpticState.CurrentAvailableOptics[OpticState.CurrentOpticIndex]);
 			CurrentFOV = 90.0f;
 			OpticState.isMagnified = false;
 			UGameplayStatics::PlaySound2D(GetWorld(), CurrentOpticData.PowerOnSound);
 			if (VehicleCurrentState.SeatStates[SeatIndex].UpdateHUD)
 			{
-				GetHUDSystem()->UpdateOpticMagnificationHUD_Vehicle(ZoomMagnification);
+				UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateOpticMagnificationHUD_Vehicle(ZoomMagnification);
 			}
 		}
 	}
@@ -1251,21 +1252,6 @@ UCameraComponent* AVehicle_Base::GetRemoteActiveCam(int32 SeatIndex)
 	return VehicleCurrentState.SeatStates[SeatIndex].ActiveCamera;
 }
 
-TWeakObjectPtr<UHUDSubsystem> AVehicle_Base::GetHUDSystem()
-{
-	TWeakObjectPtr<ULocalPlayer> LP = GetWorld()->GetFirstLocalPlayerFromController();
-	if (LP.Get())
-	{
-		TWeakObjectPtr<UHUDSubsystem> HUDSub = LP->GetSubsystem<UHUDSubsystem>();
-		return HUDSub;
-	}
-	return nullptr;
-}
-
-UDataManagerSubsystem* AVehicle_Base::GetDataManager()
-{
-	return GetGameInstance()->GetSubsystem<UDataManagerSubsystem>();
-}
 
 USkeletalMeshComponent* AVehicle_Base::GetVehicleMesh() const
 {

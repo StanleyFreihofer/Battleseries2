@@ -4,7 +4,6 @@
 #include "Subsystems/WorldSubsystem.h"
 #include "ProjectilePoolSubsystem.generated.h"
 
-class UDataManagerSubsystem;
 class AProjectile_Base;
 struct FSimProjectile_Runtime;
 
@@ -68,6 +67,5 @@ public:
     FVector CalculateDrop(FVector Velocity, float Gravity, float DeltaSeconds);
 
 private:
-    UDataManagerSubsystem* DataManager;
 
 };

@@ -1,7 +1,6 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Engine/DataAsset.h"
 #include "Data/Core/CoreEnums.h"
 #include "CoreTypes.generated.h"
 
@@ -118,28 +117,7 @@ struct FCoreTypeEnumDefinition
 	FText DisplayName = FText::GetEmpty();
 };
 
-UCLASS(BlueprintType)
-class BATTLESERIES2_API UDA_CoreTypes : public UDataAsset
-{
-	GENERATED_BODY()
 
-public:
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	TMap<ECoreType, FCoreTypeEnumDefinition>  CoreTypeDefinitions;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	TMap<ECoreItemType, FCoreTypeEnumDefinition> CoreItemTypeDefinitions;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	TMap<ECharacterItemType, FCoreTypeEnumDefinition> CharacterItemTypeDefinitions;
-
-	//UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	//TMap<EWeaponItemType, FCoreTypeEnumDefinition> WeaponItemTypeDefinitions;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	TMap<EVehicleItemType, FCoreTypeEnumDefinition> VehicleItemTypeDefinitions;
-};
 
 
 

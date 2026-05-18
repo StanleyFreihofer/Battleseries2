@@ -11,13 +11,13 @@
 #include "Data/Weapons/Data_VehicleWeapon.h"
 #include "Data/Data_Optics.h"
 #include "Data/Data_Camo.h"
+#include "Utilities/BS2FunctionLibrary.h"
 #include "Utilities/DataManagerSubsystem.h"
 
 
 void UUW_LoadoutSlot::NativeConstruct()
 {
 	Super::NativeConstruct();
-	DataManager = GetGameInstance()->GetSubsystem<UDataManagerSubsystem>();
 	SB_SlotHeightOverride_UnHovered = SB_Slot->GetHeightOverride();
 }
 
@@ -55,7 +55,7 @@ void UUW_LoadoutSlot::AddDropdownOption(FName NewOptionID, int32 OptionIndex)
 		{
 			case ECoreItemType::VehicleWeapon:
 				{
-					const FVehicleWeaponData* VehicleWeaponData = DataManager->GetVehicleWeaponDataRow(NewOptionID);
+					const FVehicleWeaponData* VehicleWeaponData = UBS2FunctionLibrary::GetDataSubsystem(this)->GetVehicleWeaponDataRow(NewOptionID);
 					if (VehicleWeaponData)			//if add an early contingency for none, get rid of this check
 					{
 						DisplayName = VehicleWeaponData->WeaponData.WeaponClassification.WeaponDisplayName;
@@ -64,7 +64,7 @@ void UUW_LoadoutSlot::AddDropdownOption(FName NewOptionID, int32 OptionIndex)
 				break;
 			case ECoreItemType::VehicleOptic:
 				{
-					const FOpticData* OpticData = DataManager->GetOpticDataRow(NewOptionID);
+					const FOpticData* OpticData = UBS2FunctionLibrary::GetDataSubsystem(this)->GetOpticDataRow(NewOptionID);
 					if (OpticData)
 					{
 						DisplayName = OpticData->OpticDisplayName;
@@ -72,7 +72,7 @@ void UUW_LoadoutSlot::AddDropdownOption(FName NewOptionID, int32 OptionIndex)
 				}
 				break;
 			case ECoreItemType::Camo:
-				const FCamoData* CamoData = DataManager->GetCamoDataRow(NewOptionID);
+				const FCamoData* CamoData = UBS2FunctionLibrary::GetDataSubsystem(this)->GetCamoDataRow(NewOptionID);
 				if (CamoData)
 				{
 					DisplayName = CamoData->CamoDisplayName;
@@ -86,7 +86,7 @@ void UUW_LoadoutSlot::AddDropdownOption(FName NewOptionID, int32 OptionIndex)
 		{
 			case ECoreItemType::CharacterWeapon:
 			{
-				const FInfantryWeaponData* InfantryWeaponData = DataManager->GetInfantryWeaponDataRow(NewOptionID);
+				const FInfantryWeaponData* InfantryWeaponData = UBS2FunctionLibrary::GetDataSubsystem(this)->GetInfantryWeaponDataRow(NewOptionID);
 				if (InfantryWeaponData)
 				{
 					DisplayName = InfantryWeaponData->WeaponClassificationData.BaseWeaponClassificationData.WeaponDisplayName;
