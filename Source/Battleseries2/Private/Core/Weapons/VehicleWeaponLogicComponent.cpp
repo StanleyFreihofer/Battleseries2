@@ -1714,6 +1714,7 @@ TWeakObjectPtr<UHUDSubsystem> UVehicleWeaponLogicComponent::GetHUDSystem()
 
 TWeakObjectPtr<UAudioComponent> UVehicleWeaponLogicComponent::GetWAC(int32& SeatIndex)
 {
+	UE_LOG(LogTemp, Warning, TEXT("[VWLC::GetWAC] SeatIndex =  %d"), SeatIndex);
 	FVehicleWeaponSystem_Runtime& SeatWeaponSystem = *VehicleWeaponSystem.Find(SeatIndex);
 	TWeakObjectPtr<UAudioComponent> WAC = SeatWeaponSystem.VehicleWeaponSystemState.WeaponAudioComponent;
 	return WAC;

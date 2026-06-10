@@ -9,6 +9,7 @@
 #include "Data/Weapons/Data_WeaponAttachments.h"
 #include "Data/Weapons/Data_Projectile.h"
 #include "Save/SaveSubsystem.h"
+#include "Utilities/BS2FunctionLibrary.h"
 
 UWeaponLogicComponent::UWeaponLogicComponent()
 {
@@ -30,31 +31,39 @@ void UWeaponLogicComponent::TickComponent(float DeltaTime, ELevelTick TickType, 
 void UWeaponLogicComponent::Init_WeaponLoadout(FPlayerLoadoutConfig_Class ClassLoadout, TArray<FPlayerLoadoutConfig_Weapon> WeaponLoadouts)
 {
 	TArray<FName>& Weapons = ClassLoadout.Weapons;
+	WeaponSystem.BaseWeaponSystem.Weapons.SetNum(Weapons.Num());
+	StaticWeaponDataCache.SetNum(Weapons.Num());
+	WeaponSystem.InfantryWeaponSystem.WeaponState_FP.SetNum(Weapons.Num());
+	WeaponSystem.InfantryWeaponSystem.WeaponState_TP.SetNum(Weapons.Num());
+
 	for (int32 i = 0; i < Weapons.Num(); i++)
 	{
-		WeaponSystem.BaseWeaponSystem.Weapons[i].WeaponID = Weapons[i];
-		FInfantryWeaponState NewFPState;
-
-		//Create Weapon Mesh
-		TWeakObjectPtr<USkeletalMeshComponent> NewWeapon = NewObject<USkeletalMeshComponent>(GetOwner());
-		NewWeapon->RegisterComponent();
-
-		//Update Mesh
-		const FInfantryWeaponData& WeaponData = *GetDataManager()->GetInfantryWeaponDataRow(Weapons[i]);
-		TWeakObjectPtr<USkeletalMesh> WeaponMesh = WeaponData.WeaponClassificationData.WeaponMesh.LoadSynchronous();
-		NewWeapon->SetSkeletalMesh(WeaponMesh.Get());
-		NewFPState.WeaponMesh = NewWeapon;
-
-		//attach and cache
-		WeaponSystem.InfantryWeaponSystem.WeaponState_FP.Add(NewFPState);
-		NewWeapon->AttachToComponent(Cast<ACharacter_Base>(GetOwner())->GetMesh(), FAttachmentTransformRules(EAttachmentRule::SnapToTarget, EAttachmentRule::SnapToTarget, EAttachmentRule::KeepRelative, true));
-
-		//apply saved attachments
-		const FPlayerLoadoutConfig_Weapon& CustomWeapon = WeaponLoadouts[i];				
-		ApplyAttachments(CustomWeapon, i);
-		//NewWeapon->SetHiddenInGame(true);
+		Init_Weapon(Weapons[i], i, WeaponLoadouts[i]);
 	}
+}
 
+void UWeaponLogicComponent::Init_Weapon(FName WeaponID, int32 WeaponIndex, FPlayerLoadoutConfig_Weapon WeaponLoadout)
+{
+	//Init WeaponSlot		Init Weapon
+	FInfantryWeaponState NewFPState;
+	Init_WeaponMesh(NewFPState.WeaponMesh);
+	UpdateWeaponMesh(WeaponID, NewFPState.WeaponMesh);
+	UpdateWeaponData(WeaponIndex, WeaponID, NewFPState);
+
+	//attach
+	WeaponSystem.InfantryWeaponSystem.WeaponState_FP[WeaponIndex].WeaponMesh->AttachToComponent(Cast<ACharacter_Base>(GetOwner())->GetMesh(), FAttachmentTransformRules(EAttachmentRule::SnapToTarget, EAttachmentRule::SnapToTarget, EAttachmentRule::KeepRelative, true));
+
+	//apply saved attachments
+	const FPlayerLoadoutConfig_Weapon& CustomWeapon = WeaponLoadout;
+	ApplyAttachments(CustomWeapon, WeaponIndex);
+	//NewWeapon->SetHiddenInGame(true);
+}
+
+void UWeaponLogicComponent::Init_WeaponMesh(TWeakObjectPtr<USkeletalMeshComponent>& WeaponMesh)
+{
+	TWeakObjectPtr<USkeletalMeshComponent> NewWeapon = NewObject<USkeletalMeshComponent>(GetOwner());
+	NewWeapon->RegisterComponent();
+	WeaponMesh = NewWeapon;			//cache
 }
 
 void UWeaponLogicComponent::Init_Attachment(FWeaponAttachmentState& RuntimeSlotState, FInfantryWeaponState& WeaponToApplyTo, EAttachmentSlot AttachmentSlot)
@@ -77,20 +86,35 @@ void UWeaponLogicComponent::ApplyAttachments(const FPlayerLoadoutConfig_Weapon& 
 		FWeaponAttachmentState& RuntimeSlotState = WeaponToApplyTo.WeaponAttachmentStates.FindOrAdd(SlotType);
 
 		Init_Attachment(RuntimeSlotState, WeaponToApplyTo, SlotType);
-
-		//update attachment mesh
-		const FWeaponAttachmentData& AttachmentData = *GetDataManager()->GetWeaponAttachmentDataRow(AttachmentConfig.AttachmentID);			//hardcoded for now
-		TWeakObjectPtr<UStaticMesh> AttachmentMesh = AttachmentData.AttachmentClassification.AttachmentMesh.LoadSynchronous();
-		const FVector& AttachmentOffset = GetAttachmentDefaultOffset(GetBaseWeaponState(WeaponIndex).WeaponID, SlotType, AttachmentConfig.AttachmentID);
-
-		UpdateAttachment(RuntimeSlotState, AttachmentMesh, AttachmentConfig.AttachmentID, AttachmentOffset);
+		UpdateAttachment(RuntimeSlotState, AttachmentConfig.AttachmentID, GetBaseWeaponState(WeaponIndex).WeaponID, SlotType);
 	}
 }
 
-void UWeaponLogicComponent::UpdateAttachment(FWeaponAttachmentState& RuntimeSlotState, TWeakObjectPtr<UStaticMesh> AttachmentMesh, FName AttachmentID, FVector Offset)
+void UWeaponLogicComponent::UpdateWeaponMesh(FName WeaponID, TWeakObjectPtr<USkeletalMeshComponent>& WeaponMeshComp)
 {
+	const FInfantryWeaponData& WeaponData = *UBS2FunctionLibrary::GetDataSubsystem(this)->GetInfantryWeaponDataRow(WeaponID);
+	TWeakObjectPtr<USkeletalMesh> WeaponMesh = WeaponData.WeaponClassificationData.WeaponMesh.LoadSynchronous();
+	WeaponMeshComp->SetSkeletalMesh(WeaponMesh.Get());
+}
+
+void UWeaponLogicComponent::UpdateWeaponData(int32 WeaponIndex, FName WeaponID, FInfantryWeaponState WeaponState)
+{
+	WeaponSystem.BaseWeaponSystem.Weapons[WeaponIndex].WeaponID = WeaponID;
+	StaticWeaponDataCache[WeaponIndex] = UBS2FunctionLibrary::GetDataSubsystem(this)->GetInfantryWeaponDataRow(WeaponID);
+
+	//add a bool or an int if it should fp, tp or both
+	WeaponSystem.InfantryWeaponSystem.WeaponState_FP[WeaponIndex] = WeaponState;
+}
+
+void UWeaponLogicComponent::UpdateAttachment(FWeaponAttachmentState& RuntimeSlotState, FName AttachmentID, FName WeaponID, EAttachmentSlot AttachmentSlot)
+{
+	//update attachment mesh
+	const FWeaponAttachmentData& AttachmentData = *UBS2FunctionLibrary::GetDataSubsystem(this)->GetWeaponAttachmentDataRow(AttachmentID);
+	TWeakObjectPtr<UStaticMesh> AttachmentMesh = AttachmentData.AttachmentClassification.AttachmentMesh.LoadSynchronous();
+	const FVector& AttachmentOffset = GetAttachmentDefaultOffset(WeaponID, AttachmentSlot, AttachmentID);
+
 	RuntimeSlotState.SpawnedAttachment->SetStaticMesh(AttachmentMesh.Get());
-	RuntimeSlotState.SpawnedAttachment->SetRelativeLocation(Offset);
+	RuntimeSlotState.SpawnedAttachment->SetRelativeLocation(AttachmentOffset);
 	RuntimeSlotState.BaseAttachmentState.AttachmentID = AttachmentID;
 }
 
@@ -126,8 +150,8 @@ void UWeaponLogicComponent::StartFire()
 				if (!GetWorld()->GetTimerManager().IsTimerActive(TimerHandle_AutoFire))
 				{
 					FireWeapon();	//fire weapon immediately AND THEN fire rate every shot after
-					float FireRate = UWeaponFunctions::GetFireRate(StaticWeaponDataCache[WeaponSystem.BaseWeaponSystem.EquippedWeaponState.CurrentWeaponIndex]->WeaponFirePerformance.RateOfFire);
-					GetWorld()->GetTimerManager().SetTimer(TimerHandle_AutoFire, this, &UWeaponLogicComponent::FireWeapon, FireRate, true);	//looping
+					//float FireRate = UWeaponFunctions::GetFireRate(StaticWeaponDataCache[WeaponSystem.BaseWeaponSystem.EquippedWeaponState.CurrentWeaponIndex]->.RateOfFire);
+					//GetWorld()->GetTimerManager().SetTimer(TimerHandle_AutoFire, this, &UWeaponLogicComponent::FireWeapon, FireRate, true);	//looping
 				}
 				break;
 		}
@@ -158,7 +182,7 @@ void UWeaponLogicComponent::DryFire()
 
 void UWeaponLogicComponent::FireWeapon()
 {
-	const FBaseWeaponData* StaticWeaponData = GetCurrentWeaponStaticData();
+	const FInfantryWeaponData* StaticWeaponData = GetCurrentWeaponStaticData();
 	FWeapon_Runtime& CurrentWeapon = *GetCurrentWeaponRuntime();	
 	if (!CurrentWeapon.WeaponState.canFire)
 	{
@@ -214,12 +238,7 @@ FWeapon_Runtime& UWeaponLogicComponent::GetBaseWeaponState(int32 WeaponIndex)
 
 FVector UWeaponLogicComponent::GetAttachmentDefaultOffset(FName WeaponID, EAttachmentSlot Slot, FName AttachmentID)
 {
-	return GetDataManager()->GetInfantryWeaponDataRow(WeaponID)->AvailableAttachmentSlots.Find(Slot)->Attachments.Find(AttachmentID)->LocationOffset;
-}
-
-UDataManagerSubsystem* UWeaponLogicComponent::GetDataManager()
-{
-	return GetWorld()->GetGameInstance()->GetSubsystem<UDataManagerSubsystem>();
+	return UBS2FunctionLibrary::GetDataSubsystem(this)->GetInfantryWeaponDataRow(WeaponID)->AvailableAttachmentSlots.Find(Slot)->Attachments.Find(AttachmentID)->LocationOffset;
 }
 
 FWeapon_Runtime* UWeaponLogicComponent::GetCurrentWeaponRuntime()
@@ -228,9 +247,9 @@ FWeapon_Runtime* UWeaponLogicComponent::GetCurrentWeaponRuntime()
 	return CurrentWeapon;
 }
 
-const FBaseWeaponData* UWeaponLogicComponent::GetCurrentWeaponStaticData() const
+const FInfantryWeaponData* UWeaponLogicComponent::GetCurrentWeaponStaticData() const
 {
-	const FBaseWeaponData* StaticWeaponData = StaticWeaponDataCache[WeaponSystem.BaseWeaponSystem.EquippedWeaponState.CurrentWeaponIndex];
+	const FInfantryWeaponData* StaticWeaponData = StaticWeaponDataCache[WeaponSystem.BaseWeaponSystem.EquippedWeaponState.CurrentWeaponIndex];
 	return StaticWeaponData;
 }
 

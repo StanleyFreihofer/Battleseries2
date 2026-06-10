@@ -61,7 +61,7 @@ struct FOnFootWeaponSystem_Runtime
 	GENERATED_BODY()
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	FBaseWeaponSystem_Runtime BaseWeaponSystem = FBaseWeaponSystem_Runtime();
+	FBaseWeaponSystem_Runtime BaseWeaponSystem = FBaseWeaponSystem_Runtime();			//contains WeaponID and other basic runtime data for both weapons
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FInfantryWeaponSystem InfantryWeaponSystem = FInfantryWeaponSystem();
@@ -89,11 +89,19 @@ class BATTLESERIES2_API UWeaponLogicComponent : public UActorComponent
 		UFUNCTION(BlueprintCallable)
 		void Init_WeaponLoadout(FPlayerLoadoutConfig_Class ClassLoadout, TArray<FPlayerLoadoutConfig_Weapon> WeaponLoadouts);
 		UFUNCTION(BlueprintCallable)
+		void Init_Weapon(FName WeaponID, int32 WeaponIndex, FPlayerLoadoutConfig_Weapon WeaponLoadout);
+		UFUNCTION()
+		void Init_WeaponMesh(TWeakObjectPtr<USkeletalMeshComponent>& WeaponMesh);
+		UFUNCTION(BlueprintCallable)
 		void Init_Attachment(FWeaponAttachmentState& RuntimeSlotState, FInfantryWeaponState& WeaponToApplyTo, EAttachmentSlot AttachmentSlot);
 		UFUNCTION(BlueprintCallable)
 		void ApplyAttachments(const FPlayerLoadoutConfig_Weapon& AttachmentsToApply, int32 WeaponIndex);
 		UFUNCTION()
-		void UpdateAttachment(FWeaponAttachmentState& RuntimeSlotState, TWeakObjectPtr<UStaticMesh> AttachmentMesh, FName AttachmentID, FVector Offset);
+		void UpdateWeaponMesh(FName WeaponID, TWeakObjectPtr<USkeletalMeshComponent>& WeaponMeshComp);
+		UFUNCTION(BlueprintCallable)
+		void UpdateWeaponData(int32 WeaponIndex, FName WeaponID, FInfantryWeaponState WeaponState);
+		UFUNCTION()
+		void UpdateAttachment(FWeaponAttachmentState& RuntimeSlotState, FName AttachmentID, FName WeaponID, EAttachmentSlot AttachmentSlot);
 		UFUNCTION(BlueprintCallable)
 		virtual bool Rangefinder(const FTransform& StartTransform, FHitResult& OutHit);
 		UFUNCTION(BlueprintCallable)			//calculates projectile velocity direction based on rangefinder (projectile should move toward cos, new SetProjectileSpawnTransform())
@@ -113,14 +121,12 @@ class BATTLESERIES2_API UWeaponLogicComponent : public UActorComponent
 		FWeapon_Runtime& GetBaseWeaponState(int32 WeaponIndex);
 		UFUNCTION(BlueprintCallable, BlueprintPure)
 		FVector GetAttachmentDefaultOffset(FName WeaponID, EAttachmentSlot Slot, FName AttachmentID);
-		UFUNCTION()
-		UDataManagerSubsystem* GetDataManager();
 
 	protected:
-		TArray<FBaseWeaponData*> StaticWeaponDataCache;
+		TArray<const FInfantryWeaponData*> StaticWeaponDataCache;
 
 		FWeapon_Runtime* GetCurrentWeaponRuntime();
-		const FBaseWeaponData* GetCurrentWeaponStaticData() const;
+		const FInfantryWeaponData* GetCurrentWeaponStaticData() const;
 
 	private:
 		UProjectilePoolSubsystem* ProjectileManager;
