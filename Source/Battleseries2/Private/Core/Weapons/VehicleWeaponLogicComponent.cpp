@@ -73,7 +73,7 @@ void UVehicleWeaponLogicComponent::Init_HUDReticleQuad(int32 SeatIndex)
 	{
 		return;
 	}
-	UStaticMesh* DefaultPlane = LoadObject<UStaticMesh>(nullptr, TEXT("/Engine/BasicShapes/Plane.Plane"));
+	TObjectPtr<UStaticMesh> DefaultPlane = LoadObject<UStaticMesh>(nullptr, TEXT("/Engine/BasicShapes/Plane.Plane"));
 	TWeakObjectPtr<UStaticMeshComponent> NewQuad = NewObject<UStaticMeshComponent>(this);
 	NewQuad->RegisterComponent();
 	NewQuad->AttachToComponent(OwnerDataAccessor->GetVehicleState().SeatStates[SeatIndex].SeatHUDComponent, FAttachmentTransformRules::SnapToTargetIncludingScale);
@@ -318,7 +318,7 @@ USkeletalMeshComponent* UVehicleWeaponLogicComponent::ApplyWeaponMeshToVehicle(U
 	FString SocketNameString = FString::Printf(TEXT("WM_%02d"), SeatIndex);		//WM_SeatIndex	[WM_00]
 	FName SocketName = FName(*SocketNameString);
 
-	USkeletalMeshComponent* WeaponComp = NewObject<USkeletalMeshComponent>(GetOwner());
+	TObjectPtr<USkeletalMeshComponent> WeaponComp = NewObject<USkeletalMeshComponent>(GetOwner());
 	WeaponComp->SetupAttachment(OwnerDataAccessor->GetVehicleMesh(), SocketName);
 	WeaponComp->RegisterComponent(); 
 
@@ -351,7 +351,7 @@ void UVehicleWeaponLogicComponent::ConfigureWeaponCam(int32 SeatIndex, int32 Wea
 {
 	//setup/initialization of the special weapon turret cam
 	//spring arm?
-	AActor* OwningActor = GetOwner();
+	TObjectPtr<AActor> OwningActor = GetOwner();
 	FString WCNameString = FString::Printf(TEXT("WC_%02d_%02d"), SeatIndex, WeaponIndex);		//WC_SeatIndex_WeaponIndex	[WC_00_00]
 	FName WCSocketName = FName(*WCNameString);
 	TWeakObjectPtr<USceneComponent> TargetParent = nullptr;
@@ -359,7 +359,7 @@ void UVehicleWeaponLogicComponent::ConfigureWeaponCam(int32 SeatIndex, int32 Wea
 	//create cam comp doesnt work
 	FActorSpawnParameters SpawnParams;
 	SpawnParams.Owner = GetOwner();
-	ACameraActor* WeaponCameraActor = GetWorld()->SpawnActor<ACameraActor>(ACameraActor::StaticClass(), FVector::ZeroVector, FRotator::ZeroRotator, SpawnParams);
+	TObjectPtr<ACameraActor> WeaponCameraActor = GetWorld()->SpawnActor<ACameraActor>(ACameraActor::StaticClass(), FVector::ZeroVector, FRotator::ZeroRotator, SpawnParams);
 
 	switch (WeaponSystem.Weapons[WeaponIndex].VehicleWeaponInstanceData.WeaponCamBehavior.MountMethod)
 	{
@@ -582,22 +582,16 @@ void UVehicleWeaponLogicComponent::ControlTurret(FVector2D InputValue, int32 Sea
 	UpdateTurretCam(SeatIndex, NewTurretRotation, NewTurretPitch);
 
 	//Update UI
-	if (PreviousTurretRotation != NewTurretRotation)
+	if (PreviousTurretRotation != NewTurretRotation && OwnerDataAccessor->GetVehicleState().SeatStates[SeatIndex].UpdateHUD)
 	{
-		if (OwnerDataAccessor->GetVehicleState().SeatStates[SeatIndex].UpdateHUD)
+		if (OwnerDataAccessor->GetVehicleState().SeatStates[SeatIndex].ActiveCamera)
 		{
-			if (OwnerDataAccessor->GetVehicleState().SeatStates[SeatIndex].ActiveCamera)
-			{
-				GetHUDSystem()->HandleTurretRotationUpdate(OwnerDataAccessor->GetVehicleState().SeatStates[SeatIndex].ActiveCamera->GetComponentRotation().Yaw);
-			}
+			UBS2FunctionLibrary::GetHUDSubsystem(this)->HandleTurretRotationUpdate(OwnerDataAccessor->GetVehicleState().SeatStates[SeatIndex].ActiveCamera->GetComponentRotation().Yaw);
 		}
 	}
-	if (PreviousTurretPitch != NewTurretPitch)
+	if (PreviousTurretPitch != NewTurretPitch && OwnerDataAccessor->GetVehicleState().SeatStates[SeatIndex].UpdateHUD)
 	{
-		if (OwnerDataAccessor->GetVehicleState().SeatStates[SeatIndex].UpdateHUD)
-		{
-			GetHUDSystem()->HandleTurretPitchUpdate(PitchMin, PitchMax, NewTurretPitch);
-		}
+		UBS2FunctionLibrary::GetHUDSubsystem(this)->HandleTurretPitchUpdate(PitchMin, PitchMax, NewTurretPitch);
 	}
 }
 
@@ -626,7 +620,7 @@ void UVehicleWeaponLogicComponent::UpdateTurretCam(int32 SeatIndex, float Turret
 	//only works for a special weapon cam thats not on an attacment and is mounted to the vehicle mesh
 	if (!VWID.bHasSeparateMesh && VWID.bHasSpecialCam && VWID.WeaponCamBehavior.MountMethod == EVehicleWeaponCamMountMethod::VehicleMesh)
 	{
-		UCameraComponent* ActiveCam = OwnerDataAccessor->GetVehicle().GetRemoteActiveCam(SeatIndex);
+		TObjectPtr<UCameraComponent> ActiveCam = OwnerDataAccessor->GetVehicle().GetRemoteActiveCam(SeatIndex);
 		ActiveCam->SetRelativeRotation(FRotator(TurretPitch, TurretRotation, 0.0f));
 	}
 }
@@ -702,7 +696,7 @@ void UVehicleWeaponLogicComponent::UpdateSeatRangefinder(int32 SeatIndex, FTrans
 	if (OwnerDataAccessor->GetVehicleState().SeatStates[SeatIndex].UpdateHUD)
 	{
 		//HMD
-		GetHUDSystem()->UpdateRangefinderHUD_Vehicle(HitResult.Distance / 100);	//distance in meter
+		UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateRangefinderHUD_Vehicle(HitResult.Distance / 100);	//distance in meter
 
 		//HUD
 	}
@@ -843,7 +837,7 @@ void UVehicleWeaponLogicComponent::StartLockingOn(int32& SeatIndex, FVehicleWeap
 	//interface to acquired target (locking on)
 	if (OwnerDataAccessor->GetVehicleState().SeatStates[SeatIndex].UpdateHUD)
 	{
-		GetHUDSystem()->SpawnLockOnIndicator(HomingData.IndicatorReticle);
+		UBS2FunctionLibrary::GetHUDSubsystem(this)->SpawnLockOnIndicator(HomingData.IndicatorReticle);
 	}
 }
 
@@ -853,7 +847,7 @@ void UVehicleWeaponLogicComponent::LockOn(int32 SeatIndex, const FWeaponHomingDa
 	FVehicleWeapon_Runtime& CurrentWeapon = GetEquippedWeaponInSeat(SeatIndex);
 	FWeaponState& WeaponState = CurrentWeapon.VehicleWeaponState.BaseWeaponRuntimeData.WeaponState;
 	WeaponState.LockOnState.CurrentLockStatus = ELockOnState::IsLockedOn;
-	GetHUDSystem()->UpdateLockOnIndicatorStatus(WeaponState.LockOnState.CurrentLockStatus);
+	UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateLockOnIndicatorStatus(WeaponState.LockOnState.CurrentLockStatus);
 	GetWorld()->GetTimerManager().ClearTimer(WeaponState.LockOnState.LockOnTimer);
 	GetWAC(SeatIndex)->SetTriggerParameter(FName("Event_LockOn"));
 	//interface to acquired target (locked on)?... do only when fire
@@ -876,7 +870,7 @@ void UVehicleWeaponLogicComponent::StartCancelLockOn(int32& SeatIndex, FLockOnSt
 	GetWorld()->GetTimerManager().SetTimer(LockOnState.LockOnTimer, LockOnDelegate, ElapsedTime, false);
 	LockOnState.CurrentLockStatus = ELockOnState::IsLosingLock;
 	GetWAC(SeatIndex)->SetTriggerParameter(FName("Event_StopLockOn"));
-	GetHUDSystem()->UpdateLockOnIndicatorStatus(LockOnState.CurrentLockStatus);
+	UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateLockOnIndicatorStatus(LockOnState.CurrentLockStatus);
 	UE_LOG(LogTemp, Warning, TEXT("[VWLC::IsLosingLock]"));
 }
 
@@ -885,13 +879,13 @@ void UVehicleWeaponLogicComponent::CancelLockOn(int32 SeatIndex, int32 WeaponInd
 	FWeaponState& WeaponState = VehicleWeaponSystem.Find(SeatIndex)->Weapons[WeaponIndex].VehicleWeaponState.BaseWeaponRuntimeData.WeaponState;
 	const FWeaponHomingData& HomingData = GetBaseWeaponDataInSlot(SeatIndex, WeaponIndex).WeaponFunctionality.HomingFunctionality;
 	WeaponState.LockOnState.CurrentLockStatus = ELockOnState::NotLockingOn;
-	GetHUDSystem()->UpdateLockOnIndicatorStatus(WeaponState.LockOnState.CurrentLockStatus);
+	UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateLockOnIndicatorStatus(WeaponState.LockOnState.CurrentLockStatus);
 	WeaponState.LockOnState.AcquiredTargetComp = nullptr;
 	GetWorld()->GetTimerManager().ClearTimer(WeaponState.LockOnState.LockOnTimer);
 	GetWAC(SeatIndex)->SetTriggerParameter(FName("Event_StopLockingOn"));
 	if (OwnerDataAccessor->GetVehicleState().SeatStates[SeatIndex].UpdateHUD)
 	{
-		GetHUDSystem()->RemoveWidget(GetHUDSystem()->LockOnIndicator);
+		UBS2FunctionLibrary::GetHUDSubsystem(this)->RemoveWidget(UBS2FunctionLibrary::GetHUDSubsystem(this)->LockOnIndicator);
 	}
 	if (HomingData.HomingCapability == EHomingCapability::RequireLockOn)
 	{
@@ -924,7 +918,7 @@ void UVehicleWeaponLogicComponent::UpdateLockOnIndicator(bool UpdateHUD, FHitRes
 	}
 	if (UpdateHUD)
 	{
-		GetHUDSystem()->UpdateLockOnIndicatorPosition(HitResult.GetActor()->GetRootComponent()->GetSocketLocation(FName("LockOn")));
+		UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateLockOnIndicatorPosition(HitResult.GetActor()->GetRootComponent()->GetSocketLocation(FName("LockOn")));
 	}
 }
 
@@ -1257,7 +1251,7 @@ void UVehicleWeaponLogicComponent::HandleAmmoDepletion(int32 SeatIndex, int32 We
 
 			if (OwnerDataAccessor->GetVehicleState().SeatStates[SeatIndex].UpdateHUD)
 			{
-				GetHUDSystem()->UpdateStatusHUD_CAMCount(CurrentWeapon.WeaponState.CurrentAmmoinMag);
+				UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateStatusHUD_CAMCount(CurrentWeapon.WeaponState.CurrentAmmoinMag);
 			}
 
 			if (CurrentWeapon.WeaponState.CurrentAmmoinMag == 0)
@@ -1328,14 +1322,14 @@ void UVehicleWeaponLogicComponent::AutoloadNewMag(int32 SeatIndex, int32 WeaponI
 	//HMD
 	if (OwnerDataAccessor->GetVehicleState().SeatStates[SeatIndex].UpdateHUD && CurrentWeapon.WeaponState.isEquipped)
 	{
-		GetHUDSystem()->UpdateStatusHUD_CAMCount(NewCAM);
-		GetHUDSystem()->UpdateStatusHUD_CRACount(NewCRA);
-		GetHUDSystem()->UpdateWeaponStatusHUD_Vehicle(CurrentWeapon.WeaponState.canFire);
+		UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateStatusHUD_CAMCount(NewCAM);
+		UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateStatusHUD_CRACount(NewCRA);
+		UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateWeaponStatusHUD_Vehicle(CurrentWeapon.WeaponState.canFire);
 	}
 	//HUD
 	if (OwnerDataAccessor->GetVehicleState().SeatStates[SeatIndex].SeatHUDComponent)
 	{
-		UUW_HUD_Vehicle_Base* VehicleHUD = Cast<UUW_HUD_Vehicle_Base>(OwnerDataAccessor->GetVehicleState().SeatStates[SeatIndex].SeatHUDComponent->GetUserWidgetObject());
+		TObjectPtr<UUW_HUD_Vehicle_Base> VehicleHUD = Cast<UUW_HUD_Vehicle_Base>(OwnerDataAccessor->GetVehicleState().SeatStates[SeatIndex].SeatHUDComponent->GetUserWidgetObject());
 		VehicleHUD->UpdateWeaponStatusHUD(GetEquippedWeaponInSeat(SeatIndex).VehicleWeaponState.BaseWeaponRuntimeData.WeaponState.canFire);
 	}
 
@@ -1468,9 +1462,9 @@ void UVehicleWeaponLogicComponent::EquipWeapon(int32 SeatIndex, int32 WeaponInde
 		if (OwnerDataAccessor->GetVehicleState().SeatStates[SeatIndex].UpdateHUD)
 		{
 			//HMD
-			GetHUDSystem()->UpdateStatusHUD_CAMCount(NewWeapon.WeaponState.CurrentAmmoinMag);
-			GetHUDSystem()->UpdateStatusHUD_CRACount(NewWeapon.WeaponState.CurrentReserveAmmo);
-			GetHUDSystem()->UpdateEquippedWeaponHUD_Vehicle
+			UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateStatusHUD_CAMCount(NewWeapon.WeaponState.CurrentAmmoinMag);
+			UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateStatusHUD_CRACount(NewWeapon.WeaponState.CurrentReserveAmmo);
+			UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateEquippedWeaponHUD_Vehicle
 			(
 				GetBaseWeaponDataInSlot(SeatIndex, WeaponIndex).WeaponClassification.WeaponDisplayNameAbrev,
 				GetEquippedWeaponInSeat(SeatIndex).VehicleWeaponInstanceData.WeaponUIInstanceData.WeaponReticle,
@@ -1481,7 +1475,7 @@ void UVehicleWeaponLogicComponent::EquipWeapon(int32 SeatIndex, int32 WeaponInde
 			//HUD (HUD Componenet)
 			if (OwnerDataAccessor->GetVehicleState().SeatStates[SeatIndex].SeatHUDComponent)
 			{
-				UUW_HUD_Vehicle_Base* VehicleHUD = Cast<UUW_HUD_Vehicle_Base>(OwnerDataAccessor->GetVehicleState().SeatStates[SeatIndex].SeatHUDComponent->GetUserWidgetObject());
+				TObjectPtr<UUW_HUD_Vehicle_Base> VehicleHUD = Cast<UUW_HUD_Vehicle_Base>(OwnerDataAccessor->GetVehicleState().SeatStates[SeatIndex].SeatHUDComponent->GetUserWidgetObject());
 				VehicleHUD->UpdateEquippedWeaponHUD
 				(
 					GetBaseWeaponDataInSlot(SeatIndex, WeaponIndex).WeaponClassification.WeaponDisplayNameAbrev,
@@ -1554,7 +1548,7 @@ void UVehicleWeaponLogicComponent::UpdateWeaponAudioCompData(int32 SeatIndex, in
 	TArray<UObject*> LoadedWaves;
 	for (const TSoftObjectPtr<USoundWave>& SoftWave : StaticData.WeaponAudio.FireLoop)
 	{
-		USoundWave* Wave = SoftWave.LoadSynchronous();
+		TObjectPtr<USoundWave> Wave = SoftWave.LoadSynchronous();
 		LoadedWaves.Add(Wave);
 	}
 	WAC->SetObjectArrayParameter(FName("Data_FireLoopAudio"), LoadedWaves);
@@ -1564,11 +1558,11 @@ void UVehicleWeaponLogicComponent::UpdateWeaponStatusUI(int32& SeatIndex, bool& 
 {
 	if (!OwnerDataAccessor->GetVehicleState().SeatStates[SeatIndex].UpdateHUD) { return;}
 	//HMD
-	GetHUDSystem()->UpdateWeaponStatusHUD_Vehicle(canFire);
+	UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateWeaponStatusHUD_Vehicle(canFire);
 	//HUD Comp
 	if (OwnerDataAccessor->GetVehicleState().SeatStates[SeatIndex].SeatHUDComponent)
 	{
-		UUW_HUD_Vehicle_Base* VehicleHUD = Cast<UUW_HUD_Vehicle_Base>(OwnerDataAccessor->GetVehicleState().SeatStates[SeatIndex].SeatHUDComponent->GetUserWidgetObject());
+		TObjectPtr<UUW_HUD_Vehicle_Base> VehicleHUD = Cast<UUW_HUD_Vehicle_Base>(OwnerDataAccessor->GetVehicleState().SeatStates[SeatIndex].SeatHUDComponent->GetUserWidgetObject());
 		VehicleHUD->UpdateWeaponStatusHUD(canFire);
 	}
 }
@@ -1612,7 +1606,7 @@ TWeakObjectPtr<AActor> UVehicleWeaponLogicComponent::GetCurrentViewTargetAtSeatI
 	//current meaning currently equipped weapon (what is the view context of the currently equipped weapon)
 	TWeakObjectPtr<AActor> NewViewTarget = nullptr;
 	FVehicleWeaponSystem_Runtime& VWS = *VehicleWeaponSystem.Find(SeatIndex);
-	FVehicleWeapon_Runtime& Weapon = VWS.Weapons[VWS.VehicleWeaponSystemState.EquippedWeaponState.CurrentWeaponIndex];
+	FVehicleWeapon_Runtime& Weapon = VWS.Weapons[GetCWIForSeat(SeatIndex)];
 	if (Weapon.VehicleWeaponInstanceData.bHasSpecialCam)
 	{
 		switch (Weapon.VehicleWeaponInstanceData.WeaponCamBehavior.MountMethod)
@@ -1699,17 +1693,6 @@ int32& UVehicleWeaponLogicComponent::GetCWIForSeat(int32 SeatIndex)
 FVehicleWeapon_Runtime& UVehicleWeaponLogicComponent::GetEquippedWeaponInSeat(int32 SeatIndex)
 {
 	return VehicleWeaponSystem.Find(SeatIndex)->Weapons[GetCWIForSeat(SeatIndex)];
-}
-
-TWeakObjectPtr<UHUDSubsystem> UVehicleWeaponLogicComponent::GetHUDSystem()
-{
-	TWeakObjectPtr<ULocalPlayer> LP = GetWorld()->GetFirstLocalPlayerFromController();
-	if (LP.Get())
-	{
-		TWeakObjectPtr<UHUDSubsystem> HUDSub = LP->GetSubsystem<UHUDSubsystem>();
-		return HUDSub;
-	}
-	return nullptr;
 }
 
 TWeakObjectPtr<UAudioComponent> UVehicleWeaponLogicComponent::GetWAC(int32& SeatIndex)

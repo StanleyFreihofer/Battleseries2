@@ -38,6 +38,66 @@ struct FInfantryWeaponAmmoData
 };
 
 USTRUCT(BlueprintType)
+struct FInfantryWeaponAnimData_FP
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Actions | Montages")
+	TSoftObjectPtr<UAnimMontage> InspectMontage = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Actions | Montages")
+	TSoftObjectPtr<UAnimMontage> ReloadWeaponMontage = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Actions | Montages")
+	TSoftObjectPtr<UAnimMontage> ReloadEmptyWeaponMontage = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Actions | Montages")
+	TSoftObjectPtr<UAnimMontage> UnequipWeaponMontage = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Actions | Montages")
+	TSoftObjectPtr<UAnimMontage> EquipWeaponMontage = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Actions | Montages")
+	TSoftObjectPtr<UAnimMontage> InitialEquipWeaponMontage = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Actions | Montages")
+	TSoftObjectPtr<UAnimMontage> FireWeaponMontage = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Actions | Montages")
+	TSoftObjectPtr<UAnimMontage> DryFireMontage = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Transitions | Montages")
+	TSoftObjectPtr<UAnimMontage> EnterReloadMontage = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Transitions | Montages")
+	TSoftObjectPtr<UAnimMontage> ExitReloadMontage = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Transitions | Montages")
+	TSoftObjectPtr<UAnimMontage> LoopReloadMontage = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Transitions | Montages")
+	TSoftObjectPtr<UAnimSequence> TacSprintExit = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Transitions | Montages")
+	TSoftObjectPtr<UAnimSequence> TacSprintEnter = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Transitions | Montages")
+	TSoftObjectPtr<UAnimSequence> SprintEnter = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Transitions | Montages")
+	TSoftObjectPtr<UAnimSequence> SprintExit = nullptr;
+};
+
+USTRUCT(BlueprintType)
+struct FInfantryWeaponAnimData
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	FInfantryWeaponAnimData_FP FPWeaponAnimData = FInfantryWeaponAnimData_FP();
+};
+
+USTRUCT(BlueprintType)
 struct FAttachmentOffset
 {
 	GENERATED_BODY()
@@ -69,6 +129,9 @@ struct FInfantryWeaponData : public FTableRowBase
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	FInfantryWeaponAmmoData InfantryWeaponAmmoData = FInfantryWeaponAmmoData();
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	FInfantryWeaponAnimData InfantryWeaponAnimData = FInfantryWeaponAnimData();
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	TMap<EAttachmentSlot, FAvailableAttachments> AvailableAttachmentSlots;

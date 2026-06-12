@@ -50,7 +50,7 @@ struct FVehicleWeaponState
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	USpringArmComponent* WeaponTurretSpringArm = nullptr;
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
-	ACameraActor* WeaponTurretCamera = nullptr;
+	TObjectPtr<ACameraActor> WeaponTurretCamera = nullptr;
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
 	TArray<FDecorative_Runtime> VehicleWeaponDecoratives;
@@ -280,8 +280,6 @@ public:
 	int32& GetCWIForSeat(int32 SeatIndex);
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	FVehicleWeapon_Runtime& GetEquippedWeaponInSeat(int32 SeatIndex);
-	UFUNCTION()
-	TWeakObjectPtr<UHUDSubsystem> GetHUDSystem();
 	UFUNCTION()
 	TWeakObjectPtr<UAudioComponent> GetWAC(int32& SeatIndex);
 
