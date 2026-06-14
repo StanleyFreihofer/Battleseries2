@@ -306,9 +306,8 @@ void UVehicleWeaponLogicComponent::ApplyWeaponsToSeat(int32 SeatIndex, TArray<FN
 void UVehicleWeaponLogicComponent::ApplySavedWeaponsToSeat(int32 SeatIndex)
 {
 	//apply SAVED weapons to seat (consider changing the function name)
-	USaveSubsystem* SaveSys = GetWorld()->GetGameInstance()->GetSubsystem<USaveSubsystem>();
 	const FVehicleData& VehicleData = OwnerDataAccessor->GetVehicleData();
-	const FSavedSeatLoadout& SeatLoadoutSave = SaveSys->GetSeatLoadout(VehicleData.Vehicle_Type, SeatIndex);
+	const FSavedSeatLoadout& SeatLoadoutSave = UBS2FunctionLibrary::GetSaveSubsystem(this)->GetSeatLoadout(VehicleData.Vehicle_Type, SeatIndex);
 
 	ApplyWeaponsToSeat(SeatIndex, SeatLoadoutSave.Weapons);
 }
