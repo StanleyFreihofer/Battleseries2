@@ -12,28 +12,35 @@
 #include "Data/Characters/CharacterDefaults.h"
 #include "Data/Weapons/Data_Weapon.h"
 #include "Core/Weapons/VehicleWeaponLogicComponent.h"
+#include "Core/Weapons/WeaponLogicComponent.h"
 #include "Core/UI/VehicleHUDs/UW_HUD_Vehicle_Base.h"
 #include "Core/UI/GameplayHUDs/UW_HUD_Status_Base.h"
 #include "Core/PlayerController_Base.h"
 #include "Core/Weapons/Projectiles/Projectile_Base.h"
 #include "Utilities/HUDSubsystem.h"
 #include "Utilities/DataManagerSubsystem.h"
+#include "Utilities/BS2FunctionLibrary.h"
 #include "Kismet/KismetMathLibrary.h"
 
-
 // Sets default values
-ACharacter_Base::ACharacter_Base()
+ACharacter_Base::ACharacter_Base(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
 {
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
-	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("CameraComponent"));
-	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
+	FPCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("CameraComponent"));
+	FPArmsSpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
+	FPLegsSpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("LegsSpringArm"));
 	FPArms = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("FPArms"));
+	FPLegs = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("FPLegs"));
 	WeaponManager = CreateDefaultSubobject<UWeaponLogicComponent>(TEXT("WeaponManager"));
-	FPArms->SetupAttachment(GetCapsuleComponent());
-	CameraBoom->SetupAttachment(FPArms, FName("Camera"));
-	Camera->SetupAttachment(CameraBoom, FName("SpringEndpoint"));
+	FPArmsSpringArm->SetupAttachment(GetCapsuleComponent());
+	FPLegsSpringArm->SetupAttachment(GetCapsuleComponent());
+	FPArms->SetupAttachment(FPArmsSpringArm);
+	FPLegs->SetupAttachment(FPLegsSpringArm);
+	FPCamera->SetupAttachment(FPArms, FName("Camera"));
 	GetMesh()->bOwnerNoSee = true;
+	FPArms->bOnlyOwnerSee = true;
+	FPLegs->bOnlyOwnerSee = true;
 }
 
 // Called when the game starts or when spawned
@@ -85,18 +92,18 @@ void ACharacter_Base::Init_PlayerCharacter()
 
 	if (!PC) { return; }
 
-	GetDataSystem_Character()->GetCharacterDefaults()->DefaultIMC.LoadSynchronous();
-	GetDataSystem_Character()->GetCharacterDefaults()->DefaultGameplayIMC.LoadSynchronous();
+	UBS2FunctionLibrary::GetDataSubsystem(this)->GetCharacterDefaults()->DefaultIMC.LoadSynchronous();
+	UBS2FunctionLibrary::GetDataSubsystem(this)->GetCharacterDefaults()->DefaultGameplayIMC.LoadSynchronous();
 	//IMC
-	ManageIMC(nullptr, GetDataSystem_Character()->GetCharacterDefaults()->DefaultIMC.Get(), 0);
-	ManageIMC(nullptr, GetDataSystem_Character()->GetCharacterDefaults()->DefaultGameplayIMC.Get(), 1);
+	ManageIMC(nullptr, UBS2FunctionLibrary::GetDataSubsystem(this)->GetCharacterDefaults()->DefaultIMC.Get(), 0);
+	ManageIMC(nullptr, UBS2FunctionLibrary::GetDataSubsystem(this)->GetCharacterDefaults()->DefaultGameplayIMC.Get(), 1);
 
 	FInputModeGameOnly GameMode;
 	PC->SetInputMode(GameMode);
 	PC->bShowMouseCursor = false;
 
 	//HUD
-	GetLocalPlayerHUDSystem()->SpawnStatusHUD(GetDataSystem_Character()->GetCharacterDefaults()->StatusHUDClass.Get());
+	UBS2FunctionLibrary::GetHUDSubsystem(this)->SpawnStatusHUD(UBS2FunctionLibrary::GetDataSubsystem(this)->GetCharacterDefaults()->StatusHUDClass.Get());
 }
 
 #pragma region Input
@@ -215,17 +222,20 @@ void ACharacter_Base::CharacterEnterVehicle()
 {
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Vehicle, ECR_Ignore);
 	GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Vehicle, ECollisionResponse::ECR_Ignore);
+	FPArms->SetCollisionResponseToChannel(ECC_Vehicle, ECR_Ignore);
+	FPLegs->SetCollisionResponseToChannel(ECC_Vehicle, ECR_Ignore);
+	WeaponManager->UpdateWeaponCollision(ECC_Vehicle, ECR_Ignore);
 	GetCharacterMovement()->SetMovementMode(MOVE_None);
 	AttachToActor(GetCurrentVehicle(), FAttachmentTransformRules::KeepRelativeTransform);
-	CameraBoom->bInheritPitch = true;
-	CameraBoom->bInheritRoll = true;
-	CameraBoom->bInheritYaw = true;
-	CameraBoom->bUsePawnControlRotation = false;
-	Camera->bUsePawnControlRotation = false;
-	Camera->SetRelativeRotation(FRotator());
+	FPArmsSpringArm->bInheritPitch = true;
+	FPArmsSpringArm->bInheritRoll = true;
+	FPArmsSpringArm->bInheritYaw = true;
+	FPArmsSpringArm->bUsePawnControlRotation = false;
+	FPCamera->bUsePawnControlRotation = false;
+	FPCamera->SetRelativeRotation(FRotator());
 	bUseControllerRotationYaw = false;
 
-	ManageIMC(GetDataSystem_Character()->GetCharacterDefaults()->DefaultGameplayIMC.Get(), nullptr, -1);
+	ManageIMC(UBS2FunctionLibrary::GetDataSubsystem(this)->GetCharacterDefaults()->DefaultGameplayIMC.Get(), nullptr, -1);
 
 	/**
 	static FProperty* ContextsProp = UEnhancedPlayerInput::StaticClass()->FindPropertyByName(FName("AppliedInputContexts"));
@@ -265,12 +275,12 @@ void ACharacter_Base::CharacterExitVehicle()
 		GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Vehicle, ECR_Block);
 		GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Vehicle, ECollisionResponse::ECR_Block);
 		GetCharacterMovement()->SetMovementMode(MOVE_Walking);		//make this more dynamic (are we falling out of ejecting from a jet for example)
-		Camera->bUsePawnControlRotation = true;
+		FPCamera->bUsePawnControlRotation = true;
 		bUseControllerRotationYaw = true;
-		UpdateViewTarget(this, Camera);
+		UpdateViewTarget(this, FPCamera);
 		CharacterState.CharacterVehicleState = FCharacterVehicleState();
 
-		ManageIMC(nullptr, GetDataSystem_Character()->GetCharacterDefaults()->DefaultGameplayIMC.Get(), 1);
+		ManageIMC(nullptr, UBS2FunctionLibrary::GetDataSubsystem(this)->GetCharacterDefaults()->DefaultGameplayIMC.Get(), 1);
 	}
 }
 
@@ -377,25 +387,25 @@ void ACharacter_Base::UpdateUI_EnterSeat()
 	switch (GetCurrentVehicle()->VehicleData->Seats[GetCSI()].SeatRole)
 	{
 		case E_SeatRole::Driver:
-			GetLocalPlayerHUDSystem()->UpdateSpeedHUD_Vehicle(GetCurrentVehicle()->GetVelocity().Size());
+			UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateSpeedHUD_Vehicle(GetCurrentVehicle()->GetVelocity().Size());
 			break;
 		case E_SeatRole::Gunner:
 			break;
 		case E_SeatRole::DriverGunner:
 			//HUD
-			GetLocalPlayerHUDSystem()->UpdateSpeedHUD_Vehicle(GetCurrentVehicle()->GetVelocity().Size());
+			UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateSpeedHUD_Vehicle(GetCurrentVehicle()->GetVelocity().Size());
 
 			//turrets/heading
 			if (GetCurrentVehicle()->VehicleCurrentState.SeatStates[GetCSI()].ActiveCamera)
 			{
-				GetLocalPlayerHUDSystem()->UpdateCompassHUD_Vehicle(GetCurrentVehicle()->VehicleCurrentState.SeatStates[GetCSI()].ActiveCamera->GetComponentRotation().Yaw);
-				GetLocalPlayerHUDSystem()->HandleTurretRotationUpdate(GetCurrentVehicle()->VehicleCurrentState.SeatStates[GetCSI()].ActiveCamera->GetComponentRotation().Yaw);
+				UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateCompassHUD_Vehicle(GetCurrentVehicle()->VehicleCurrentState.SeatStates[GetCSI()].ActiveCamera->GetComponentRotation().Yaw);
+				UBS2FunctionLibrary::GetHUDSubsystem(this)->HandleTurretRotationUpdate(GetCurrentVehicle()->VehicleCurrentState.SeatStates[GetCSI()].ActiveCamera->GetComponentRotation().Yaw);
 			}
 			if (GetCurrentVehicle()->VehicleData->Seats[GetCSI()].AvailableItems.ControlledTurretIndexes.Num())
 			{
 				const int32& CTI = GetCurrentVehicle()->GetControlledTurret(GetCSI());
 
-				GetLocalPlayerHUDSystem()->HandleTurretPitchUpdate
+				UBS2FunctionLibrary::GetHUDSubsystem(this)->HandleTurretPitchUpdate
 				(
 					GetCurrentVehicle()->VehicleData->Turrets[CTI].TurretPitch.TurretMinMax.GetLowerBoundValue(),
 					GetCurrentVehicle()->VehicleData->Turrets[CTI].TurretPitch.TurretMinMax.GetUpperBoundValue(),
@@ -509,7 +519,7 @@ void ACharacter_Base::UpdateRangefinder_WindowedVehicle()
 	switch (CurrentWeapon.VehicleWeaponInstanceData.WindowedAimAnchor)
 	{
 		case EWindowedAimAnchor::FreeAim:
-			TraceTransform = Camera->GetComponentTransform();
+			TraceTransform = FPCamera->GetComponentTransform();
 			break;
 
 		case EWindowedAimAnchor::FixedHead:
@@ -544,11 +554,11 @@ void ACharacter_Base::UpdateRangefinder_WindowedVehicle()
 	auto* WeaponSystem = VWLC->VehicleWeaponSystem.Find(GetCSI());
 
 	FHitResult& HitResult = WeaponSystem->VehicleWeaponSystemState.EquippedWeaponState.RaycastData.RangefinderData;
-	UStaticMeshComponent* Quad = WeaponSystem->VehicleWeaponSystemState.ReticleQuad.Get();
+	TObjectPtr<UStaticMeshComponent> Quad = WeaponSystem->VehicleWeaponSystemState.ReticleQuad.Get();
 
 	if (Quad)
 	{
-		FVector EyePos = Camera->GetComponentLocation();
+		FVector EyePos = FPCamera->GetComponentLocation();
 		FVector TargetPos = HitResult.bBlockingHit ? HitResult.ImpactPoint : TraceTransform.GetLocation() + (TraceTransform.GetUnitAxis(EAxis::X) * 100000.0f);
 
 		// Calculate where the eye-to-target line hits the HUD glass plane
@@ -556,25 +566,6 @@ void ACharacter_Base::UpdateRangefinder_WindowedVehicle()
 
 		Quad->SetWorldLocation(IntersectionPoint);
 	}
-}
-
-UHUDSubsystem* ACharacter_Base::GetLocalPlayerHUDSystem()
-{
-	APlayerController_Base* PC = Cast<APlayerController_Base>(GetController());
-	if (IsLocallyControlled())
-	{
-		ULocalPlayer* LP = PC->GetLocalPlayer();
-		if (LP)
-		{
-			return LP->GetSubsystem<UHUDSubsystem>();
-		}
-	}
-	return nullptr;
-}
-
-UDataManagerSubsystem* ACharacter_Base::GetDataSystem_Character()
-{
-	return GetGameInstance()->GetSubsystem<UDataManagerSubsystem>();
 }
 
 AVehicle_Base* ACharacter_Base::GetCurrentVehicle()
@@ -596,7 +587,7 @@ int32& ACharacter_Base::GetCSI()
 
 void ACharacter_Base::UpdateVehicleHUD(TSubclassOf<UUserWidget> HUDClass)
 {
-	if (UHUDSubsystem* HUDSub = GetLocalPlayerHUDSystem())
+	if (UHUDSubsystem* HUDSub = UBS2FunctionLibrary::GetHUDSubsystem(this))
 	{
 		if (!HUDSub->CurrentVehicleHMD && HUDClass)
 		{

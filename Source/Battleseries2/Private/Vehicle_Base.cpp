@@ -624,7 +624,7 @@ void AVehicle_Base::HandleViewMethod_Default(ACharacter_Base* Character, const F
 	switch (SeatData.ViewMethod)
 	{
 		case E_ViewMethod::Windowed:
-			Character->UpdateViewTarget(Character, Character->Camera);
+			Character->UpdateViewTarget(Character, Character->FPCamera);
 			break;
 		case E_ViewMethod::Remote:
 			if (VehicleCurrentState.SeatStates[Character->GetCSI()].ActiveCamera)
@@ -870,6 +870,7 @@ void AVehicle_Base::UpdateThrottle_GV(float InputValue)
 	}
 	else if (InputValue < 0)
 	{
+		ChaosVehicleMovement->SetThrottleInput(0.0f);
 		ChaosVehicleMovement->SetBrakeInput(FMath::Abs(InputValue));
 		UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateSpeedHUD_Vehicle(GetVelocity().Size());		//block behind updatehud check?
 	}
@@ -893,7 +894,18 @@ void AVehicle_Base::Input_UpdateSteering_GV(float SteeringValue, int32 SeatIndex
 {
 	if (VehicleData->GroundVehicle_Data.canIdleTurn)
 	{
-		ChaosVehicleMovement->SetYawInput(SteeringValue);
+		//ChaosVehicleMovement->SetYawInput(SteeringValue);
+
+		//if (UPrimitiveComponent* RootPrim = Cast<UPrimitiveComponent>(GetRootComponent()))
+		//{
+			//float TankWeightFactor = RootPrim->GetMass();
+			float TargetTorqueScale = 10.0f; // make actual data
+
+			FVector TorqueVector = FVector(0.0f, 0.0f, SteeringValue * TargetTorqueScale);
+
+			// Inject direct physics torque onto the asynchronous physics thread
+			VehicleMeshComponent->AddTorqueInRadians(TorqueVector, NAME_None, true);
+		//}
 	}
 	else
 	{
@@ -1141,10 +1153,15 @@ void AVehicle_Base::ToggleOptic(int32 SeatIndex)
 	OpticState.CurrentOpticIndex = (OpticState.CurrentOpticIndex + 1) % OpticState.CurrentAvailableOptics.Num();
 	if (PreviousOpticIndex == OpticState.CurrentOpticIndex) { return;  }
 
-	const FOpticData& CurrentOpticData = *UBS2FunctionLibrary::GetDataSubsystem(this)->GetOpticDataRow(OpticState.CurrentAvailableOptics[OpticState.CurrentOpticIndex]);
+	const FOpticData* CurrentOpticData = UBS2FunctionLibrary::GetDataSubsystem(this)->GetOpticDataRow(OpticState.CurrentAvailableOptics[OpticState.CurrentOpticIndex]);
 	const FOpticData& PreviousOpticData = *UBS2FunctionLibrary::GetDataSubsystem(this)->GetOpticDataRow(OpticState.CurrentAvailableOptics[PreviousOpticIndex]);
+	if (!CurrentOpticData)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[Vehicle_Base::ToggleOptic] - Invalid Optic Data for Optic ID: %s"), *OpticState.CurrentAvailableOptics[OpticState.CurrentOpticIndex].ToString());
+		return;
+	}
 	//HandleTogglePPOptic
-	if (CurrentOpticData.OpticPPSettings.WeightedBlendables.Array.Num() > 0)
+	if (CurrentOpticData->OpticPPSettings.WeightedBlendables.Array.Num() > 0)
 	{
 		TurnOnPPOptic(SeatIndex);
 	}
@@ -1153,7 +1170,7 @@ void AVehicle_Base::ToggleOptic(int32 SeatIndex)
 		TurnOffPPOptic(SeatIndex, PreviousOpticIndex);
 	}
 
-	ToggleMagnificationOptic(SeatIndex, CurrentOpticData.ZoomMagnification);
+	ToggleMagnificationOptic(SeatIndex, CurrentOpticData->ZoomMagnification);
 }
 
 void AVehicle_Base::TurnOnPPOptic(int32 SeatIndex)
@@ -1251,7 +1268,6 @@ UCameraComponent* AVehicle_Base::GetRemoteActiveCam(int32 SeatIndex)
 {
 	return VehicleCurrentState.SeatStates[SeatIndex].ActiveCamera;
 }
-
 
 USkeletalMeshComponent* AVehicle_Base::GetVehicleMesh() const
 {

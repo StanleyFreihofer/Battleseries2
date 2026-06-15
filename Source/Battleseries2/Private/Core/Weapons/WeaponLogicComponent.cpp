@@ -20,7 +20,6 @@ void UWeaponLogicComponent::BeginPlay()
 {
 	Super::BeginPlay();
 
-	ProjectileManager = GetWorld()->GetSubsystem<UProjectilePoolSubsystem>();
 }
 
 void UWeaponLogicComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
@@ -51,7 +50,7 @@ void UWeaponLogicComponent::Init_Weapon(FName WeaponID, int32 WeaponIndex, FPlay
 	UpdateWeaponData(WeaponIndex, WeaponID, NewFPState);
 
 	//attach
-	WeaponSystem.InfantryWeaponSystem.WeaponState_FP[WeaponIndex].WeaponMesh->AttachToComponent(Cast<ACharacter_Base>(GetOwner())->GetMesh(), FAttachmentTransformRules(EAttachmentRule::SnapToTarget, EAttachmentRule::SnapToTarget, EAttachmentRule::KeepRelative, true));
+	WeaponSystem.InfantryWeaponSystem.WeaponState_FP[WeaponIndex].WeaponMesh->AttachToComponent(Cast<ACharacter_Base>(GetOwner())->FPArms, FAttachmentTransformRules(EAttachmentRule::SnapToTarget, EAttachmentRule::SnapToTarget, EAttachmentRule::KeepRelative, true), FName("Socket_M4A1"));
 
 	//apply saved attachments
 	const FPlayerLoadoutConfig_Weapon& CustomWeapon = WeaponLoadout;
@@ -116,6 +115,16 @@ void UWeaponLogicComponent::UpdateAttachment(FWeaponAttachmentState& RuntimeSlot
 	RuntimeSlotState.SpawnedAttachment->SetStaticMesh(AttachmentMesh.Get());
 	RuntimeSlotState.SpawnedAttachment->SetRelativeLocation(AttachmentOffset);
 	RuntimeSlotState.BaseAttachmentState.AttachmentID = AttachmentID;
+}
+
+void UWeaponLogicComponent::UpdateWeaponCollision(ECollisionChannel CollisionChannel, ECollisionResponse CollisionResponse)
+{
+	WeaponSystem.InfantryWeaponSystem.WeaponState_FP[WeaponSystem.BaseWeaponSystem.EquippedWeaponState.CurrentWeaponIndex].WeaponMesh->SetCollisionResponseToChannel(CollisionChannel, CollisionResponse);
+	for (auto& Attachment : WeaponSystem.InfantryWeaponSystem.WeaponState_FP[WeaponSystem.BaseWeaponSystem.EquippedWeaponState.CurrentWeaponIndex].WeaponAttachmentStates)
+	{
+		Attachment.Value.SpawnedAttachment.Get()->SetCollisionResponseToChannel(CollisionChannel, CollisionResponse);
+	}
+	//WeaponSystem.InfantryWeaponSystem.WeaponState_TP[WeaponSystem.BaseWeaponSystem.EquippedWeaponState.CurrentWeaponIndex].WeaponMesh->SetCollisionResponseToChannel(CollisionChannel, CollisionResponse);
 }
 
 bool UWeaponLogicComponent::Rangefinder(const FTransform& StartTransform, FHitResult& OutHit)

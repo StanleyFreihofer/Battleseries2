@@ -280,6 +280,8 @@ public:
 	int32& GetCWIForSeat(int32 SeatIndex);
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	FVehicleWeapon_Runtime& GetEquippedWeaponInSeat(int32 SeatIndex);
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	UNiagaraComponent* DebugMuzzleVFXPool(int32 SeatIndex, int32 WeaponIndex);
 	UFUNCTION()
 	TWeakObjectPtr<UAudioComponent> GetWAC(int32& SeatIndex);
 

@@ -26,9 +26,13 @@ public:
     UFUNCTION(BlueprintCallable, Category = "Vehicle|HUD")
     static FString GetVehicleTypeLiteralString(EVehicleType VehicleType);
 
+	UFUNCTION(BlueprintCallable)
     static UDataManagerSubsystem* GetDataSubsystem(const UObject* WorldContextObject);
+	UFUNCTION(BlueprintCallable)
     static UHUDSubsystem* GetHUDSubsystem(const UObject* WorldContextObject);
+    UFUNCTION(BlueprintCallable)
     static USaveSubsystem* GetSaveSubsystem(const UObject* WorldContextObject);
+	UFUNCTION(BlueprintCallable)
     static UProjectilePoolSubsystem* GetProjectileSystem(const UObject* WorldContextObject);
     static IVehicleDataAccessor* GetVehicleAccessor(AActor* TargetActor);
 };

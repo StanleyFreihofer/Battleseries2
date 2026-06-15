@@ -969,11 +969,10 @@ void UVehicleWeaponLogicComponent::SetupMuzzleSockets(TWeakObjectPtr<USkeletalMe
 		//map with socket name?
 		TWeakObjectPtr<UNiagaraComponent> NewVFX = NewObject<UNiagaraComponent>(GetOwner());
 		NewVFX->SetupAttachment(Mesh.Get(), SocketName);
-		NewVFX->RegisterComponent();
 		NewVFX->SetAutoActivate(false);
 		NewVFX->SetAsset(StaticWeaponData.WeaponFX.MuzzleFlashFX.LoadSynchronous());
-		NewVFX->Deactivate();
 		NewVFX->SetNiagaraVariableFloat(TEXT("User.RateOfFire"), UWeaponFunctions::GetFireRate(StaticWeaponData.WeaponFirePerformance.RateOfFire));
+		NewVFX->RegisterComponent();
 		VehicleWeaponToFill.VehicleWeaponState.MuzzleVFXPool.Add(NewVFX);
 	}
 
@@ -1692,6 +1691,15 @@ int32& UVehicleWeaponLogicComponent::GetCWIForSeat(int32 SeatIndex)
 FVehicleWeapon_Runtime& UVehicleWeaponLogicComponent::GetEquippedWeaponInSeat(int32 SeatIndex)
 {
 	return VehicleWeaponSystem.Find(SeatIndex)->Weapons[GetCWIForSeat(SeatIndex)];
+}
+
+UNiagaraComponent* UVehicleWeaponLogicComponent::DebugMuzzleVFXPool(int32 SeatIndex, int32 WeaponIndex)
+{
+	if (VehicleWeaponSystem.Find(SeatIndex)->Weapons[WeaponIndex].VehicleWeaponState.MuzzleVFXPool.IsValidIndex(0))
+	{
+		return VehicleWeaponSystem.Find(SeatIndex)->Weapons[WeaponIndex].VehicleWeaponState.MuzzleVFXPool[0].Get();
+	}
+	return nullptr;
 }
 
 TWeakObjectPtr<UAudioComponent> UVehicleWeaponLogicComponent::GetWAC(int32& SeatIndex)

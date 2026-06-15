@@ -26,7 +26,6 @@ struct FCharacterStartingData
 {
 	GENERATED_BODY()
 
-	//what this vehicle is on start
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Instance")
 	FName CharacterID = NAME_None;
 
@@ -44,15 +43,19 @@ class BATTLESERIES2_API ACharacter_Base : public ACharacter
 
 public:
 	// Sets default values for this character's properties
-	ACharacter_Base();
+	ACharacter_Base(const FObjectInitializer& ObjectInitializer);
 
 	//COMPONENTS
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
-	UCameraComponent* Camera = nullptr;
+	UCameraComponent* FPCamera = nullptr;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
-	USpringArmComponent* CameraBoom = nullptr;
+	USpringArmComponent* FPArmsSpringArm = nullptr;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
+	USpringArmComponent* FPLegsSpringArm = nullptr;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
 	USkeletalMeshComponent* FPArms = nullptr;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
+	USkeletalMeshComponent* FPLegs = nullptr;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
 	UWeaponLogicComponent* WeaponManager;
 
@@ -132,10 +135,6 @@ public:
 
 
 	UFUNCTION(BlueprintCallable, BlueprintPure)
-	UHUDSubsystem* GetLocalPlayerHUDSystem();
-	UFUNCTION(BlueprintCallable, BlueprintPure)
-	UDataManagerSubsystem* GetDataSystem_Character();
-	UFUNCTION(BlueprintCallable, BlueprintPure)
 	AVehicle_Base* GetCurrentVehicle();
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	int32& GetCSI();
@@ -144,7 +143,6 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "Input|Debug")
 	TArray<FString> DebugCurrentIMCNames();
-
 
 protected:
 	// Called when the game starts or when spawned

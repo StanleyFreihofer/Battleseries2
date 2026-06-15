@@ -103,6 +103,8 @@ class BATTLESERIES2_API UWeaponLogicComponent : public UActorComponent
 		UFUNCTION()
 		void UpdateAttachment(FWeaponAttachmentState& RuntimeSlotState, FName AttachmentID, FName WeaponID, EAttachmentSlot AttachmentSlot);
 		UFUNCTION(BlueprintCallable)
+		void UpdateWeaponCollision(ECollisionChannel CollisionChannel, ECollisionResponse CollisionResponse);
+		UFUNCTION(BlueprintCallable)
 		virtual bool Rangefinder(const FTransform& StartTransform, FHitResult& OutHit);
 		UFUNCTION(BlueprintCallable)			//calculates projectile velocity direction based on rangefinder (projectile should move toward cos, new SetProjectileSpawnTransform())
 		virtual void UpdateProjectileAimDirection();		
@@ -129,5 +131,4 @@ class BATTLESERIES2_API UWeaponLogicComponent : public UActorComponent
 		const FInfantryWeaponData* GetCurrentWeaponStaticData() const;
 
 	private:
-		UProjectilePoolSubsystem* ProjectileManager;
 };
