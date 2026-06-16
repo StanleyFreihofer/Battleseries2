@@ -173,6 +173,9 @@ struct FAttachmentOffset
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)				//data needed to move attachment to correct central/base location
 	FVector LocationOffset = FVector::ZeroVector;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	FRotator RotationOffset = FRotator::ZeroRotator;
 };
 
 USTRUCT(BlueprintType)
