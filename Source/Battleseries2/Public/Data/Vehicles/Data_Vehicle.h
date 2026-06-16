@@ -301,8 +301,8 @@ struct FGroundVehicleData
 
 	//THE FOLLOWING ARE CHAOSWHEELEDVEHICLEMOVEMENT PROPERTIES/DATA & SHOULD BE BAKED/COPIED ACCORDINGLY
 	//Wheel Setup
-	UPROPERTY(EditAnywhere)
-	TArray<FBaseWheelData> BaseWheelData;
+	//UPROPERTY(EditAnywhere)
+	//TArray<FBaseWheelData> BaseWheelData;
 	UPROPERTY(EditAnywhere)
 	TArray<FChaosWheelSetup> WheelData;
 	//Engine Setup

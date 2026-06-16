@@ -39,6 +39,7 @@ AVehicle_Base::AVehicle_Base()
 	ChaosVehicleMovement = CreateDefaultSubobject<UChaosWheeledVehicleMovementComponent>(TEXT("ChaosWheeledVehicleMovementComponent"));
 	ChaosVehicleMovement->bAutoRegister = false;
 	ChaosVehicleMovement->bAutoActivate = false;
+	ChaosVehicleMovement->SetUpdatedComponent(VehicleMeshComponent);
 	InteractionWidgetComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("Interaction Widget"));
 	VehicleWeaponLogicComponent = CreateDefaultSubobject<UVehicleWeaponLogicComponent>(TEXT("Vehicle Weapon Logic Component"));
 	SpawnComponent = CreateDefaultSubobject<USpawnComponent>(TEXT("Spawn Component"));
@@ -98,9 +99,13 @@ void AVehicle_Base::Init_Wheels(const TArray<FChaosWheelSetup>& WheelData)
 
 void AVehicle_Base::Init_GroundVehicle()
 {
+	if (!ChaosVehicleMovement->IsRegistered())
+	{
+		ChaosVehicleMovement->RegisterComponent();
+	}
 	VehicleMeshComponent->RecreatePhysicsState();
-	ChaosVehicleMovement->UnregisterComponent();
-	ChaosVehicleMovement->SetUpdatedComponent(VehicleMeshComponent);
+	//ChaosVehicleMovement->UnregisterComponent();
+	//ChaosVehicleMovement->SetUpdatedComponent(VehicleMeshComponent);
 	Init_Wheels(VehicleData->GroundVehicle_Data.WheelData);
 
 	//Mechanical Setup
@@ -120,8 +125,8 @@ void AVehicle_Base::Init_GroundVehicle()
 
 	//allows the vehicle/chaos vehicle to actual simulate physics properly
 	HandleChaosMovement(true);
-	ChaosVehicleMovement->RegisterComponent();
-	ChaosVehicleMovement->RecreatePhysicsState();;
+	ChaosVehicleMovement->ResetVehicle();
+	//ChaosVehicleMovement->RecreatePhysicsState();;
 	VehicleMeshComponent->InitAnim(true);
 }
 
@@ -316,7 +321,6 @@ void AVehicle_Base::Init_DetermineVehicleBuildBehavior()
 void AVehicle_Base::Init_Vehicle()
 {
 	Init_VehicleMesh(VehicleData->Vehicle_Mesh.Get());
-	Init_VehicleAnim(VehicleData->Anim_Class.Get());
 	Init_EngineAudio();
 	Init_Seats();
 	VehicleWeaponLogicComponent->Init_VehicleWeaponSystem(VehicleStartingData.StartingVehicleLoadout.SeatLoadout);		//weapons and turrets
@@ -351,8 +355,8 @@ void AVehicle_Base::Init_Vehicle()
 			UE_LOG(LogTemp, Log, TEXT("BOAT SETUP STARTED"));
 			break;
 	}
+	Init_VehicleAnim(VehicleData->Anim_Class.Get());
 	ApplyCamoToVehicle(VehicleStartingData.StartingVehicleLoadout.VehicleCamo);
-
 	SpawnComponent->Init_SpawnData(VehicleData->Vehicle_DisplayName, VehicleData->VehicleIcon.Get(), ESpawnType::Vehicle);
 }
 
