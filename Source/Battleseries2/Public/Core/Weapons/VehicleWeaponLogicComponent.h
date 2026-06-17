@@ -293,7 +293,5 @@ protected:
 
 private:
 	IVehicleDataAccessor* OwnerDataAccessor;
-
-	FTimerHandle TimerHandle_AutoFire;			//put into actual architecture/move somewhere else
 	FTimerHandle TimerHandle_ReserveResupply; //put into actual architecture/move somewhere else
 };

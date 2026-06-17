@@ -29,23 +29,25 @@ struct FWeaponState
 {
 	GENERATED_BODY()
 
-	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	bool canFire = true;
-	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	bool isFiring = false;
-	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	bool isReloading = false;
-	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	bool isWarmingUp = false;
-	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	bool isEquipped = false;
-	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	EFireMode CurrentFireMode = EFireMode::Auto;		//defined in weapon config data
-	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	int32 CurrentAmmoinMag = 0;
-	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	int32 CurrentReserveAmmo = 0;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	FTimerHandle TimerHandle_AutoFire = FTimerHandle();
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	FTimerHandle TimerHandle_Reload = FTimerHandle();
 
 	UPROPERTY(VisibleAnywhere)

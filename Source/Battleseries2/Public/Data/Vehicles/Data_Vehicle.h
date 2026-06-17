@@ -47,12 +47,6 @@ struct FTurretData
 {
 	GENERATED_BODY()
 
-	//UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	//bool TurretMeshIsSeparateWeaponMesh = false;
-
-	//UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (EditCondition = "TurretMeshIsSeparateWeaponMesh == false", EditConditionHides))
-	//FName TurretSocket = NAME_None;
-
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	FTurretData_PitchAndRotation TurretPitch = FTurretData_PitchAndRotation();
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
@@ -224,6 +218,21 @@ struct FBaseWheelData
 };
 
 USTRUCT(BlueprintType)
+struct FIdleTurnData
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	bool canIdleTurn = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	float TargetTorqueScale = 0.0f;			// Power of the turn (increased since drag will fight it)
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	float AngularDragScale = 0.0f;   // How hard the tank fights its own rotation speed
+};
+
+USTRUCT(BlueprintType)
 struct FVehicleSetup
 {
 	//STRUCT THAT LIFTS/COPIES PROPERTIES FROM CHAOS "VEHICLE SETUP" section
@@ -297,12 +306,10 @@ struct FGroundVehicleData
 
 	//STEERING DATA
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	bool canIdleTurn = false;
+	FIdleTurnData IdleTurnData = FIdleTurnData();
 
 	//THE FOLLOWING ARE CHAOSWHEELEDVEHICLEMOVEMENT PROPERTIES/DATA & SHOULD BE BAKED/COPIED ACCORDINGLY
-	//Wheel Setup
-	//UPROPERTY(EditAnywhere)
-	//TArray<FBaseWheelData> BaseWheelData;
+
 	UPROPERTY(EditAnywhere)
 	TArray<FChaosWheelSetup> WheelData;
 	//Engine Setup

@@ -51,8 +51,6 @@ AVehicle_Base::AVehicle_Base()
 void AVehicle_Base::BeginPlay()
 {
 	Super::BeginPlay();
-	//DataManager = GetWorld()->GetGameInstance()->GetSubsystem<UDataManagerSubsystem>();
-	SaveSubsystem = GetWorld()->GetGameInstance()->GetSubsystem<USaveSubsystem>();
 
 	if (!VehicleStartingData.VehicleID.IsNone())
 	{
@@ -196,11 +194,10 @@ void AVehicle_Base::Init_DefaultSeatRemoteCamera(int32 SeatIndex)
 {
 	//init default seat camera
 	//every seat that is remote should do this
-	//how does this work with ConfigureWeaponCam on VehicleWeaponLogicComp???????????????
 	E_ViewMethod ViewMethod = VehicleData->Seats[SeatIndex].ViewMethod;
 	FString CameraSocketString = FString::Printf(TEXT("SC_%02d"), SeatIndex);		//SeatCam_SeatIndex		[SC_00]
 	FName CameraSocketName = FName(*CameraSocketString);
-	UCameraComponent* NewCamera;
+	TObjectPtr<UCameraComponent> NewCamera;
 	switch (ViewMethod)
 	{
 		case E_ViewMethod::Remote:
@@ -215,7 +212,7 @@ void AVehicle_Base::Init_DefaultSeatRemoteCamera(int32 SeatIndex)
 
 void AVehicle_Base::Init_SeatHUDComp(int32& SeatIndex)
 {
-	UWidgetComponent* CockpitHUDComponent = NewObject<UWidgetComponent>(this);
+	TObjectPtr<UWidgetComponent> CockpitHUDComponent = NewObject<UWidgetComponent>(this);
 	CockpitHUDComponent->RegisterComponent();
 	CockpitHUDComponent->AttachToComponent(GetRootComponent(), FAttachmentTransformRules::KeepRelativeTransform);
 	CockpitHUDComponent->SetRelativeTransform(VehicleData->Seats[SeatIndex].DefaultCharacterContext.SeatHUDTransform);
@@ -448,8 +445,7 @@ void AVehicle_Base::ApplyLoadoutToSeat(int32 SeatIndex)		//this functions applie
 
 void AVehicle_Base::ApplySavedOpticToSeat(int32 SeatIndex)
 {
-	USaveSubsystem* SaveSys = GetWorld()->GetGameInstance()->GetSubsystem<USaveSubsystem>();
-	const FSavedSeatLoadout& SeatLoadoutSave = SaveSys->GetSeatLoadout(VehicleData->Vehicle_Type, SeatIndex);
+	const FSavedSeatLoadout& SeatLoadoutSave = UBS2FunctionLibrary::GetSaveSubsystem(this)->GetSeatLoadout(VehicleData->Vehicle_Type, SeatIndex);
 
 	VehicleCurrentState.SeatStates[SeatIndex].OpticState.CurrentAvailableOptics.Add(SeatLoadoutSave.Optic);
 }
@@ -467,7 +463,7 @@ void AVehicle_Base::ApplyLoadoutToVehicle()
 		{
 			ApplyLoadoutToSeat(i);
 		}
-		ApplyCamoToVehicle(SaveSubsystem->GetVehicleLoadout(VehicleData->Vehicle_Type).VehicleCamo);
+		ApplyCamoToVehicle(UBS2FunctionLibrary::GetSaveSubsystem(this)->GetVehicleLoadout(VehicleData->Vehicle_Type).VehicleCamo);
 		VehicleCurrentState.GenericVehicleState.LoadoutApplied = true;
 	}
 }
@@ -896,20 +892,30 @@ void AVehicle_Base::UpdateThrottle_GV(float InputValue)
 
 void AVehicle_Base::Input_UpdateSteering_GV(float SteeringValue, int32 SeatIndex)
 {
-	if (VehicleData->GroundVehicle_Data.canIdleTurn)
+	if (VehicleData->GroundVehicle_Data.IdleTurnData.canIdleTurn)
 	{
-		//ChaosVehicleMovement->SetYawInput(SteeringValue);
+		// 1. Get the current turning speed of the vehicle mesh (radians per second)
+		FVector CurrentAngularVelocity = VehicleMeshComponent->GetPhysicsAngularVelocityInRadians();
+		float CurrentYawSpeed = CurrentAngularVelocity.Z;
 
-		//if (UPrimitiveComponent* RootPrim = Cast<UPrimitiveComponent>(GetRootComponent()))
-		//{
-			//float TankWeightFactor = RootPrim->GetMass();
-			float TargetTorqueScale = 10.0f; // make actual data
+		// 2. Tune these two parameters (ideally expose these to your VehicleData asset)
+		const float& TargetTorqueScale = VehicleData->GroundVehicle_Data.IdleTurnData.TargetTorqueScale;  // Power of the turn (increased since drag will fight it)
+		const float& AngularDragScale = VehicleData->GroundVehicle_Data.IdleTurnData.AngularDragScale;   // How hard the tank fights its own rotation speed
 
-			FVector TorqueVector = FVector(0.0f, 0.0f, SteeringValue * TargetTorqueScale);
+		// 3. Calculate the forces
+		// The driver wants to accelerate rotation:
+		float DrivingTorque = SteeringValue * TargetTorqueScale;
 
-			// Inject direct physics torque onto the asynchronous physics thread
-			VehicleMeshComponent->AddTorqueInRadians(TorqueVector, NAME_None, true);
-		//}
+		// The counter-force that grows stronger the faster the tank is already spinning:
+		float DampingTorque = -CurrentYawSpeed * AngularDragScale;
+
+		// Combine them so they fight each other
+		float FinalYawTorque = DrivingTorque + DampingTorque;
+
+		FVector TorqueVector = FVector(0.0f, 0.0f, FinalYawTorque);
+
+		// Inject the balanced torque onto the mesh
+		VehicleMeshComponent->AddTorqueInRadians(TorqueVector, NAME_None, true);
 	}
 	else
 	{

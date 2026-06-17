@@ -1036,7 +1036,7 @@ TWeakObjectPtr<AProjectile_Base> UVehicleWeaponLogicComponent::HandleStartFire(i
 		case EFireMode::Burst:
 			break;
 		case EFireMode::Auto:
-			if (!GetWorld()->GetTimerManager().IsTimerActive(TimerHandle_AutoFire))
+			if (!GetWorld()->GetTimerManager().IsTimerActive(CurrentWeapon.WeaponState.TimerHandle_AutoFire))
 			{
 				FiredProjectile = StartFire(SeatIndex);
 
@@ -1053,7 +1053,7 @@ TWeakObjectPtr<AProjectile_Base> UVehicleWeaponLogicComponent::HandleStartFire(i
 						this->FireVehicleWeapon(SeatIndex);
 					});
 
-					GetWorld()->GetTimerManager().SetTimer(TimerHandle_AutoFire, FireDelegate, FireRate, true);
+					GetWorld()->GetTimerManager().SetTimer(CurrentWeapon.WeaponState.TimerHandle_AutoFire, FireDelegate, FireRate, true);
 				}
 			}
 			break;
@@ -1407,9 +1407,9 @@ void UVehicleWeaponLogicComponent::StopWeaponSlotFire(int32 SeatIndex, int32 Wea
 		}
 	});
 
-	if (GetWorld()->GetTimerManager().IsTimerActive(TimerHandle_AutoFire))
+	if (GetWorld()->GetTimerManager().IsTimerActive(CurrentWeapon.WeaponState.TimerHandle_AutoFire))
 	{
-		GetWorld()->GetTimerManager().ClearTimer(TimerHandle_AutoFire);
+		GetWorld()->GetTimerManager().ClearTimer(CurrentWeapon.WeaponState.TimerHandle_AutoFire);
 	}
 	CurrentWeapon.WeaponState.isFiring = false;		//crucial for delegates/controlling input state, etc
 }
