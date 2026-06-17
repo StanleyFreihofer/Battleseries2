@@ -42,7 +42,10 @@ struct FCharacterState
 	GENERATED_BODY()
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "State")
-	ECharacterCurrentStance CurrentStance = ECharacterCurrentStance::Standing;
+	ECharacterStance CurrentStance = ECharacterStance::Standing;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "State")
+	ECharacterMovementMode MovementMode = ECharacterMovementMode::Idle;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "State")
 	FCharacterVehicleState CharacterVehicleState = FCharacterVehicleState();

@@ -243,7 +243,8 @@ void AVehicle_Base::Init_Seats()
 		{
 			if (VehicleStartingData.OccupiedSeats[i] == SI)
 			{
-				VehicleCurrentState.SeatStates[SI].isOccupied = true;
+				HandleSeatOccupationStatus(true, SI);
+				//VehicleCurrentState.SeatStates[SI].isOccupied = true;
 				break;
 			}
 		}

@@ -165,6 +165,46 @@ void ACharacter_Base::Input_SwitchWeapon_Vehicle()
 	GetCurrentVehicle()->HandleViewMethod(this, SeatData);
 }
 
+void ACharacter_Base::HandleUpdateStance(ECharacterStance NewStance)
+{
+	//undo previous stuff
+	switch (CharacterState.CurrentStance)
+	{
+		case ECharacterStance::Standing:
+			switch (NewStance)
+			{
+				case ECharacterStance::Crouching:
+					//Crouch();
+					//GetCharacterMovement()->Crouch();
+					break;
+				case ECharacterStance::Proning:
+					break;
+			}
+			break;
+		case ECharacterStance::Crouching:
+			switch (NewStance)
+			{
+				case ECharacterStance::Standing:
+					//UnCrouch();
+					//GetCharacterMovement()->UnCrouch();
+					break;
+				case ECharacterStance::Proning:
+					break;
+			}		
+			break;
+		case ECharacterStance::Proning:
+			switch (NewStance)
+			{
+				case ECharacterStance::Crouching:
+					//Crouch();
+					//GetCharacterMovement()->Crouch();
+					break;
+			}
+			break;
+	}
+	CharacterState.CurrentStance = NewStance;
+}
+
 #pragma endregion
 
 void ACharacter_Base::Freelook(FVector2D InputAxisValue)
@@ -271,7 +311,7 @@ void ACharacter_Base::CharacterExitVehicle()
 		FVector ExitLocation = CalculateSafeExitLocation(GetCurrentVehicle());
 		SetActorLocation(ExitLocation);
 
-		UpdateCharacterStance(ECharacterCurrentStance::Standing);
+		UpdateCharacterStance(ECharacterStance::Standing);
 		GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Vehicle, ECR_Block);
 		GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Vehicle, ECollisionResponse::ECR_Block);
 		GetCharacterMovement()->SetMovementMode(MOVE_Walking);		//make this more dynamic (are we falling out of ejecting from a jet for example)
@@ -419,7 +459,7 @@ void ACharacter_Base::UpdateUI_EnterSeat()
 
 #pragma endregion
 
-void ACharacter_Base::UpdateCharacterStance(ECharacterCurrentStance NewStance)
+void ACharacter_Base::UpdateCharacterStance(ECharacterStance NewStance)
 {
 	CharacterState.CurrentStance = NewStance;
 }

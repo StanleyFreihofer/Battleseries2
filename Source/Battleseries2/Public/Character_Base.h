@@ -85,6 +85,8 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void Input_SwitchWeapon_Vehicle();
 	UFUNCTION(BlueprintCallable)
+	void HandleUpdateStance(ECharacterStance NewStance);
+	UFUNCTION(BlueprintCallable)
 	void Freelook(FVector2D InputAxisValue);
 	UFUNCTION(BlueprintCallable)
 	void UpdateHeadRotation(FRotator HeadRotation);
@@ -108,7 +110,7 @@ public:
 	void UpdateUI_EnterSeat();
 
 	UFUNCTION(BlueprintCallable)
-	void UpdateCharacterStance(ECharacterCurrentStance NewStance);
+	void UpdateCharacterStance(ECharacterStance NewStance);
 
 	UFUNCTION()
 	void UpdateViewTarget(TWeakObjectPtr<AActor> NewViewTarget, TWeakObjectPtr<UCameraComponent> CameraComponent);

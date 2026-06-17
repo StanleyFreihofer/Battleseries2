@@ -275,12 +275,14 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void UpdateSeatList_AllOccupants();
 
+#pragma region Getters
+
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	int32 GetControlledTurret(int32 SeatIndex);
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	UCameraComponent* GetRemoteActiveCam(int32 SeatIndex);
 
-	//Interfaces
+#pragma region InterfaceGetters
 	virtual USkeletalMeshComponent* GetVehicleMesh() const override;
 	virtual FName GetVehicleID() const override;
 	virtual const FVehicleData& GetVehicleData() const override;
@@ -288,14 +290,16 @@ public:
 	virtual AVehicle_Base& GetVehicle() override;
 
 	virtual bool GetIfCanLockOn_Implementation(const TArray<ETargetingCategory>& TargetingCategories, EHomingCapability HomingCapability) override;
+#pragma endregion
 
-	//Getters
-
-	//BP Wrappers
+#pragma region BlueprintWrapperGetters
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	FVehicleData GetVehicleData_BP() { return GetVehicleData(); }
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	FVehicleCurrentState GetVehicleState_BP() { return GetVehicleState(); }
+#pragma endregion
+
+#pragma endregion
 
 protected:
 	// Called when the game starts or when spawned

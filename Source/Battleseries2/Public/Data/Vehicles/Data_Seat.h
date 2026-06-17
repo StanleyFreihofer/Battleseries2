@@ -230,7 +230,7 @@ struct FCharacterSeatContext
 	FTransform SeatTransform = FTransform();
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	ECharacterCurrentStance SeatStance = ECharacterCurrentStance::Sitting;
+	ECharacterStance SeatStance = ECharacterStance::Sitting;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	EControlRotationMethod CharacterRotationMethod = EControlRotationMethod::None;
