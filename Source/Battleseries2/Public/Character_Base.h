@@ -109,9 +109,6 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void UpdateUI_EnterSeat();
 
-	UFUNCTION(BlueprintCallable)
-	void UpdateCharacterStance(ECharacterStance NewStance);
-
 	UFUNCTION()
 	void UpdateViewTarget(TWeakObjectPtr<AActor> NewViewTarget, TWeakObjectPtr<UCameraComponent> CameraComponent);
 

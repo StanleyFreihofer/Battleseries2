@@ -174,8 +174,7 @@ void ACharacter_Base::HandleUpdateStance(ECharacterStance NewStance)
 			switch (NewStance)
 			{
 				case ECharacterStance::Crouching:
-					//Crouch();
-					//GetCharacterMovement()->Crouch();
+					Crouch();
 					break;
 				case ECharacterStance::Proning:
 					break;
@@ -185,8 +184,7 @@ void ACharacter_Base::HandleUpdateStance(ECharacterStance NewStance)
 			switch (NewStance)
 			{
 				case ECharacterStance::Standing:
-					//UnCrouch();
-					//GetCharacterMovement()->UnCrouch();
+					UnCrouch();
 					break;
 				case ECharacterStance::Proning:
 					break;
@@ -196,8 +194,7 @@ void ACharacter_Base::HandleUpdateStance(ECharacterStance NewStance)
 			switch (NewStance)
 			{
 				case ECharacterStance::Crouching:
-					//Crouch();
-					//GetCharacterMovement()->Crouch();
+					Crouch();
 					break;
 			}
 			break;
@@ -311,7 +308,7 @@ void ACharacter_Base::CharacterExitVehicle()
 		FVector ExitLocation = CalculateSafeExitLocation(GetCurrentVehicle());
 		SetActorLocation(ExitLocation);
 
-		UpdateCharacterStance(ECharacterStance::Standing);
+		HandleUpdateStance(ECharacterStance::Standing);
 		GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Vehicle, ECR_Block);
 		GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Vehicle, ECollisionResponse::ECR_Block);
 		GetCharacterMovement()->SetMovementMode(MOVE_Walking);		//make this more dynamic (are we falling out of ejecting from a jet for example)
@@ -350,7 +347,7 @@ void ACharacter_Base::CharacterEnterSeat(const FCharacterSeatContext& SeatContex
 			break;
 	}
 
-	UpdateCharacterStance(SeatContext.SeatStance);
+	HandleUpdateStance(SeatContext.SeatStance);
 	ManageIMC(nullptr, SeatContext.InputMappingContext, 1);
 	UpdateCharacterMeshVisibility(SeatContext.bIsCharacterVisible);
 	if (SeatContext.SeatHMD)
@@ -458,11 +455,6 @@ void ACharacter_Base::UpdateUI_EnterSeat()
 }
 
 #pragma endregion
-
-void ACharacter_Base::UpdateCharacterStance(ECharacterStance NewStance)
-{
-	CharacterState.CurrentStance = NewStance;
-}
 
 void ACharacter_Base::UpdateViewTarget(TWeakObjectPtr<AActor> NewViewTarget, TWeakObjectPtr<UCameraComponent> CameraComponent)
 {
