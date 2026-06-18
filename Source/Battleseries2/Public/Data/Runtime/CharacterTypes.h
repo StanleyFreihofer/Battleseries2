@@ -14,7 +14,7 @@ struct FCharacterVehicleState
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "State")
 	bool inVehicle = false;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "State")
-	AVehicle_Base* CurrentVehicle = nullptr;		
+	TObjectPtr<AVehicle_Base> CurrentVehicle = nullptr;		
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "State")
 	bool isFreeLooking = false;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "State")
@@ -33,7 +33,8 @@ struct FInteractionState
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "State")
 	TWeakObjectPtr<AActor> HitInteractable = nullptr;
 
-	//interacttimer
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "State")
+	FTimerHandle InteractTimer = FTimerHandle();
 };
 
 USTRUCT(BlueprintType)
@@ -41,14 +42,17 @@ struct FCharacterState
 {
 	GENERATED_BODY()
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "State")
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "State")
 	ECharacterStance CurrentStance = ECharacterStance::Standing;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "State")
 	ECharacterMovementMode MovementMode = ECharacterMovementMode::Idle;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "State")
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "State")
 	FCharacterVehicleState CharacterVehicleState = FCharacterVehicleState();
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "State")
+	FInteractionState InteractionState = FInteractionState();
 
 	//current controlled projectile?
 

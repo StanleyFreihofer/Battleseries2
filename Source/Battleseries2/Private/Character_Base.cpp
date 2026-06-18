@@ -331,7 +331,7 @@ void ACharacter_Base::CharacterEnterSeat(const FCharacterSeatContext& SeatContex
 			break;
 		case E_SeatRole::DriverGunner:
 		case E_SeatRole::Gunner:
-			UVehicleWeaponLogicComponent* VWLC = GetCurrentVehicle()->VehicleWeaponLogicComponent;
+			TObjectPtr<UVehicleWeaponLogicComponent> VWLC = GetCurrentVehicle()->VehicleWeaponLogicComponent;
 			const FVehicleWeaponInstanceData& VWID = VWLC->GetVWID(GetCSI(), VWLC->GetCWIForSeat(GetCSI()), VWLC->GetEquippedWeaponInSeat(GetCSI()).VehicleWeaponState.BaseWeaponRuntimeData.WeaponID);
 			if (VWID.AttachmentInstanceData.bAttachCharacter)
 			{

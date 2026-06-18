@@ -76,6 +76,14 @@ enum class ECoreItemType : uint8
 };
 
 UENUM(BlueprintType)
+enum class EInteractType : uint8
+{
+	Press			UMETA(DisplayName = "Press"),
+	Hold			UMETA(DisplayName = "Hold"),
+	Passive			UMETA(DisplayName = "Passive", ToolTip = "No input needed to interact")
+};
+
+UENUM(BlueprintType)
 enum class EFactionType : uint8
 {
 	US				UMETA(DisplayName = "US"),
