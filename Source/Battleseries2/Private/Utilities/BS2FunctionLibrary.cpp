@@ -1,6 +1,8 @@
 #include "Utilities/BS2FunctionLibrary.h"
 #include "Engine/World.h"
 #include "Engine/GameInstance.h"
+#include "Kismet/KismetSystemLibrary.h"
+#include "DrawDebugHelpers.h"
 #include "Utilities/BS2FunctionLibrary.h"
 #include "Utilities/DataManagerSubsystem.h"
 #include "Utilities/ProjectilePoolSubsystem.h"
@@ -8,6 +10,34 @@
 #include "Save/SaveSubsystem.h"
 #include "Utilities/I_VehicleDataAccessor.h"
 
+bool UBS2FunctionLibrary::PerformSphereTraceMulti(const UObject* WorldContextObject, const FTransform StartTransform, TArray<FHitResult>& OutHits, TArray<AActor*> ActorsToIgnore, float Radius, float Distance)
+{
+	UWorld* World = GEngine->GetWorldFromContextObject(WorldContextObject, EGetWorldErrorMode::LogAndReturnNull);
+	FVector Startpoint = StartTransform.GetLocation();
+	FVector GetRotationXVector = StartTransform.GetRotation().Rotator().Vector();
+	FVector Endpoint = GetRotationXVector * Distance + Startpoint;
+
+	FCollisionQueryParams Params;
+	FCollisionShape SphereShape = FCollisionShape::MakeSphere(Radius);
+	Params.AddIgnoredActors(ActorsToIgnore);
+
+	return UKismetSystemLibrary::SphereTraceMulti(
+		WorldContextObject,
+		Startpoint,
+		Endpoint,
+		Radius,
+		UEngineTypes::ConvertToTraceType(ECC_Visibility),
+		false,              // bTraceComplex
+		ActorsToIgnore,
+		EDrawDebugTrace::ForOneFrame,
+		OutHits,
+		true,               // bIgnoreSelf
+		FLinearColor::Red,  // Trace Color
+		FLinearColor::Green,// Hit Color
+		0.0f                // Draw Time
+	);
+	return false;
+}
 
 void UBS2FunctionLibrary::ConvertNamesToVehicleTypes(const TArray<FName>& VehicleTypeNames, TArray<EVehicleType>& OutVehicleTypes)
 {

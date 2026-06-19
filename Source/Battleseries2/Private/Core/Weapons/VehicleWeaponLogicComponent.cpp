@@ -4,7 +4,7 @@
 #include "Character_Base.h"	
 #include "Core/Weapons/Projectiles/Projectile_Base.h"
 #include "Data/Weapons/Data_Projectile.h"
-#include "Data/Runtime/ProjectileTypes.h"
+#include "Data/Weapons/ProjectileTypes.h"
 #include "Data/Weapons/Data_VehicleWeapon.h"
 #include "Data/Weapons/WeaponDefaults.h"
 #include "Data/Vehicles/VehicleDefaults.h"

@@ -7,7 +7,7 @@
 #include "Components/PointLightComponent.h"
 #include "Utilities/DataManagerSubsystem.h"
 #include "Utilities/ProjectilePoolSubsystem.h"
-#include "Data/Runtime/ProjectileTypes.h"
+#include "Data/Weapons/ProjectileTypes.h"
 #include "Projectile_Base.generated.h"
 
 class UProjectilePoolSubsystem;

@@ -3,7 +3,7 @@
 #include "Core/Weapons/WeaponFunctions.h"
 #include "Character_Base.h"
 #include "Data/Core/CoreTypes.h"
-#include "Data/Runtime/ProjectileTypes.h"
+#include "Data/Weapons/ProjectileTypes.h"
 #include "Data/Weapons/Data_Weapon.h"
 #include "Data/Weapons/Data_InfantryWeapon.h"
 #include "Data/Weapons/Data_WeaponAttachments.h"

@@ -5,7 +5,7 @@
 #include "NiagaraSystem.h"
 #include "Utilities/ProjectilePoolSubsystem.h"
 #include "Utilities/I_VehicleDataAccessor.h"
-#include "Data/Runtime/WeaponTypes.h"
+#include "Data/Weapons/WeaponTypes.h"
 #include "Data/Vehicles/Data_Seat.h"
 #include "Data/Core/CoreTypes.h"
 #include "VehicleWeaponLogicComponent.generated.h"

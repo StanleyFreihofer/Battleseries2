@@ -8,7 +8,7 @@
 #include "EnhancedInputSubsystems.h"
 #include "InputMappingContext.h"
 #include "InputAction.h"
-#include "Data/Runtime/CharacterTypes.h"
+#include "Data/Characters/CharacterTypes.h"
 #include "Data/Core/CoreTypes.h"
 #include "Utilities/I_Anims.h"
 #include "Character_Base.generated.h"
@@ -76,14 +76,30 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void Init_PlayerCharacter();
 
+#pragma region Input
 	UFUNCTION(BlueprintCallable)
 	void Input_Look(FVector2D InputAxisValue);
 	UFUNCTION(BlueprintCallable)
 	void Input_Move(FVector2D InputAxisValue);
 	UFUNCTION(BlueprintCallable)
+	void Input_Interact();
+	UFUNCTION(BlueprintCallable)
 	void Input_ShootWeapon_Vehicle();
 	UFUNCTION(BlueprintCallable)
 	void Input_SwitchWeapon_Vehicle();
+#pragma endregion
+
+#pragma region Interaction
+	UFUNCTION(BlueprintCallable)
+	void InteractTrace();
+	UFUNCTION(BlueprintCallable)
+	void StartInteract();
+	UFUNCTION(BlueprintCallable)
+	void AttemptInteract();
+	UFUNCTION(BlueprintCallable)
+	void StopInteract();
+#pragma endregion
+
 	UFUNCTION(BlueprintCallable)
 	void HandleUpdateStance(ECharacterStance NewStance);
 	UFUNCTION(BlueprintCallable)

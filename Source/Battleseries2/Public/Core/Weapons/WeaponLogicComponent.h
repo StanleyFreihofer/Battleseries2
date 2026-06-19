@@ -4,7 +4,7 @@
 #include "Components/ActorComponent.h"
 #include "Utilities/ProjectilePoolSubsystem.h"
 #include "Utilities/DataManagerSubsystem.h"
-#include "Data/Runtime/WeaponTypes.h"
+#include "Data/Weapons/WeaponTypes.h"
 #include "Data/Core/CoreTypes.h"
 #include "Data/Core/CoreEnums.h"
 #include "WeaponLogicComponent.generated.h"

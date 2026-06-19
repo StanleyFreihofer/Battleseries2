@@ -2,7 +2,7 @@
 
 #include "Character_Base.h"
 #include "Vehicle_Base.h"
-#include "Data/Runtime/VehicleTypes.h"
+#include "Data/Vehicles/VehicleTypes.h"
 #include "Components/CapsuleComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "EnhancedInputComponent.h"
@@ -17,6 +17,7 @@
 #include "Core/UI/GameplayHUDs/UW_HUD_Status_Base.h"
 #include "Core/PlayerController_Base.h"
 #include "Core/Weapons/Projectiles/Projectile_Base.h"
+#include "Utilities/I_Interact.h"
 #include "Utilities/HUDSubsystem.h"
 #include "Utilities/DataManagerSubsystem.h"
 #include "Utilities/BS2FunctionLibrary.h"
@@ -66,6 +67,7 @@ void ACharacter_Base::PossessedBy(AController* NewController)
 void ACharacter_Base::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+	InteractTrace();
 }
 
 // Called to bind functionality to input
@@ -136,6 +138,15 @@ void ACharacter_Base::Input_Move(FVector2D InputAxisValue)
 	}
 }
 
+void ACharacter_Base::Input_Interact()
+{
+	if (CharacterState.CharacterVehicleState.inVehicle)
+	{
+		return;
+	}
+	StartInteract();
+}
+
 void ACharacter_Base::Input_ShootWeapon_Vehicle()
 {
 	TWeakObjectPtr<AProjectile_Base> FiredProjectile;
@@ -164,6 +175,73 @@ void ACharacter_Base::Input_SwitchWeapon_Vehicle()
 	const FSeatData& SeatData = GetCurrentVehicle()->VehicleData->Seats[GetCSI()];
 	GetCurrentVehicle()->HandleViewMethod(this, SeatData);
 }
+
+#pragma region Interaction
+
+void ACharacter_Base::InteractTrace()
+{
+	if (!GetController() || CharacterState.CharacterVehicleState.inVehicle)
+	{
+		return;
+	}
+
+	TArray<FHitResult> HitResults;
+	TArray<AActor*> ActorsToIgnore;
+	const float& InteractionDistance = UBS2FunctionLibrary::GetDataSubsystem(GetWorld())->GetCharacterDefaults()->InteractionDistance;
+	UBS2FunctionLibrary::PerformSphereTraceMulti(GetWorld(), FPCamera->GetComponentTransform(), HitResults, ActorsToIgnore, 1.0f, InteractionDistance);
+	if (HitResults.Num() > 0 && HitResults[0].GetActor()->GetClass()->ImplementsInterface(UInteract::StaticClass()))
+	{
+		CharacterState.InteractionState.HitInteractable = HitResults[0].GetActor();
+		IInteract::Execute_HoverInteraction(CharacterState.InteractionState.HitInteractable.Get(), true);
+	}
+	else if (CharacterState.InteractionState.HitInteractable.IsValid())
+	{
+		IInteract::Execute_HoverInteraction(CharacterState.InteractionState.HitInteractable.Get(), false);
+		CharacterState.InteractionState.HitInteractable = nullptr;
+	}
+}
+
+void ACharacter_Base::StartInteract()
+{
+	UObject* TargetObject = CharacterState.InteractionState.HitInteractable.Get();
+	if (!TargetObject)
+	{
+		return;
+	}
+	if (!TargetObject->GetClass()->ImplementsInterface(UInteract::StaticClass()))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s does not implement UInteract interface!"), *TargetObject->GetName());
+		return;
+	}
+	EInteractType CurrentType = IInteract::Execute_GetInteractionType(TargetObject);
+	UE_LOG(LogTemp, Warning, TEXT("Interaction Type Returned: %d"), (int32)CurrentType);
+	switch (CurrentType)
+	{
+		case EInteractType::Press:
+			AttemptInteract();
+			break;
+		case EInteractType::Hold:
+			if (!GetWorld()->GetTimerManager().IsTimerActive(CharacterState.InteractionState.InteractTimer))
+			{
+				GetWorld()->GetTimerManager().SetTimer(CharacterState.InteractionState.InteractTimer, this, &ACharacter_Base::AttemptInteract, 1.0f, false);
+			}
+			break;
+		case EInteractType::Passive:
+			break;
+	}
+}
+
+void ACharacter_Base::AttemptInteract()
+{
+	IInteract::Execute_Interact(CharacterState.InteractionState.HitInteractable.Get(), this);
+}
+
+void ACharacter_Base::StopInteract()
+{
+	GetWorld()->GetTimerManager().ClearTimer(CharacterState.InteractionState.InteractTimer);
+}
+
+#pragma endregion
 
 void ACharacter_Base::HandleUpdateStance(ECharacterStance NewStance)
 {

@@ -84,6 +84,15 @@ enum class EInteractType : uint8
 };
 
 UENUM(BlueprintType)
+enum class EActionType : uint8
+{
+	Pickup			UMETA(DisplayName = "Pickup"),
+	Enter			UMETA(DisplayName = "Enter"),
+	Open			UMETA(DisplayName = "Open"),
+	Custom			UMETA(DisplayName = "Custom")
+};
+
+UENUM(BlueprintType)
 enum class EFactionType : uint8
 {
 	US				UMETA(DisplayName = "US"),

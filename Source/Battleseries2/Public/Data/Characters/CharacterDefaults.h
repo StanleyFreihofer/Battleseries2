@@ -30,6 +30,8 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "HUD")
 	TSubclassOf<UUW_HUD_Status_Base> StatusHUDClass = nullptr;
 
-	//interaction range
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Interaction")
+	float InteractionDistance = 75.0f;
 	//minimap HUD class (gameplay hud)
+	//spotting range?
 };

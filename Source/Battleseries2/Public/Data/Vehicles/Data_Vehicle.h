@@ -248,7 +248,7 @@ struct FVehicleSetup
 	/** Mass to set the vehicle chassis to. It's much easier to tweak vehicle settings when
 	 * the mass doesn't change due to tweaks with the physics asset. [kg] */
 	UPROPERTY(EditAnywhere, Category = VehicleSetup, meta = (ClampMin = "0.01", UIMin = "0.01"))
-	float Mass = 0.0f;
+	float Mass = 1.0f;
 
 	/**
 	 * Enable to override the calculated COM position with your own fixed value - this prevents the vehicle handling changing when the asset changes

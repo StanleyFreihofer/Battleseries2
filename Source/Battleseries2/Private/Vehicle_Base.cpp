@@ -429,6 +429,12 @@ void AVehicle_Base::UpdateSeatList_AllOccupants()
 	}
 }
 
+void AVehicle_Base::Interact_Implementation(ACharacter_Base* CharacterInteracting)
+{
+	AttemptEnterVehicle(CharacterInteracting);
+	InteractionWidgetComponent->SetVisibility(false, false);
+}
+
 #pragma region LoadoutUpdates
 
 void AVehicle_Base::ApplyLoadoutToSeat(int32 SeatIndex)		//this functions applies everything in the loadout (weapons, optics, upgrades, camos (if applicable), etc)
@@ -1303,6 +1309,12 @@ const FVehicleCurrentState& AVehicle_Base::GetVehicleState() const
 AVehicle_Base& AVehicle_Base::GetVehicle() 
 {
 	return *this;
+}
+
+void AVehicle_Base::GetInteractObjectInfo_Implementation(FText& ObjectName, TSoftObjectPtr<UTexture2D>& ObjectIcon)
+{
+	ObjectName = VehicleData->Vehicle_DisplayName;
+	ObjectIcon = VehicleData->VehicleIcon;
 }
 
 bool AVehicle_Base::GetIfCanLockOn_Implementation(const TArray<ETargetingCategory>& TargetingCategories, EHomingCapability HomingCapability)

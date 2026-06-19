@@ -1,6 +1,6 @@
 #include "Core/Weapons/WeaponFunctions.h"
-#include "Data/Runtime/WeaponTypes.h"
-#include "Data/Runtime/ProjectileTypes.h"
+#include "Data/Weapons/WeaponTypes.h"
+#include "Data/Weapons/ProjectileTypes.h"
 #include "Utilities/ProjectilePoolSubsystem.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "DrawDebugHelpers.h"

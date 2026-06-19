@@ -4,13 +4,14 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Pawn.h"
 // Interfaces MUST be included for inheritance
+#include "Utilities/I_Interact.h"
 #include "Utilities/I_VehicleDataAccessor.h"
 #include "Utilities/I_Anims.h"
 #include "Core/Weapons/I_LockOnTarget.h"
 // Structs used by VALUE must be included
 #include "Data/Vehicles/Data_Vehicle.h" 
 #include "Data/Core/CoreTypes.h"
-#include "Data/Runtime/VehicleTypes.h"
+#include "Data/Vehicles/VehicleTypes.h"
 // UBT/UHT requirements
 #include "Engine/DataTable.h" 
 #include "Vehicle_Base.generated.h"
@@ -70,7 +71,7 @@ struct FVehicleStartingData
 };
 
 UCLASS()
-class BATTLESERIES2_API AVehicle_Base : public APawn, public IVehicleDataAccessor, public ILockOnTarget, public IAnims
+class BATTLESERIES2_API AVehicle_Base : public APawn, public IInteract, public IVehicleDataAccessor, public ILockOnTarget, public IAnims
 {
 	GENERATED_BODY()
 
@@ -275,6 +276,10 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void UpdateSeatList_AllOccupants();
 
+	UFUNCTION(BlueprintCallable)
+	virtual void Interact_Implementation(ACharacter_Base* CharacterInteracting);
+	
+
 #pragma region Getters
 
 	UFUNCTION(BlueprintCallable, BlueprintPure)
@@ -288,6 +293,9 @@ public:
 	virtual const FVehicleData& GetVehicleData() const override;
 	virtual const FVehicleCurrentState& GetVehicleState() const override;
 	virtual AVehicle_Base& GetVehicle() override;
+	virtual EActionType GetActionType_Implementation() override { return EActionType::Enter; };
+	virtual EInteractType GetInteractionType_Implementation() override { return EInteractType::Hold; };
+	virtual void GetInteractObjectInfo_Implementation(FText& ObjectName, TSoftObjectPtr<UTexture2D>& ObjectIcon) override;
 
 	virtual bool GetIfCanLockOn_Implementation(const TArray<ETargetingCategory>& TargetingCategories, EHomingCapability HomingCapability) override;
 #pragma endregion

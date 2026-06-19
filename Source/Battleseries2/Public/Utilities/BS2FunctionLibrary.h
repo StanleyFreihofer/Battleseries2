@@ -19,6 +19,9 @@ class BATTLESERIES2_API UBS2FunctionLibrary : public UBlueprintFunctionLibrary
     GENERATED_BODY()
 
 public:
+
+    UFUNCTION(BlueprintCallable, Category = "Battleseries | Tools")
+    static bool PerformSphereTraceMulti(const UObject* WorldContextObject, const FTransform StartTransform, TArray<FHitResult>& OutHits, TArray<AActor*> ActorsToIgnore, float Radius, float Distance);
     UFUNCTION(BlueprintCallable, Category = "Vehicle|HUD")
     static void ConvertNamesToVehicleTypes(const TArray<FName>& VehicleTypeNames, TArray<EVehicleType>& OutVehicleTypes);
 
@@ -26,13 +29,13 @@ public:
     UFUNCTION(BlueprintCallable, Category = "Vehicle|HUD")
     static FString GetVehicleTypeLiteralString(EVehicleType VehicleType);
 
-    UFUNCTION(BlueprintCallable, Category = "Battleseries | Subsystems")
+    UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Battleseries | Subsystems")
     static UDataManagerSubsystem* GetDataSubsystem(const UObject* WorldContextObject);
-    UFUNCTION(BlueprintCallable, Category = "Battleseries | Subsystems")
+    UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Battleseries | Subsystems")
     static UHUDSubsystem* GetHUDSubsystem(const UObject* WorldContextObject);
-    UFUNCTION(BlueprintCallable)
+    UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Battleseries | Subsystems")
     static USaveSubsystem* GetSaveSubsystem(const UObject* WorldContextObject);
-	UFUNCTION(BlueprintCallable)
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Battleseries | Subsystems")
     static UProjectilePoolSubsystem* GetProjectileSystem(const UObject* WorldContextObject);
     static IVehicleDataAccessor* GetVehicleAccessor(AActor* TargetActor);
 };
