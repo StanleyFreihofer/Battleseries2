@@ -238,7 +238,7 @@ void UVehicleWeaponLogicComponent::HandleApplyWeaponMesh(int32 SeatIndex, int32 
 
 void UVehicleWeaponLogicComponent::MountProjectiles(int32 SeatIndex, int32 WeaponIndex)
 {
-	USkeletalMeshComponent* VehicleMeshComponent = OwnerDataAccessor->GetVehicleMesh();
+	TObjectPtr<USkeletalMeshComponent> VehicleMeshComponent = OwnerDataAccessor->GetVehicleMesh();
 	FVehicleWeapon_Runtime& SeatWeaponToFill = VehicleWeaponSystem.Find(SeatIndex)->Weapons[WeaponIndex];
 	FWeapon_Runtime& WeaponDataToFill = SeatWeaponToFill.VehicleWeaponState.BaseWeaponRuntimeData;
 	const FVehicleWeaponData* VehicleWeaponRow = UBS2FunctionLibrary::GetDataSubsystem(this)->GetVehicleWeaponDataRow(WeaponDataToFill.WeaponID);

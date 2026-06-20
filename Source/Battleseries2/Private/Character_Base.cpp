@@ -187,9 +187,10 @@ void ACharacter_Base::InteractTrace()
 
 	TArray<FHitResult> HitResults;
 	TArray<AActor*> ActorsToIgnore;
+	const float& TraceDistance = UBS2FunctionLibrary::GetDataSubsystem(GetWorld())->GetCharacterDefaults()->TraceDistance;
 	const float& InteractionDistance = UBS2FunctionLibrary::GetDataSubsystem(GetWorld())->GetCharacterDefaults()->InteractionDistance;
-	UBS2FunctionLibrary::PerformSphereTraceMulti(GetWorld(), FPCamera->GetComponentTransform(), HitResults, ActorsToIgnore, 1.0f, InteractionDistance);
-	if (HitResults.Num() > 0 && HitResults[0].GetActor()->GetClass()->ImplementsInterface(UInteract::StaticClass()))
+	UBS2FunctionLibrary::PerformSphereTraceMulti(GetWorld(), FPCamera->GetComponentTransform(), HitResults, ActorsToIgnore, 1.0f, TraceDistance);
+	if (HitResults.Num() > 0 && HitResults[0].GetActor()->GetClass()->ImplementsInterface(UInteract::StaticClass()) && HitResults[0].Distance <= InteractionDistance)
 	{
 		CharacterState.InteractionState.HitInteractable = HitResults[0].GetActor();
 		IInteract::Execute_HoverInteraction(CharacterState.InteractionState.HitInteractable.Get(), true);
@@ -255,6 +256,7 @@ void ACharacter_Base::HandleUpdateStance(ECharacterStance NewStance)
 					Crouch();
 					break;
 				case ECharacterStance::Proning:
+					Crouch();
 					break;
 			}
 			break;
@@ -559,7 +561,7 @@ void ACharacter_Base::HandleFireCompleted()
 {
 	if (CharacterState.CharacterVehicleState.inVehicle)
 	{
-		OnFireReleased_Vehicle.Broadcast(CharacterState.CharacterVehicleState.CSI);
+		OnFireReleased_Vehicle.Broadcast(GetCSI());
 	}
 }
 
@@ -578,6 +580,8 @@ void ACharacter_Base::ManageIMC(UInputMappingContext* IMC_ToRemove, UInputMappin
 		}
 	}
 }
+
+# pragma region MeshVisibility
 
 void ACharacter_Base::HideCharacterMesh()
 {
@@ -606,6 +610,8 @@ void ACharacter_Base::UpdateCharacterMeshVisibility(bool ShowMesh)
 		HideCharacterMesh();
 	}
 }
+
+#pragma endregion
 
 void ACharacter_Base::UpdateRangefinder_WindowedVehicle()
 {
@@ -697,7 +703,7 @@ int32& ACharacter_Base::GetCSI()
 
 void ACharacter_Base::UpdateVehicleHUD(TSubclassOf<UUserWidget> HUDClass)
 {
-	if (UHUDSubsystem* HUDSub = UBS2FunctionLibrary::GetHUDSubsystem(this))
+	if (TObjectPtr<UHUDSubsystem> HUDSub = UBS2FunctionLibrary::GetHUDSubsystem(this))
 	{
 		if (!HUDSub->CurrentVehicleHMD && HUDClass)
 		{

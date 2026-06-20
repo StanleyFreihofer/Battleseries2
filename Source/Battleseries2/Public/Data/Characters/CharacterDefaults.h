@@ -30,6 +30,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "HUD")
 	TSubclassOf<UUW_HUD_Status_Base> StatusHUDClass = nullptr;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Default Trace")
+	float TraceDistance = 75000.0f;
+
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Interaction")
 	float InteractionDistance = 75.0f;
 	//minimap HUD class (gameplay hud)

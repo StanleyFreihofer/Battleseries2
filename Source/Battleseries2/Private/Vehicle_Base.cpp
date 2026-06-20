@@ -52,16 +52,14 @@ void AVehicle_Base::BeginPlay()
 {
 	Super::BeginPlay();
 
-	if (!VehicleStartingData.VehicleID.IsNone())
+	check(!VehicleStartingData.VehicleID.IsNone());			//enter the ID dummy
+	if (UBS2FunctionLibrary::GetDataSubsystem(this)->IsDataReady())
 	{
-		if (UBS2FunctionLibrary::GetDataSubsystem(this)->IsDataReady())
-		{
-			Init_VehicleData();
-		}
-		else
-		{
-			UBS2FunctionLibrary::GetDataSubsystem(this)->OnDataReady.AddDynamic(this, &AVehicle_Base::Init_VehicleData);
-		}
+		Init_VehicleData();
+	}
+	else
+	{
+		UBS2FunctionLibrary::GetDataSubsystem(this)->OnDataReady.AddDynamic(this, &AVehicle_Base::Init_VehicleData);
 	}
 }
 
