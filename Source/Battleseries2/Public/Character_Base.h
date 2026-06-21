@@ -100,8 +100,21 @@ public:
 	void StopInteract();
 #pragma endregion
 
+#pragma region StanceManagement
+
 	UFUNCTION(BlueprintCallable)
 	void HandleUpdateStance(ECharacterStance NewStance);
+	UFUNCTION(BlueprintCallable)
+	void EnterProne();
+	UFUNCTION(BlueprintCallable)
+	void ExitProne();
+	UFUNCTION(BlueprintCallable)
+	void InterpEnterProne_FP();
+	UFUNCTION(BlueprintCallable)
+	void InterpExitProne_FP();
+
+#pragma endregion
+
 	UFUNCTION(BlueprintCallable)
 	void Freelook(FVector2D InputAxisValue);
 	UFUNCTION(BlueprintCallable)
@@ -153,6 +166,8 @@ public:
 	AVehicle_Base* GetCurrentVehicle();
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	int32& GetCSI();
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	ECharacterStance& GetCurrentStance();
 
 	TMap<TObjectPtr<const UInputMappingContext>, int32> DebugCurrentIMC();
 

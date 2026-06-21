@@ -244,10 +244,13 @@ void ACharacter_Base::StopInteract()
 
 #pragma endregion
 
+#pragma region StanceManagement
+
 void ACharacter_Base::HandleUpdateStance(ECharacterStance NewStance)
 {
 	//undo previous stuff
-	switch (CharacterState.CurrentStance)
+	ECharacterStance& CurrentStance = GetCurrentStance();
+	switch (CurrentStance)
 	{
 		case ECharacterStance::Standing:
 			switch (NewStance)
@@ -257,6 +260,7 @@ void ACharacter_Base::HandleUpdateStance(ECharacterStance NewStance)
 					break;
 				case ECharacterStance::Proning:
 					Crouch();
+					EnterProne();
 					break;
 			}
 			break;
@@ -267,6 +271,7 @@ void ACharacter_Base::HandleUpdateStance(ECharacterStance NewStance)
 					UnCrouch();
 					break;
 				case ECharacterStance::Proning:
+					EnterProne();
 					break;
 			}		
 			break;
@@ -274,13 +279,55 @@ void ACharacter_Base::HandleUpdateStance(ECharacterStance NewStance)
 			switch (NewStance)
 			{
 				case ECharacterStance::Crouching:
+					ExitProne();
 					Crouch();
 					break;
 			}
 			break;
 	}
-	CharacterState.CurrentStance = NewStance;
+	CharacterState.CharacterStanceState.CurrentStance = NewStance;
 }
+
+void ACharacter_Base::EnterProne()
+{
+	GetWorld()->GetTimerManager().SetTimer(CharacterState.CharacterStanceState.StanceTransitionTimer, this, &ACharacter_Base::InterpEnterProne_FP, GetWorld()->GetDeltaSeconds(), true);
+}
+
+void ACharacter_Base::ExitProne()
+{
+	GetWorld()->GetTimerManager().SetTimer(CharacterState.CharacterStanceState.StanceTransitionTimer, this, &ACharacter_Base::InterpExitProne_FP, GetWorld()->GetDeltaSeconds(), true);
+}
+
+void ACharacter_Base::InterpEnterProne_FP()
+{
+	float DeltaTime = GetWorld()->GetTimerManager().GetTimerElapsed(CharacterState.CharacterStanceState.StanceTransitionTimer);
+	float InterpSpeed = 12.0f;
+	FVector CurrentOffset = FPArmsSpringArm->GetRelativeLocation();
+	const FVector TargetOffset = UBS2FunctionLibrary::GetDataSubsystem(this)->GetCharacterDefaults()->ProneFPHeight;
+	FVector Offset = FMath::VInterpTo(CurrentOffset, TargetOffset, DeltaTime, InterpSpeed);
+	FPArmsSpringArm->SetRelativeLocation(Offset);
+	if (FVector::PointsAreNear(Offset, TargetOffset, 0.05f))
+	{
+		FPArmsSpringArm->SetRelativeLocation(TargetOffset);
+		GetWorld()->GetTimerManager().ClearTimer(CharacterState.CharacterStanceState.StanceTransitionTimer);
+	}
+}
+
+void ACharacter_Base::InterpExitProne_FP()
+{
+	float DeltaTime = GetWorld()->GetTimerManager().GetTimerElapsed(CharacterState.CharacterStanceState.StanceTransitionTimer);
+	float InterpSpeed = 12.0f;
+	FVector CurrentOffset = FPArmsSpringArm->GetRelativeLocation();
+	FVector Offset = FMath::VInterpTo(CurrentOffset, FVector::ZeroVector, DeltaTime, InterpSpeed);
+	FPArmsSpringArm->SetRelativeLocation(Offset);
+	if (FVector::PointsAreNear(Offset, FVector::ZeroVector, 0.05f))
+	{
+		FPArmsSpringArm->SetRelativeLocation(FVector::ZeroVector);
+		GetWorld()->GetTimerManager().ClearTimer(CharacterState.CharacterStanceState.StanceTransitionTimer);
+	}
+}
+
+#pragma endregion
 
 #pragma endregion
 
@@ -699,6 +746,11 @@ AVehicle_Base* ACharacter_Base::GetCurrentVehicle()
 int32& ACharacter_Base::GetCSI()
 {
 	return CharacterState.CharacterVehicleState.CSI;
+}
+
+ECharacterStance& ACharacter_Base::GetCurrentStance()
+{
+	return CharacterState.CharacterStanceState.CurrentStance;
 }
 
 void ACharacter_Base::UpdateVehicleHUD(TSubclassOf<UUserWidget> HUDClass)

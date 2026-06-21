@@ -35,6 +35,9 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Interaction")
 	float InteractionDistance = 75.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Stances")
+	FVector ProneFPHeight = FVector::ZeroVector;
 	//minimap HUD class (gameplay hud)
 	//spotting range?
 };

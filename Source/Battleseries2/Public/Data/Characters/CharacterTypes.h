@@ -38,7 +38,7 @@ struct FInteractionState
 };
 
 USTRUCT(BlueprintType)
-struct FCharacterState
+struct FCharacterStanceState
 {
 	GENERATED_BODY()
 
@@ -46,7 +46,19 @@ struct FCharacterState
 	ECharacterStance CurrentStance = ECharacterStance::Standing;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "State")
+	FTimerHandle StanceTransitionTimer = FTimerHandle();
+};
+
+USTRUCT(BlueprintType)
+struct FCharacterState
+{
+	GENERATED_BODY()
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "State")
 	ECharacterMovementMode MovementMode = ECharacterMovementMode::Idle;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "State")
+	FCharacterStanceState CharacterStanceState = FCharacterStanceState();
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "State")
 	FCharacterVehicleState CharacterVehicleState = FCharacterVehicleState();
