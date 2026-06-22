@@ -5,12 +5,9 @@
 #include "GameFramework/ProjectileMovementComponent.h"
 #include "NiagaraComponent.h"
 #include "Components/PointLightComponent.h"
-#include "Utilities/DataManagerSubsystem.h"
-#include "Utilities/ProjectilePoolSubsystem.h"
 #include "Data/Weapons/ProjectileTypes.h"
 #include "Projectile_Base.generated.h"
 
-class UProjectilePoolSubsystem;
 struct FProjectileData;
 struct FActorProjectile_Runtime;
 
@@ -88,10 +85,6 @@ public:
 	void OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
 	UFUNCTION(BlueprintCallable)
 	void OnImpact();
-	UFUNCTION()
-	UDataManagerSubsystem* GetDataManager();
-	UFUNCTION()
-	UProjectilePoolSubsystem* GetProjectileSystem();
 
 protected:
 	FTimerHandle StageTimerHandle;
