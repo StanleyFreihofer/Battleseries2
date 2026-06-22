@@ -9,7 +9,7 @@ enum class EVehicleType : uint8;
 //defines traits of a vehicle type
 
 USTRUCT(BlueprintType)
-struct FVehicleTypeDefintion
+struct FVehicleTypeDefintion        //entity type definition (store in core instead?)
 {
 	GENERATED_BODY()
 

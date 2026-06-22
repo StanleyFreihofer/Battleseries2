@@ -81,6 +81,7 @@ void ACharacter_Base::Init_Character()
 	//called on spawn into game I imagine.
 	//how to handle different spawn contexts (spawn in vehicle for example)
 
+	Init_CharacterMovement();
 	if (IsLocallyControlled())
 	{
 		Init_PlayerCharacter();
@@ -108,6 +109,18 @@ void ACharacter_Base::Init_PlayerCharacter()
 	UBS2FunctionLibrary::GetHUDSubsystem(this)->SpawnStatusHUD(UBS2FunctionLibrary::GetDataSubsystem(this)->GetCharacterDefaults()->StatusHUDClass.Get());
 }
 
+void ACharacter_Base::Init_CharacterMovement()
+{
+	FCharacterMovementData& CharacterMovementData = UBS2FunctionLibrary::GetDataSubsystem(this)->GetCharacterDefaults()->CharacterMovementData;
+	//default character movement comp data
+	GetCharacterMovement()->MaxAcceleration = CharacterMovementData.CharacterMovementDefaults.MaxAcceleration;
+	GetCharacterMovement()->MaxWalkSpeed = CharacterMovementData.CharacterMovementDefaults.MaxWalkSpeed;
+	GetCharacterMovement()->MaxWalkSpeedCrouched = CharacterMovementData.CharacterMovementDefaults.MaxWalkSpeedCrouched;
+
+	CharacterState.CharacterMovementState.canSprint = CharacterMovementData.canSprint;
+	CharacterState.CharacterMovementState.CurrentStamina = CharacterMovementData.StaminaDuration;
+}
+
 #pragma region Input
 
 void ACharacter_Base::Input_Look(FVector2D InputAxisValue)
@@ -131,19 +144,41 @@ void ACharacter_Base::Input_Look(FVector2D InputAxisValue)
 
 void ACharacter_Base::Input_Move(FVector2D InputAxisValue)
 {
-	if (!CharacterState.CharacterVehicleState.inVehicle)
+	if (CharacterState.CharacterVehicleState.inVehicle) { return; }
+
+	AddMovementInput(FVector(GetActorForwardVector()), InputAxisValue.Y);
+	AddMovementInput(FVector(GetActorRightVector()), InputAxisValue.X);
+	UpdateMovementMode();
+}
+
+void ACharacter_Base::Input_Sprint(bool Sprint)
+{
+	//add functionality and data for sprinting in different stances (also if can sprint in those stances)
+	FCharacterMovementState& CharacterMovementState = CharacterState.CharacterMovementState;
+	FCharacterMovementData& CharacterMovementData = UBS2FunctionLibrary::GetDataSubsystem(this)->GetCharacterDefaults()->CharacterMovementData;
+	if (Sprint)
 	{
-		AddMovementInput(FVector(GetActorForwardVector()), InputAxisValue.Y);
-		AddMovementInput(FVector(GetActorRightVector()), InputAxisValue.X);
+		//Start Sprint
+		if (!CharacterMovementState.canSprint) { return; }
+
+		GetCharacterMovement()->MaxWalkSpeed = CharacterMovementData.MaxSprintSpeed;
+
+		//start decrementing stamina value
+		if (CharacterMovementState.CurrentStamina > 0.0f && CharacterMovementState.CurrentMovementMode != ECharacterMovementMode::Sprinting)
+		{
+			GetWorldTimerManager().SetTimer(CharacterMovementState.SprintTimer, this, &ACharacter_Base::DepleteStamina, GetWorld()->GetDeltaSeconds(), true);
+		}
 	}
+	else if (CharacterMovementState.CurrentMovementMode == ECharacterMovementMode::Sprinting)
+	{
+		StopSprint();
+	}
+	UpdateMovementMode();
 }
 
 void ACharacter_Base::Input_Interact()
 {
-	if (CharacterState.CharacterVehicleState.inVehicle)
-	{
-		return;
-	}
+	if (CharacterState.CharacterVehicleState.inVehicle)	{ return; }
 	StartInteract();
 }
 
@@ -175,6 +210,8 @@ void ACharacter_Base::Input_SwitchWeapon_Vehicle()
 	const FSeatData& SeatData = GetCurrentVehicle()->VehicleData->Seats[GetCSI()];
 	GetCurrentVehicle()->HandleViewMethod(this, SeatData);
 }
+
+#pragma endregion
 
 #pragma region Interaction
 
@@ -244,12 +281,82 @@ void ACharacter_Base::StopInteract()
 
 #pragma endregion
 
+#pragma region Movement
+
+#pragma region Sprint/Stamina
+
+void ACharacter_Base::DepleteStamina()
+{
+	FCharacterMovementState& CharacterMovementState = CharacterState.CharacterMovementState;
+	CharacterMovementState.CurrentStamina = CharacterMovementState.CurrentStamina - GetWorld()->GetDeltaSeconds();
+	if (CharacterMovementState.CurrentStamina <= 0.0f)
+	{
+		CharacterMovementState.canSprint = false;
+		StopSprint();
+	}
+}
+
+void ACharacter_Base::ReplenishStamina()
+{
+	FCharacterMovementData& CharacterMovementData = UBS2FunctionLibrary::GetDataSubsystem(this)->GetCharacterDefaults()->CharacterMovementData;
+	FCharacterMovementState& CharacterMovementState = CharacterState.CharacterMovementState;
+
+	CharacterMovementState.CurrentStamina = CharacterMovementState.CurrentStamina + GetWorld()->GetDeltaSeconds();
+	if (CharacterMovementState.CurrentStamina > 0.0f)
+	{
+		CharacterMovementState.canSprint = true;
+		if (CharacterMovementState.CurrentStamina >= CharacterMovementData.StaminaDuration)
+		{
+			GetWorldTimerManager().ClearTimer(CharacterMovementState.SprintTimer);
+		}
+	}
+}
+
+void ACharacter_Base::StopSprint()
+{
+	FCharacterMovementData& CharacterMovementData = UBS2FunctionLibrary::GetDataSubsystem(this)->GetCharacterDefaults()->CharacterMovementData;
+
+	GetCharacterMovement()->MaxWalkSpeed = CharacterMovementData.CharacterMovementDefaults.MaxWalkSpeed;
+	
+	//reset timer, start incrementing stamina value
+	GetWorldTimerManager().SetTimer(CharacterState.CharacterMovementState.SprintTimer, this, &ACharacter_Base::ReplenishStamina, GetWorld()->GetDeltaSeconds(), true);
+}
+
+#pragma endregion
+
+void ACharacter_Base::UpdateMovementMode()
+{
+	const FCharacterMovementData& CharacterMovementData = UBS2FunctionLibrary::GetDataSubsystem(this)->GetCharacterDefaults()->CharacterMovementData;
+	ECharacterMovementMode& CurrentMovementMode = GetCurrentMovementMode();
+	const float CurrentSpeed = GetCharacterMovement()->Velocity.Size2D();
+
+	if (FMath::IsNearlyZero(CurrentSpeed, 5.0f) || CurrentSpeed <= 0.1f)
+	{
+		CurrentMovementMode = ECharacterMovementMode::Idle;
+		return;
+	}
+
+	if (CurrentSpeed >= (CharacterMovementData.MaxSprintSpeed - 10.0f))
+	{
+		CurrentMovementMode = ECharacterMovementMode::Sprinting;
+	}
+	else
+	{
+		CurrentMovementMode = ECharacterMovementMode::Walking;
+	}
+}
+
 #pragma region StanceManagement
 
 void ACharacter_Base::HandleUpdateStance(ECharacterStance NewStance)
 {
 	//undo previous stuff
+	const FCharacterMovementData& CharacterMovementData = UBS2FunctionLibrary::GetDataSubsystem(this)->GetCharacterDefaults()->CharacterMovementData;
 	ECharacterStance& CurrentStance = GetCurrentStance();
+	if (NewStance == CurrentStance) { return; }
+	if (!CharacterMovementData.canCrouch && NewStance == ECharacterStance::Crouching) { return; }
+	if (!CharacterMovementData.canProne && NewStance == ECharacterStance::Proning) { return; }
+
 	switch (CurrentStance)
 	{
 		case ECharacterStance::Standing:
@@ -391,37 +498,16 @@ void ACharacter_Base::CharacterEnterVehicle()
 	WeaponManager->UpdateWeaponCollision(ECC_Vehicle, ECR_Ignore);
 	GetCharacterMovement()->SetMovementMode(MOVE_None);
 	AttachToActor(GetCurrentVehicle(), FAttachmentTransformRules::KeepRelativeTransform);
-	FPArmsSpringArm->bInheritPitch = true;
-	FPArmsSpringArm->bInheritRoll = true;
-	FPArmsSpringArm->bInheritYaw = true;
+
 	FPArmsSpringArm->bUsePawnControlRotation = false;
-	FPCamera->bUsePawnControlRotation = false;
+	FPArmsSpringArm->bInheritRoll = true;
+	FPArmsSpringArm->bEnableCameraLag = false;
+
+	//FPCamera->bUsePawnControlRotation = false;
 	FPCamera->SetRelativeRotation(FRotator());
 	bUseControllerRotationYaw = false;
 
 	ManageIMC(UBS2FunctionLibrary::GetDataSubsystem(this)->GetCharacterDefaults()->DefaultGameplayIMC.Get(), nullptr, -1);
-
-	/**
-	static FProperty* ContextsProp = UEnhancedPlayerInput::StaticClass()->FindPropertyByName(FName("AppliedInputContexts"));
-	void* ValuePtr = ContextsProp->ContainerPtrToValuePtr<void>(PC->PlayerInput);
-	auto* MapPtr = static_cast<TMap<TObjectPtr<const UInputMappingContext>, int32>*>(ValuePtr);
-
-	TArray<UInputMappingContext*> ContextsToModify;
-
-	//Iterate over the Map and fill the snapshot array
-	for (auto& Pair : *MapPtr)
-	{
-		if (Pair.Value == 1)
-		{
-			ContextsToModify.Add(const_cast<UInputMappingContext*>(Pair.Key.Get()));
-		}
-	}
-
-	for (UInputMappingContext* IMC : ContextsToModify)
-	{
-		ManageIMC(IMC, nullptr, -1);
-	}
-	**/
 }
 
 void ACharacter_Base::CharacterExitVehicle()
@@ -441,6 +527,8 @@ void ACharacter_Base::CharacterExitVehicle()
 		GetCharacterMovement()->SetMovementMode(MOVE_Walking);		//make this more dynamic (are we falling out of ejecting from a jet for example)
 		FPCamera->bUsePawnControlRotation = true;
 		bUseControllerRotationYaw = true;
+		FPArmsSpringArm->bUsePawnControlRotation = true;
+		FPArmsSpringArm->bInheritRoll = false;
 		UpdateViewTarget(this, FPCamera);
 		CharacterState.CharacterVehicleState = FCharacterVehicleState();
 
@@ -751,6 +839,11 @@ int32& ACharacter_Base::GetCSI()
 ECharacterStance& ACharacter_Base::GetCurrentStance()
 {
 	return CharacterState.CharacterStanceState.CurrentStance;
+}
+
+ECharacterMovementMode& ACharacter_Base::GetCurrentMovementMode()
+{
+	return CharacterState.CharacterMovementState.CurrentMovementMode;
 }
 
 void ACharacter_Base::UpdateVehicleHUD(TSubclassOf<UUserWidget> HUDClass)

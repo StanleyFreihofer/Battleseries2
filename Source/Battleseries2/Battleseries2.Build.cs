@@ -7,8 +7,15 @@ public class Battleseries2 : ModuleRules
 	public Battleseries2(ReadOnlyTargetRules Target) : base(Target)
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
-	
-		PublicDependencyModuleNames.AddRange(
+
+        PublicIncludePaths.AddRange(
+            new string[] {
+                ModuleDirectory,
+                System.IO.Path.Combine(ModuleDirectory, "Public")
+            }
+        );
+
+        PublicDependencyModuleNames.AddRange(
 			new string[] 
 			{ 
 				"Core", 

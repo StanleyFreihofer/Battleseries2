@@ -8,8 +8,6 @@
 #include "Data/Data_VehicleAttachments.h"
 #include "Data/Data_Optics.h"
 #include "Data/Vehicles/VehicleDefaults.h"
-#include "Utilities/ProjectilePoolSubsystem.h"
-#include "Utilities/BS2FunctionLibrary.h"
 #include "Core/Weapons/Projectiles/Projectile_Base.h"
 #include "Core/Weapons/VehicleWeaponLogicComponent.h"
 #include "Core/Vehicles/ChaosWheel_Base.h"
@@ -19,6 +17,9 @@
 #include "Save/PlayerSave_Loadout.h"
 #include "Save/SaveSubsystem.h"
 #include "Utilities/GameInstance_Base.h"
+#include "Utilities/DataManagerSubsystem.h"
+#include "Utilities/ProjectilePoolSubsystem.h"
+#include "Utilities/BS2FunctionLibrary.h"
 #include "Utilities/HUDSubsystem.h"
 #include "Utilities/BS2FunctionLibrary.h"
 #include "Utilities/I_Anims.h"
@@ -596,12 +597,12 @@ void AVehicle_Base::HandleViewMethod(ACharacter_Base* Character, const FSeatData
 	//move this to character?
 	if (SeatData.SeatRole == E_SeatRole::DriverGunner || SeatData.SeatRole == E_SeatRole::Gunner)
 	{
-		const FVehicleWeaponSystem_Runtime& VWS = *VehicleWeaponLogicComponent->VehicleWeaponSystem.Find(Character->CharacterState.CharacterVehicleState.CSI);
+		const FVehicleWeaponSystem_Runtime& VWS = *VehicleWeaponLogicComponent->VehicleWeaponSystem.Find(Character->GetCSI());
 		const FVehicleWeapon_Runtime& EquippedWeapon = VWS.Weapons[VWS.VehicleWeaponSystemState.EquippedWeaponState.CurrentWeaponIndex];
 		if (EquippedWeapon.VehicleWeaponInstanceData.bHasSpecialCam)
 		{
 			TWeakObjectPtr<AActor> ViewTarget = nullptr;
-			TWeakObjectPtr<UCameraComponent> Cam = VehicleCurrentState.SeatStates[Character->CharacterState.CharacterVehicleState.CSI].ActiveCamera;
+			TWeakObjectPtr<UCameraComponent> Cam = VehicleCurrentState.SeatStates[Character->GetCSI()].ActiveCamera;
 			switch (EquippedWeapon.VehicleWeaponInstanceData.WeaponCamBehavior.MountMethod)
 			{
 				case EVehicleWeaponCamMountMethod::VehicleMesh:

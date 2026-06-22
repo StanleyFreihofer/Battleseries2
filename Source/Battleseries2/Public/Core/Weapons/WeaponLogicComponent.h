@@ -83,8 +83,6 @@ class BATTLESERIES2_API UWeaponLogicComponent : public UActorComponent
 
 		UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Runtime")
 		FOnFootWeaponSystem_Runtime WeaponSystem;
-		UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Runtime")
-		FTimerHandle TimerHandle_AutoFire;
 
 		UFUNCTION(BlueprintCallable)
 		void Init_WeaponLoadout(FPlayerLoadoutConfig_Class ClassLoadout, TArray<FPlayerLoadoutConfig_Weapon> WeaponLoadouts);
@@ -123,6 +121,8 @@ class BATTLESERIES2_API UWeaponLogicComponent : public UActorComponent
 		FWeapon_Runtime& GetBaseWeaponState(int32 WeaponIndex);
 		UFUNCTION(BlueprintCallable, BlueprintPure)
 		FVector GetAttachmentDefaultOffset(FName WeaponID, EAttachmentSlot Slot, FName AttachmentID);
+		UFUNCTION(BlueprintCallable, BlueprintPure)
+		FInfantryWeaponData GetCurrentWeaponStaticData_BP();
 
 	protected:
 		TArray<const FInfantryWeaponData*> StaticWeaponDataCache;

@@ -2,6 +2,8 @@
 #include "Data/Weapons/Data_Projectile.h"
 #include "Utilities/DataManagerSubsystem.h"
 #include "Utilities/GameInstance_Base.h"
+#include "Utilities/ProjectilePoolSubsystem.h"
+#include "Utilities/BS2FunctionLibrary.h"
 #include "NiagaraSystem.h"
 #include "NiagaraFunctionLibrary.h"
 #include "NiagaraComponent.h"
@@ -36,8 +38,7 @@ void AProjectile_Base::SetProjectileAndInit(FName InputProjectileID, bool Activa
 
 void AProjectile_Base::Init_ProjectileData()
 {
-	UDataManagerSubsystem* DataManager = GetDataManager();
-	const FProjectileData* ProjectileRow = DataManager->GetProjectileDataRow(ProjectileState.MunitionID);
+	const FProjectileData* ProjectileRow = UBS2FunctionLibrary::GetDataSubsystem(this)->GetProjectileDataRow(ProjectileState.MunitionID);
 	ProjectileData = ProjectileRow;
 
 	TArray<FSoftObjectPath> AssetsToLoad;
@@ -273,7 +274,7 @@ void AProjectile_Base::StartGPSGuidance()
 
 void AProjectile_Base::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
-	UNiagaraSystem* SelectedVFX = ProjectileData->ProjectileVisualData.ImpactVFX.LoadSynchronous();
+	UNiagaraSystem* SelectedVFX = ProjectileData->ProjectileVisualData.ImpactVFX.LoadSynchronous();		//move this somewhere before impact so has time to load?
 	if (SelectedVFX)
 	{
 		UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), SelectedVFX, Hit.ImpactPoint, Hit.ImpactNormal.Rotation());
@@ -288,20 +289,9 @@ void AProjectile_Base::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, U
 	ProjectileState.FlightStageIndex = 0;
 	ProjectileMovementComponent->Deactivate();
 	NiagaraComponent->Deactivate();
-	GetProjectileSystem()->ReturnProjectileToPool(this);
+	UBS2FunctionLibrary::GetProjectileSystem(this)->ReturnProjectileToPool(this);
 }
 
 void AProjectile_Base::OnImpact()
 {
 }
-
-UDataManagerSubsystem* AProjectile_Base::GetDataManager()
-{
-	return GetGameInstance()->GetSubsystem<UDataManagerSubsystem>();
-}
-
-UProjectilePoolSubsystem* AProjectile_Base::GetProjectileSystem()
-{
-	return GetWorld()->GetSubsystem<UProjectilePoolSubsystem>();
-}
-

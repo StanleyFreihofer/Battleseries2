@@ -15,7 +15,7 @@ enum class ECharacterStance : uint8
 };
 
 UENUM(BlueprintType)
-enum class ECharacterMovementMode : uint8
+enum class ECharacterMovementMode : uint8		//applies to ground movement only
 {
 	Idle				UMETA(DisplayName = "Idle"),
 	Walking				UMETA(DisplayName = "Walking"),

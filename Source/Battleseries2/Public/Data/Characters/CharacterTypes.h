@@ -50,12 +50,30 @@ struct FCharacterStanceState
 };
 
 USTRUCT(BlueprintType)
-struct FCharacterState
+struct FCharacterMovementState
 {
 	GENERATED_BODY()
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "State")
-	ECharacterMovementMode MovementMode = ECharacterMovementMode::Idle;
+	ECharacterMovementMode CurrentMovementMode = ECharacterMovementMode::Idle;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "State")
+	bool canSprint = true;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "State")
+	float CurrentStamina = 0.0f;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "State")
+	FTimerHandle SprintTimer = FTimerHandle();
+};
+
+USTRUCT(BlueprintType)
+struct FCharacterState
+{
+	GENERATED_BODY()
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	FCharacterMovementState CharacterMovementState = FCharacterMovementState();
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "State")
 	FCharacterStanceState CharacterStanceState = FCharacterStanceState();

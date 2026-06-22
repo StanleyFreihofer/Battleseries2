@@ -156,12 +156,6 @@ void UWeaponLogicComponent::StartFire()
 			case EFireMode::Burst:
 				break;
 			case EFireMode::Auto:
-				if (!GetWorld()->GetTimerManager().IsTimerActive(TimerHandle_AutoFire))
-				{
-					FireWeapon();	//fire weapon immediately AND THEN fire rate every shot after
-					//float FireRate = UWeaponFunctions::GetFireRate(StaticWeaponDataCache[WeaponSystem.BaseWeaponSystem.EquippedWeaponState.CurrentWeaponIndex]->.RateOfFire);
-					//GetWorld()->GetTimerManager().SetTimer(TimerHandle_AutoFire, this, &UWeaponLogicComponent::FireWeapon, FireRate, true);	//looping
-				}
 				break;
 		}
 	}
@@ -177,10 +171,7 @@ void UWeaponLogicComponent::StartFire()
 void UWeaponLogicComponent::CeaseFire()
 {
 	FWeapon_Runtime& CurrentWeapon = *GetCurrentWeaponRuntime();
-	if (GetWorld()->GetTimerManager().IsTimerActive(TimerHandle_AutoFire))
-	{
-		GetWorld()->GetTimerManager().ClearTimer(TimerHandle_AutoFire);
-	}
+
 	CurrentWeapon.WeaponState.isFiring = false;
 }
 
@@ -250,6 +241,7 @@ FVector UWeaponLogicComponent::GetAttachmentDefaultOffset(FName WeaponID, EAttac
 	return UBS2FunctionLibrary::GetDataSubsystem(this)->GetInfantryWeaponDataRow(WeaponID)->AvailableAttachmentSlots.Find(Slot)->Attachments.Find(AttachmentID)->LocationOffset;
 }
 
+
 FWeapon_Runtime* UWeaponLogicComponent::GetCurrentWeaponRuntime()
 {
 	FWeapon_Runtime* CurrentWeapon = &WeaponSystem.BaseWeaponSystem.Weapons[WeaponSystem.BaseWeaponSystem.EquippedWeaponState.CurrentWeaponIndex];
@@ -260,5 +252,11 @@ const FInfantryWeaponData* UWeaponLogicComponent::GetCurrentWeaponStaticData() c
 {
 	const FInfantryWeaponData* StaticWeaponData = StaticWeaponDataCache[WeaponSystem.BaseWeaponSystem.EquippedWeaponState.CurrentWeaponIndex];
 	return StaticWeaponData;
+}
+
+FInfantryWeaponData UWeaponLogicComponent::GetCurrentWeaponStaticData_BP()
+{
+	const FInfantryWeaponData* StaticWeaponData = GetCurrentWeaponStaticData();
+	return *StaticWeaponData;
 }
 

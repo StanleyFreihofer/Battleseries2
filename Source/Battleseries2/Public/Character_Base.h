@@ -75,12 +75,16 @@ public:
 	void Init_Character();
 	UFUNCTION(BlueprintCallable)
 	void Init_PlayerCharacter();
+	UFUNCTION(BlueprintCallable)
+	void Init_CharacterMovement();
 
 #pragma region Input
 	UFUNCTION(BlueprintCallable)
 	void Input_Look(FVector2D InputAxisValue);
 	UFUNCTION(BlueprintCallable)
 	void Input_Move(FVector2D InputAxisValue);
+	UFUNCTION(BlueprintCallable)
+	void Input_Sprint(bool Sprint);
 	UFUNCTION(BlueprintCallable)
 	void Input_Interact();
 	UFUNCTION(BlueprintCallable)
@@ -99,6 +103,15 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void StopInteract();
 #pragma endregion
+
+	UFUNCTION(BlueprintCallable)
+	void DepleteStamina();
+	UFUNCTION(BlueprintCallable)
+	void ReplenishStamina();
+	UFUNCTION(BlueprintCallable)
+	void StopSprint();
+	UFUNCTION(BlueprintCallable)
+	void UpdateMovementMode();
 
 #pragma region StanceManagement
 
@@ -168,6 +181,8 @@ public:
 	int32& GetCSI();
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	ECharacterStance& GetCurrentStance();
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	ECharacterMovementMode& GetCurrentMovementMode();
 
 	TMap<TObjectPtr<const UInputMappingContext>, int32> DebugCurrentIMC();
 
