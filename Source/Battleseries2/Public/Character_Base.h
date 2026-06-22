@@ -104,12 +104,21 @@ public:
 	void StopInteract();
 #pragma endregion
 
+#pragma region Movement
+
+#pragma region Sprint/Sprint
+
 	UFUNCTION(BlueprintCallable)
 	void DepleteStamina();
 	UFUNCTION(BlueprintCallable)
 	void ReplenishStamina();
 	UFUNCTION(BlueprintCallable)
+	void StartSprint();
+	UFUNCTION(BlueprintCallable)
 	void StopSprint();
+
+#pragma endregion
+
 	UFUNCTION(BlueprintCallable)
 	void UpdateMovementMode();
 
@@ -128,10 +137,15 @@ public:
 
 #pragma endregion
 
+#pragma endregion
+
 	UFUNCTION(BlueprintCallable)
 	void Freelook(FVector2D InputAxisValue);
 	UFUNCTION(BlueprintCallable)
 	void UpdateHeadRotation(FRotator HeadRotation);
+
+#pragma region Vehicle
+
 	UFUNCTION(BlueprintCallable)
 	void ManageinVehicleStatus(AVehicle_Base* Vehicle, bool In_Vehicle);
 	UFUNCTION(BlueprintCallable)
@@ -150,6 +164,8 @@ public:
 	void UpdateSeatIndexes(int32 NewLSI, int32 NewCSI, int32 NewNSI);
 	UFUNCTION(BlueprintCallable)
 	void UpdateUI_EnterSeat();
+
+#pragma endregion
 
 	UFUNCTION()
 	void UpdateViewTarget(TWeakObjectPtr<AActor> NewViewTarget, TWeakObjectPtr<UCameraComponent> CameraComponent);
@@ -177,11 +193,11 @@ public:
 
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	AVehicle_Base* GetCurrentVehicle();
-	UFUNCTION(BlueprintCallable, BlueprintPure)
+	UFUNCTION(BlueprintCallable, BlueprintPure, meta = (BlueprintThreadSafe))
 	int32& GetCSI();
-	UFUNCTION(BlueprintCallable, BlueprintPure)
+	UFUNCTION(BlueprintCallable, BlueprintPure, meta = (BlueprintThreadSafe))
 	ECharacterStance& GetCurrentStance();
-	UFUNCTION(BlueprintCallable, BlueprintPure)
+	UFUNCTION(BlueprintCallable, BlueprintPure, meta = (BlueprintThreadSafe))
 	ECharacterMovementMode& GetCurrentMovementMode();
 
 	TMap<TObjectPtr<const UInputMappingContext>, int32> DebugCurrentIMC();

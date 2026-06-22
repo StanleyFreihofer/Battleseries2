@@ -48,7 +48,7 @@ ACharacter_Base::ACharacter_Base(const FObjectInitializer& ObjectInitializer) : 
 void ACharacter_Base::BeginPlay()
 {
 	Super::BeginPlay();
-	Init_Character();
+w	Init_Character();
 }
 
 void ACharacter_Base::PossessedBy(AController* NewController)
@@ -158,16 +158,7 @@ void ACharacter_Base::Input_Sprint(bool Sprint)
 	FCharacterMovementData& CharacterMovementData = UBS2FunctionLibrary::GetDataSubsystem(this)->GetCharacterDefaults()->CharacterMovementData;
 	if (Sprint)
 	{
-		//Start Sprint
-		if (!CharacterMovementState.canSprint) { return; }
-
-		GetCharacterMovement()->MaxWalkSpeed = CharacterMovementData.MaxSprintSpeed;
-
-		//start decrementing stamina value
-		if (CharacterMovementState.CurrentStamina > 0.0f && CharacterMovementState.CurrentMovementMode != ECharacterMovementMode::Sprinting)
-		{
-			GetWorldTimerManager().SetTimer(CharacterMovementState.SprintTimer, this, &ACharacter_Base::DepleteStamina, GetWorld()->GetDeltaSeconds(), true);
-		}
+		StartSprint();
 	}
 	else if (CharacterMovementState.CurrentMovementMode == ECharacterMovementMode::Sprinting)
 	{
@@ -309,6 +300,22 @@ void ACharacter_Base::ReplenishStamina()
 		{
 			GetWorldTimerManager().ClearTimer(CharacterMovementState.SprintTimer);
 		}
+	}
+}
+
+void ACharacter_Base::StartSprint()
+{
+	FCharacterMovementState& CharacterMovementState = CharacterState.CharacterMovementState;
+	FCharacterMovementData& CharacterMovementData = UBS2FunctionLibrary::GetDataSubsystem(this)->GetCharacterDefaults()->CharacterMovementData;
+
+	if (CharacterMovementState.CurrentStamina <= 0.0f) { return; }		//CharacterMovementState.canSprint
+
+	GetCharacterMovement()->MaxWalkSpeed = CharacterMovementData.MaxSprintSpeed;
+
+	//start decrementing stamina value
+	if (CharacterMovementState.CurrentStamina > 0.0f && CharacterMovementState.CurrentMovementMode != ECharacterMovementMode::Sprinting)
+	{
+		GetWorldTimerManager().SetTimer(CharacterMovementState.SprintTimer, this, &ACharacter_Base::DepleteStamina, GetWorld()->GetDeltaSeconds(), true);
 	}
 }
 
