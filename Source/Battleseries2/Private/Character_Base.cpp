@@ -48,7 +48,7 @@ ACharacter_Base::ACharacter_Base(const FObjectInitializer& ObjectInitializer) : 
 void ACharacter_Base::BeginPlay()
 {
 	Super::BeginPlay();
-w	Init_Character();
+	Init_Character();
 }
 
 void ACharacter_Base::PossessedBy(AController* NewController)
