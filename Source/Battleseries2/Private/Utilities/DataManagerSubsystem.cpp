@@ -97,6 +97,18 @@ FVehicleAttachmentData UDataManagerSubsystem::GetVehicleAttachmentDataRowCopy(FN
     return *VehicleAttachmentData;
 }
 
+FInfantryWeaponData UDataManagerSubsystem::GetInfantryWeaponDataRowCopy(FName RowName) const
+{
+    const FInfantryWeaponData* InfantryWeaponData = InfantryWeaponDataTable->FindRow<FInfantryWeaponData>(RowName, TEXT("InfantryWeaponDataLookup"));
+    return *InfantryWeaponData;
+}
+
+FWeaponAttachmentData UDataManagerSubsystem::GetWeaponAttachmentDataRowCopy(FName RowName) const
+{
+    const FWeaponAttachmentData* WeaponAttachmentData = WeaponAttachmentDataTable->FindRow<FWeaponAttachmentData>(RowName, TEXT("WeaponAttachmentDataLookup"));
+    return *WeaponAttachmentData;
+}
+
 FProjectileData UDataManagerSubsystem::GetProjectileDataRowCopy(FName RowName) const
 {
     const FProjectileData* ProjectileData = ProjectileDataTable->FindRow<FProjectileData>(RowName, TEXT("ProjectileDataLookup"));

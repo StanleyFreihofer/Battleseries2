@@ -189,6 +189,26 @@ struct FAvailableAttachments
 };
 
 USTRUCT(BlueprintType)
+struct FGunAttachmentData
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	float DefaultAimInSpeed = 0.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	float DefaultAimOutSpeed = 0.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	float DefaultSightDistance = 0.0f;
+
+	//cycle sight speed?
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	TMap<EAttachmentSlot, FAvailableAttachments> AvailableAttachmentSlots;
+};
+
+USTRUCT(BlueprintType)
 struct FInfantryWeaponData : public FTableRowBase
 {
 	GENERATED_BODY()
@@ -206,6 +226,6 @@ struct FInfantryWeaponData : public FTableRowBase
 	FInfantryWeaponAnimData InfantryWeaponAnimData = FInfantryWeaponAnimData();
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	TMap<EAttachmentSlot, FAvailableAttachments> AvailableAttachmentSlots;
+	FGunAttachmentData GunAttachmentData = FGunAttachmentData();
 };
 

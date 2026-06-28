@@ -118,11 +118,15 @@ class BATTLESERIES2_API UWeaponLogicComponent : public UActorComponent
 		UFUNCTION(BlueprintCallable, BlueprintPure)
 		FName GetSocketNameForSlot(EAttachmentSlot Slot);
 		UFUNCTION(BlueprintCallable, BlueprintPure)
+		FTransform GetSightTransform();
+		UFUNCTION(BlueprintCallable, BlueprintPure)
 		FWeapon_Runtime& GetBaseWeaponState(int32 WeaponIndex);
 		UFUNCTION(BlueprintCallable, BlueprintPure)
 		FVector GetAttachmentDefaultOffset(FName WeaponID, EAttachmentSlot Slot, FName AttachmentID);
 		UFUNCTION(BlueprintCallable, BlueprintPure)
 		FInfantryWeaponData GetCurrentWeaponStaticData_BP();
+		UFUNCTION(BlueprintCallable, BlueprintPure)
+		int32 GetCWI();
 
 	protected:
 		TArray<const FInfantryWeaponData*> StaticWeaponDataCache;

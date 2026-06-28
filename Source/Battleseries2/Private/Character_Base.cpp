@@ -148,7 +148,12 @@ void ACharacter_Base::Input_Move(FVector2D InputAxisValue)
 
 	AddMovementInput(FVector(GetActorForwardVector()), InputAxisValue.Y);
 	AddMovementInput(FVector(GetActorRightVector()), InputAxisValue.X);
-	UpdateMovementMode();
+
+
+	if (CharacterState.CharacterMovementState.CurrentMovementMode == ECharacterMovementMode::Idle)
+	{
+		UpdateMovementMode(ECharacterMovementMode::Walking);
+	}
 }
 
 void ACharacter_Base::Input_Sprint(bool Sprint)
@@ -158,13 +163,12 @@ void ACharacter_Base::Input_Sprint(bool Sprint)
 	FCharacterMovementData& CharacterMovementData = UBS2FunctionLibrary::GetDataSubsystem(this)->GetCharacterDefaults()->CharacterMovementData;
 	if (Sprint)
 	{
-		StartSprint();
+		UpdateMovementMode(ECharacterMovementMode::Sprinting);
 	}
 	else if (CharacterMovementState.CurrentMovementMode == ECharacterMovementMode::Sprinting)
 	{
-		StopSprint();
+		UpdateMovementMode(ECharacterMovementMode::Walking);
 	}
-	UpdateMovementMode();
 }
 
 void ACharacter_Base::Input_Interact()
@@ -283,7 +287,7 @@ void ACharacter_Base::DepleteStamina()
 	if (CharacterMovementState.CurrentStamina <= 0.0f)
 	{
 		CharacterMovementState.canSprint = false;
-		StopSprint();
+		UpdateMovementMode(ECharacterMovementMode::Walking);
 	}
 }
 
@@ -316,6 +320,7 @@ void ACharacter_Base::StartSprint()
 	if (CharacterMovementState.CurrentStamina > 0.0f && CharacterMovementState.CurrentMovementMode != ECharacterMovementMode::Sprinting)
 	{
 		GetWorldTimerManager().SetTimer(CharacterMovementState.SprintTimer, this, &ACharacter_Base::DepleteStamina, GetWorld()->GetDeltaSeconds(), true);
+		CharacterMovementState.CurrentMovementMode = ECharacterMovementMode::Sprinting;
 	}
 }
 
@@ -327,17 +332,53 @@ void ACharacter_Base::StopSprint()
 	
 	//reset timer, start incrementing stamina value
 	GetWorldTimerManager().SetTimer(CharacterState.CharacterMovementState.SprintTimer, this, &ACharacter_Base::ReplenishStamina, GetWorld()->GetDeltaSeconds(), true);
+	//UpdateMovementMode(ECharacterMovementMode::Walking);
 }
 
 #pragma endregion
 
-void ACharacter_Base::UpdateMovementMode()
+void ACharacter_Base::UpdateMovementMode(ECharacterMovementMode NewMode)
 {
-	const FCharacterMovementData& CharacterMovementData = UBS2FunctionLibrary::GetDataSubsystem(this)->GetCharacterDefaults()->CharacterMovementData;
+	//const FCharacterMovementData& CharacterMovementData = UBS2FunctionLibrary::GetDataSubsystem(this)->GetCharacterDefaults()->CharacterMovementData;
 	ECharacterMovementMode& CurrentMovementMode = GetCurrentMovementMode();
-	const float CurrentSpeed = GetCharacterMovement()->Velocity.Size2D();
 
-	if (FMath::IsNearlyZero(CurrentSpeed, 5.0f) || CurrentSpeed <= 0.1f)
+	if (CurrentMovementMode == NewMode) { return; }
+	//const float CurrentSpeed = GetCharacterMovement()->Velocity.Size2D();
+	//const bool bIsPlacingInput = !GetCharacterMovement()->GetCurrentAcceleration().IsNearlyZero(1.0f);
+	//UE_LOG(LogTemp, Warning, TEXT("[Character_Base::UpdateMovementMode] Current Speed = %.2f, IsPlacingInput = %d"), CurrentSpeed, bIsPlacingInput);
+
+	switch (NewMode)
+	{
+		case ECharacterMovementMode::Idle:
+		{
+			if (CurrentMovementMode == ECharacterMovementMode::Sprinting)
+			{
+				StopSprint();
+			}
+			CurrentMovementMode = ECharacterMovementMode::Idle;
+			break;
+		}
+		case ECharacterMovementMode::Walking:
+		{
+			if (CurrentMovementMode == ECharacterMovementMode::Sprinting)
+			{
+				StopSprint();
+			}
+			CurrentMovementMode = ECharacterMovementMode::Walking;
+			break;
+		}
+		case ECharacterMovementMode::Sprinting:
+		{
+			if (CurrentMovementMode == ECharacterMovementMode::Walking)
+			{
+				StartSprint();
+			}
+			break;
+		}
+	}
+
+	/**
+	if (CurrentSpeed <= 10.0f || !bIsPlacingInput)
 	{
 		CurrentMovementMode = ECharacterMovementMode::Idle;
 		return;
@@ -351,6 +392,7 @@ void ACharacter_Base::UpdateMovementMode()
 	{
 		CurrentMovementMode = ECharacterMovementMode::Walking;
 	}
+	**/
 }
 
 #pragma region StanceManagement

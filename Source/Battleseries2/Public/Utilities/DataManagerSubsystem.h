@@ -92,6 +92,7 @@ public:
 
     //HELPER FUNCTIONS
 
+#pragma region DataTableGetters
     UFUNCTION(BlueprintCallable, Category = "Data")
     UDataTable* GetInfantryWeaponDataTable() const { return InfantryWeaponDataTable; }
 
@@ -131,18 +132,23 @@ public:
     UFUNCTION(BlueprintCallable, Category = "Data")
     UDA_CustomizationDefaults* GetCustomizationDefaults() const { return CustomizationDefaultsDataAsset; }
 
+#pragma endregion
 
+#pragma region BlueprintCallableRowGetters
     //USTRUCTs are value types, not objects like UCLASS.
     //UFUNCTIONs exposed to Blueprints cannot return raw pointers or references to USTRUCTs.
     //Unreal doesn’t allow exposing memory addresses of value types to Blueprints.
     //in conclusion, another Blueprint L
     UFUNCTION(BlueprintCallable, Category = "Data")
     FVehicleData GetVehicleDataRowCopy(FName RowName) const;
-
     UFUNCTION(BlueprintCallable, Category = "Data")
     FVehicleWeaponData GetVehicleWeaponDataRowCopy(FName RowName) const;
     UFUNCTION(BlueprintCallable, Category = "Data")
     FVehicleAttachmentData GetVehicleAttachmentDataRowCopy(FName RowName) const;
+    UFUNCTION(BlueprintCallable, Category = "Data")
+    FInfantryWeaponData GetInfantryWeaponDataRowCopy(FName RowName) const;
+    UFUNCTION(BlueprintCallable, Category = "Data")
+    FWeaponAttachmentData GetWeaponAttachmentDataRowCopy(FName RowName) const;
     UFUNCTION(BlueprintCallable, Category = "Data")
     FProjectileData GetProjectileDataRowCopy(FName RowName) const;
     UFUNCTION(BlueprintCallable, Category = "Data")
@@ -159,6 +165,7 @@ public:
     FText GetWeaponSlotName(int32 WeaponSlotIndex);
     UFUNCTION(BlueprintCallable)
     TArray<FName> GetAllInfantryWeaponIDsOfType(EWeaponType WeaponType) const;
+#pragma endregion
 
     UFUNCTION(BlueprintCallable)
     void PreloadCoreAssets();

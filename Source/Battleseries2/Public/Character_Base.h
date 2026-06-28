@@ -45,7 +45,7 @@ public:
 	// Sets default values for this character's properties
 	ACharacter_Base(const FObjectInitializer& ObjectInitializer);
 
-	//COMPONENTS
+#pragma region Components
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
 	UCameraComponent* FPCamera = nullptr;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
@@ -59,6 +59,8 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
 	UWeaponLogicComponent* WeaponManager;
 
+#pragma endregion
+
 	UPROPERTY(BlueprintAssignable, BlueprintCallable)
 	FOnWeaponInputReleased_Vehicle OnFireReleased_Vehicle;
 
@@ -70,13 +72,18 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Input")
 	UInputComponent* InputComponent_Player = nullptr;
 
-	//FUNCTIONS
+#pragma region Functions
+
+#pragma region Factory/Initialization
+
 	UFUNCTION(BlueprintCallable)
 	void Init_Character();
 	UFUNCTION(BlueprintCallable)
 	void Init_PlayerCharacter();
 	UFUNCTION(BlueprintCallable)
 	void Init_CharacterMovement();
+
+#pragma endregion
 
 #pragma region Input
 	UFUNCTION(BlueprintCallable)
@@ -120,7 +127,7 @@ public:
 #pragma endregion
 
 	UFUNCTION(BlueprintCallable)
-	void UpdateMovementMode();
+	void UpdateMovementMode(ECharacterMovementMode NewMode);
 
 #pragma region StanceManagement
 
@@ -204,6 +211,8 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "Input|Debug")
 	TArray<FString> DebugCurrentIMCNames();
+
+#pragma endregion
 
 protected:
 	// Called when the game starts or when spawned

@@ -47,10 +47,12 @@ void UWeaponLogicComponent::Init_Weapon(FName WeaponID, int32 WeaponIndex, FPlay
 	FInfantryWeaponState NewFPState;
 	Init_WeaponMesh(NewFPState.WeaponMesh);
 	UpdateWeaponMesh(WeaponID, NewFPState.WeaponMesh);
-	UpdateWeaponData(WeaponIndex, WeaponID, NewFPState);
-
-	//attach
+	NewFPState.WeaponMesh->FirstPersonPrimitiveType = EFirstPersonPrimitiveType::FirstPerson;
+	WeaponSystem.InfantryWeaponSystem.WeaponState_FP[WeaponIndex] = NewFPState;
 	WeaponSystem.InfantryWeaponSystem.WeaponState_FP[WeaponIndex].WeaponMesh->AttachToComponent(Cast<ACharacter_Base>(GetOwner())->FPArms, FAttachmentTransformRules(EAttachmentRule::SnapToTarget, EAttachmentRule::SnapToTarget, EAttachmentRule::SnapToTarget, true), FName("Socket_M4A1"));
+
+	WeaponSystem.BaseWeaponSystem.Weapons[WeaponIndex].WeaponID = WeaponID;
+	StaticWeaponDataCache[WeaponIndex] = UBS2FunctionLibrary::GetDataSubsystem(this)->GetInfantryWeaponDataRow(WeaponID);
 
 	//apply saved attachments
 	const FPlayerLoadoutConfig_Weapon& CustomWeapon = WeaponLoadout;
@@ -231,6 +233,30 @@ FName UWeaponLogicComponent::GetSocketNameForSlot(EAttachmentSlot Slot)
 	return NAME_None;
 }
 
+FTransform UWeaponLogicComponent::GetSightTransform()
+{
+	FTransform SightTransform = WeaponSystem.InfantryWeaponSystem.WeaponState_FP[GetCWI()].WeaponMesh->GetSocketTransform(FName("Aimpoint"), ERelativeTransformSpace::RTS_Component);
+	FInfantryWeaponState& InfantryWeaponState = WeaponSystem.InfantryWeaponSystem.WeaponState_FP[GetCWI()];
+	float VerticalAimpointOffset = 0.0f;
+	FName AttachmentID = NAME_None;
+	if (FWeaponAttachmentState* OpticState = InfantryWeaponState.WeaponAttachmentStates.Find(EAttachmentSlot::Optic))
+	{
+		AttachmentID = OpticState->BaseAttachmentState.AttachmentID;
+	}
+	else if (FWeaponAttachmentState* RearSightState = InfantryWeaponState.WeaponAttachmentStates.Find(EAttachmentSlot::RearSight))
+	{
+		AttachmentID = RearSightState->BaseAttachmentState.AttachmentID;
+	}
+	if (!AttachmentID.IsNone())
+	{
+		VerticalAimpointOffset = UBS2FunctionLibrary::GetDataSubsystem(this)->GetWeaponAttachmentDataRow(AttachmentID)->WeaponSightData.VerticalAimpointOffset;
+		FVector NewLocation = SightTransform.GetLocation();
+		NewLocation.Z += VerticalAimpointOffset;
+		SightTransform.SetLocation(NewLocation);
+	}
+	return SightTransform;
+}
+
 FWeapon_Runtime& UWeaponLogicComponent::GetBaseWeaponState(int32 WeaponIndex)
 {
 	return WeaponSystem.BaseWeaponSystem.Weapons[WeaponIndex];
@@ -238,13 +264,13 @@ FWeapon_Runtime& UWeaponLogicComponent::GetBaseWeaponState(int32 WeaponIndex)
 
 FVector UWeaponLogicComponent::GetAttachmentDefaultOffset(FName WeaponID, EAttachmentSlot Slot, FName AttachmentID)
 {
-	return UBS2FunctionLibrary::GetDataSubsystem(this)->GetInfantryWeaponDataRow(WeaponID)->AvailableAttachmentSlots.Find(Slot)->Attachments.Find(AttachmentID)->LocationOffset;
+	return UBS2FunctionLibrary::GetDataSubsystem(this)->GetInfantryWeaponDataRow(WeaponID)->GunAttachmentData.AvailableAttachmentSlots.Find(Slot)->Attachments.Find(AttachmentID)->LocationOffset;
 }
 
 
 FWeapon_Runtime* UWeaponLogicComponent::GetCurrentWeaponRuntime()
 {
-	FWeapon_Runtime* CurrentWeapon = &WeaponSystem.BaseWeaponSystem.Weapons[WeaponSystem.BaseWeaponSystem.EquippedWeaponState.CurrentWeaponIndex];
+	FWeapon_Runtime* CurrentWeapon = &WeaponSystem.BaseWeaponSystem.Weapons[GetCWI()];
 	return CurrentWeapon;
 }
 
@@ -258,5 +284,10 @@ FInfantryWeaponData UWeaponLogicComponent::GetCurrentWeaponStaticData_BP()
 {
 	const FInfantryWeaponData* StaticWeaponData = GetCurrentWeaponStaticData();
 	return *StaticWeaponData;
+}
+
+int32 UWeaponLogicComponent::GetCWI()
+{
+	return WeaponSystem.BaseWeaponSystem.EquippedWeaponState.CurrentWeaponIndex;
 }
 
