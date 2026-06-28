@@ -339,13 +339,9 @@ void ACharacter_Base::StopSprint()
 
 void ACharacter_Base::UpdateMovementMode(ECharacterMovementMode NewMode)
 {
-	//const FCharacterMovementData& CharacterMovementData = UBS2FunctionLibrary::GetDataSubsystem(this)->GetCharacterDefaults()->CharacterMovementData;
 	ECharacterMovementMode& CurrentMovementMode = GetCurrentMovementMode();
 
 	if (CurrentMovementMode == NewMode) { return; }
-	//const float CurrentSpeed = GetCharacterMovement()->Velocity.Size2D();
-	//const bool bIsPlacingInput = !GetCharacterMovement()->GetCurrentAcceleration().IsNearlyZero(1.0f);
-	//UE_LOG(LogTemp, Warning, TEXT("[Character_Base::UpdateMovementMode] Current Speed = %.2f, IsPlacingInput = %d"), CurrentSpeed, bIsPlacingInput);
 
 	switch (NewMode)
 	{
@@ -376,23 +372,6 @@ void ACharacter_Base::UpdateMovementMode(ECharacterMovementMode NewMode)
 			break;
 		}
 	}
-
-	/**
-	if (CurrentSpeed <= 10.0f || !bIsPlacingInput)
-	{
-		CurrentMovementMode = ECharacterMovementMode::Idle;
-		return;
-	}
-
-	if (CurrentSpeed >= (CharacterMovementData.MaxSprintSpeed - 10.0f))
-	{
-		CurrentMovementMode = ECharacterMovementMode::Sprinting;
-	}
-	else
-	{
-		CurrentMovementMode = ECharacterMovementMode::Walking;
-	}
-	**/
 }
 
 #pragma region StanceManagement

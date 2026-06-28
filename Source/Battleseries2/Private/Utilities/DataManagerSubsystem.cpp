@@ -79,6 +79,8 @@ void UDataManagerSubsystem::LoadDataTables()
     OnDataReady.Broadcast();
 }
 
+#pragma region BlueprintCallableRowGetters
+
 FVehicleData UDataManagerSubsystem::GetVehicleDataRowCopy(FName RowName) const
 {
     const FVehicleData* VehicleData = VehicleDataTable->FindRow<FVehicleData>(RowName, TEXT("VehicleDataLookup"));
@@ -114,6 +116,8 @@ FProjectileData UDataManagerSubsystem::GetProjectileDataRowCopy(FName RowName) c
     const FProjectileData* ProjectileData = ProjectileDataTable->FindRow<FProjectileData>(RowName, TEXT("ProjectileDataLookup"));
     return *ProjectileData;
 }
+
+#pragma endregion
 
 
 

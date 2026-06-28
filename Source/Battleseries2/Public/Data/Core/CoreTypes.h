@@ -93,20 +93,41 @@ struct FPlayerLoadoutConfig_Vehicle
 
 #pragma endregion
 
-USTRUCT(BlueprintType)
-struct FStatModifier
+USTRUCT(BlueprintType)				//map this with 	EStatToAffect Stat 
+struct FStatModifierData
 {
 	GENERATED_BODY()
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	EStatToAffect Stat = EStatToAffect::Health;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	EModifierOp Operation = EModifierOp::Multiply;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float ModifierValue = 1.0f;
+
+	float ApplyToValue(float InCurrentValue) const
+	{
+		switch (Operation)
+		{
+			case EModifierOp::Set:
+				return ModifierValue;
+			case EModifierOp::Add:
+				return InCurrentValue + ModifierValue;
+			case EModifierOp::Subtract:
+				return InCurrentValue - ModifierValue;
+			case EModifierOp::Multiply:
+				return InCurrentValue * ModifierValue;
+			case EModifierOp::Divide:
+				if (!FMath::IsNearlyZero(ModifierValue))
+				{
+					return InCurrentValue / ModifierValue;
+				}
+				return InCurrentValue; // Guard against division by zero
+			default:
+				return InCurrentValue;
+		}
+	}
 };
+
 
 USTRUCT(BlueprintType)
 struct FCoreTypeEnumDefinition

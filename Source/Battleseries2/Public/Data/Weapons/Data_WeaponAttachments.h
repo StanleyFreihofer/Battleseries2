@@ -74,11 +74,11 @@ struct FAttachmentTuningData
 	// --- STAT INFLUENCE ---
 	//what stat does it influence (positively) (e.g., +10% control)
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Tuning Impact", meta = (EditCondition = "TuningCapability != ETuningCapability::NoTuning", EditConditionHides))
-	FStatModifier TuningModifier = FStatModifier();
+	TMap<EStatToAffect, FStatModifierData> TuningModifiers;
 
 	//what stat does it influence (negatively) (e.g., +15% time)
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Tuning Impact", meta = (EditCondition = "TuningCapability != ETuningCapability::NoTuning", EditConditionHides))
-	FStatModifier TuningPenalty = FStatModifier();
+	TMap<EStatToAffect, FStatModifierData> TuningPenalty;
 };
 
 USTRUCT(BlueprintType)
@@ -93,7 +93,7 @@ struct FWeaponAttachmentData : public FTableRowBase
 	FWeaponSightData WeaponSightData = FWeaponSightData();
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (tooltip = "the stat modifiers (positive or negative) of this attachment"))
-	TArray<FStatModifier> AttachmentModifiers;
+	TMap<EStatToAffect, FStatModifierData> AttachmentModifiers;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (tooltip = "the tuning modifiers (positive/negative) for this attachment (modified on top of the base attachment modifiers)"))
 	FAttachmentTuningData TuningModifier = FAttachmentTuningData();

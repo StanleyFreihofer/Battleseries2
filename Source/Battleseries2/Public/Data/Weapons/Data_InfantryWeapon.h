@@ -38,6 +38,26 @@ struct FInfantryWeaponAmmoData
 };
 
 USTRUCT(BlueprintType)
+struct FInfantryWeaponAimData
+{
+	GENERATED_BODY()
+
+	//cycle sight speed?
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	bool canAim = true;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	float DefaultAimInSpeed = 0.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	float DefaultAimOutSpeed = 0.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	float DefaultSightDistance = 0.0f;
+};
+
+USTRUCT(BlueprintType)
 struct FInfantryWeaponAnimData_FP
 {
 	GENERATED_BODY()
@@ -192,16 +212,6 @@ USTRUCT(BlueprintType)
 struct FGunAttachmentData
 {
 	GENERATED_BODY()
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	float DefaultAimInSpeed = 0.0f;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	float DefaultAimOutSpeed = 0.0f;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	float DefaultSightDistance = 0.0f;
-
 	//cycle sight speed?
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
@@ -218,6 +228,9 @@ struct FInfantryWeaponData : public FTableRowBase
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	FWeaponFunctionalityData WeaponFunctionalityData = FWeaponFunctionalityData();
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	FInfantryWeaponAimData InfantryWeaponAimData = FInfantryWeaponAimData();
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	FInfantryWeaponAmmoData InfantryWeaponAmmoData = FInfantryWeaponAmmoData();

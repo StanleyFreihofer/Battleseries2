@@ -115,10 +115,19 @@ class BATTLESERIES2_API UWeaponLogicComponent : public UActorComponent
 		UFUNCTION(BlueprintCallable)
 		void FireWeapon();
 
+		UFUNCTION(BlueprintCallable)
+		float CalculateFinalStatValue(float BaseValue, TArray<FStatModifierData>& ModifierArray);
+
 		UFUNCTION(BlueprintCallable, BlueprintPure)
 		FName GetSocketNameForSlot(EAttachmentSlot Slot);
 		UFUNCTION(BlueprintCallable, BlueprintPure)
 		FTransform GetSightTransform();
+		UFUNCTION(BlueprintCallable, BlueprintPure)
+		float GetSightDistance();
+		UFUNCTION(BlueprintCallable, BlueprintPure)
+		void GetAimSpeeds(float& AimInSpeed, float& AimOutSpeed);
+		UFUNCTION(BlueprintCallable, BlueprintPure)
+		void GetAllAttachmentModifierDataOfTypeForWeapon(TMap<EAttachmentSlot, FWeaponAttachmentState>& WeaponAttachmentStates, EStatToAffect StatType, TArray<FStatModifierData>& OutAttachmentModifierData);
 		UFUNCTION(BlueprintCallable, BlueprintPure)
 		FWeapon_Runtime& GetBaseWeaponState(int32 WeaponIndex);
 		UFUNCTION(BlueprintCallable, BlueprintPure)

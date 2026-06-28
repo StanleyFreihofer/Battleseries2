@@ -203,6 +203,16 @@ void UWeaponLogicComponent::FireWeapon()
 	//handle/manage ammo
 }
 
+float UWeaponLogicComponent::CalculateFinalStatValue(float BaseValue, TArray<FStatModifierData>& ModifierArray)
+{
+	float CurrentValue = BaseValue;
+	for (FStatModifierData& Modifier : ModifierArray)
+	{
+		CurrentValue = Modifier.ApplyToValue(CurrentValue);
+	}
+	return CurrentValue;
+}
+
 FName UWeaponLogicComponent::GetSocketNameForSlot(EAttachmentSlot Slot)
 {
 	switch (Slot)
@@ -255,6 +265,58 @@ FTransform UWeaponLogicComponent::GetSightTransform()
 		SightTransform.SetLocation(NewLocation);
 	}
 	return SightTransform;
+}
+
+float UWeaponLogicComponent::GetSightDistance()
+{
+	FName& WeaponID = WeaponSystem.BaseWeaponSystem.Weapons[GetCWI()].WeaponID;
+	const float& DefaultSightDistance = UBS2FunctionLibrary::GetDataSubsystem(this)->GetInfantryWeaponDataRow(WeaponID)->InfantryWeaponAimData.DefaultSightDistance;
+	FInfantryWeaponState& InfantryWeaponState = WeaponSystem.InfantryWeaponSystem.WeaponState_FP[GetCWI()];
+	FName AttachmentID = NAME_None;
+	if (FWeaponAttachmentState* OpticState = InfantryWeaponState.WeaponAttachmentStates.Find(EAttachmentSlot::Optic))
+	{
+		AttachmentID = OpticState->BaseAttachmentState.AttachmentID;
+	}
+	else if (FWeaponAttachmentState* RearSightState = InfantryWeaponState.WeaponAttachmentStates.Find(EAttachmentSlot::RearSight))
+	{
+		AttachmentID = RearSightState->BaseAttachmentState.AttachmentID;
+	}
+	else
+	{
+		return DefaultSightDistance;
+	}
+	const float& SightDistanceOffset = UBS2FunctionLibrary::GetDataSubsystem(this)->GetWeaponAttachmentDataRow(AttachmentID)->WeaponSightData.SightDistanceOffset;
+	float FinalSightDistance = DefaultSightDistance + SightDistanceOffset;
+	return FinalSightDistance;
+}
+
+void UWeaponLogicComponent::GetAimSpeeds(float& AimInSpeed, float& AimOutSpeed)
+{
+	FName& WeaponID = WeaponSystem.BaseWeaponSystem.Weapons[GetCWI()].WeaponID;
+	const float& DefaultAimInSpeed = UBS2FunctionLibrary::GetDataSubsystem(this)->GetInfantryWeaponDataRow(WeaponID)->InfantryWeaponAimData.DefaultAimInSpeed;
+	const float& DefaultAimOutSpeed = UBS2FunctionLibrary::GetDataSubsystem(this)->GetInfantryWeaponDataRow(WeaponID)->InfantryWeaponAimData.DefaultAimOutSpeed;
+	TMap<EAttachmentSlot, FWeaponAttachmentState>& WeaponAttachmentStates = WeaponSystem.InfantryWeaponSystem.WeaponState_FP[GetCWI()].WeaponAttachmentStates;
+	TArray<FStatModifierData> ADSModifiers;
+	GetAllAttachmentModifierDataOfTypeForWeapon(WeaponAttachmentStates, EStatToAffect::ADS_Speed, ADSModifiers);
+	float CurrentAimInSpeed = CalculateFinalStatValue(DefaultAimInSpeed, ADSModifiers);
+	AimInSpeed = CurrentAimInSpeed;
+	AimOutSpeed = DefaultAimOutSpeed;
+}
+
+void UWeaponLogicComponent::GetAllAttachmentModifierDataOfTypeForWeapon(TMap<EAttachmentSlot, FWeaponAttachmentState>& WeaponAttachmentStates, EStatToAffect StatType, TArray<FStatModifierData>& OutAttachmentModifierData)
+{
+	//consider doing this on start or pickup of a weapon and gather/cache a source of truth/data struct for THE CURRENT STATS of the weapon with all of its attachments
+	//that way we may not have to do expensive lookups
+	for (auto& AttachmentSlot : WeaponAttachmentStates)
+	{
+		FWeaponAttachmentState& AttachmentState = AttachmentSlot.Value;
+		FName& AttachmentID = AttachmentState.BaseAttachmentState.AttachmentID;
+		const FStatModifierData* NewAttachmentModifierData = UBS2FunctionLibrary::GetDataSubsystem(this)->GetWeaponAttachmentDataRow(AttachmentID)->AttachmentModifiers.Find(StatType);
+		if (NewAttachmentModifierData)
+		{
+			OutAttachmentModifierData.Add(*NewAttachmentModifierData);
+		}
+	}
 }
 
 FWeapon_Runtime& UWeaponLogicComponent::GetBaseWeaponState(int32 WeaponIndex)
