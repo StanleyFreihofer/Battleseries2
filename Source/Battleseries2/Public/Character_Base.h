@@ -202,6 +202,8 @@ public:
 	AVehicle_Base* GetCurrentVehicle();
 	UFUNCTION(BlueprintCallable, BlueprintPure, meta = (BlueprintThreadSafe))
 	int32& GetCSI();
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	bool& GetInVehicle();
 	UFUNCTION(BlueprintCallable, BlueprintPure, meta = (BlueprintThreadSafe))
 	ECharacterStance& GetCurrentStance();
 	UFUNCTION(BlueprintCallable, BlueprintPure, meta = (BlueprintThreadSafe))

@@ -17,6 +17,9 @@ struct FWeaponDefaults
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	TArray<FText> WeaponSlotNames;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	float ScopeCameraFOV = 90.0f;
 };
 
 UCLASS(BlueprintType)

@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "Data/Weapons/WeaponEnums.h"
+#include "Data/Weapons/Data_Weapon.h"
 #include "WeaponTypes.generated.h"
 class AProjectile_Base;
 struct FBaseWeaponData;
@@ -110,4 +111,44 @@ struct FBaseWeaponSystem_Runtime
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
 	FEquippedWeaponState EquippedWeaponState = FEquippedWeaponState();
+};
+
+USTRUCT(BlueprintType)
+struct FWeaponStats_Runtime
+{
+	//used to cache stats of weapon AFTER ATTACHMENTS/UPGRADES HAVE BEEN APPLIED 
+	GENERATED_BODY()
+
+	// --- Aim / Handling Performance (Flattened from FInfantryWeaponAimData) ---
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Weapon | Runtime Stats")
+	float AimInSpeed = 0.2f;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Weapon | Runtime Stats")
+	float AimOutSpeed = 0.2f;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Weapon | Runtime Stats")
+	float SightDistance = 0.0f;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Weapon | Runtime Stats")
+	FWeaponFireModeData FireModeData = FWeaponFireModeData();
+
+	// --- Fire Performance (Flattened from FWeaponFirePerformanceData & FWeaponDamageData) ---
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Weapon | Runtime Stats")
+	float RateOfFire = 600.0f;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Weapon | Runtime Stats")
+	float BaseDamage = 25.0f;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Weapon | Runtime Stats")
+	float MuzzleVelocity = 900.0f;
+
+	// --- Magazine Performance (Flattened from FAmmoData) ---
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Weapon | Runtime Stats")
+	int32 MagSize = 30;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Weapon | Runtime Stats")
+	int32 MaxReserveAmmo = 30;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Weapon | Runtime Stats")
+	float ReloadSpeed = 2.5f;
 };

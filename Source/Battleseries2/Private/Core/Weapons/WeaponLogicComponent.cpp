@@ -2,12 +2,16 @@
 #include "Core/Weapons/WeaponLogicComponent.h"
 #include "Core/Weapons/WeaponFunctions.h"
 #include "Character_Base.h"
+#include "Engine/TextureRenderTarget2D.h"
+#include "Kismet/KismetRenderingLibrary.h"
+#include "Materials/MaterialInstanceDynamic.h"
 #include "Data/Core/CoreTypes.h"
 #include "Data/Weapons/ProjectileTypes.h"
 #include "Data/Weapons/Data_Weapon.h"
 #include "Data/Weapons/Data_InfantryWeapon.h"
 #include "Data/Weapons/Data_WeaponAttachments.h"
 #include "Data/Weapons/Data_Projectile.h"
+#include "Data/Weapons/WeaponDefaults.h"
 #include "Save/SaveSubsystem.h"
 #include "Utilities/BS2FunctionLibrary.h"
 
@@ -34,11 +38,24 @@ void UWeaponLogicComponent::Init_WeaponLoadout(FPlayerLoadoutConfig_Class ClassL
 	StaticWeaponDataCache.SetNum(Weapons.Num());
 	WeaponSystem.InfantryWeaponSystem.WeaponState_FP.SetNum(Weapons.Num());
 	WeaponSystem.InfantryWeaponSystem.WeaponState_TP.SetNum(Weapons.Num());
+	WeaponSystem.InfantryWeaponSystem.CurrentWeaponStats.SetNum(Weapons.Num());
 
 	for (int32 i = 0; i < Weapons.Num(); i++)
 	{
 		Init_Weapon(Weapons[i], i, WeaponLoadouts[i]);
 	}
+
+	Init_ScopeCamera();
+}
+
+void UWeaponLogicComponent::Init_ScopeCamera()
+{
+	WeaponSystem.ScopeCamera = NewObject<USceneCaptureComponent2D>(GetOwner());
+	WeaponSystem.ScopeCamera->RegisterComponent();
+	WeaponSystem.ScopeCamera->TextureTarget = UKismetRenderingLibrary::CreateRenderTarget2D(this, 256, 256, RTF_RGBA16f);
+	WeaponSystem.ScopeCamera->HideActorComponents(GetOwner(), true);
+	WeaponSystem.ScopeCamera->bCaptureEveryFrame = true;
+	UpdateScopeZoom(0);
 }
 
 void UWeaponLogicComponent::Init_Weapon(FName WeaponID, int32 WeaponIndex, FPlayerLoadoutConfig_Weapon WeaponLoadout)
@@ -57,6 +74,8 @@ void UWeaponLogicComponent::Init_Weapon(FName WeaponID, int32 WeaponIndex, FPlay
 	//apply saved attachments
 	const FPlayerLoadoutConfig_Weapon& CustomWeapon = WeaponLoadout;
 	ApplyAttachments(CustomWeapon, WeaponIndex);
+
+	UpdateCurrentWeaponStats(WeaponIndex);
 	//NewWeapon->SetHiddenInGame(true);
 }
 
@@ -70,7 +89,6 @@ void UWeaponLogicComponent::Init_WeaponMesh(TWeakObjectPtr<USkeletalMeshComponen
 void UWeaponLogicComponent::Init_Attachment(FWeaponAttachmentState& RuntimeSlotState, FInfantryWeaponState& WeaponToApplyTo, EAttachmentSlot AttachmentSlot)
 {
 	//Initialize/Create Attachment, attach to gun, cache
-
 	TWeakObjectPtr<UStaticMeshComponent> NewAttachment = NewObject<UStaticMeshComponent>(GetOwner());
 	NewAttachment->RegisterComponent();
 	NewAttachment->AttachToComponent(WeaponToApplyTo.WeaponMesh.Get(), FAttachmentTransformRules::SnapToTargetIncludingScale, GetSocketNameForSlot(AttachmentSlot));
@@ -105,6 +123,22 @@ void UWeaponLogicComponent::UpdateWeaponData(int32 WeaponIndex, FName WeaponID, 
 
 	//add a bool or an int if it should fp, tp or both
 	WeaponSystem.InfantryWeaponSystem.WeaponState_FP[WeaponIndex] = WeaponState;
+}
+
+void UWeaponLogicComponent::UpdateScopeCamera()
+{
+	WeaponSystem.ScopeCamera->AttachToComponent(WeaponSystem.InfantryWeaponSystem.WeaponState_FP[GetCWI()].WeaponMesh.Get(), FAttachmentTransformRules(EAttachmentRule::SnapToTarget, EAttachmentRule::SnapToTarget, EAttachmentRule::SnapToTarget, true), FName("PIP"));
+
+	if (WeaponSystem.InfantryWeaponSystem.WeaponState_FP[GetCWI()].WeaponAttachmentStates.Find(EAttachmentSlot::Optic))
+	{
+
+		FWeaponAttachmentState& WeaponAttachmentState = *WeaponSystem.InfantryWeaponSystem.WeaponState_FP[GetCWI()].WeaponAttachmentStates.Find(EAttachmentSlot::Optic);
+		int32 PIPMatIndex = UBS2FunctionLibrary::GetDataSubsystem(this)->GetWeaponAttachmentDataRow(WeaponAttachmentState.BaseAttachmentState.AttachmentID)->WeaponSightData.PIPMaterialIndex;
+		if (PIPMatIndex < 0) { return; }
+		UMaterialInstanceDynamic* MID = WeaponAttachmentState.SpawnedAttachment->CreateDynamicMaterialInstance(PIPMatIndex, WeaponAttachmentState.SpawnedAttachment->GetMaterial(PIPMatIndex));
+		WeaponAttachmentState.SpawnedAttachment->SetMaterial(PIPMatIndex, MID);
+		MID->SetTextureParameterValue(FName("RenderTarget"), WeaponSystem.ScopeCamera->TextureTarget);
+	}
 }
 
 void UWeaponLogicComponent::UpdateAttachment(FWeaponAttachmentState& RuntimeSlotState, FName AttachmentID, FName WeaponID, EAttachmentSlot AttachmentSlot)
@@ -161,12 +195,9 @@ void UWeaponLogicComponent::StartFire()
 				break;
 		}
 	}
-	else
+	else if (CurrentWeapon.WeaponState.CurrentAmmoinMag <= 0)
 	{
-		if (CurrentWeapon.WeaponState.CurrentAmmoinMag == 0)
-		{
-			DryFire();
-		}
+		DryFire();
 	}
 }
 
@@ -192,15 +223,179 @@ void UWeaponLogicComponent::FireWeapon()
 	}
 	FTransform MuzzleTransform;
 	UpdateProjectileAimDirection();
-	//switch (StaticWeaponData->WeaponFirePerformance.WeaponFireType)
-	//{
-		//case EWeaponFireType::SimProjectile:
-			//const FProjectileData& ProjectileData = *DataManager->GetProjectileDataRow(StaticWeaponData->WeaponFirePerformance.MunitionID);
-			//MuzzleTransform = UWeaponFunctions::GetMuzzleTransform("Muzzle", WeaponSystem.WeaponMeshes[WeaponSystem.BaseWeaponSystem.EquippedWeaponState.CurrentWeaponIndex]);
-			//UWeaponFunctions::CreateSimProjectile(MuzzleTransform.GetLocation(), StaticWeaponData->WeaponPerformance.MuzzleVelocity, ProjectileData.ProjectileFlightPlan[0].GuidanceParams.GravityScale, WeaponSystem.BaseWeaponSystem.EquippedWeaponState.RaycastData.MuzzleAimDirections[0], ProjectileManager);
-			//break;
-	//}
-	//handle/manage ammo
+
+}
+
+void UWeaponLogicComponent::ToggleFireMode()
+{
+	FWeaponStats_Runtime& CurrentWeaponStats = GetCurrentWeaponStats();
+	FWeaponFireModeData& CurrentFireModeData = CurrentWeaponStats.FireModeData;
+	FWeapon_Runtime& CurrentWeapon = *GetCurrentWeaponRuntime();
+	EFireMode& CurrentFireMode = CurrentWeapon.WeaponState.CurrentFireMode;
+
+	switch (CurrentFireMode)
+	{
+		case EFireMode::Single:
+			if (CurrentFireModeData.canFullAuto)
+			{
+				CurrentFireMode = EFireMode::Auto;
+			}
+			else if (CurrentFireModeData.canBurstFire)
+			{
+				CurrentFireMode = EFireMode::Burst;
+			}
+			break;
+		case EFireMode::Burst:
+			if (CurrentFireModeData.canSingleFire)
+			{
+				CurrentFireMode = EFireMode::Single;
+			}
+			else if (CurrentFireModeData.canFullAuto)
+			{
+				CurrentFireMode = EFireMode::Auto;
+			}
+		case EFireMode::Auto:
+			if (CurrentFireModeData.canBurstFire)
+			{
+				CurrentFireMode = EFireMode::Burst;
+			}
+			else if (CurrentFireModeData.canSingleFire)
+			{
+				CurrentFireMode = EFireMode::Single;
+			}
+			break;
+	}
+}
+
+void UWeaponLogicComponent::ToggleScope()
+{
+	if (!WeaponSystem.isAiming) { return; }
+	int32 TotalOpticLevels = UBS2FunctionLibrary::GetDataSubsystem(this)->GetWeaponAttachmentDataRow(GetCurrentAttachmentInSlot(EAttachmentSlot::Optic).BaseAttachmentState.AttachmentID)->WeaponSightData.ZoomMagnification.Num();
+	int32& CurrentOpticIndex = WeaponSystem.InfantryWeaponSystem.WeaponState_FP[GetCWI()].CurrentOpticIndex;
+	int32 NewOpticIndex = (CurrentOpticIndex + 1) % TotalOpticLevels;
+	CurrentOpticIndex = NewOpticIndex;
+	UpdateScopeZoom(CurrentOpticIndex);
+}
+
+void UWeaponLogicComponent::UpdateScopeZoom(int32 NewOpticIndex)
+{
+	float& DefaultFOV = UBS2FunctionLibrary::GetDataSubsystem(this)->GetWeaponDefaults()->WeaponDefaults.ScopeCameraFOV;
+	FName& OpticID = GetCurrentAttachmentInSlot(EAttachmentSlot::Optic).BaseAttachmentState.AttachmentID;
+	float Magnification = UBS2FunctionLibrary::GetDataSubsystem(this)->GetWeaponAttachmentDataRow(OpticID)->WeaponSightData.ZoomMagnification[NewOpticIndex];
+	WeaponSystem.ScopeCamera->FOVAngle = (DefaultFOV / Magnification);
+}
+
+void UWeaponLogicComponent::UpdateCurrentWeaponStats(int32 WeaponIndex)
+{
+	FWeaponStats_Runtime& RuntimeStats = WeaponSystem.InfantryWeaponSystem.CurrentWeaponStats[WeaponIndex];
+	FName& WeaponID = WeaponSystem.BaseWeaponSystem.Weapons[WeaponIndex].WeaponID;
+	const FInfantryWeaponData* StaticWeaponData = StaticWeaponDataCache[WeaponIndex];
+
+	RuntimeStats.AimInSpeed = StaticWeaponData->InfantryWeaponAimData.DefaultAimInSpeed;
+	RuntimeStats.AimOutSpeed = StaticWeaponData->InfantryWeaponAimData.DefaultAimOutSpeed;
+	RuntimeStats.SightDistance = StaticWeaponData->InfantryWeaponAimData.DefaultSightDistance;
+	RuntimeStats.MagSize = StaticWeaponData->InfantryWeaponAmmoData.BaseAmmoData.MagSize;
+	RuntimeStats.MaxReserveAmmo = StaticWeaponData->InfantryWeaponAmmoData.BaseAmmoData.MaxReserveAmmo;
+
+	TMap<EAttachmentSlot, FWeaponAttachmentState>& WeaponAttachmentStates = WeaponSystem.InfantryWeaponSystem.WeaponState_FP[WeaponIndex].WeaponAttachmentStates;
+	for (auto& SlotPair : WeaponAttachmentStates)
+	{
+		FName& AttachmentID = SlotPair.Value.BaseAttachmentState.AttachmentID;
+		if (AttachmentID.IsNone()) continue;
+		const FWeaponAttachmentData* AttachmentData = UBS2FunctionLibrary::GetDataSubsystem(this)->GetWeaponAttachmentDataRow(AttachmentID);
+
+		for (auto& ModifierPair : AttachmentData->AttachmentModifiers)
+		{
+			ApplyAttachmentModifier(RuntimeStats, ModifierPair.Key, ModifierPair.Value);
+		}
+	}
+}
+
+void UWeaponLogicComponent::ApplyAttachmentModifier(FWeaponStats_Runtime& RuntimeStats, EWeaponStat WeaponStat, const FStatModifierData& Modifier)
+{
+	using FloatPtr = float FWeaponStats_Runtime::*;				//FloatPtr = float*
+	using IntPtr = int32 FWeaponStats_Runtime::*;				//IntPtr = int32*
+	using BoolPtr = bool FWeaponStats_Runtime::*;
+
+	// Local struct that holds either a float or int pointer-to-member
+	// One of these will always be nullptr depending on the stat's type
+	struct FStatTarget
+	{
+		FloatPtr FloatMember = nullptr;
+		IntPtr IntMember = nullptr;
+		BoolPtr BoolMember = nullptr;
+	};
+
+	// This map is the only place you touch when adding a new stat
+	// "static const" means it's built ONCE for the lifetime of the program
+	// not rebuilt every time this function is called
+	// Key   = which stat we want to affect (the enum)
+	// Value = which field on FWeaponStats_Runtime corresponds to that stat
+	static const TMap<EWeaponStat, FStatTarget> StatTargets =
+	{
+		{ EWeaponStat::ADSInSpeed,      
+			{ 
+				&FWeaponStats_Runtime::AimInSpeed,     
+				nullptr,
+			} 
+		},
+		{ EWeaponStat::ADSOutSpeed,
+			{
+				&FWeaponStats_Runtime::AimOutSpeed,
+				nullptr,
+				nullptr
+			}
+		},
+		{ EWeaponStat::MuzzleVelocity, 
+			{ 
+				&FWeaponStats_Runtime::MuzzleVelocity, 
+				nullptr,
+				nullptr
+			} 
+		},
+		{ EWeaponStat::BaseDamage,	   
+			{ 
+				&FWeaponStats_Runtime::BaseDamage,    
+				nullptr,
+				nullptr
+			}
+		},
+		{ EWeaponStat::MagSize,        
+			{ 
+				nullptr, 
+				&FWeaponStats_Runtime::MagSize,
+				nullptr
+			} 
+		},
+		{ EWeaponStat::MaxReserveAmmo, 
+			{ 
+				nullptr, 
+				&FWeaponStats_Runtime::MaxReserveAmmo,
+				nullptr
+			}
+		},
+	};
+
+	const FStatTarget* StatTarget = StatTargets.Find(WeaponStat);
+
+	if (StatTarget->FloatMember)
+	{
+		float& FloatValue = RuntimeStats.*StatTarget->FloatMember;
+		FloatValue = Modifier.ApplyToValue(FloatValue);
+	}
+	else if (StatTarget->IntMember)
+	{
+		int32& IntValue = RuntimeStats.*StatTarget->IntMember;
+		IntValue = FMath::RoundToInt(Modifier.ApplyToValue((float)IntValue));
+	}
+	else if (StatTarget->BoolMember)
+	{
+		bool& BoolValue = RuntimeStats.*StatTarget->BoolMember;
+		if (Modifier.Operation == EModifierOp::Set)
+		{
+			BoolValue = !FMath::IsNearlyZero(Modifier.ModifierValue);
+		}
+	}
 }
 
 float UWeaponLogicComponent::CalculateFinalStatValue(float BaseValue, TArray<FStatModifierData>& ModifierArray)
@@ -212,6 +407,8 @@ float UWeaponLogicComponent::CalculateFinalStatValue(float BaseValue, TArray<FSt
 	}
 	return CurrentValue;
 }
+
+#pragma region Getters
 
 FName UWeaponLogicComponent::GetSocketNameForSlot(EAttachmentSlot Slot)
 {
@@ -297,13 +494,13 @@ void UWeaponLogicComponent::GetAimSpeeds(float& AimInSpeed, float& AimOutSpeed)
 	const float& DefaultAimOutSpeed = UBS2FunctionLibrary::GetDataSubsystem(this)->GetInfantryWeaponDataRow(WeaponID)->InfantryWeaponAimData.DefaultAimOutSpeed;
 	TMap<EAttachmentSlot, FWeaponAttachmentState>& WeaponAttachmentStates = WeaponSystem.InfantryWeaponSystem.WeaponState_FP[GetCWI()].WeaponAttachmentStates;
 	TArray<FStatModifierData> ADSModifiers;
-	GetAllAttachmentModifierDataOfTypeForWeapon(WeaponAttachmentStates, EStatToAffect::ADS_Speed, ADSModifiers);
+	GetAllAttachmentModifierDataOfTypeForWeapon(WeaponAttachmentStates, EWeaponStat::ADSInSpeed, ADSModifiers);
 	float CurrentAimInSpeed = CalculateFinalStatValue(DefaultAimInSpeed, ADSModifiers);
 	AimInSpeed = CurrentAimInSpeed;
 	AimOutSpeed = DefaultAimOutSpeed;
 }
 
-void UWeaponLogicComponent::GetAllAttachmentModifierDataOfTypeForWeapon(TMap<EAttachmentSlot, FWeaponAttachmentState>& WeaponAttachmentStates, EStatToAffect StatType, TArray<FStatModifierData>& OutAttachmentModifierData)
+void UWeaponLogicComponent::GetAllAttachmentModifierDataOfTypeForWeapon(TMap<EAttachmentSlot, FWeaponAttachmentState>& WeaponAttachmentStates, EWeaponStat WeaponStatType, TArray<FStatModifierData>& OutAttachmentModifierData)
 {
 	//consider doing this on start or pickup of a weapon and gather/cache a source of truth/data struct for THE CURRENT STATS of the weapon with all of its attachments
 	//that way we may not have to do expensive lookups
@@ -311,11 +508,24 @@ void UWeaponLogicComponent::GetAllAttachmentModifierDataOfTypeForWeapon(TMap<EAt
 	{
 		FWeaponAttachmentState& AttachmentState = AttachmentSlot.Value;
 		FName& AttachmentID = AttachmentState.BaseAttachmentState.AttachmentID;
-		const FStatModifierData* NewAttachmentModifierData = UBS2FunctionLibrary::GetDataSubsystem(this)->GetWeaponAttachmentDataRow(AttachmentID)->AttachmentModifiers.Find(StatType);
+		const FStatModifierData* NewAttachmentModifierData = UBS2FunctionLibrary::GetDataSubsystem(this)->GetWeaponAttachmentDataRow(AttachmentID)->AttachmentModifiers.Find(WeaponStatType);
 		if (NewAttachmentModifierData)
 		{
 			OutAttachmentModifierData.Add(*NewAttachmentModifierData);
 		}
+	}
+}
+
+FWeaponAttachmentState& UWeaponLogicComponent::GetCurrentAttachmentInSlot(EAttachmentSlot Slot)
+{
+	if (WeaponSystem.InfantryWeaponSystem.WeaponState_FP[GetCWI()].WeaponAttachmentStates.Contains(Slot))
+	{
+		return WeaponSystem.InfantryWeaponSystem.WeaponState_FP[GetCWI()].WeaponAttachmentStates[Slot];
+	}
+	else
+	{
+		static FWeaponAttachmentState DefaultAttachmentState;
+		return DefaultAttachmentState;
 	}
 }
 
@@ -348,8 +558,15 @@ FInfantryWeaponData UWeaponLogicComponent::GetCurrentWeaponStaticData_BP()
 	return *StaticWeaponData;
 }
 
-int32 UWeaponLogicComponent::GetCWI()
+FWeaponStats_Runtime& UWeaponLogicComponent::GetCurrentWeaponStats()
+{
+	return WeaponSystem.InfantryWeaponSystem.CurrentWeaponStats[GetCWI()];
+}
+
+int32& UWeaponLogicComponent::GetCWI()
 {
 	return WeaponSystem.BaseWeaponSystem.EquippedWeaponState.CurrentWeaponIndex;
 }
+
+#pragma endregion
 

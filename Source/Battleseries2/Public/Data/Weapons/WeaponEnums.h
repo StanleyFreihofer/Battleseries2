@@ -14,6 +14,8 @@ enum class EWeaponType : uint8
 	DMR				UMETA(DisplayName = "Designated Marksman Rifle"),
 	SniperRifle		UMETA(DisplayName = "Sniper Rifle"),
 	Pistol			UMETA(DisplayName = "Pistol")
+	//launcher
+	//special
 };
 
 UENUM(BlueprintType)
@@ -128,6 +130,24 @@ enum class EMuzzleType : uint8						//defines muzzle socket to use (should be us
 	Launcher		UMETA(DisplayName = "Launcher")
 	//pod?
 	//mounted?		//replace mounted projectile with this?
+};
+
+UENUM(BlueprintType)
+enum class EWeaponStat : uint8
+{
+	BaseDamage,
+	RateOfFire,
+	Recoil,
+	MuzzleVelocity,
+	canSingleFire,
+	canBurstFire,
+	canAutoFire,
+	DefaultFireMode,
+	MagSize,
+	MaxReserveAmmo,
+	ReloadSpeed,
+	ADSInSpeed,
+	ADSOutSpeed
 };
 
 

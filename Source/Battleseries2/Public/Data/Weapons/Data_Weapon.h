@@ -50,7 +50,7 @@ struct FWeaponHomingData
 };
 
 USTRUCT(BlueprintType)
-struct FWeaponFunctionalityData
+struct FWeaponFireModeData
 {
 	GENERATED_BODY()
 
@@ -66,6 +66,15 @@ struct FWeaponFunctionalityData
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (EditCondition = "canBurstFire", EditConditionHides = true, ToolTip = "the # of rounds in 1 burst"))
 	int32 BurstSize = 0;
+};
+
+USTRUCT(BlueprintType)
+struct FWeaponFunctionalityData
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	FWeaponFireModeData WeaponFireModeData = FWeaponFireModeData();
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	FWeaponHomingData HomingFunctionality = FWeaponHomingData();

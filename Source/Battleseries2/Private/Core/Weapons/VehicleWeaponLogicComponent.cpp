@@ -186,7 +186,7 @@ void UVehicleWeaponLogicComponent::ApplyWeaponAtIndexToSeat(int32 SeatIndex, int
 	//initialize state on weapon side
 	//make apply WeaponStateToSeat function?
 	const FVehicleWeaponData& VehicleWeaponDataToUse = *UBS2FunctionLibrary::GetDataSubsystem(this)->GetVehicleWeaponDataRow(WeaponID);
-	DefaultWeaponDataToFill.WeaponState.CurrentFireMode = VehicleWeaponDataToUse.WeaponData.WeaponFunctionality.DefaultFireMode;
+	DefaultWeaponDataToFill.WeaponState.CurrentFireMode = VehicleWeaponDataToUse.WeaponData.WeaponFunctionality.WeaponFireModeData.DefaultFireMode;
 	DefaultWeaponDataToFill.WeaponState.CurrentAmmoinMag = VehicleWeaponDataToUse.WeaponData.AmmoData.MagSize;
 	DefaultWeaponDataToFill.WeaponState.CurrentReserveAmmo = VehicleWeaponDataToUse.WeaponData.AmmoData.MaxReserveAmmo;
 

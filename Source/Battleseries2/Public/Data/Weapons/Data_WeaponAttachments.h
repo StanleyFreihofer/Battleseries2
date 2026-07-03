@@ -19,20 +19,29 @@ struct FWeaponSightData
 {
 	GENERATED_BODY()
 
+
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	ESightSlot SightSlot = ESightSlot::FrontSight;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	FPostProcessSettings SightPPSettings = FPostProcessSettings();
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (tooltip = "the number to divide by (by itself represents the magnification value)")) 
-	float ZoomMagnification = 1.0f;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (tooltip = "the number to divide by (by itself represents the magnification value), more than 1 value means there is variable zoom functionality")) 
+	TArray<float> ZoomMagnification;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (tooltip = "the default number to increase/decrease the sight distance by (helps to ensure when aim, sight distance brings camera to front of sight rather than center/in it"))
 	float SightDistanceOffset = 0.0f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (tooltip = "the number to increase/decrease the default SightTransform by, helps to ensure vertically we aim down center of sight"))
 	float VerticalAimpointOffset = 0.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	int32 PIPMaterialIndex = -1;
+
+	FWeaponSightData()
+	{
+		ZoomMagnification.Add(3.0f);
+	}
 };
 
 USTRUCT(BlueprintType)
@@ -74,7 +83,7 @@ struct FAttachmentTuningData
 	// --- STAT INFLUENCE ---
 	//what stat does it influence (positively) (e.g., +10% control)
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Tuning Impact", meta = (EditCondition = "TuningCapability != ETuningCapability::NoTuning", EditConditionHides))
-	TMap<EStatToAffect, FStatModifierData> TuningModifiers;
+	TMap<EWeaponStat, FStatModifierData> TuningModifiers;
 
 	//what stat does it influence (negatively) (e.g., +15% time)
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Tuning Impact", meta = (EditCondition = "TuningCapability != ETuningCapability::NoTuning", EditConditionHides))
@@ -93,7 +102,7 @@ struct FWeaponAttachmentData : public FTableRowBase
 	FWeaponSightData WeaponSightData = FWeaponSightData();
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (tooltip = "the stat modifiers (positive or negative) of this attachment"))
-	TMap<EStatToAffect, FStatModifierData> AttachmentModifiers;
+	TMap<EWeaponStat, FStatModifierData> AttachmentModifiers;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (tooltip = "the tuning modifiers (positive/negative) for this attachment (modified on top of the base attachment modifiers)"))
 	FAttachmentTuningData TuningModifier = FAttachmentTuningData();

@@ -585,7 +585,7 @@ bool AVehicle_Base::CycleThroughSeats(ACharacter_Base* Character)
 		int32 CheckIndex = (StartIndex + Offset) % TotalSeats;		//wraps around the seat list circularly, so if you’re at the last seat, it loops back to seat 0.
 		if (!VehicleCurrentState.SeatStates[CheckIndex].isOccupied)
 		{
-			Character->UpdateSeatIndexes(Character->CharacterState.CharacterVehicleState.CSI, CheckIndex, CheckIndex);
+			Character->UpdateSeatIndexes(Character->GetCSI(), CheckIndex, CheckIndex);
 			return true;
 		}
 	}

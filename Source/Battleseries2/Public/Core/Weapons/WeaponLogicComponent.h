@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
+#include "Components/SceneCaptureComponent2D.h"
 #include "Utilities/ProjectilePoolSubsystem.h"
 #include "Utilities/DataManagerSubsystem.h"
 #include "Data/Weapons/WeaponTypes.h"
@@ -24,7 +25,7 @@ struct FWeaponAttachmentState
 	GENERATED_BODY()
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	FPlayerLoadoutConfig_WeaponAttachment BaseAttachmentState = FPlayerLoadoutConfig_WeaponAttachment();
+	FPlayerLoadoutConfig_WeaponAttachment BaseAttachmentState = FPlayerLoadoutConfig_WeaponAttachment();		//attachmentID, railoffset
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TWeakObjectPtr<UStaticMeshComponent> SpawnedAttachment = nullptr; // The actual mesh on the gun
@@ -40,6 +41,9 @@ struct FInfantryWeaponState
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TWeakObjectPtr<USkeletalMeshComponent> WeaponMesh = nullptr;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	int32 CurrentOpticIndex = 0;
 };
 
 USTRUCT(BlueprintType)
@@ -49,10 +53,13 @@ struct FInfantryWeaponSystem
 	GENERATED_BODY()
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	TArray<FInfantryWeaponState> WeaponState_FP;
+	TArray<FInfantryWeaponState> WeaponState_FP;			//change to be more individual structs?
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	TArray<FInfantryWeaponState> WeaponState_TP;
+	TArray<FInfantryWeaponState> WeaponState_TP;			//change to be more individual structs?
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	TArray<FWeaponStats_Runtime> CurrentWeaponStats;
 };
 
 USTRUCT(BlueprintType)
@@ -67,7 +74,11 @@ struct FOnFootWeaponSystem_Runtime
 	FInfantryWeaponSystem InfantryWeaponSystem = FInfantryWeaponSystem();
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	TObjectPtr<USceneCaptureComponent2D> ScopeCamera = nullptr;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	bool isAiming = false;
+
 
 };
 
@@ -87,6 +98,8 @@ class BATTLESERIES2_API UWeaponLogicComponent : public UActorComponent
 		UFUNCTION(BlueprintCallable)
 		void Init_WeaponLoadout(FPlayerLoadoutConfig_Class ClassLoadout, TArray<FPlayerLoadoutConfig_Weapon> WeaponLoadouts);
 		UFUNCTION(BlueprintCallable)
+		void Init_ScopeCamera();
+		UFUNCTION(BlueprintCallable)
 		void Init_Weapon(FName WeaponID, int32 WeaponIndex, FPlayerLoadoutConfig_Weapon WeaponLoadout);
 		UFUNCTION()
 		void Init_WeaponMesh(TWeakObjectPtr<USkeletalMeshComponent>& WeaponMesh);
@@ -98,6 +111,8 @@ class BATTLESERIES2_API UWeaponLogicComponent : public UActorComponent
 		void UpdateWeaponMesh(FName WeaponID, TWeakObjectPtr<USkeletalMeshComponent>& WeaponMeshComp);
 		UFUNCTION(BlueprintCallable)
 		void UpdateWeaponData(int32 WeaponIndex, FName WeaponID, FInfantryWeaponState WeaponState);
+		UFUNCTION(BlueprintCallable)
+		void UpdateScopeCamera();
 		UFUNCTION()
 		void UpdateAttachment(FWeaponAttachmentState& RuntimeSlotState, FName AttachmentID, FName WeaponID, EAttachmentSlot AttachmentSlot);
 		UFUNCTION(BlueprintCallable)
@@ -114,6 +129,17 @@ class BATTLESERIES2_API UWeaponLogicComponent : public UActorComponent
 		void DryFire();
 		UFUNCTION(BlueprintCallable)
 		void FireWeapon();
+		UFUNCTION(BlueprintCallable)
+		void ToggleFireMode();
+		UFUNCTION(BlueprintCallable)
+		void ToggleScope();
+		UFUNCTION(BlueprintCallable)
+		void UpdateScopeZoom(int32 NewOpticIndex);
+
+		UFUNCTION(BlueprintCallable)
+		void UpdateCurrentWeaponStats(int32 WeaponIndex);
+		UFUNCTION(BlueprintCallable)
+		void ApplyAttachmentModifier(FWeaponStats_Runtime& RuntimeStats, EWeaponStat WeaponStat, const FStatModifierData& Modifier);
 
 		UFUNCTION(BlueprintCallable)
 		float CalculateFinalStatValue(float BaseValue, TArray<FStatModifierData>& ModifierArray);
@@ -127,7 +153,9 @@ class BATTLESERIES2_API UWeaponLogicComponent : public UActorComponent
 		UFUNCTION(BlueprintCallable, BlueprintPure)
 		void GetAimSpeeds(float& AimInSpeed, float& AimOutSpeed);
 		UFUNCTION(BlueprintCallable, BlueprintPure)
-		void GetAllAttachmentModifierDataOfTypeForWeapon(TMap<EAttachmentSlot, FWeaponAttachmentState>& WeaponAttachmentStates, EStatToAffect StatType, TArray<FStatModifierData>& OutAttachmentModifierData);
+		void GetAllAttachmentModifierDataOfTypeForWeapon(TMap<EAttachmentSlot, FWeaponAttachmentState>& WeaponAttachmentStates, EWeaponStat WeaponStatType, TArray<FStatModifierData>& OutAttachmentModifierData);
+		UFUNCTION(BlueprintCallable, BlueprintPure)
+		FWeaponAttachmentState& GetCurrentAttachmentInSlot(EAttachmentSlot Slot);
 		UFUNCTION(BlueprintCallable, BlueprintPure)
 		FWeapon_Runtime& GetBaseWeaponState(int32 WeaponIndex);
 		UFUNCTION(BlueprintCallable, BlueprintPure)
@@ -135,7 +163,9 @@ class BATTLESERIES2_API UWeaponLogicComponent : public UActorComponent
 		UFUNCTION(BlueprintCallable, BlueprintPure)
 		FInfantryWeaponData GetCurrentWeaponStaticData_BP();
 		UFUNCTION(BlueprintCallable, BlueprintPure)
-		int32 GetCWI();
+		FWeaponStats_Runtime& GetCurrentWeaponStats();
+		UFUNCTION(BlueprintCallable, BlueprintPure)
+		int32& GetCWI();
 
 	protected:
 		TArray<const FInfantryWeaponData*> StaticWeaponDataCache;

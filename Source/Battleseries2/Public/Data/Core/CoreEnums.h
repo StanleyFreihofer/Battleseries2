@@ -117,7 +117,7 @@ ENUM_RANGE_BY_COUNT(EClassType, EClassType::MAX);
 **/
 
 UENUM(BlueprintType)
-enum class EStatToAffect : uint8
+enum class EStatToAffect : uint8		//separate into entity categories (weapons, vehicles, health, etc)?
 {
 	Health,
 	Recoil,
@@ -135,4 +135,5 @@ enum class EModifierOp : uint8
 	Multiply		UMETA(DisplayName = "Multiply"),
 	Divide			UMETA(DisplayName = "Divide"),
 	Set				UMETA(DisplayName = "Set/Override")
+	//inverse (if bool is on, turn off for example)?
 };

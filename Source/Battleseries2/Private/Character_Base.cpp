@@ -365,7 +365,8 @@ void ACharacter_Base::UpdateMovementMode(ECharacterMovementMode NewMode)
 		}
 		case ECharacterMovementMode::Sprinting:
 		{
-			if (CurrentMovementMode == ECharacterMovementMode::Walking)
+			if (WeaponManager->WeaponSystem.isAiming) { return; }
+			else if (CurrentMovementMode == ECharacterMovementMode::Walking)
 			{
 				StartSprint();
 			}
@@ -862,6 +863,11 @@ AVehicle_Base* ACharacter_Base::GetCurrentVehicle()
 int32& ACharacter_Base::GetCSI()
 {
 	return CharacterState.CharacterVehicleState.CSI;
+}
+
+bool& ACharacter_Base::GetInVehicle()
+{
+	return CharacterState.CharacterVehicleState.inVehicle;
 }
 
 ECharacterStance& ACharacter_Base::GetCurrentStance()

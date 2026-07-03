@@ -29,7 +29,7 @@ bool UBS2FunctionLibrary::PerformSphereTraceMulti(const UObject* WorldContextObj
 		UEngineTypes::ConvertToTraceType(ECC_Visibility),
 		false,              // bTraceComplex
 		ActorsToIgnore,
-		EDrawDebugTrace::ForOneFrame,
+		EDrawDebugTrace::None,
 		OutHits,
 		true,               // bIgnoreSelf
 		FLinearColor::Red,  // Trace Color
