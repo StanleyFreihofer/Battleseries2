@@ -130,6 +130,8 @@ class BATTLESERIES2_API UWeaponLogicComponent : public UActorComponent
 		UFUNCTION(BlueprintCallable)
 		void FireWeapon();
 		UFUNCTION(BlueprintCallable)
+		void ReloadWeapon();
+		UFUNCTION(BlueprintCallable)
 		void ToggleFireMode();
 		UFUNCTION(BlueprintCallable)
 		void ToggleScope();
@@ -174,4 +176,6 @@ class BATTLESERIES2_API UWeaponLogicComponent : public UActorComponent
 		const FInfantryWeaponData* GetCurrentWeaponStaticData() const;
 
 	private:
+		void OnReloadFinished(UAnimMontage* Montage, bool bInterrupted);
+		FOnMontageEnded ReloadEndedDelegate;
 };

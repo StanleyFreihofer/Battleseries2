@@ -2,11 +2,11 @@
 
 #include "CoreMinimal.h"
 #include "Engine/DataAsset.h"
-#include "Vehicle_Base.h"
 #include "Data_Customization.generated.h"
 
 enum class ECoreType : uint8;
 enum class EVehicleType : uint8;
+class AVehicle_Base;
 class UUW_Customization;
 class UUW_LoadoutSlot;
 class UUW_DropdownOption;

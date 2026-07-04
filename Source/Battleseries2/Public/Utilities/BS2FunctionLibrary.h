@@ -38,4 +38,7 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Battleseries | Subsystems")
     static UProjectilePoolSubsystem* GetProjectileSystem(const UObject* WorldContextObject);
     static IVehicleDataAccessor* GetVehicleAccessor(AActor* TargetActor);
+
+    UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Battleseries | Weapon Functons")
+    static void CalculateReload(int32 MagSize, int32 CAM, int32 CRA, int32& OutCAM, int32& OutCRA);
 };

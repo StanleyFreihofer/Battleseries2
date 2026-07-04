@@ -809,6 +809,7 @@ void UVehicleWeaponLogicComponent::HandleLockOn(int32 SeatIndex, int32 WeaponInd
 					UpdateLockOnIndicator(OwnerDataAccessor->GetVehicleState().SeatStates[SeatIndex].UpdateHUD, HitResult, LockOnState);
 					break;
 				case ELockOnState::IsLosingLock:
+					//DO SOMETHING HERE!!!!!!!!!!!!!!!!!!!!!!!
 					break;
 			}
 		}
@@ -1304,7 +1305,7 @@ void UVehicleWeaponLogicComponent::AutoloadNewMag(int32 SeatIndex, int32 WeaponI
 	FWeapon_Runtime& CurrentWeapon = SeatWeaponSystem.Weapons[WeaponIndex].VehicleWeaponState.BaseWeaponRuntimeData;
 	const FBaseWeaponData& StaticWeaponData = GetBaseWeaponDataInSlot(SeatIndex, WeaponIndex);
 	int32 NewCAM, NewCRA;
-	UWeaponFunctions::CalculateReload(MagSize, CurrentWeapon.WeaponState.CurrentAmmoinMag, CurrentWeapon.WeaponState.CurrentReserveAmmo, NewCAM, NewCRA);
+	UBS2FunctionLibrary::CalculateReload(MagSize, CurrentWeapon.WeaponState.CurrentAmmoinMag, CurrentWeapon.WeaponState.CurrentReserveAmmo, NewCAM, NewCRA);
 
 	CurrentWeapon.WeaponState.CurrentAmmoinMag = NewCAM;
 	CurrentWeapon.WeaponState.CurrentReserveAmmo = NewCRA;

@@ -180,6 +180,9 @@ struct FAmmoData
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ToolTip = "Maximum reserve ammo for the weapon"))
 	int32 MaxReserveAmmo = 0;					//<-- this ties it to the gun, not the player inventory (if there even is one... BR mode)
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ToolTip = "If bullet fed, loads 1 round at a time, if not (magazine fed/standard reload) reloads entire magazine at once"))
+	bool isBulletFed = false;
+
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ToolTip = "Time it takes to reload"))
 	float ReloadSpeed = 0.0f;		//is this gonna work with anim-based reloads?
 

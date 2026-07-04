@@ -8,6 +8,8 @@ struct FBaseWeaponData;
 struct FWeapon_Runtime;
 struct FSimProjectile_Runtime;
 
+//BEING DEPRECIATED AND MOVED TO UBS2FunctionLibrary
+
 UCLASS()
 class BATTLESERIES2_API UWeaponFunctions : public UObject
 {
@@ -26,8 +28,6 @@ public:
 	static bool PerformWeaponSphereTrace(const UObject* WorldContextObject, const FTransform& StartTransform, FHitResult& OutHit, TArray<AActor*> ActorsToIgnore, float Radius);
 	UFUNCTION(BlueprintCallable)
 	static int32 UpdateCurrentAmmoInMag(FWeapon_Runtime& CurrentWeapon, int32 AmmoDelta, int32 MagSize);
-	UFUNCTION(BlueprintCallable, BlueprintPure)
-	static void CalculateReload(int32 MagSize, int32 CAM, int32 CRA, int32& OutCAM, int32& OutCRA);
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	static int32 UpdateWeaponIndex(TArray<FWeapon_Runtime> Weapons, int32 WeaponIndex);
 	UFUNCTION(BlueprintCallable)

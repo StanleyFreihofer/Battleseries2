@@ -26,6 +26,20 @@ struct FInfantryWeaponClassificationData
 };
 
 USTRUCT(BlueprintType)
+struct FInfantryWeaponFunctionalityData
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	FWeaponFunctionalityData BaseWeaponFunctionality = FWeaponFunctionalityData();
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	bool canADSReload = false;
+
+	//canholdbreath
+};
+
+USTRUCT(BlueprintType)
 struct FInfantryWeaponAmmoData
 {
 	GENERATED_BODY()
@@ -178,12 +192,46 @@ struct FInfantryWeaponAnimData_FP
 };
 
 USTRUCT(BlueprintType)
+struct FInfantryWeaponAnimData_Weapon
+{
+	//animations of the gun itself, not the character holding it
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	TSoftObjectPtr<UAnimSequence> WeaponFire = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	TSoftObjectPtr<UAnimSequence> WeaponReload = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	TSoftObjectPtr<UAnimSequence> WeaponReloadEmpty = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	TSoftObjectPtr<UAnimSequence> WeaponReloadEnter = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	TSoftObjectPtr<UAnimSequence> WeaponReloadExit = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	TSoftObjectPtr<UAnimSequence> WeaponEquip = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	TSoftObjectPtr<UAnimSequence> WeaponInspect = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	TSoftObjectPtr<UAnimSequence> WeaponUnholsterInitial = nullptr;
+};
+
+USTRUCT(BlueprintType)
 struct FInfantryWeaponAnimData
 {
 	GENERATED_BODY()
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	FInfantryWeaponAnimData_FP FPWeaponAnimData = FInfantryWeaponAnimData_FP();
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	FInfantryWeaponAnimData_Weapon WeaponAnimData = FInfantryWeaponAnimData_Weapon();
 };
 
 USTRUCT(BlueprintType)
@@ -227,7 +275,7 @@ struct FInfantryWeaponData : public FTableRowBase
 	FInfantryWeaponClassificationData WeaponClassificationData = FInfantryWeaponClassificationData();
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	FWeaponFunctionalityData WeaponFunctionalityData = FWeaponFunctionalityData();
+	FInfantryWeaponFunctionalityData WeaponFunctionalityData = FInfantryWeaponFunctionalityData();
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	FInfantryWeaponAimData InfantryWeaponAimData = FInfantryWeaponAimData();

@@ -87,15 +87,6 @@ int32 UWeaponFunctions::UpdateCurrentAmmoInMag(FWeapon_Runtime& CurrentWeapon, i
 	return CurrentWeapon.WeaponState.CurrentAmmoinMag;
 }
 
-void UWeaponFunctions::CalculateReload(int32 MagSize, int32 CAM, int32 CRA, int32& OutCAM, int32& OutCRA)
-{
-	//need max reserve ammo input?
-	int32 BulletsFiredFromMag = MagSize - CAM;
-	int32 BulletsToLoad = FMath::Min(BulletsFiredFromMag, CRA);
-	OutCRA = CRA - BulletsToLoad;
-	OutCAM = CAM + BulletsToLoad;
-}
-
 int32 UWeaponFunctions::UpdateWeaponIndex(TArray<FWeapon_Runtime> Weapons, int32 CurrentWeaponIndex)
 {
 	int32 NewWeaponIndex = CurrentWeaponIndex++;

@@ -226,6 +226,38 @@ void UWeaponLogicComponent::FireWeapon()
 
 }
 
+void UWeaponLogicComponent::ReloadWeapon()
+{
+	FWeapon_Runtime& CurrentWeapon = *GetCurrentWeaponRuntime();
+	const FInfantryWeaponData* StaticWeaponData = GetCurrentWeaponStaticData();
+	FInfantryWeaponState& InfantryWeaponState_FP = WeaponSystem.InfantryWeaponSystem.WeaponState_FP[GetCWI()];
+
+	//if (CurrentWeapon.WeaponState.CurrentReserveAmmo > 0)
+	//{ 
+		CurrentWeapon.WeaponState.isReloading = true;
+		bool bEmptyMag = CurrentWeapon.WeaponState.CurrentAmmoinMag <= 0;
+		TSoftObjectPtr<UAnimMontage> FPReloadMontage = bEmptyMag ? StaticWeaponData->InfantryWeaponAnimData.FPWeaponAnimData.ReloadEmptyWeaponMontage : StaticWeaponData->InfantryWeaponAnimData.FPWeaponAnimData.ReloadWeaponMontage;
+		TSoftObjectPtr<UAnimSequence> WeaponReloadAnim = bEmptyMag ? StaticWeaponData->InfantryWeaponAnimData.WeaponAnimData.WeaponReload : StaticWeaponData->InfantryWeaponAnimData.WeaponAnimData.WeaponReloadEmpty;
+		FPReloadMontage.LoadSynchronous();
+		WeaponReloadAnim.LoadSynchronous();
+
+		InfantryWeaponState_FP.WeaponMesh->PlayAnimation(WeaponReloadAnim.Get(), false);
+
+		TWeakObjectPtr<UAnimInstance> FPArmsAnimInstance = Cast<ACharacter_Base>(GetOwner())->FPArms->GetAnimInstance();
+		FPArmsAnimInstance->Montage_Play(FPReloadMontage.Get(), 1.0f);
+		FPArmsAnimInstance->Montage_SetEndDelegate(ReloadEndedDelegate, FPReloadMontage.Get());
+	//}
+}
+
+void UWeaponLogicComponent::OnReloadFinished(UAnimMontage* Montage, bool bInterrupted)
+{
+	FWeaponStats_Runtime& CurrentWeaponStats = GetCurrentWeaponStats();
+	FWeapon_Runtime& CurrentWeapon = *GetCurrentWeaponRuntime();
+	int32 NewCAM, NewCRA;
+	UBS2FunctionLibrary::CalculateReload(CurrentWeaponStats.MagSize, CurrentWeapon.WeaponState.CurrentAmmoinMag, CurrentWeapon.WeaponState.CurrentReserveAmmo, NewCAM, NewCRA);
+	CurrentWeapon.WeaponState.isReloading = false;
+}
+
 void UWeaponLogicComponent::ToggleFireMode()
 {
 	FWeaponStats_Runtime& CurrentWeaponStats = GetCurrentWeaponStats();
@@ -551,6 +583,8 @@ const FInfantryWeaponData* UWeaponLogicComponent::GetCurrentWeaponStaticData() c
 	const FInfantryWeaponData* StaticWeaponData = StaticWeaponDataCache[WeaponSystem.BaseWeaponSystem.EquippedWeaponState.CurrentWeaponIndex];
 	return StaticWeaponData;
 }
+
+
 
 FInfantryWeaponData UWeaponLogicComponent::GetCurrentWeaponStaticData_BP()
 {

@@ -96,5 +96,14 @@ IVehicleDataAccessor* UBS2FunctionLibrary::GetVehicleAccessor(AActor* TargetActo
 	return Cast<IVehicleDataAccessor>(TargetActor);
 }
 
+void UBS2FunctionLibrary::CalculateReload(int32 MagSize, int32 CAM, int32 CRA, int32& OutCAM, int32& OutCRA)
+{
+	//need max reserve ammo input?
+	int32 BulletsFiredFromMag = MagSize - CAM;
+	int32 BulletsToLoad = FMath::Min(BulletsFiredFromMag, CRA);
+	OutCRA = CRA - BulletsToLoad;
+	OutCAM = CAM + BulletsToLoad;
+}
+
 
 
