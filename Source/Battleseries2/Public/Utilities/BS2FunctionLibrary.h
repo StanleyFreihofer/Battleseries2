@@ -39,6 +39,32 @@ public:
     static UProjectilePoolSubsystem* GetProjectileSystem(const UObject* WorldContextObject);
     static IVehicleDataAccessor* GetVehicleAccessor(AActor* TargetActor);
 
-    UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Battleseries | Weapon Functons")
+    UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Battleseries | Weapon Functions")
+    static float GetFireRate(float RateOfFire);
+    UFUNCTION(BlueprintCallable, Category = "Battleseries | Weapon Functions")
+    static bool PerformWeaponLineTrace(const UObject* WorldContextObject, const FTransform& StartTransform, FHitResult& OutHit, TArray<AActor*> ActorsToIgnore);
+    UFUNCTION(BlueprintCallable, Category = "Battleseries | Weapon Functions")
+    static bool PerformWeaponSphereTrace(const UObject* WorldContextObject, const FTransform& StartTransform, FHitResult& OutHit, TArray<AActor*> ActorsToIgnore, float Radius);
+    UFUNCTION()
+    static FTransform GetMuzzleTransform(FName MuzzleSocketName, TWeakObjectPtr<USkeletalMeshComponent> SocketMesh);
+
+    UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Battleseries | Weapon Functions")
+    static FVector CalculateAimDirection(FHitResult TraceData, FVector MuzzleLocation);
+    UFUNCTION()
+    static FVector GetAimDirectionFromMuzzle(FHitResult TraceData, FName MuzzleSocketName, TWeakObjectPtr<USkeletalMeshComponent> WeaponMesh);
+    UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Battleseries | Weapon Functions")
+	static FVector GetAimDirectionFromMuzzle_BP(FHitResult TraceData, FName MuzzleSocketName, USkeletalMeshComponent* WeaponMesh);
+    UFUNCTION(BlueprintCallable, Category = "Battleseries | Weapon Functions")
+    static FSimProjectile_Runtime CreateSimProjectile(FName MunitionID, class APlayerState* InstigatorPlayerState, FVector MuzzleLocation, float MuzzleSpeed, float GravityScale, FVector AimDirection, float BaseDamage, UCurveFloat* DamageDropoffCurve, UProjectilePoolSubsystem* ProjectileSubsystem);
+    UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Battleseries | Weapon Functions")
     static void CalculateReload(int32 MagSize, int32 CAM, int32 CRA, int32& OutCAM, int32& OutCRA);
+    UFUNCTION(BlueprintCallable, Category = "Battleseries | Weapon Functions")
+    static int32 UpdateCurrentAmmoInMag(FWeapon_Runtime& CurrentWeapon, int32 AmmoDelta, int32 MagSize);
+    UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Battleseries | Weapon Functions")
+    static int32 UpdateWeaponIndex(TArray<FWeapon_Runtime> Weapons, int32 WeaponIndex);
+
+	UFUNCTION(BlueprintCallable, Category = "Battleseries | Optic Functions")
+    static void HandleUpdateOptic(float inDefaultFOV, float inOpticMagnfication, float& OutOpticFOV, FPostProcessSettings inPostProcessData, FPostProcessSettings& OutPostProcessSettings, float& OutPostProcessWeight);
+    UFUNCTION(BlueprintCallable, Category = "Battleseries | Optic Functions")
+    static void UpdateOpticIndex(int32 TotalOptics, int32& CurrentOpticIndex);
 };

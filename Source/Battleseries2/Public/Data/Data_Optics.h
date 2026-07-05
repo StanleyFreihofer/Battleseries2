@@ -4,6 +4,11 @@
 #include "Engine/DataTable.h"
 #include "Data_Optics.generated.h"
 
+/**
+* NOT PHYSICAL SCOPES/OPTICS BUT RATHER THEIR SETTINGS IN REGARDS TO FOV AND POST PROCESS MAINLY
+* can be used for vehicle and weapon scopes
+**/
+
 USTRUCT(BlueprintType)
 struct FOpticData : public FTableRowBase
 {

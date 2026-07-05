@@ -8,6 +8,8 @@ struct FVehicleData;
 struct FVehicleCurrentState;
 class AVehicle_Base;
 
+//RENAME!!!!!!!!!!!!!!!!!!!!!!
+
 UINTERFACE(MinimalAPI)
 class UVehicleDataAccessor : public UInterface
 {
@@ -20,9 +22,10 @@ class BATTLESERIES2_API IVehicleDataAccessor
 
 public:
 	// Returns the main mesh component used for socket lookups (turrets, weapons, projectiles).
-	virtual USkeletalMeshComponent* GetVehicleMesh() const = 0;
+	virtual USkeletalMeshComponent* GetMesh() const = 0;
 	virtual FName GetVehicleID() const = 0;
 	virtual const FVehicleData& GetVehicleData() const = 0;
 	virtual const FVehicleCurrentState& GetVehicleState() const = 0;
 	virtual AVehicle_Base& GetVehicle() = 0;
+
 };

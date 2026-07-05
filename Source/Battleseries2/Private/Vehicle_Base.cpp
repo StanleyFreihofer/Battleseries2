@@ -1166,7 +1166,7 @@ void AVehicle_Base::ToggleOptic(int32 SeatIndex)
 {
 	FOpticState& OpticState = VehicleCurrentState.SeatStates[SeatIndex].OpticState;
 	int32 PreviousOpticIndex = OpticState.CurrentOpticIndex;
-	OpticState.CurrentOpticIndex = (OpticState.CurrentOpticIndex + 1) % OpticState.CurrentAvailableOptics.Num();
+	UBS2FunctionLibrary::UpdateOpticIndex(OpticState.CurrentAvailableOptics.Num(), OpticState.CurrentOpticIndex);
 	if (PreviousOpticIndex == OpticState.CurrentOpticIndex) { return;  }
 
 	const FOpticData* CurrentOpticData = UBS2FunctionLibrary::GetDataSubsystem(this)->GetOpticDataRow(OpticState.CurrentAvailableOptics[OpticState.CurrentOpticIndex]);
@@ -1285,7 +1285,7 @@ UCameraComponent* AVehicle_Base::GetRemoteActiveCam(int32 SeatIndex)
 	return VehicleCurrentState.SeatStates[SeatIndex].ActiveCamera;
 }
 
-USkeletalMeshComponent* AVehicle_Base::GetVehicleMesh() const
+USkeletalMeshComponent* AVehicle_Base::GetMesh() const
 {
 	return VehicleMeshComponent;
 }

@@ -288,7 +288,7 @@ public:
 	UCameraComponent* GetRemoteActiveCam(int32 SeatIndex);
 
 #pragma region InterfaceGetters
-	virtual USkeletalMeshComponent* GetVehicleMesh() const override;
+	virtual USkeletalMeshComponent* GetMesh() const override;
 	virtual FName GetVehicleID() const override;
 	virtual const FVehicleData& GetVehicleData() const override;
 	virtual const FVehicleCurrentState& GetVehicleState() const override;

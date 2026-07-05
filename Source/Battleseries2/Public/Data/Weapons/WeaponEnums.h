@@ -33,6 +33,7 @@ enum class EFireMode : uint8
 	Auto		UMETA(DisplayName = "Auto"),
 	Burst		UMETA(DisplayName = "Burst"),
 	Single		UMETA(DisplayName = "Single/Semi-Auto")
+	//Bolt Action, Lever Action, Pump Action, etc?
 };
 
 #pragma region WeaponAttachments

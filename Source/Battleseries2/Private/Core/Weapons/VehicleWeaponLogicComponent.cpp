@@ -96,7 +96,7 @@ void UVehicleWeaponLogicComponent::Init_WAC(int32 SeatIndex)
 	//Initialize Weapon Audio Component
 	FVehicleWeaponSystem_Runtime NewSystem;
 	TWeakObjectPtr<UAudioComponent> NewAudioComp = NewObject<UAudioComponent>(GetOwner());
-	NewAudioComp->SetupAttachment(OwnerDataAccessor->GetVehicleMesh());
+	NewAudioComp->SetupAttachment(OwnerDataAccessor->GetMesh());
 	NewAudioComp->RegisterComponent();
 	TSoftObjectPtr<UDA_WeaponDefaults> WeaponDefaults = UBS2FunctionLibrary::GetDataSubsystem(this)->WeaponDefaultsDAAsset;
 	NewAudioComp->SetSound(WeaponDefaults->WeaponDefaults.DefaultWeaponMetaSound.LoadSynchronous());
@@ -140,7 +140,7 @@ void UVehicleWeaponLogicComponent::ApplyVWID(int32 SeatIndex, int32 WeaponIndex,
 		}
 		else
 		{
-			SetupMuzzleSockets(OwnerDataAccessor->GetVehicleMesh(), SeatIndex, WeaponIndex, SeatName);
+			SetupMuzzleSockets(OwnerDataAccessor->GetMesh(), SeatIndex, WeaponIndex, SeatName);
 		}
 	}
 
@@ -238,7 +238,7 @@ void UVehicleWeaponLogicComponent::HandleApplyWeaponMesh(int32 SeatIndex, int32 
 
 void UVehicleWeaponLogicComponent::MountProjectiles(int32 SeatIndex, int32 WeaponIndex)
 {
-	TObjectPtr<USkeletalMeshComponent> VehicleMeshComponent = OwnerDataAccessor->GetVehicleMesh();
+	TObjectPtr<USkeletalMeshComponent> VehicleMeshComponent = OwnerDataAccessor->GetMesh();
 	FVehicleWeapon_Runtime& SeatWeaponToFill = VehicleWeaponSystem.Find(SeatIndex)->Weapons[WeaponIndex];
 	FWeapon_Runtime& WeaponDataToFill = SeatWeaponToFill.VehicleWeaponState.BaseWeaponRuntimeData;
 	const FVehicleWeaponData* VehicleWeaponRow = UBS2FunctionLibrary::GetDataSubsystem(this)->GetVehicleWeaponDataRow(WeaponDataToFill.WeaponID);
@@ -274,7 +274,7 @@ void UVehicleWeaponLogicComponent::ApplyWeaponDecoratives(const TArray<FDecorati
 			TWeakObjectPtr<UStaticMesh> LoadedMesh = AttachmentData.Attachment_SM.LoadSynchronous();
 			TWeakObjectPtr<UStaticMeshComponent> SMComp = NewObject<UStaticMeshComponent>(GetOwner());
 			SMComp->SetStaticMesh(LoadedMesh.Get());
-			SMComp->SetupAttachment(OwnerDataAccessor->GetVehicleMesh(), WeaponDecorative.SocketName);
+			SMComp->SetupAttachment(OwnerDataAccessor->GetMesh(), WeaponDecorative.SocketName);
 			SMComp->SetRelativeTransform(WeaponDecorative.TransformOffset);
 			SMComp->SetCollisionResponseToChannel(ECollisionChannel::ECC_Vehicle, ECollisionResponse::ECR_Ignore);
 			SMComp->RegisterComponent();
@@ -318,7 +318,7 @@ USkeletalMeshComponent* UVehicleWeaponLogicComponent::ApplyWeaponMeshToVehicle(U
 	FName SocketName = FName(*SocketNameString);
 
 	TObjectPtr<USkeletalMeshComponent> WeaponComp = NewObject<USkeletalMeshComponent>(GetOwner());
-	WeaponComp->SetupAttachment(OwnerDataAccessor->GetVehicleMesh(), SocketName);
+	WeaponComp->SetupAttachment(OwnerDataAccessor->GetMesh(), SocketName);
 	WeaponComp->RegisterComponent(); 
 
 	return WeaponComp;
@@ -363,7 +363,7 @@ void UVehicleWeaponLogicComponent::ConfigureWeaponCam(int32 SeatIndex, int32 Wea
 	switch (WeaponSystem.Weapons[WeaponIndex].VehicleWeaponInstanceData.WeaponCamBehavior.MountMethod)
 	{
 		case EVehicleWeaponCamMountMethod::VehicleMesh:
-			TargetParent = OwnerDataAccessor->GetVehicleMesh();
+			TargetParent = OwnerDataAccessor->GetMesh();
 			break;
 		case EVehicleWeaponCamMountMethod::WeaponMesh:
 			//cam comp doesnt work (cuz we're attaching it to a component... thats on a component i guess)
@@ -667,7 +667,7 @@ void UVehicleWeaponLogicComponent::HandleSeatRangefinders()
 			else
 			{
 				//vehicle mesh
-				CalculateAimDirection(OwnerDataAccessor->GetVehicleMesh(), HitResult, WeaponIndex, SeatIndex);
+				CalculateAimDirection(OwnerDataAccessor->GetMesh(), HitResult, WeaponIndex, SeatIndex);
 			}
 		}
 	}
@@ -689,7 +689,7 @@ void UVehicleWeaponLogicComponent::UpdateSeatRangefinder(int32 SeatIndex, FTrans
 	else
 	{
 		bool bHit;
-		bHit = UWeaponFunctions::PerformWeaponLineTrace(this, TraceTransform, HitResult, ActorsToIgnore);
+		bHit = UBS2FunctionLibrary::PerformWeaponLineTrace(this, TraceTransform, HitResult, ActorsToIgnore);
 	}
 
 	if (OwnerDataAccessor->GetVehicleState().SeatStates[SeatIndex].UpdateHUD)
@@ -725,10 +725,10 @@ void UVehicleWeaponLogicComponent::CalculateAimDirection(TWeakObjectPtr<USkeleta
 				return;
 			}
 			FName MuzzleSocketName = SeatWeaponSystem.Weapons[WeaponIndex].VehicleWeaponState.MuzzleSockets[MI];
-			FVector MuzzleLocation = UWeaponFunctions::GetMuzzleTransform(MuzzleSocketName, Mesh).GetLocation();
+			FVector MuzzleLocation = UBS2FunctionLibrary::GetMuzzleTransform(MuzzleSocketName, Mesh).GetLocation();
 
 			//CALCULATE AIM DIRECTION
-			AimDirections[MI] = UWeaponFunctions::CalculateAimDirection(HitResult, MuzzleLocation);
+			AimDirections[MI] = UBS2FunctionLibrary::CalculateAimDirection(HitResult, MuzzleLocation);
 
 			// DEBUG: Draw the convergence line
 			UWeaponFunctions::Debug_ProjectilePath(GetWorld(), MuzzleLocation, HitResult);
@@ -755,7 +755,7 @@ void UVehicleWeaponLogicComponent::HandleHoming(int32 SeatIndex, FTransform Trac
 	FHitResult& HitResult = SystemPtr->VehicleWeaponSystemState.EquippedWeaponState.RaycastData.RangefinderData;
 
 	bool bHit;
-	bHit = UWeaponFunctions::PerformWeaponSphereTrace(this, TraceTransform, HitResult, ActorsToIgnore, 35.0f);
+	bHit = UBS2FunctionLibrary::PerformWeaponSphereTrace(this, TraceTransform, HitResult, ActorsToIgnore, StaticWeaponData.WeaponFunctionality.HomingFunctionality.LockOnRadius);
 	FLockOnState& LockOnState = CurrentWeapon.VehicleWeaponState.BaseWeaponRuntimeData.WeaponState.LockOnState;
 
 	switch (StaticHomingData.HomingCapability)
@@ -972,7 +972,7 @@ void UVehicleWeaponLogicComponent::SetupMuzzleSockets(TWeakObjectPtr<USkeletalMe
 		NewVFX->SetupAttachment(Mesh.Get(), SocketName);
 		NewVFX->SetAutoActivate(false);
 		NewVFX->SetAsset(StaticWeaponData.WeaponFX.MuzzleFlashFX.LoadSynchronous());
-		NewVFX->SetNiagaraVariableFloat(TEXT("User.RateOfFire"), UWeaponFunctions::GetFireRate(StaticWeaponData.WeaponFirePerformance.RateOfFire));
+		NewVFX->SetNiagaraVariableFloat(TEXT("User.RateOfFire"), UBS2FunctionLibrary::GetFireRate(StaticWeaponData.WeaponFirePerformance.RateOfFire));
 		NewVFX->RegisterComponent();
 		VehicleWeaponToFill.VehicleWeaponState.MuzzleVFXPool.Add(NewVFX);
 	}
@@ -1044,7 +1044,7 @@ TWeakObjectPtr<AProjectile_Base> UVehicleWeaponLogicComponent::HandleStartFire(i
 				//autofire
 				if (CurrentWeapon.WeaponState.canFire)	//if here so if the first fire changed this state
 				{
-					float FireRate = UWeaponFunctions::GetFireRate(StaticWeaponData.WeaponFirePerformance.RateOfFire);
+					float FireRate = UBS2FunctionLibrary::GetFireRate(StaticWeaponData.WeaponFirePerformance.RateOfFire);
 
 					// Create a Weak Lambda
 					FTimerDelegate FireDelegate;
@@ -1137,7 +1137,7 @@ void UVehicleWeaponLogicComponent::HandleShootSimProjectile(FVehicleWeaponState&
 		FVector MuzzleLocation = FVector::ForwardVector;
 		MuzzleLocation = GetMuzzleTransform(VehicleWeaponState, SeatWeaponSystem, MuzzleIndex).GetLocation();
 
-		UWeaponFunctions::CreateSimProjectile
+		UBS2FunctionLibrary::CreateSimProjectile
 		(
 			StaticWeaponData.WeaponFirePerformance.MunitionID,
 			nullptr,
@@ -1241,10 +1241,10 @@ void UVehicleWeaponLogicComponent::HandleAmmoDepletion(int32 SeatIndex, int32 We
 			{
 				case EFireMethod::Default:
 				case EFireMethod::Sequential:
-					UWeaponFunctions::UpdateCurrentAmmoInMag(CurrentWeapon, -1, StaticWeaponData.AmmoData.MagSize);
+					UBS2FunctionLibrary::UpdateCurrentAmmoInMag(CurrentWeapon, -1, StaticWeaponData.AmmoData.MagSize);
 					break;
 				case EFireMethod::Dual:
-					UWeaponFunctions::UpdateCurrentAmmoInMag(CurrentWeapon, -2, StaticWeaponData.AmmoData.MagSize);
+					UBS2FunctionLibrary::UpdateCurrentAmmoInMag(CurrentWeapon, -2, StaticWeaponData.AmmoData.MagSize);
 					break;
 			}
 
@@ -1347,9 +1347,9 @@ void UVehicleWeaponLogicComponent::ApplyWeaponRecoilJostle(int32 SeatIndex, int3
 
 	//RECOIL
 	//vehicle mesh anim fire
-	if (OwnerDataAccessor->GetVehicleMesh()->GetAnimInstance()->GetClass()->ImplementsInterface(UAnims::StaticClass()))
+	if (OwnerDataAccessor->GetMesh()->GetAnimInstance()->GetClass()->ImplementsInterface(UAnims::StaticClass()))
 	{
-		IAnims::Execute_OnFireWeapon_Vehicle(OwnerDataAccessor->GetVehicleMesh()->GetAnimInstance(), SeatIndex, WeaponIndex);
+		IAnims::Execute_OnFireWeapon_Vehicle(OwnerDataAccessor->GetMesh()->GetAnimInstance(), SeatIndex, WeaponIndex);
 	}
 
 	//jostle 
@@ -1576,11 +1576,11 @@ FTransform UVehicleWeaponLogicComponent::GetMuzzleTransform(FVehicleWeaponState&
 	MuzzleTransform.SetLocation(FVector::ForwardVector);
 	if (SeatWeaponSystem.VehicleWeaponSystemState.WeaponSystemMesh.IsValid())
 	{
-		MuzzleTransform = UWeaponFunctions::GetMuzzleTransform(VehicleWeaponState.MuzzleSockets[MuzzleIndex], SeatWeaponSystem.VehicleWeaponSystemState.WeaponSystemMesh);
+		MuzzleTransform = UBS2FunctionLibrary::GetMuzzleTransform(VehicleWeaponState.MuzzleSockets[MuzzleIndex], SeatWeaponSystem.VehicleWeaponSystemState.WeaponSystemMesh);
 	}
 	else
 	{
-		MuzzleTransform = UWeaponFunctions::GetMuzzleTransform(VehicleWeaponState.MuzzleSockets[MuzzleIndex], OwnerDataAccessor->GetVehicleMesh());
+		MuzzleTransform = UBS2FunctionLibrary::GetMuzzleTransform(VehicleWeaponState.MuzzleSockets[MuzzleIndex], OwnerDataAccessor->GetMesh());
 	}
 	return MuzzleTransform;
 }

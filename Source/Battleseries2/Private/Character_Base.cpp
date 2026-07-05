@@ -219,6 +219,7 @@ void ACharacter_Base::InteractTrace()
 
 	TArray<FHitResult> HitResults;
 	TArray<AActor*> ActorsToIgnore;
+	ActorsToIgnore.Add(this);
 	const float& TraceDistance = UBS2FunctionLibrary::GetDataSubsystem(GetWorld())->GetCharacterDefaults()->TraceDistance;
 	const float& InteractionDistance = UBS2FunctionLibrary::GetDataSubsystem(GetWorld())->GetCharacterDefaults()->InteractionDistance;
 	UBS2FunctionLibrary::PerformSphereTraceMulti(GetWorld(), FPCamera->GetComponentTransform(), HitResults, ActorsToIgnore, 1.0f, TraceDistance);
@@ -558,6 +559,7 @@ void ACharacter_Base::CharacterExitVehicle()
 		bUseControllerRotationYaw = true;
 		FPArmsSpringArm->bUsePawnControlRotation = true;
 		FPArmsSpringArm->bInheritRoll = false;
+		FPArmsSpringArm->bEnableCameraLag = true;
 		UpdateViewTarget(this, FPCamera);
 		CharacterState.CharacterVehicleState = FCharacterVehicleState();
 

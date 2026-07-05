@@ -19,15 +19,11 @@ struct FWeaponSightData
 {
 	GENERATED_BODY()
 
-
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	ESightSlot SightSlot = ESightSlot::FrontSight;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	FPostProcessSettings SightPPSettings = FPostProcessSettings();
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (tooltip = "the number to divide by (by itself represents the magnification value), more than 1 value means there is variable zoom functionality")) 
-	TArray<float> ZoomMagnification;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (tooltip = "optic settings to pull from optic data table"))
+	TArray<FName> OpticIDs;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (tooltip = "the default number to increase/decrease the sight distance by (helps to ensure when aim, sight distance brings camera to front of sight rather than center/in it"))
 	float SightDistanceOffset = 0.0f;
@@ -40,7 +36,7 @@ struct FWeaponSightData
 
 	FWeaponSightData()
 	{
-		ZoomMagnification.Add(3.0f);
+		OpticIDs.Add(FName("O_60hz"));
 	}
 };
 

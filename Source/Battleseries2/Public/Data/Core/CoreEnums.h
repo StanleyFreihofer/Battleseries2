@@ -35,8 +35,8 @@ enum class EAttachmentSlot : uint8
 	RearSight		UMETA(DisplayName = "Rear Sight"),
 	Barrel			UMETA(DisplayName = "Barrel"),
 	Handguard		UMETA(DisplayName = "Handguard"),
-	Optic			UMETA(DisplayName = "Optic"),
-	OpticAccessory	UMETA(DisplayName = "Optic Accessory"),
+	Scope			UMETA(DisplayName = "Scope"),
+	ScopeAccessory	UMETA(DisplayName = "Scope Accessory"),
 	Muzzle			UMETA(DisplayName = "Muzzle"),
 	Underbarrel		UMETA(DisplayName = "Underbarrel"),		//grip?
 	LeftRail		UMETA(DisplayName = "Side Rail Left"),

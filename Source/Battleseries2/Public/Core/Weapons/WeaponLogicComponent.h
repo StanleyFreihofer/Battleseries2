@@ -118,13 +118,11 @@ class BATTLESERIES2_API UWeaponLogicComponent : public UActorComponent
 		UFUNCTION(BlueprintCallable)
 		void UpdateWeaponCollision(ECollisionChannel CollisionChannel, ECollisionResponse CollisionResponse);
 		UFUNCTION(BlueprintCallable)
-		virtual bool Rangefinder(const FTransform& StartTransform, FHitResult& OutHit);
-		UFUNCTION(BlueprintCallable)			//calculates projectile velocity direction based on rangefinder (projectile should move toward cos, new SetProjectileSpawnTransform())
-		virtual void UpdateProjectileAimDirection();		
-		UFUNCTION(BlueprintCallable) //precursor to FireWeapon (checks to see if the weapon can be fired and determines nature of fire weapon)
-		virtual void StartFire();
+		void Rangefinder();
+		UFUNCTION(BlueprintCallable) 
+		void HandleStartFire();
 		UFUNCTION(BlueprintCallable)
-		virtual void CeaseFire();
+		void CeaseFire();
 		UFUNCTION(BlueprintCallable)
 		void DryFire();
 		UFUNCTION(BlueprintCallable)
@@ -136,7 +134,7 @@ class BATTLESERIES2_API UWeaponLogicComponent : public UActorComponent
 		UFUNCTION(BlueprintCallable)
 		void ToggleScope();
 		UFUNCTION(BlueprintCallable)
-		void UpdateScopeZoom(int32 NewOpticIndex);
+		void UpdateScope(int32 NewOpticIndex);
 
 		UFUNCTION(BlueprintCallable)
 		void UpdateCurrentWeaponStats(int32 WeaponIndex);
@@ -160,6 +158,8 @@ class BATTLESERIES2_API UWeaponLogicComponent : public UActorComponent
 		FWeaponAttachmentState& GetCurrentAttachmentInSlot(EAttachmentSlot Slot);
 		UFUNCTION(BlueprintCallable, BlueprintPure)
 		FWeapon_Runtime& GetBaseWeaponState(int32 WeaponIndex);
+		UFUNCTION(BlueprintCallable, BlueprintPure)
+		FInfantryWeaponState& GetCurrentInfantryWeaponState_FP();
 		UFUNCTION(BlueprintCallable, BlueprintPure)
 		FVector GetAttachmentDefaultOffset(FName WeaponID, EAttachmentSlot Slot, FName AttachmentID);
 		UFUNCTION(BlueprintCallable, BlueprintPure)
