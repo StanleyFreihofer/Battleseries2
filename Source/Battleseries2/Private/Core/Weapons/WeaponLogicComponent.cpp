@@ -45,8 +45,8 @@ void UWeaponLogicComponent::Init_WeaponLoadout(FPlayerLoadoutConfig_Class ClassL
 	{
 		Init_Weapon(Weapons[i], i, WeaponLoadouts[i]);
 	}
+
 	Init_ScopeCamera();
-	UpdateWeaponVisibility(WeaponSystem.InfantryWeaponSystem.WeaponState_FP[0], true);
 }
 
 void UWeaponLogicComponent::Init_ScopeCamera()
@@ -70,7 +70,7 @@ void UWeaponLogicComponent::Init_Weapon(FName WeaponID, int32 WeaponIndex, FPlay
 	NewFPState.WeaponMesh->FirstPersonPrimitiveType = EFirstPersonPrimitiveType::FirstPerson;
 	WeaponSystem.InfantryWeaponSystem.WeaponState_FP[WeaponIndex] = NewFPState;
 	WeaponSystem.InfantryWeaponSystem.WeaponState_FP[WeaponIndex].WeaponMesh->AttachToComponent(Cast<ACharacter_Base>(GetOwner())->FPArms, FAttachmentTransformRules(EAttachmentRule::SnapToTarget, EAttachmentRule::SnapToTarget, EAttachmentRule::SnapToTarget, true), FName("Socket_M4A1"));
-	
+
 	WeaponSystem.BaseWeaponSystem.Weapons[WeaponIndex].WeaponID = WeaponID;
 	StaticWeaponDataCache[WeaponIndex] = UBS2FunctionLibrary::GetDataSubsystem(this)->GetInfantryWeaponDataRow(WeaponID);
 
@@ -87,8 +87,7 @@ void UWeaponLogicComponent::Init_Weapon(FName WeaponID, int32 WeaponIndex, FPlay
 	BaseWeaponState.WeaponState.CurrentReserveAmmo = CurrentWeaponStats.MaxReserveAmmo;
 	BaseWeaponState.WeaponState.CurrentFireMode = CurrentWeaponStats.FireModeData.DefaultFireMode;
 	BaseWeaponState.WeaponID = WeaponID;
-	
-	UpdateWeaponVisibility(WeaponSystem.InfantryWeaponSystem.WeaponState_FP[WeaponIndex], false);
+	//NewWeapon->SetHiddenInGame(true);
 }
 
 void UWeaponLogicComponent::Init_WeaponMesh(TWeakObjectPtr<USkeletalMeshComponent>& WeaponMesh)
@@ -174,15 +173,6 @@ void UWeaponLogicComponent::UpdateWeaponCollision(ECollisionChannel CollisionCha
 		Attachment.Value.SpawnedAttachment.Get()->SetCollisionResponseToChannel(CollisionChannel, CollisionResponse);
 	}
 	//WeaponSystem.InfantryWeaponSystem.WeaponState_TP[WeaponSystem.BaseWeaponSystem.EquippedWeaponState.CurrentWeaponIndex].WeaponMesh->SetCollisionResponseToChannel(CollisionChannel, CollisionResponse);
-}
-
-void UWeaponLogicComponent::UpdateWeaponVisibility(FInfantryWeaponState& Weapon, bool Hide)
-{
-	Weapon.WeaponMesh->SetHiddenInGame(Hide);
-	for (auto& AttachmentSlot : Weapon.WeaponAttachmentStates)
-	{
-		AttachmentSlot.Value.SpawnedAttachment->SetHiddenInGame(Hide);
-	}
 }
 
 void UWeaponLogicComponent::Rangefinder()
@@ -274,47 +264,6 @@ void UWeaponLogicComponent::OnReloadFinished(UAnimMontage* Montage, bool bInterr
 	CurrentWeapon.WeaponState.CurrentAmmoinMag = NewCAM;
 	CurrentWeapon.WeaponState.CurrentReserveAmmo = NewCRA;
 	CurrentWeapon.WeaponState.isReloading = false;
-}
-
-void UWeaponLogicComponent::StartSwitchWeapon(int32 LastWeaponIndex, int32 NewWeaponIndex)
-{
-	WeaponSystem.PreviousWeaponIndex = LastWeaponIndex;
-	GetCWI() = NewWeaponIndex;
-	TSoftObjectPtr<UAnimMontage> FPUnequipWeaponMontage = StaticWeaponDataCache[LastWeaponIndex]->InfantryWeaponAnimData.FPWeaponAnimData.UnequipWeaponMontage;
-	TWeakObjectPtr<UAnimInstance> FPArmsAnimInstance = Cast<ACharacter_Base>(GetOwner())->FPArms->GetAnimInstance();
-	FPUnequipWeaponMontage.LoadSynchronous();
-	UnequipBlendOutDelegate.BindUObject(this, &UWeaponLogicComponent::OnUnequipBlendOut);
-	FPArmsAnimInstance->Montage_Play(FPUnequipWeaponMontage.Get(), 1.0f);
-	FPArmsAnimInstance->Montage_SetBlendingOutDelegate(UnequipBlendOutDelegate, FPUnequipWeaponMontage.Get());
-}
-
-void UWeaponLogicComponent::OnUnequipBlendOut(UAnimMontage* Montage, bool bInterrupted)
-{
-	TWeakObjectPtr<ACharacter_Base> Character = Cast<ACharacter_Base>(GetOwner());
-	TWeakObjectPtr<UAnimInstance> FPArmsAnimInstance = Character->FPArms->GetAnimInstance();
-	TSoftObjectPtr<UAnimMontage> FPUnequipWeaponMontage = StaticWeaponDataCache[WeaponSystem.PreviousWeaponIndex]->InfantryWeaponAnimData.FPWeaponAnimData.UnequipWeaponMontage;
-
-	FPArmsAnimInstance->Montage_Play(FPUnequipWeaponMontage.Get(), 0.0f);
-	FPArmsAnimInstance->Montage_SetPosition(FPUnequipWeaponMontage.Get(), FPUnequipWeaponMontage->GetPlayLength());
-	Character->FPArms->SetVisibility(false);
-	GetWorld()->GetTimerManager().SetTimerForNextTick([this, Character]()
-	{
-		Character->FPArms->SetVisibility(true);
-	});
-
-	UpdateWeaponVisibility(WeaponSystem.InfantryWeaponSystem.WeaponState_FP[WeaponSystem.PreviousWeaponIndex], true);
-
-	//Equip Weapon
-	TObjectPtr<USkeletalMeshComponent> NewWeaponMesh = WeaponSystem.InfantryWeaponSystem.WeaponState_FP[GetCWI()].WeaponMesh.Get();
-	UpdateWeaponVisibility(WeaponSystem.InfantryWeaponSystem.WeaponState_FP[GetCWI()], false);
-	TSoftObjectPtr<UAnimSequence> WeaponEquipAnim = GetCurrentWeaponStaticData()->InfantryWeaponAnimData.WeaponAnimData.WeaponEquip;
-	WeaponEquipAnim.LoadSynchronous();
-	NewWeaponMesh->PlayAnimation(WeaponEquipAnim.Get(), false);
-
-	TSoftObjectPtr<UAnimMontage> FPEquipWeaponMontage = GetCurrentWeaponStaticData()->InfantryWeaponAnimData.FPWeaponAnimData.EquipWeaponMontage;
-	FPEquipWeaponMontage.LoadSynchronous();
-
-	FPArmsAnimInstance->Montage_Play(FPEquipWeaponMontage.Get(), 1.0f);
 }
 
 void UWeaponLogicComponent::ToggleFireMode()

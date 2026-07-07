@@ -217,7 +217,11 @@ int32 UBS2FunctionLibrary::UpdateCurrentAmmoInMag(FWeapon_Runtime& CurrentWeapon
 
 int32 UBS2FunctionLibrary::UpdateWeaponIndex(TArray<FWeapon_Runtime> Weapons, int32 CurrentWeaponIndex)
 {
-	int32 NewWeaponIndex = (CurrentWeaponIndex + 1) % Weapons.Num();
+	int32 NewWeaponIndex = CurrentWeaponIndex++;
+	if (!Weapons.IsValidIndex(NewWeaponIndex))
+	{
+		NewWeaponIndex = 0;
+	}
 	return NewWeaponIndex;
 }
 

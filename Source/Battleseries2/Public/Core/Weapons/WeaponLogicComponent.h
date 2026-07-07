@@ -70,7 +70,6 @@ struct FOnFootWeaponSystem_Runtime
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FBaseWeaponSystem_Runtime BaseWeaponSystem = FBaseWeaponSystem_Runtime();			//contains WeaponID and other basic runtime data for both weapons
 
-
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FInfantryWeaponSystem InfantryWeaponSystem = FInfantryWeaponSystem();
 
@@ -79,9 +78,6 @@ struct FOnFootWeaponSystem_Runtime
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	bool isAiming = false;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
-	int32 PreviousWeaponIndex = 0;
 
 
 };
@@ -122,8 +118,6 @@ class BATTLESERIES2_API UWeaponLogicComponent : public UActorComponent
 		UFUNCTION(BlueprintCallable)
 		void UpdateWeaponCollision(ECollisionChannel CollisionChannel, ECollisionResponse CollisionResponse);
 		UFUNCTION(BlueprintCallable)
-		void UpdateWeaponVisibility(FInfantryWeaponState& Weapon, bool Hide);
-		UFUNCTION(BlueprintCallable)
 		void Rangefinder();
 		UFUNCTION(BlueprintCallable) 
 		void HandleStartFire();
@@ -135,8 +129,6 @@ class BATTLESERIES2_API UWeaponLogicComponent : public UActorComponent
 		void FireWeapon();
 		UFUNCTION(BlueprintCallable)
 		void ReloadWeapon();
-		UFUNCTION(BlueprintCallable)
-		void StartSwitchWeapon(int32 LastWeaponIndex, int32 NewWeaponIndex);
 		UFUNCTION(BlueprintCallable)
 		void ToggleFireMode();
 		UFUNCTION(BlueprintCallable)
@@ -185,7 +177,5 @@ class BATTLESERIES2_API UWeaponLogicComponent : public UActorComponent
 
 	private:
 		void OnReloadFinished(UAnimMontage* Montage, bool bInterrupted);
-		void OnUnequipBlendOut(UAnimMontage* Montage, bool bInterrupted);
 		FOnMontageEnded ReloadEndedDelegate;
-		FOnMontageBlendingOutStarted UnequipBlendOutDelegate;
 };
