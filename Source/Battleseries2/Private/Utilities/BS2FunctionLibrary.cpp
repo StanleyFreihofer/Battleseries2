@@ -215,10 +215,9 @@ int32 UBS2FunctionLibrary::UpdateCurrentAmmoInMag(FWeapon_Runtime& CurrentWeapon
 	return CurrentWeapon.WeaponState.CurrentAmmoinMag;
 }
 
-int32 UBS2FunctionLibrary::UpdateWeaponIndex(TArray<FWeapon_Runtime> Weapons, int32 CurrentWeaponIndex)
+void UBS2FunctionLibrary::UpdateWeaponIndex(TArray<FWeapon_Runtime> Weapons, int32 InCurrentWeaponIndex, int32& OutNewWeaponIndex)
 {
-	int32 NewWeaponIndex = (CurrentWeaponIndex + 1) % Weapons.Num();
-	return NewWeaponIndex;
+	OutNewWeaponIndex = (InCurrentWeaponIndex + 1) % Weapons.Num();
 }
 
 void UBS2FunctionLibrary::HandleUpdateOptic(float inDefaultFOV, float inOpticMagnfication, float& OutOpticFOV, FPostProcessSettings inPostProcessData, FPostProcessSettings& OutPostProcessSettings, float& OutPostProcessWeight)

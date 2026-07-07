@@ -60,8 +60,8 @@ public:
     static void CalculateReload(int32 MagSize, int32 CAM, int32 CRA, int32& OutCAM, int32& OutCRA);
     UFUNCTION(BlueprintCallable, Category = "Battleseries | Weapon Functions")
     static int32 UpdateCurrentAmmoInMag(FWeapon_Runtime& CurrentWeapon, int32 AmmoDelta, int32 MagSize);
-    UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Battleseries | Weapon Functions")
-    static int32 UpdateWeaponIndex(TArray<FWeapon_Runtime> Weapons, int32 WeaponIndex);
+    UFUNCTION(BlueprintCallable, Category = "Battleseries | Weapon Functions")
+    static void UpdateWeaponIndex(TArray<FWeapon_Runtime> Weapons, int32 InCurrentWeaponIndex, int32& OutNewWeaponIndex);
 
 	UFUNCTION(BlueprintCallable, Category = "Battleseries | Optic Functions")
     static void HandleUpdateOptic(float inDefaultFOV, float inOpticMagnfication, float& OutOpticFOV, FPostProcessSettings inPostProcessData, FPostProcessSettings& OutPostProcessSettings, float& OutPostProcessWeight);
