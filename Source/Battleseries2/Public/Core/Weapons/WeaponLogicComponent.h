@@ -140,6 +140,8 @@ class BATTLESERIES2_API UWeaponLogicComponent : public UActorComponent
 		UFUNCTION(BlueprintCallable)
 		void StartSwitchWeapon(int32 LastWeaponIndex, int32 NewWeaponIndex);
 		UFUNCTION(BlueprintCallable)
+		void EquipWeapon(int32 WeaponIndex, bool InitalEquip);
+		UFUNCTION(BlueprintCallable)
 		void ToggleFireMode();
 		UFUNCTION(BlueprintCallable)
 		void ToggleScope();

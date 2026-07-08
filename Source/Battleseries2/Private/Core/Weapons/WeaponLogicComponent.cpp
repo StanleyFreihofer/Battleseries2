@@ -46,7 +46,7 @@ void UWeaponLogicComponent::Init_WeaponLoadout(FPlayerLoadoutConfig_Class ClassL
 		Init_Weapon(Weapons[i], i, WeaponLoadouts[i]);
 	}
 	Init_ScopeCamera();
-	UpdateWeaponVisibility(0, false);
+	EquipWeapon(0, true);
 }
 
 void UWeaponLogicComponent::Init_ScopeCamera()
@@ -312,16 +312,30 @@ void UWeaponLogicComponent::OnUnequipBlendOut(UAnimMontage* Montage, bool bInter
 		Character->FPArms->SetVisibility(true);
 	}, 0.05f, false);
 
-	//Equip Weapon
-	TObjectPtr<USkeletalMeshComponent> NewWeaponMesh = WeaponSystem.InfantryWeaponSystem.WeaponState_FP[GetCWI()].WeaponMesh.Get();
-	UpdateWeaponVisibility(GetCWI(), false);
-	TSoftObjectPtr<UAnimSequence> WeaponEquipAnim = GetCurrentWeaponStaticData()->InfantryWeaponAnimData.WeaponAnimData.WeaponEquip;
-	WeaponEquipAnim.LoadSynchronous();
-	NewWeaponMesh->PlayAnimation(WeaponEquipAnim.Get(), false);
+	EquipWeapon(GetCWI(), false);
+}
 
-	TSoftObjectPtr<UAnimMontage> FPEquipWeaponMontage = GetCurrentWeaponStaticData()->InfantryWeaponAnimData.FPWeaponAnimData.EquipWeaponMontage;
+void UWeaponLogicComponent::EquipWeapon(int32 WeaponIndex, bool InitialEquip)
+{
+	TWeakObjectPtr<ACharacter_Base> Character = Cast<ACharacter_Base>(GetOwner());
+	TWeakObjectPtr<UAnimInstance> FPArmsAnimInstance = Character->FPArms->GetAnimInstance();
+	TObjectPtr<USkeletalMeshComponent> NewWeaponMesh = WeaponSystem.InfantryWeaponSystem.WeaponState_FP[WeaponIndex].WeaponMesh.Get();
+	UpdateWeaponVisibility(WeaponIndex, false);
+	TSoftObjectPtr<UAnimMontage> FPEquipWeaponMontage;
+	if (InitialEquip)
+	{
+		//only do weapon mesh animation on initial equip
+		TSoftObjectPtr<UAnimSequence> WeaponEquipAnim = GetCurrentWeaponStaticData()->InfantryWeaponAnimData.WeaponAnimData.WeaponEquip;
+		WeaponEquipAnim.LoadSynchronous();
+		NewWeaponMesh->PlayAnimation(WeaponEquipAnim.Get(), false);
+		FPEquipWeaponMontage = GetCurrentWeaponStaticData()->InfantryWeaponAnimData.FPWeaponAnimData.InitialEquipWeaponMontage;
+	}
+	else
+	{
+		FPEquipWeaponMontage = GetCurrentWeaponStaticData()->InfantryWeaponAnimData.FPWeaponAnimData.EquipWeaponMontage;
+	}
+
 	FPEquipWeaponMontage.LoadSynchronous();
-
 	FPArmsAnimInstance->Montage_Play(FPEquipWeaponMontage.Get(), 1.0f);
 }
 
