@@ -122,7 +122,7 @@ class BATTLESERIES2_API UWeaponLogicComponent : public UActorComponent
 		UFUNCTION(BlueprintCallable)
 		void UpdateWeaponCollision(ECollisionChannel CollisionChannel, ECollisionResponse CollisionResponse);
 		UFUNCTION(BlueprintCallable)
-		void UpdateWeaponVisibility(FInfantryWeaponState& Weapon, bool Hide);
+		void UpdateWeaponVisibility(int32 WeaponIndex, bool Hide);
 		UFUNCTION(BlueprintCallable)
 		void Rangefinder();
 		UFUNCTION(BlueprintCallable) 
@@ -135,6 +135,8 @@ class BATTLESERIES2_API UWeaponLogicComponent : public UActorComponent
 		void FireWeapon();
 		UFUNCTION(BlueprintCallable)
 		void ReloadWeapon();
+		UFUNCTION(BlueprintCallable)
+		void SwitchWeapon_AutoIncrement();
 		UFUNCTION(BlueprintCallable)
 		void StartSwitchWeapon(int32 LastWeaponIndex, int32 NewWeaponIndex);
 		UFUNCTION(BlueprintCallable)
@@ -182,6 +184,8 @@ class BATTLESERIES2_API UWeaponLogicComponent : public UActorComponent
 
 		FWeapon_Runtime* GetCurrentWeaponRuntime();
 		const FInfantryWeaponData* GetCurrentWeaponStaticData() const;
+
+		FTimerHandle SwitchWeaponTimer;
 
 	private:
 		void OnReloadFinished(UAnimMontage* Montage, bool bInterrupted);
