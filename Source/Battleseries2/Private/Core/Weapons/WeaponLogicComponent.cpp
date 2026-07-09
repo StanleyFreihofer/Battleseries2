@@ -69,7 +69,11 @@ void UWeaponLogicComponent::Init_Weapon(FName WeaponID, int32 WeaponIndex, FPlay
 	UpdateWeaponMesh(WeaponID, NewFPState.WeaponMesh);
 	NewFPState.WeaponMesh->FirstPersonPrimitiveType = EFirstPersonPrimitiveType::FirstPerson;
 	WeaponSystem.InfantryWeaponSystem.WeaponState_FP[WeaponIndex] = NewFPState;
-	WeaponSystem.InfantryWeaponSystem.WeaponState_FP[WeaponIndex].WeaponMesh->AttachToComponent(Cast<ACharacter_Base>(GetOwner())->FPArms, FAttachmentTransformRules(EAttachmentRule::SnapToTarget, EAttachmentRule::SnapToTarget, EAttachmentRule::SnapToTarget, true), FName("Socket_M4A1"));
+	
+	FString SocketString = FString::Printf(TEXT("Socket_%s"), *WeaponID.ToString());
+	FName AttachSocketName = FName(*SocketString);
+
+	WeaponSystem.InfantryWeaponSystem.WeaponState_FP[WeaponIndex].WeaponMesh->AttachToComponent(Cast<ACharacter_Base>(GetOwner())->FPArms, FAttachmentTransformRules(EAttachmentRule::SnapToTarget, EAttachmentRule::SnapToTarget, EAttachmentRule::SnapToTarget, true), AttachSocketName);
 	
 	WeaponSystem.BaseWeaponSystem.Weapons[WeaponIndex].WeaponID = WeaponID;
 	StaticWeaponDataCache[WeaponIndex] = UBS2FunctionLibrary::GetDataSubsystem(this)->GetInfantryWeaponDataRow(WeaponID);
@@ -81,6 +85,7 @@ void UWeaponLogicComponent::Init_Weapon(FName WeaponID, int32 WeaponIndex, FPlay
 
 	UpdateCurrentWeaponStats(WeaponIndex);
 
+	//weaponstate
 	FWeaponStats_Runtime& CurrentWeaponStats = WeaponSystem.InfantryWeaponSystem.CurrentWeaponStats[WeaponIndex];
 	FWeapon_Runtime& BaseWeaponState = GetBaseWeaponState(WeaponIndex);
 	BaseWeaponState.WeaponState.CurrentAmmoinMag = CurrentWeaponStats.MagSize;
@@ -291,6 +296,11 @@ void UWeaponLogicComponent::StartSwitchWeapon(int32 LastWeaponIndex, int32 NewWe
 	WeaponSystem.PreviousWeaponIndex = LastWeaponIndex;
 	GetCWI() = NewWeaponIndex;
 	TSoftObjectPtr<UAnimMontage> FPUnequipWeaponMontage = StaticWeaponDataCache[LastWeaponIndex]->InfantryWeaponAnimData.FPWeaponAnimData.UnequipWeaponMontage;
+	if (!FPUnequipWeaponMontage.Get())
+	{
+		TransitionWeapon();
+		return;
+	}
 	TWeakObjectPtr<UAnimInstance> FPArmsAnimInstance = Cast<ACharacter_Base>(GetOwner())->FPArms->GetAnimInstance();
 	FPUnequipWeaponMontage.LoadSynchronous();
 	UnequipBlendOutDelegate.BindUObject(this, &UWeaponLogicComponent::OnUnequipBlendOut);
@@ -298,13 +308,9 @@ void UWeaponLogicComponent::StartSwitchWeapon(int32 LastWeaponIndex, int32 NewWe
 	FPArmsAnimInstance->Montage_SetBlendingOutDelegate(UnequipBlendOutDelegate, FPUnequipWeaponMontage.Get());
 }
 
-void UWeaponLogicComponent::OnUnequipBlendOut(UAnimMontage* Montage, bool bInterrupted)
+void UWeaponLogicComponent::TransitionWeapon()
 {
 	TWeakObjectPtr<ACharacter_Base> Character = Cast<ACharacter_Base>(GetOwner());
-	TWeakObjectPtr<UAnimInstance> FPArmsAnimInstance = Character->FPArms->GetAnimInstance();
-	TSoftObjectPtr<UAnimMontage> FPUnequipWeaponMontage = StaticWeaponDataCache[WeaponSystem.PreviousWeaponIndex]->InfantryWeaponAnimData.FPWeaponAnimData.UnequipWeaponMontage;
-
-	FPArmsAnimInstance->Montage_Play(FPUnequipWeaponMontage.Get(), 0.0f, EMontagePlayReturnType::MontageLength, FPUnequipWeaponMontage->GetPlayLength());
 	Character->FPArms->SetVisibility(false);
 	UpdateWeaponVisibility(WeaponSystem.PreviousWeaponIndex, true);
 	GetWorld()->GetTimerManager().SetTimer(SwitchWeaponTimer, [this, Character]()
@@ -313,6 +319,21 @@ void UWeaponLogicComponent::OnUnequipBlendOut(UAnimMontage* Montage, bool bInter
 	}, 0.05f, false);
 
 	EquipWeapon(GetCWI(), false);
+}
+
+void UWeaponLogicComponent::OnUnequipBlendOut(UAnimMontage* Montage, bool bInterrupted)
+{
+	TWeakObjectPtr<ACharacter_Base> Character = Cast<ACharacter_Base>(GetOwner());
+	TWeakObjectPtr<UAnimInstance> FPArmsAnimInstance = Character->FPArms->GetAnimInstance();
+	TSoftObjectPtr<UAnimMontage> FPUnequipWeaponMontage = StaticWeaponDataCache[WeaponSystem.PreviousWeaponIndex]->InfantryWeaponAnimData.FPWeaponAnimData.UnequipWeaponMontage;
+	if (!FPUnequipWeaponMontage.Get())
+	{
+		EquipWeapon(GetCWI(), false);
+		return;
+	}
+	FPArmsAnimInstance->Montage_Play(FPUnequipWeaponMontage.Get(), 0.0f, EMontagePlayReturnType::MontageLength, FPUnequipWeaponMontage->GetPlayLength());
+
+	TransitionWeapon();
 }
 
 void UWeaponLogicComponent::EquipWeapon(int32 WeaponIndex, bool InitialEquip)
@@ -397,6 +418,7 @@ void UWeaponLogicComponent::UpdateScope(int32 NewOpticIndex)
 {
 	float& DefaultFOV = UBS2FunctionLibrary::GetDataSubsystem(this)->GetWeaponDefaults()->WeaponDefaults.ScopeCameraFOV;
 	FName& ScopeID = GetCurrentAttachmentInSlot(EAttachmentSlot::Scope).BaseAttachmentState.AttachmentID;
+	if (ScopeID == NAME_None) { return; }
 	FName OpticID = UBS2FunctionLibrary::GetDataSubsystem(this)->GetWeaponAttachmentDataRow(ScopeID)->WeaponSightData.OpticIDs[NewOpticIndex];
 	const FOpticData& OpticData = *UBS2FunctionLibrary::GetDataSubsystem(this)->GetOpticDataRow(OpticID);
 
@@ -687,8 +709,6 @@ const FInfantryWeaponData* UWeaponLogicComponent::GetCurrentWeaponStaticData() c
 	const FInfantryWeaponData* StaticWeaponData = StaticWeaponDataCache[WeaponSystem.BaseWeaponSystem.EquippedWeaponState.CurrentWeaponIndex];
 	return StaticWeaponData;
 }
-
-
 
 FInfantryWeaponData UWeaponLogicComponent::GetCurrentWeaponStaticData_BP()
 {
