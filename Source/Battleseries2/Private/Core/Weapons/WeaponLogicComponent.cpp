@@ -191,6 +191,42 @@ void UWeaponLogicComponent::UpdateWeaponVisibility(int32 WeaponIndex, bool Hide)
 	}
 }
 
+void UWeaponLogicComponent::StartAim()
+{
+	const FInfantryWeaponAimData& AimData = GetCurrentWeaponStaticData()->InfantryWeaponAimData;
+	if (!AimData.canAim) { return; }
+	if (AimData.HideArms)
+	{
+		TWeakObjectPtr<ACharacter_Base> Character = Cast<ACharacter_Base>(GetOwner());
+		USkeletalMeshComponent* FPArms = Character->FPArms;
+		FPArms->SetVisibility(false);
+		FString SocketString = FString::Printf(TEXT("Socket_%s_1"), *GetCurrentWeaponRuntime()->WeaponID.ToString());
+		FName AttachSocketName = FName(*SocketString);
+		if (FPArms->DoesSocketExist(AttachSocketName))
+		{
+			GetCurrentInfantryWeaponState_FP().WeaponMesh->AttachToComponent(Character->FPArms, FAttachmentTransformRules(EAttachmentRule::SnapToTarget, EAttachmentRule::SnapToTarget, EAttachmentRule::SnapToTarget, true), AttachSocketName);
+		}
+	}
+	WeaponSystem.isAiming = true;
+}
+
+void UWeaponLogicComponent::StopAim()
+{
+	const FInfantryWeaponAimData& AimData = GetCurrentWeaponStaticData()->InfantryWeaponAimData;
+	if (!AimData.canAim) { return; }
+	if (!WeaponSystem.isAiming) { return; }
+	if (AimData.HideArms)
+	{
+		TWeakObjectPtr<ACharacter_Base> Character = Cast<ACharacter_Base>(GetOwner());
+		USkeletalMeshComponent* FPArms = Character->FPArms;
+		FPArms->SetVisibility(true);
+		FString SocketString = FString::Printf(TEXT("Socket_%s"), *GetCurrentWeaponRuntime()->WeaponID.ToString());
+		FName AttachSocketName = FName(*SocketString);
+		GetCurrentInfantryWeaponState_FP().WeaponMesh->AttachToComponent(Character->FPArms, FAttachmentTransformRules(EAttachmentRule::SnapToTarget, EAttachmentRule::SnapToTarget, EAttachmentRule::SnapToTarget, true), AttachSocketName);
+	}
+	WeaponSystem.isAiming = false;
+}
+
 void UWeaponLogicComponent::Rangefinder()
 {
 	FHitResult OutHit;

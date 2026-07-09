@@ -61,6 +61,9 @@ struct FInfantryWeaponAimData
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	bool canAim = true;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ToolTip = "Hide First Person Arms when ADS?"))
+	bool HideArms = false;
+
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	float DefaultAimInSpeed = 0.0f;
 

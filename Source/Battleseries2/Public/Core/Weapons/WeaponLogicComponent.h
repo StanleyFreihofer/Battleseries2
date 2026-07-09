@@ -124,6 +124,10 @@ class BATTLESERIES2_API UWeaponLogicComponent : public UActorComponent
 		UFUNCTION(BlueprintCallable)
 		void UpdateWeaponVisibility(int32 WeaponIndex, bool Hide);
 		UFUNCTION(BlueprintCallable)
+		void StartAim();
+		UFUNCTION(BlueprintCallable)
+		void StopAim();
+		UFUNCTION(BlueprintCallable)
 		void Rangefinder();
 		UFUNCTION(BlueprintCallable) 
 		void HandleStartFire();
