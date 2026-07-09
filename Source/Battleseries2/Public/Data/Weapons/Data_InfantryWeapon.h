@@ -49,6 +49,9 @@ struct FInfantryWeaponAmmoData
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	bool bCanRoundBeChambered = true;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (tooltip = "is projectile mounted/loaded in gun (will show the actual projectile fired)"))
+	bool isProjectileMounted = false;
 };
 
 USTRUCT(BlueprintType)

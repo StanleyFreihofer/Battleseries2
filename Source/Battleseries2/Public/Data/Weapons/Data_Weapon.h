@@ -162,10 +162,10 @@ struct FWeaponVisualData
 	GENERATED_BODY()
 
 	UPROPERTY(EditAnywhere, Category = "VFX")
-	TSoftObjectPtr<UNiagaraSystem> MuzzleFlashFX;
+	TSoftObjectPtr<UNiagaraSystem> MuzzleFlashFX = nullptr;
 
 	UPROPERTY(EditAnywhere, Category = "VFX")
-	TSoftObjectPtr<UNiagaraSystem> TracerFX;
+	TSoftObjectPtr<UNiagaraSystem> TracerFX = nullptr;
 };
 
 USTRUCT(BlueprintType)

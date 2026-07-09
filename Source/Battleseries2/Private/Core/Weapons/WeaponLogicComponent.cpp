@@ -332,13 +332,13 @@ void UWeaponLogicComponent::StartSwitchWeapon(int32 LastWeaponIndex, int32 NewWe
 	WeaponSystem.PreviousWeaponIndex = LastWeaponIndex;
 	GetCWI() = NewWeaponIndex;
 	TSoftObjectPtr<UAnimMontage> FPUnequipWeaponMontage = StaticWeaponDataCache[LastWeaponIndex]->InfantryWeaponAnimData.FPWeaponAnimData.UnequipWeaponMontage;
+	FPUnequipWeaponMontage.LoadSynchronous();
 	if (!FPUnequipWeaponMontage.Get())
 	{
 		TransitionWeapon();
 		return;
 	}
 	TWeakObjectPtr<UAnimInstance> FPArmsAnimInstance = Cast<ACharacter_Base>(GetOwner())->FPArms->GetAnimInstance();
-	FPUnequipWeaponMontage.LoadSynchronous();
 	UnequipBlendOutDelegate.BindUObject(this, &UWeaponLogicComponent::OnUnequipBlendOut);
 	FPArmsAnimInstance->Montage_Play(FPUnequipWeaponMontage.Get(), 1.0f, EMontagePlayReturnType::MontageLength, 0.0f);
 	FPArmsAnimInstance->Montage_SetBlendingOutDelegate(UnequipBlendOutDelegate, FPUnequipWeaponMontage.Get());
@@ -394,6 +394,8 @@ void UWeaponLogicComponent::EquipWeapon(int32 WeaponIndex, bool InitialEquip)
 
 	FPEquipWeaponMontage.LoadSynchronous();
 	FPArmsAnimInstance->Montage_Play(FPEquipWeaponMontage.Get(), 1.0f);
+	IAnims::Execute_OnEquipWeapon_FP(FPArmsAnimInstance.Get(), GetCurrentWeaponStaticData()->InfantryWeaponAnimData.FPWeaponAnimData);
+	UpdateScopeCamera();
 }
 
 void UWeaponLogicComponent::ToggleFireMode()
@@ -609,6 +611,8 @@ FName UWeaponLogicComponent::GetSocketNameForSlot(EAttachmentSlot Slot)
 			return TEXT("S_RearSight");
 		case EAttachmentSlot::Scope:       
 			return TEXT("S_Optic");
+		case EAttachmentSlot::ScopeAccessory:
+			return TEXT("S_OpticAccessory");
 		case EAttachmentSlot::Handguard:
 			return TEXT("S_Handguard");
 		case EAttachmentSlot::Muzzle:			
