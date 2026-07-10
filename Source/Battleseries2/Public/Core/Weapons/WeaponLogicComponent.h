@@ -132,6 +132,10 @@ class BATTLESERIES2_API UWeaponLogicComponent : public UActorComponent
 		UFUNCTION(BlueprintCallable) 
 		void HandleStartFire();
 		UFUNCTION(BlueprintCallable)
+		void StartFire();
+		UFUNCTION(BlueprintCallable)
+		void HandleShootProjectileActor();
+		UFUNCTION(BlueprintCallable)
 		void CeaseFire();
 		UFUNCTION(BlueprintCallable)
 		void DryFire();

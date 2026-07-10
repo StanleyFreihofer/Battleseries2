@@ -5,6 +5,7 @@
 #include "Engine/TextureRenderTarget2D.h"
 #include "Kismet/KismetRenderingLibrary.h"
 #include "Materials/MaterialInstanceDynamic.h"
+#include "Core/Weapons/Projectiles/Projectile_Base.h"
 #include "Data/Core/CoreTypes.h"
 #include "Data/Weapons/ProjectileTypes.h"
 #include "Data/Weapons/Data_Weapon.h"
@@ -253,6 +254,10 @@ void UWeaponLogicComponent::HandleStartFire()
 	switch (CurrentWeapon.WeaponState.CurrentFireMode)
 	{
 		case EFireMode::Single:
+			if (!CurrentWeapon.WeaponState.isFiring)
+			{
+				HandleShootProjectileActor();
+			}
 			break;
 		case EFireMode::Burst:
 			break;
@@ -260,6 +265,29 @@ void UWeaponLogicComponent::HandleStartFire()
 			break;
 	}
 
+}
+
+void UWeaponLogicComponent::StartFire()
+{
+}
+
+void UWeaponLogicComponent::HandleShootProjectileActor()
+{
+	const FInfantryWeaponData& StaticWeaponData = *GetCurrentWeaponStaticData();
+	TWeakObjectPtr<AProjectile_Base> FiredProjectile = nullptr;
+	if (GetCurrentWeaponStaticData()->InfantryWeaponAmmoData.isProjectileMounted)
+	{
+
+	}
+	else
+	{
+		FiredProjectile = UBS2FunctionLibrary::GetProjectileSystem(this)->AcquireProjectileFromPool(StaticWeaponData.WeaponFirePerformanceData.MunitionID);
+		FiredProjectile->MoveIgnoreActorAdd(GetOwner());
+		FVector& AimDirection = WeaponSystem.BaseWeaponSystem.EquippedWeaponState.RaycastData.MuzzleAimDirections[0];
+		FTransform MuzzleTransform = UBS2FunctionLibrary::GetMuzzleTransform(FName("Muzzle"), GetCurrentInfantryWeaponState_FP().WeaponMesh);
+		FiredProjectile->SetActorTransform(MuzzleTransform);
+		FiredProjectile->FireProjectile(AimDirection);
+	}
 }
 
 void UWeaponLogicComponent::CeaseFire()
@@ -278,9 +306,17 @@ void UWeaponLogicComponent::FireWeapon()
 {
 	const FInfantryWeaponData* StaticWeaponData = GetCurrentWeaponStaticData();
 	FWeapon_Runtime& CurrentWeapon = *GetCurrentWeaponRuntime();	
-	if (!CurrentWeapon.WeaponState.canFire)
+
+	switch(StaticWeaponData->WeaponFirePerformanceData.WeaponFireType)
 	{
-		return;
+		case EWeaponFireType::SimProjectile:
+			break;
+		case EWeaponFireType::ActorProjectile:
+			break;
+		case EWeaponFireType::VFX:
+			break;
+		case EWeaponFireType::Hitscan:
+			break;
 	}
 }
 
