@@ -171,10 +171,10 @@ void UWeaponLogicComponent::UpdateAttachment(FWeaponAttachmentState& RuntimeSlot
 	RuntimeSlotState.BaseAttachmentState.AttachmentID = AttachmentID;
 }
 
-void UWeaponLogicComponent::UpdateWeaponCollision(ECollisionChannel CollisionChannel, ECollisionResponse CollisionResponse)
+void UWeaponLogicComponent::UpdateWeaponCollision(ECollisionChannel CollisionChannel, ECollisionResponse CollisionResponse, int32 WeaponIndex)
 {
-	WeaponSystem.InfantryWeaponSystem.WeaponState_FP[WeaponSystem.BaseWeaponSystem.EquippedWeaponState.CurrentWeaponIndex].WeaponMesh->SetCollisionResponseToChannel(CollisionChannel, CollisionResponse);
-	for (auto& Attachment : WeaponSystem.InfantryWeaponSystem.WeaponState_FP[WeaponSystem.BaseWeaponSystem.EquippedWeaponState.CurrentWeaponIndex].WeaponAttachmentStates)
+	WeaponSystem.InfantryWeaponSystem.WeaponState_FP[WeaponIndex].WeaponMesh->SetCollisionResponseToChannel(CollisionChannel, CollisionResponse);
+	for (auto& Attachment : WeaponSystem.InfantryWeaponSystem.WeaponState_FP[WeaponIndex].WeaponAttachmentStates)
 	{
 		Attachment.Value.SpawnedAttachment.Get()->SetCollisionResponseToChannel(CollisionChannel, CollisionResponse);
 	}

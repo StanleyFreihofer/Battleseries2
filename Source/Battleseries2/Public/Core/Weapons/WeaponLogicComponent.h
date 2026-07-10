@@ -120,7 +120,7 @@ class BATTLESERIES2_API UWeaponLogicComponent : public UActorComponent
 		UFUNCTION()
 		void UpdateAttachment(FWeaponAttachmentState& RuntimeSlotState, FName AttachmentID, FName WeaponID, EAttachmentSlot AttachmentSlot);
 		UFUNCTION(BlueprintCallable)
-		void UpdateWeaponCollision(ECollisionChannel CollisionChannel, ECollisionResponse CollisionResponse);
+		void UpdateWeaponCollision(ECollisionChannel CollisionChannel, ECollisionResponse CollisionResponse, int32 WeaponIndex);
 		UFUNCTION(BlueprintCallable)
 		void UpdateWeaponVisibility(int32 WeaponIndex, bool Hide);
 		UFUNCTION(BlueprintCallable)

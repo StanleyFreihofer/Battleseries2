@@ -39,6 +39,7 @@ ACharacter_Base::ACharacter_Base(const FObjectInitializer& ObjectInitializer) : 
 	FPArms->SetupAttachment(FPArmsSpringArm);
 	FPLegs->SetupAttachment(FPLegsSpringArm);
 	FPCamera->SetupAttachment(FPArms, FName("Camera"));
+	FPCamera->bUsePawnControlRotation = true;
 	GetMesh()->bOwnerNoSee = true;
 	FPArms->bOnlyOwnerSee = true;
 	FPLegs->bOnlyOwnerSee = true;
@@ -525,15 +526,17 @@ void ACharacter_Base::CharacterEnterVehicle()
 	GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Vehicle, ECollisionResponse::ECR_Ignore);
 	FPArms->SetCollisionResponseToChannel(ECC_Vehicle, ECR_Ignore);
 	FPLegs->SetCollisionResponseToChannel(ECC_Vehicle, ECR_Ignore);
-	WeaponManager->UpdateWeaponCollision(ECC_Vehicle, ECR_Ignore);
+	for (int32 i = 0; i < WeaponManager->WeaponSystem.BaseWeaponSystem.Weapons.Num(); i++)
+	{
+		WeaponManager->UpdateWeaponCollision(ECC_Vehicle, ECR_Ignore, i);
+	}
 	GetCharacterMovement()->SetMovementMode(MOVE_None);
 	AttachToActor(GetCurrentVehicle(), FAttachmentTransformRules::KeepRelativeTransform);
 
 	FPArmsSpringArm->bUsePawnControlRotation = false;
 	FPArmsSpringArm->bInheritRoll = true;
 	FPArmsSpringArm->bEnableCameraLag = false;
-
-	//FPCamera->bUsePawnControlRotation = false;
+	FPCamera->bUsePawnControlRotation = false;
 	FPCamera->SetRelativeRotation(FRotator());
 	bUseControllerRotationYaw = false;
 
@@ -555,11 +558,13 @@ void ACharacter_Base::CharacterExitVehicle()
 		GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Vehicle, ECR_Block);
 		GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Vehicle, ECollisionResponse::ECR_Block);
 		GetCharacterMovement()->SetMovementMode(MOVE_Walking);		//make this more dynamic (are we falling out of ejecting from a jet for example)
+
 		FPCamera->bUsePawnControlRotation = true;
 		bUseControllerRotationYaw = true;
 		FPArmsSpringArm->bUsePawnControlRotation = true;
 		FPArmsSpringArm->bInheritRoll = false;
 		FPArmsSpringArm->bEnableCameraLag = true;
+
 		UpdateViewTarget(this, FPCamera);
 		CharacterState.CharacterVehicleState = FCharacterVehicleState();
 
