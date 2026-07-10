@@ -284,6 +284,9 @@ struct FInfantryWeaponData : public FTableRowBase
 	FInfantryWeaponFunctionalityData WeaponFunctionalityData = FInfantryWeaponFunctionalityData();
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	FWeaponFirePerformanceData WeaponFirePerformanceData = FWeaponFirePerformanceData();
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	FInfantryWeaponAimData InfantryWeaponAimData = FInfantryWeaponAimData();
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)

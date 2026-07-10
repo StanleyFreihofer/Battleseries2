@@ -13,9 +13,9 @@ enum class EWeaponType : uint8
 	Shotgun			UMETA(DisplayName = "Shotgun"),
 	DMR				UMETA(DisplayName = "Designated Marksman Rifle"),
 	SniperRifle		UMETA(DisplayName = "Sniper Rifle"),
-	Pistol			UMETA(DisplayName = "Pistol")
-	//launcher
-	//special
+	Pistol			UMETA(DisplayName = "Pistol"),
+	Launcher		UMETA(DisplayName = "Launcher"),
+	Special			UMETA(DisplayName = "Special")
 };
 
 UENUM(BlueprintType)
