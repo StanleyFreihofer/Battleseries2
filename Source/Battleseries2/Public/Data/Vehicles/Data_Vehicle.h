@@ -377,20 +377,38 @@ struct FHelicopterData
 	FRotorData RotorData = FRotorData();
 
 	//THROTTLE/HOVER/THRUST DATA
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	float ThrottlePower = 0.0f;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Flight|Momentum", meta = (ToolTip = "How fast Forward Momentum builds per second"))
+	float Acceleration = 4.0;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Flight|Momentum", meta = (ToolTip = "Cap on accumulated forward speed"))
+	float MaxMomentum = 200.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Flight|Momentum", meta = (ToolTip = "Minimum accumulated forward speed (allows reverse)"))
+	float MinMomentum = -50.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Flight|Throttle", meta = (ToolTip = "Vertical force needed to hover (neutral throttle)"))
+	float HoverPower = 10.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Flight|Throttle", meta = (ToolTip = "Max vertical climb force"))
+	float MaxThrust = 150.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Flight|Throttle", meta = (ToolTip = "Downward pull when below hover power"))
+	float Gravity = 500.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Flight|Rotation")
+	float MaxPitchSpeed = 2.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Flight|Rotation")
+	float MaxYawSpeed = 1.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Flight|Rotation")
+	float MaxRollSpeed = 1.0f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	float MaxThrust = 0.0f;
+	float MaxVelocity = 5000.0f;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float MaxPitchSpeed = 0.0f;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float MaxYawSpeed = 0.0f;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	float MaxRollSpeed = 0.0f;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Flight|Curves", meta = (ToolTip= "Maps input to pitch response curve"))
+	TObjectPtr<UCurveFloat> PitchCurve = nullptr;
 };
 
 USTRUCT(BlueprintType)

@@ -582,7 +582,7 @@ bool AVehicle_Base::CycleThroughSeats(ACharacter_Base* Character)
 	//try each seat exactly once, skipping the current seat
 	for (; Offset < TotalSeats; ++Offset)
 	{
-		int32 CheckIndex = (StartIndex + Offset) % TotalSeats;		//wraps around the seat list circularly, so if you’re at the last seat, it loops back to seat 0.
+		int32 CheckIndex = (StartIndex + Offset) % TotalSeats;		//wraps around the seat list circularly, so if youï¿½re at the last seat, it loops back to seat 0.
 		if (!VehicleCurrentState.SeatStates[CheckIndex].isOccupied)
 		{
 			Character->UpdateSeatIndexes(Character->GetCSI(), CheckIndex, CheckIndex);
@@ -750,7 +750,8 @@ void AVehicle_Base::SetupDriver(ACharacter_Base* Character)
 			break;
 		case E_MovementType::Helicopter:
 		{
-			GetWorld()->GetTimerManager().SetTimer(RotorUpdateTimer, this, &AVehicle_Base::UpdateRotorRPM, 0.016f, true);
+			GetWorldTimerManager().SetTimer(RotorUpdateTimer, this, &AVehicle_Base::UpdateRotorRPM, 0.016f, true);
+			GetWorldTimerManager().SetTimer(VehicleMovementTimer, this, &AVehicle_Base::UpdateMovement_Heli, 0.05f, true);
 			break;
 		}
 		case E_MovementType::Jet:
@@ -764,6 +765,13 @@ void AVehicle_Base::DropDriver()
 	VehicleCurrentState.GenericVehicleState.EngineAudioComponent->Stop();
 	GetWorldTimerManager().ClearTimer(TimerHandle_AudioUpdate_Engine);
 	UGameplayStatics::PlaySoundAtLocation(this, Cast<USoundBase>(VehicleData->GenericVehicleAudio.EngineShutdownAudio), GetActorLocation(), FRotator::ZeroRotator, 1.0f, 1.0f, 0.0f);
+
+	switch (VehicleData->Movement_Type)
+	{
+		case E_MovementType::Helicopter:
+			GetWorldTimerManager().ClearTimer(VehicleMovementTimer);
+			break;
+	}
 }
 
 #pragma endregion
@@ -939,23 +947,26 @@ void AVehicle_Base::UpdateThrottle_Heli(float InputValue)
 {
 	float& CurrentHoverVelocity = VehicleCurrentState.AircraftState.HelicopterState.CurrentHoverVelocity;
 	const FHelicopterData& HeliData = VehicleData->Helicopter_Data;
-	float NewTargetValue;
-	FVector NewVelocity;
 	if (InputValue != 0.0f)
 	{
-		NewTargetValue = InputValue * HeliData.MaxThrust;
-		CurrentHoverVelocity = FMath::FInterpTo(CurrentHoverVelocity, NewTargetValue, GetWorld()->GetDeltaSeconds(), 2.0f);
-		NewVelocity = (CurrentHoverVelocity * GetActorUpVector()) * (GetWorld()->GetDeltaSeconds() * 100.0f);
+		//NewTargetValue = InputValue * HeliData.MaxThrust;
+		//CurrentHoverVelocity = FMath::FInterpTo(CurrentHoverVelocity, NewTargetValue, GetWorld()->GetDeltaSeconds(), 2.0f);
+		//NewVelocity = (CurrentHoverVelocity * GetActorUpVector()) * (GetWorld()->GetDeltaSeconds() * 100.0f);
+		const float Target = InputValue * HeliData.MaxThrust;
+		CurrentHoverVelocity = FMath::FInterpTo(CurrentHoverVelocity, Target, GetWorld()->GetDeltaSeconds(), 2.0f);
 	}
 	else
 	{
-		CurrentHoverVelocity = FMath::FInterpTo(CurrentHoverVelocity, HeliData.ThrottlePower, GetWorld()->GetDeltaSeconds(), 4.0f);
-		NewVelocity = (CurrentHoverVelocity * GetActorUpVector()) * (GetWorld()->GetDeltaSeconds() * 100.0f);
+		CurrentHoverVelocity = FMath::FInterpTo(CurrentHoverVelocity, HeliData.HoverPower, GetWorld()->GetDeltaSeconds(), 4.0f);
 	}
-	VehicleMeshComponent->SetAllPhysicsLinearVelocity(NewVelocity, true);
+	//CurrentHoverVelocity -= HeliData.Gravity * GetWorld()->GetDeltaSeconds();
+	//VehicleMeshComponent->SetAllPhysicsLinearVelocity(NewVelocity, true);
 
 	//FVector ThrustForce = GetActorUpVector() * CurrentHoverVelocity * VehicleMeshComponent->GetMass();
 	//VehicleMeshComponent->AddForce(ThrustForce);
+
+	const FVector UpVel = GetActorUpVector() * CurrentHoverVelocity;
+	VehicleMeshComponent->SetAllPhysicsLinearVelocity(UpVel, true);
 }
 
 void AVehicle_Base::UpdatePitch_Heli(float InputValue)
@@ -963,31 +974,121 @@ void AVehicle_Base::UpdatePitch_Heli(float InputValue)
 	float& CurrentPitchSpeed = VehicleCurrentState.AircraftState.HelicopterState.CurrentPitchSpeed;
 	const FHelicopterData& HeliData = VehicleData->Helicopter_Data;
 
-	CurrentPitchSpeed = FMath::FInterpTo(CurrentPitchSpeed, InputValue * HeliData.MaxPitchSpeed, GetWorld()->GetDeltaSeconds(), 1.5f);
-	float PitchThisFrame = CurrentPitchSpeed * GetWorld()->GetDeltaSeconds();
-	FRotator DeltaRotation = FRotator(PitchThisFrame, 0.0f, 0.0f);
-	AddActorLocalRotation(DeltaRotation, false, nullptr, ETeleportType::TeleportPhysics);
+	//const float CurveValue = HeliData.PitchCurve ? HeliData.PitchCurve->GetFloatValue(FMath::Abs(InputValue)) : FMath::Abs(InputValue);
+
+	const float Target = InputValue * HeliData.MaxPitchSpeed;
+	CurrentPitchSpeed = FMath::FInterpTo(CurrentPitchSpeed, Target, GetWorld()->GetDeltaSeconds(), 2.0f);
+
+	//float PitchThisFrame = CurrentPitchSpeed * GetWorld()->GetDeltaSeconds();
+	//FRotator DeltaRotation = FRotator(PitchThisFrame, 0.0f, 0.0f);
+	AddActorLocalRotation(FRotator(CurrentPitchSpeed, 0.0f, 0.0f), false, nullptr, ETeleportType::TeleportPhysics);
+
+	//UpdateMomentum_Heli(InputValue);
 
 	UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateAltitudeHUD_Vehicle(GetActorRotation().Pitch);
 }
 
 void AVehicle_Base::UpdateYaw_Heli(float InputValue)
 {
-	float& CurrentYawSpeed = VehicleCurrentState.AircraftState.HelicopterState.CurrentYawSpeed;
+	FHelicopterState& HeliState = VehicleCurrentState.AircraftState.HelicopterState;
+	float& CurrentYawSpeed = HeliState.CurrentYawSpeed;
 	const FHelicopterData& HeliData = VehicleData->Helicopter_Data;
 
 	CurrentYawSpeed = FMath::FInterpTo(CurrentYawSpeed, InputValue * HeliData.MaxYawSpeed, GetWorld()->GetDeltaSeconds(), 2.0f);
-	float YawThisFrame = CurrentYawSpeed * GetWorld()->GetDeltaSeconds();
-	AddActorLocalRotation(FRotator(0.0f, YawThisFrame, 0.0f), false, nullptr, ETeleportType::TeleportPhysics);
+	// Yaw is world rotation, scaled by DeltaSeconds * 100 (matching BP)
+	const float YawThisFrame = HeliState.CurrentYawSpeed * GetWorld()->GetDeltaSeconds() * 100.0f;
+	AddActorWorldRotation(FRotator(0.0f, YawThisFrame, 0.0f), false, nullptr, ETeleportType::TeleportPhysics);
 }
 
 void AVehicle_Base::UpdateRoll_Heli(float InputValue)
 {
-	float& CurrentRollSpeed = VehicleCurrentState.AircraftState.HelicopterState.CurrentRollSpeed;
+	FHelicopterState& HeliState = VehicleCurrentState.AircraftState.HelicopterState;
+	float& CurrentRollSpeed = HeliState.CurrentRollSpeed;
 	const FHelicopterData& HeliData = VehicleData->Helicopter_Data;
-	CurrentRollSpeed = FMath::FInterpTo(CurrentRollSpeed, InputValue * HeliData.MaxRollSpeed, GetWorld()->GetDeltaSeconds(), 1.5f);
-	float RollThisFrame = CurrentRollSpeed * GetWorld()->GetDeltaSeconds();
-	AddActorLocalRotation(FRotator(0.0f, 0.0f, RollThisFrame), false, nullptr, ETeleportType::TeleportPhysics);
+
+	CurrentRollSpeed = FMath::FInterpTo(CurrentRollSpeed, InputValue * HeliData.MaxRollSpeed, GetWorld()->GetDeltaSeconds(), 2.0f);
+	//float RollThisFrame = CurrentRollSpeed * GetWorld()->GetDeltaSeconds();
+	AddActorLocalRotation(FRotator(0.0f, 0.0f, CurrentRollSpeed), false, nullptr, ETeleportType::TeleportPhysics);
+
+	//turning bleeds/adds momentum (drift mechanic from EA3D)
+	const float MomentumAdjust = (HeliState.CurrentForwardMomentum * 2.0f) + InputValue;
+	const float Target = FMath::Clamp(MomentumAdjust, -50.0f, 50.0f);
+	HeliState.CurrentForwardMomentum = FMath::FInterpTo(HeliState.CurrentForwardMomentum, Target, GetWorld()->GetDeltaSeconds(), 2.0f);
+}
+
+void AVehicle_Base::UpdateMovement_Heli()
+{
+	auto& State = VehicleCurrentState.AircraftState.HelicopterState;
+	const auto& Data = VehicleData->Helicopter_Data;
+	const float DeltaTime = GetWorld()->GetDeltaSeconds();
+
+	//update momentum heli
+	const float PitchDeg = FMath::Clamp(GetActorRotation().Pitch, -50.0f, 50.0f);
+	const float NormalizedPitch = (PitchDeg + 50.0f) / 100.0f; // NormalizeToRange(-50, 50, 0, 1)
+
+	const float CurveValue = Data.PitchCurve ? Data.PitchCurve->GetFloatValue(NormalizedPitch) : NormalizedPitch;
+
+	State.CurrentForwardMomentum += CurveValue * Data.Acceleration * DeltaTime;
+	State.CurrentForwardMomentum = FMath::Clamp(State.CurrentForwardMomentum, Data.MinMomentum, Data.MaxMomentum);
+
+	//calculate target velocity from momentum
+	// Forward component: actor yaw only (strip pitch/roll from direction)
+	const FRotator YawOnly(0.0f, GetActorRotation().Yaw, 0.0f);
+	const FVector ForwardDir = YawOnly.Vector();
+	const FVector RightDir = FRotationMatrix(YawOnly).GetScaledAxis(EAxis::Y);
+	// Forward: pitch * -1 (nose-down = positive thrust along yaw direction)
+	const FVector ForwardComp = ForwardDir * State.CurrentForwardMomentum * (PitchDeg * -1.0f);
+	// Right: momentum scaled by roll angle (bank = lateral drift)
+	const FVector RightComp = RightDir * State.CurrentForwardMomentum * GetActorRotation().Roll;
+	const FVector UpComp = GetActorUpVector() * State.CurrentHoverVelocity;
+	const FVector TargetVel = ForwardComp + RightComp + UpComp;
+	// Smooth velocity interpolation
+	const FVector CurrentVel = VehicleMeshComponent->GetPhysicsLinearVelocity();
+	const FVector NewVel = FMath::VInterpTo(CurrentVel, TargetVel, DeltaTime, 3.0f);
+
+	VehicleMeshComponent->SetPhysicsLinearVelocity(NewVel, false, NAME_None);
+
+	//gravity when upside down
+	const FVector Up = VehicleMeshComponent->GetUpVector();
+	if (Up.Z < -0.75f)
+	{
+		const float Alpha = FMath::GetMappedRangeValueClamped(FVector2D(-1.0f, 0.0f), FVector2D(-1.0f, 0.0f), Up.Z);
+		const float GravityImpulse = Alpha * Data.Gravity;
+
+		VehicleMeshComponent->AddImpulse(FVector(0.0f, 0.0f, GravityImpulse), NAME_None, true);
+	}
+
+	LimitHeliSpeed();
+
+	/**
+	if (PitchInput > 0.0f)
+	{
+		CurrentMomentum += PitchInput * HeliData.Acceleration * DeltaTime;
+	}
+
+	// Always decay toward zero ï¿½ coast-down when stick released
+	CurrentMomentum = FMath::FInterpTo(CurrentMomentum, 0.0f, DeltaTime, 2.0f);
+
+	// Clamp
+	CurrentMomentum = FMath::Clamp(CurrentMomentum, 0.0f, HeliData.MaxMomentum);
+
+	// Apply forward world velocity
+	const FVector ForwardVelocity = GetActorForwardVector() * CurrentMomentum * (DeltaTime * 100.0f);
+	VehicleMeshComponent->SetAllPhysicsLinearVelocity(ForwardVelocity, true);
+	**/
+}
+
+void AVehicle_Base::LimitHeliSpeed()
+{
+	const auto& Data = VehicleData->Helicopter_Data;
+
+	// Speed cap
+	FVector Vel = GetVelocity();
+	if (Vel.Size() > Data.MaxVelocity)
+	{
+		Vel = Vel.GetClampedToMaxSize(Data.MaxVelocity);
+		VehicleMeshComponent->SetAllPhysicsLinearVelocity(Vel, false);
+	}
 }
 
 #pragma endregion

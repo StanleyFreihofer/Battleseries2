@@ -247,6 +247,10 @@ public:
 	void UpdateYaw_Heli(float InputValue);
 	UFUNCTION(BlueprintCallable)
 	void UpdateRoll_Heli(float InputValue);
+	UFUNCTION(BlueprintCallable)
+	void UpdateMovement_Heli();
+	UFUNCTION(BlueprintCallable)
+	void LimitHeliSpeed();
 
 	UFUNCTION(BlueprintCallable)
 	void UpdateThrottle_Jet(float InputValue);
@@ -324,4 +328,5 @@ private:
 	FTimerHandle TimerHandle_AudioUpdate_Engine;
 	FTimerHandle SpeedTimer;
 	FTimerHandle RotorUpdateTimer;
+	FTimerHandle VehicleMovementTimer;
 };
