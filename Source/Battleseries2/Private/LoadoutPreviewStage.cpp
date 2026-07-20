@@ -5,6 +5,8 @@
 #include "Vehicle_Base.h"
 #include "Data/Data_Customization.h"
 #include "Data/Weapons/Data_InfantryWeapon.h"
+#include "Utilities/BS2FunctionLibrary.h"
+#include "Utilities/DataManagerSubsystem.h"
 #include "Camera/CameraActor.h"
 
 
@@ -36,8 +38,23 @@ void ALoadoutPreviewStage::BeginPlay()
 	Super::BeginPlay();
 
 	//assumes vehicle ca comp is valid and is a vehicle
-	PreviewStageState.CurrentVehicle = GetWorld()->SpawnActorDeferred<AVehicle_Base>(GetGameInstance()->GetSubsystem<UDataManagerSubsystem>()->GetCustomizationDefaults()->PreviewVehicleClass, FTransform::Identity);
+	FActorSpawnParameters VehicleSpawnParams;
+	VehicleSpawnParams.Owner = this;
+	VehicleSpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+	PreviewStageState.CurrentVehicle = GetWorld()->SpawnActor<AVehicle_Base>(UBS2FunctionLibrary::GetDataSubsystem(GetWorld())->GetCustomizationDefaults()->PreviewVehicleClass, FTransform::Identity, VehicleSpawnParams);
 	PreviewStageState.CurrentVehicle->VehicleStartingData.PreviewVehicle = true;
+	if (USkeletalMeshComponent* VehicleMesh = PreviewStageState.CurrentVehicle->VehicleMeshComponent)
+	{
+		VehicleMesh->SetSimulatePhysics(false);
+		VehicleMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision); // Prevent landscape snapping
+	}
+
+	// 2. CRITICAL: Disable the vehicle movement component updates entirely
+	if (UChaosVehicleMovementComponent* VehicleMovement = PreviewStageState.CurrentVehicle->ChaosVehicleMovement)
+	{
+		// Deactivating stops Chaos/PhysX from trying to ground-snap the chassis
+		VehicleMovement->Deactivate();
+	}
 	PreviewStageState.CurrentVehicle->AttachToComponent(VehicleAnchor, FAttachmentTransformRules::KeepRelativeTransform);
 
 	FActorSpawnParameters SpawnParams;
@@ -65,7 +82,7 @@ void ALoadoutPreviewStage::Tick(float DeltaTime)
 void ALoadoutPreviewStage::UpdateWeaponPreview(FName WeaponID)
 {
 	//probably move this to some weapon logic comp later
-	const FInfantryWeaponData* WeaponData = GetGameInstance()->GetSubsystem<UDataManagerSubsystem>()->GetInfantryWeaponDataRow(WeaponID);
+	const FInfantryWeaponData* WeaponData = UBS2FunctionLibrary::GetDataSubsystem(GetWorld())->GetInfantryWeaponDataRow(WeaponID);
 	WeaponData->WeaponClassificationData.WeaponMesh.LoadSynchronous();
 	if (WeaponData->WeaponClassificationData.WeaponMesh)
 	{
@@ -95,7 +112,7 @@ void ALoadoutPreviewStage::UpdateCameraBoomLength(USpringArmComponent* CamBoom, 
 void ALoadoutPreviewStage::RotatePreview(float DeltaYaw, float DeltaPitch)
 {
 	FRotator NewRotation;
-	float RotateSpeed = GetCustomizationSystemDefaults()->CustomizationModeCamSettings.Find(PreviewStageState.CurrentStageMode)->RotateSpeed;
+	float RotateSpeed = UBS2FunctionLibrary::GetDataSubsystem(GetWorld())->GetCustomizationDefaults()->CustomizationModeCamSettings.Find(PreviewStageState.CurrentStageMode)->RotateSpeed;
 	if (PreviewStageState.RotateObject)
 	{
 		// Rotate the mesh locally
@@ -137,9 +154,9 @@ void ALoadoutPreviewStage::RotatePreview(float DeltaYaw, float DeltaPitch)
 
 void ALoadoutPreviewStage::ZoomPreview(float DeltaZoom)
 {
-	float ZoomSpeed = GetCustomizationSystemDefaults()->CustomizationModeCamSettings.Find(PreviewStageState.CurrentStageMode)->ZoomSpeed;
-	float MinZoom = GetCustomizationSystemDefaults()->CustomizationModeCamSettings.Find(PreviewStageState.CurrentStageMode)->MinZoom;
-	float MaxZoom = GetCustomizationSystemDefaults()->CustomizationModeCamSettings.Find(PreviewStageState.CurrentStageMode)->MaxZoom;
+	float ZoomSpeed = UBS2FunctionLibrary::GetDataSubsystem(GetWorld())->GetCustomizationDefaults()->CustomizationModeCamSettings.Find(PreviewStageState.CurrentStageMode)->ZoomSpeed;
+	float MinZoom = UBS2FunctionLibrary::GetDataSubsystem(GetWorld())->GetCustomizationDefaults()->CustomizationModeCamSettings.Find(PreviewStageState.CurrentStageMode)->MinZoom;
+	float MaxZoom = UBS2FunctionLibrary::GetDataSubsystem(GetWorld())->GetCustomizationDefaults()->CustomizationModeCamSettings.Find(PreviewStageState.CurrentStageMode)->MaxZoom;
 
 	switch (PreviewStageState.CurrentStageMode)
 	{
@@ -188,10 +205,3 @@ AActor* ALoadoutPreviewStage::GetCurrentPreviewCameraActor()
 	}
 	return nullptr;
 }
-
-UDA_CustomizationDefaults* ALoadoutPreviewStage::GetCustomizationSystemDefaults()
-{
-	return GetGameInstance()->GetSubsystem<UDataManagerSubsystem>()->GetCustomizationDefaults();
-}
-
-

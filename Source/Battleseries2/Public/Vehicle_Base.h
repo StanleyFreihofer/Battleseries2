@@ -133,6 +133,8 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void Init_Helicopter();
 	UFUNCTION(BlueprintCallable)
+	void Init_Jet();
+	UFUNCTION(BlueprintCallable)
 	void Init_Optic(int32 SeatIndex);
 	UFUNCTION(BlueprintCallable)
 	void Init_DefaultSeatRemoteCamera(int32 SeatIndex);
@@ -239,6 +241,7 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void Input_UpdateSteering_GV(float SteeringValue, int32 SeatIndex);
 
+#pragma region HeliFlight
 	UFUNCTION(BlueprintCallable)
 	void UpdateThrottle_Heli(float InputValue);
 	UFUNCTION(BlueprintCallable)
@@ -251,15 +254,24 @@ public:
 	void UpdateMovement_Heli();
 	UFUNCTION(BlueprintCallable)
 	void LimitHeliSpeed();
+#pragma endregion
 
+#pragma region JetFlight
 	UFUNCTION(BlueprintCallable)
-	void UpdateThrottle_Jet(float InputValue);
+	void HandleThrottleInput_Jet(float InputValue);
+	UFUNCTION(BlueprintCallable)
+	void UpdateThrottle_Jet();
+	UFUNCTION(BlueprintCallable)
+	void UpdateThruster(float Throttle);
 	UFUNCTION(BlueprintCallable)
 	void UpdatePitch_Jet(float InputValue);
 	UFUNCTION(BlueprintCallable)
 	void UpdateRoll_Jet(float InputValue);
 	UFUNCTION(BlueprintCallable)
 	void UpdateYaw_Jet(float InputValue);
+	UFUNCTION(BlueprintCallable)
+	void AutoLevel_Jet();
+#pragma endregion
 
 	UFUNCTION(BlueprintCallable)
 	void ToggleOptic(int32 SeatIndex);
@@ -290,6 +302,8 @@ public:
 	int32 GetControlledTurret(int32 SeatIndex);
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	UCameraComponent* GetRemoteActiveCam(int32 SeatIndex);
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	float GetCurrentSpeed_Chaos();
 
 #pragma region InterfaceGetters
 	virtual USkeletalMeshComponent* GetMesh() const override;
@@ -329,4 +343,5 @@ private:
 	FTimerHandle SpeedTimer;
 	FTimerHandle RotorUpdateTimer;
 	FTimerHandle VehicleMovementTimer;
+	FTimerHandle ThrottleTimer;
 };

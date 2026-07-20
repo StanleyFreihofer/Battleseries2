@@ -280,6 +280,28 @@ void AProjectile_Base::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, U
 		UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), SelectedVFX, Hit.ImpactPoint, Hit.ImpactNormal.Rotation());
 	}
 
+	if (OtherActor && OtherActor != this)
+	{
+		// Extract the display name of the actor we collided with
+		FString HitActorName = OtherActor->GetActorNameOrLabel();
+
+		// Method A: Print directly to the Output Log Window
+		UE_LOG(LogTemp, Log, TEXT("[Projectile Hit] Collided with: %s"), *HitActorName);
+
+		// Method B: Print visually on the player's screen (Glows Cyan for 5 seconds)
+		if (GEngine)
+		{
+			GEngine->AddOnScreenDebugMessage(
+				-1,
+				5.0f,
+				FColor::Cyan,
+				FString::Printf(TEXT("Projectile Hit Target: %s"), *HitActorName)
+			);
+		}
+
+		// --- Handle damage, explosion, or pooling return logic here ---
+	}
+
 	ProjectileMeshComponent->ClearMoveIgnoreActors();
 	ProjectileMeshComponent->OnComponentHit.RemoveDynamic(this, &AProjectile_Base::OnHit);
 	if (GetWorld()->GetTimerManager().IsTimerActive(ManualGuidanceTimerHandle))

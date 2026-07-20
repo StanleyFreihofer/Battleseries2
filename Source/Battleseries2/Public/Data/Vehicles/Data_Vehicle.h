@@ -300,6 +300,39 @@ struct FVehicleSetup
 };
 
 USTRUCT(BlueprintType)
+struct FVehicleInput
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, Category = VehicleInput, AdvancedDisplay)
+	FVehicleInputRateConfig ThrottleInputRate = FVehicleInputRateConfig();
+
+	// Rate at which input brake can rise and fall
+	UPROPERTY(EditAnywhere, Category = VehicleInput, AdvancedDisplay)
+	FVehicleInputRateConfig BrakeInputRate = FVehicleInputRateConfig();
+
+	// Rate at which input steering can rise and fall
+	UPROPERTY(EditAnywhere, Category = VehicleInput, AdvancedDisplay)
+	FVehicleInputRateConfig SteeringInputRate = FVehicleInputRateConfig();
+
+	// Rate at which input handbrake can rise and fall
+	UPROPERTY(EditAnywhere, Category = VehicleInput, AdvancedDisplay)
+	FVehicleInputRateConfig HandbrakeInputRate = FVehicleInputRateConfig();
+
+	// Rate at which input pitch can rise and fall
+	UPROPERTY(EditAnywhere, Category = VehicleInput, AdvancedDisplay)
+	FVehicleInputRateConfig PitchInputRate = FVehicleInputRateConfig();
+
+	// Rate at which input roll can rise and fall
+	UPROPERTY(EditAnywhere, Category = VehicleInput, AdvancedDisplay)
+	FVehicleInputRateConfig RollInputRate = FVehicleInputRateConfig();
+
+	// Rate at which input yaw can rise and fall
+	UPROPERTY(EditAnywhere, Category = VehicleInput, AdvancedDisplay)
+	FVehicleInputRateConfig YawInputRate = FVehicleInputRateConfig();
+};
+
+USTRUCT(BlueprintType)
 struct FGroundVehicleData
 {
 	GENERATED_BODY()
@@ -329,6 +362,7 @@ struct FGroundVehicleData
 	FVehicleSetup VehicleSetup = FVehicleSetup();
 
 	//Vehicle Input
+	//CHANGE TO FULL VEHICLE INPUT STRUCT!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	//Yaw
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	float Yaw_Input_Rise_Rate = 0.0f;
@@ -412,92 +446,6 @@ struct FHelicopterData
 };
 
 USTRUCT(BlueprintType)
-struct FThrottleFlightModel
-{
-	GENERATED_BODY()
-
-	// --- Actuator / Spool Settings ---
-
-	// How fast the engine responds to input (Spool Speed)
-	UPROPERTY(EditAnywhere, Category = "Actuator", meta = (ClampMin = "0.1"))
-	float ThrottleSpeed = 3.0f;
-
-	// --- Power Settings ---
-
-	// The "Power" of the engine. 
-	// Kinematic: Max speed in cm/s | Dynamic: Thrust force/accel
-	UPROPERTY(EditAnywhere, Category = "Power")
-	float ThrustStrength = 5000.0f;
-
-	// --- Landing & Takeoff ---
-
-	// Speed (KMH) required before the nose can lift
-	UPROPERTY(EditAnywhere, Category = "Limits")
-	float TakeoffVelocity = 180.0f;
-
-	// Power multiplier when landing gear is out (0.5 = 50% power)
-	UPROPERTY(EditAnywhere, Category = "Limits", meta = (ClampMin = "0.0", ClampMax = "1.0"))
-	float GearDownSpeedScalar = 0.5f;
-};
-
-USTRUCT(BlueprintType)
-struct FPitchFlightModel
-{
-	GENERATED_BODY()
-
-	// --- Actuator / Response Settings ---
-
-	// How fast the elevator flaps move to target
-	UPROPERTY(EditAnywhere, Category = "Actuator")
-	float PitchSpeed = 5.0f;
-
-	// Maximum deflection of the elevators (0.0 to 1.0)
-	UPROPERTY(EditAnywhere, Category = "Actuator")
-	float InputLimit = 1.0f;
-
-	// --- Power Settings ---
-
-	// The "Agility" of the pitch.
-	// Kinematic: Degrees/sec | Dynamic: Torque force
-	UPROPERTY(EditAnywhere, Category = "Power")
-	float PitchStrength = 90.0f;
-
-	// --- Sensitivity ---
-
-	// X: Speed in KMH, Y: Multiplier (0.0 - 1.0)
-	//kinematic: FinalDegreesPerSecond = PitchStrength * SensitivityCurve
-	//dynamic: AppliedTorque = TorqueStrength * SensitivityCurve
-	//chaos input: ChaosPitchInput = RawInput * SensitivityCurve
-	UPROPERTY(EditAnywhere, Category = "Sensitivity")
-	TObjectPtr<UCurveFloat> PitchSensitivityCurve;
-};
-
-USTRUCT(BlueprintType)
-struct FRollFlightModel
-{
-	GENERATED_BODY()
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	float RollSpeed = 0.0f;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	float RollStrength = 0.0f;
-};
-
-USTRUCT(BlueprintType)
-struct FYawFlightModel
-{
-	GENERATED_BODY()
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	float YawSpeed = 0.0f;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	float YawStrength = 0.0f;
-};
-
-
-USTRUCT(BlueprintType)
 struct FFlightModel_Chaos
 {
 	GENERATED_BODY()
@@ -522,24 +470,102 @@ struct FFlightModel_Chaos
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	FVehicleSetup VehicleSetup = FVehicleSetup();
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	FVehicleInput VehicleInput = FVehicleInput();
 };
 
 USTRUCT(BlueprintType)
-struct FJetFlightModel
+struct FJetFlightModel_Arcade
 {
 	GENERATED_BODY()
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Throttle")
-	FThrottleFlightModel Throttle = FThrottleFlightModel();
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Flight|Thresholds", meta = (ToolTip = "speed at which aircraft is able to take off"))
+	float TakeoffVelocity = 150.0f;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Pitch")
-	FPitchFlightModel Pitch = FPitchFlightModel();
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Flight|Thresholds", meta = (ToolTip = "boost caps forward velocity at this value, when speed exceeds this during boost, the boost force is suppressed"))
+	float BoostMaxTargetVelocity = 450.0f;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Roll")
-	FRollFlightModel Roll = FRollFlightModel();
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Flight|Thresholds", meta = (ToolTip = "Speed at which pitch/yaw clamp ranges switch from slow to fast"))
+	float ControlAuthoritySpeedThreshold = 200.0f;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Yaw")
-	FYawFlightModel Yaw = FYawFlightModel();
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Flight|Control Surfaces", meta = (ToolTip = "All 3 control surfaces (elevator, flaperon, rudder) use this same FInterpTo speed"))
+	float ControlInterpSpeed = 6.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Flight|Pitch", meta = (ToolTip = "clamps pitch input values given current speed, value is both the min (negate) and max of the clamp"))
+	TObjectPtr<UCurveFloat> PitchClampCurve = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Flight|Roll", meta = (ToolTip = "Speed that flaperons reach 100% effectiveness"))
+	float FlaperonFullEffectSpeed = 250.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Flight|Roll", meta = (ToolTip = "Slow mode yaw min"))
+	float YawMin_Slow = 0.6f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Flight|Roll", meta = (ToolTip = "Fast mode yaw max"))
+	float YawMax_Slow = 1.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Flight|Roll", meta = (ToolTip = "Fast mode yaw min"))
+	float YawMin_Fast = 0.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Flight|Roll", meta = (ToolTip = "Fast mode yaw max"))
+	float YawMax_Fast = 1.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Flight|Yaw", meta = (ToolTip = "Ground taxi rudder authority (very limited)"))
+	float RudderGroundClamp = 0.2f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Flight|Throttle")
+	float ThrottleInterpSpeed = 900.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Flight|Throttle")
+	float GearClosedThrottleMult = 1.0f;   // divider when gear is UP
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Flight|Throttle")
+	float GearOpenThrottleMult = 1.25f;    // divider when gear is DOWN
+
+	// Thruster value multiplies by this for engine VFX particle scale.
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Flight|Throttle")
+	float ThrusterVFXScale = 4.0f;
+
+	// VFX particle scale is clamped to this range after Thruster * Scale.
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Flight|Throttle")
+	float PSJetEngineMin = 0.8f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Flight|Throttle")
+	float PSJetEngineMax = 2.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Flight|AutoLevel")
+	float AutoLevelRollThreshold = 10.0f;
+
+	// Max speed for auto-level to activate. Above this, the jet has enough
+	// energy to recover on its own.
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Flight|AutoLevel")
+	int32 AutoLevelMaxSpeed = 100;
+
+	// Dot product threshold for "how inverted." WorldZ=1.0 means upright,
+	// -1.0 means fully inverted. 0.25 means "more than ~75° tilted."
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Flight|AutoLevel")
+	float AutoLevelDotThreshold = 0.25f;
+
+	// RInterpTo speed for the auto-level rotation — smooth recovery.
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Flight|AutoLevel")
+	float AutoLevelInterpSpeed = 2.0f;
+
+	// Accumulated from control surface deflection magnitudes divided by 10.
+// When no inputs are active, G-Force decays by this amount per tick.
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Flight|GForce")
+	float GForceDecayRate = 0.4f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Flight|GForce")
+	float GForceMin = 1.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Flight|GForce")
+	float GForceMax = 8.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Flight|Ground")
+	float WheelRadius_FlightMode = 0.0f;   // wheels "tucked"
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Flight|Ground")
+	float WheelRadius_GroundMode = 32.0f;
 };
 
 USTRUCT(BlueprintType)
@@ -551,15 +577,13 @@ struct FJetData
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "General")
 	EFlightModelType FlightModelType = EFlightModelType::Dynamic;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Flight Model")
-	FJetFlightModel FlightModel = FJetFlightModel();
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	FJetFlightModel_Arcade JetFlightData_Arcade = FJetFlightModel_Arcade();
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	FFlightModel_Chaos ChaosFlightModel = FFlightModel_Chaos();
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	FVehicleSetup VehicleSetup = FVehicleSetup();
+	FFlightModel_Chaos ChaosFlightModelData = FFlightModel_Chaos();
 };
+
 
 //THE ONE THAT WE MAKE DATA TABLE OUT OF
 USTRUCT(BlueprintType)

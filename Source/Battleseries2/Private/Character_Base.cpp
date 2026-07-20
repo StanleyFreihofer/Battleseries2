@@ -802,24 +802,35 @@ void ACharacter_Base::UpdateRangefinder_WindowedVehicle()
 	FVehicleWeapon_Runtime& CurrentWeapon = VWLC->GetEquippedWeaponInSeat(GetCSI());
 	TArray<AActor*> IgnoreActors = { GetCurrentVehicle() };
 	FTransform TraceTransform;
+	FVector PlayerEyePos;
 
 	switch (CurrentWeapon.VehicleWeaponInstanceData.WindowedAimAnchor)
 	{
 		case EWindowedAimAnchor::FreeAim:
 			TraceTransform = FPCamera->GetComponentTransform();
+			PlayerEyePos = TraceTransform.GetLocation();
 			break;
-
 		case EWindowedAimAnchor::FixedHead:
 		{
-			FVector StartLocation = GetMesh()->GetSocketLocation(FName("FixedCamera"));
+			FVector StartLocation = FPArms->GetSocketLocation(FName("FixedCamera"));
 			TraceTransform = FTransform(GetActorQuat(), StartLocation);
+			PlayerEyePos = StartLocation;
 			break;
 		}
-
+		case EWindowedAimAnchor::FixedPoint:
+		{
+			FString SocketString = FString::Printf(TEXT("SC_%02d"), GetCSI());
+			FName SocketName = FName(*SocketString);
+			FVector StartLocation = GetCurrentVehicle()->VehicleMeshComponent->GetSocketLocation(SocketName);
+			TraceTransform = FTransform(GetCurrentVehicle()->GetActorQuat(), StartLocation);
+			PlayerEyePos = StartLocation;
+			break;
+		}
 		case EWindowedAimAnchor::Hull:
 		{
 			FVector HullStart = GetCurrentVehicle()->GetActorLocation() + (GetCurrentVehicle()->GetActorUpVector() * 100.0f);
 			TraceTransform = FTransform(GetCurrentVehicle()->GetActorQuat(), HullStart);
+			PlayerEyePos = HullStart;
 			break;
 		}
 	}
@@ -843,15 +854,68 @@ void ACharacter_Base::UpdateRangefinder_WindowedVehicle()
 	FHitResult& HitResult = WeaponSystem->VehicleWeaponSystemState.EquippedWeaponState.RaycastData.RangefinderData;
 	TObjectPtr<UStaticMeshComponent> Quad = WeaponSystem->VehicleWeaponSystemState.ReticleQuad.Get();
 
+	FString SocketString = FString::Printf(TEXT("SC_%02d"), GetCSI());
+	FName SocketName = FName(*SocketString);
+	FVector StartLocation = GetCurrentVehicle()->VehicleMeshComponent->GetSocketLocation(SocketName);
+
+	/**
 	if (Quad)
 	{
-		FVector EyePos = FPCamera->GetComponentLocation();
+		FVector EyePos = StartLocation;	//FPCamera->GetComponentLocation();
 		FVector TargetPos = HitResult.bBlockingHit ? HitResult.ImpactPoint : TraceTransform.GetLocation() + (TraceTransform.GetUnitAxis(EAxis::X) * 100000.0f);
 
 		// Calculate where the eye-to-target line hits the HUD glass plane
 		FVector IntersectionPoint = FMath::LinePlaneIntersection(EyePos, TargetPos, SeatHUDComp->GetComponentLocation(), SeatHUDComp->GetForwardVector());
 
 		Quad->SetWorldLocation(IntersectionPoint);
+	}
+	**/
+	FPlane HUDPlane = FPlane(SeatHUDComp->GetComponentLocation(), SeatHUDComp->GetForwardVector());
+	if (Quad)
+	{
+		// 3. FIX PARALLAX: Determine what the eye point actually is for the player
+		// If FreeAim, the player is look-controlling the camera. For others, they are looking through the fixed seat glass.
+
+
+		// 4. FIX CONVERGENCE POINT: Establish exactly where the physical system hits
+		FVector TargetImpactPos;
+		if (HitResult.bBlockingHit)
+		{
+			TargetImpactPos = HitResult.ImpactPoint;
+		}
+		else
+		{
+			// Fallback if looking at the open sky: project out 1000 meters along the directional anchor axis
+			TargetImpactPos = TraceTransform.GetLocation() + (TraceTransform.GetUnitAxis(EAxis::X) * 100000.0f);
+		}
+
+		// 5. PROJECT LINE UNTO HUD GLASS: Raycast from the actual player eye to the true impact point
+		FVector IntersectionPoint;
+		bool bIntersects = FMath::SegmentPlaneIntersection(
+			PlayerEyePos,
+			TargetImpactPos,
+			HUDPlane,
+			IntersectionPoint
+		);
+
+		if (bIntersects)
+		{
+			Quad->SetWorldLocation(IntersectionPoint);
+
+			// Optional Quality of Life: Orient the quad face flat against the HUD glass plane
+			//Quad->SetWorldRotation(SeatHUDComp->GetComponentRotation());
+
+			// Ensure it stays visible when tracking cleanly
+			if (!Quad->IsVisible())
+			{
+				Quad->SetVisibility(true);
+			}
+		}
+		else
+		{
+			// If the trajectory convergence point falls entirely outside the viewport plane bounds, hide it
+			Quad->SetVisibility(false);
+		}
 	}
 }
 

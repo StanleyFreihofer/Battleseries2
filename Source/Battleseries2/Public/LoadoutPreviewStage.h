@@ -87,8 +87,6 @@ public:
 	FName GetVehicleMeshRootBoneName();
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	AActor* GetCurrentPreviewCameraActor();
-	UFUNCTION(BlueprintCallable, BlueprintPure)
-	UDA_CustomizationDefaults* GetCustomizationSystemDefaults();
 
 protected:
 	// Called when the game starts or when spawned

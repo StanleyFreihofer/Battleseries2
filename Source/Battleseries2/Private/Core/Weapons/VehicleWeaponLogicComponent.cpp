@@ -13,6 +13,7 @@
 #include "Core/Weapons/WeaponFunctions.h"
 #include "Core/UI/VehicleHUDs/UW_HUD_Vehicle_Base.h"
 #include "Utilities/HUDSubsystem.h"
+#include "Utilities/DataManagerSubsystem.h"
 #include "Utilities/I_Anims.h"
 #include "Utilities/BS2FunctionLibrary.h"
 #include "Camera/CameraActor.h"
@@ -257,6 +258,7 @@ void UVehicleWeaponLogicComponent::MountProjectiles(int32 SeatIndex, int32 Weapo
 		FTransform SocketTransform = VehicleMeshComponent->GetSocketTransform(SocketName, RTS_World);	//transform offset is data (is that needed?)
 		TWeakObjectPtr<AProjectile_Base> NewProjectile = UBS2FunctionLibrary::GetProjectileSystem(this)->AcquireProjectileFromPool(MunitionID);
 		NewProjectile->SetRuntimeContext(VehicleMeshComponent, SocketName);
+		NewProjectile->MoveIgnoreActorAdd(GetOwner());
 		SeatWeaponToFill.VehicleWeaponState.CurrentMountedProjectiles.Add(NewProjectile);
 		//DONT INITIALIZE, PROJECTILES SHOULD ALREADY BE INITIALIZED BY POOL SUBYSTEM
 	}
@@ -1167,12 +1169,11 @@ TWeakObjectPtr<AProjectile_Base> UVehicleWeaponLogicComponent::HandleShootProjec
 	FLockOnState& LockOnState = VehicleWeaponState.BaseWeaponRuntimeData.WeaponState.LockOnState;
 	const FBaseWeaponData& StaticWeaponData = GetBaseWeaponDataInSlot(SeatIndex, WeaponIndex);
 	FHitResult& HitResult = SeatWeaponSystem.VehicleWeaponSystemState.EquippedWeaponState.RaycastData.RangefinderData;
-
+	AActor* FiringVehicle = GetOwner();
 	TWeakObjectPtr<AProjectile_Base> FiredProjectile = nullptr;
 	if (VehicleWeapon.VehicleWeaponInstanceData.bAreProjectilesMounted && VehicleWeaponState.CurrentMountedProjectiles.Num() > 0)
 	{
 		FiredProjectile = VehicleWeaponState.CurrentMountedProjectiles[0];
-
 		SetupProjectileGuidance(FiredProjectile, StaticWeaponData.WeaponFunctionality.HomingFunctionality.HomingCapability, LockOnState, HitResult);
 
 		FiredProjectile->FireProjectile(FiredProjectile->GetActorForwardVector());		//doesnt use aim direction if mounted right now
@@ -1192,8 +1193,6 @@ TWeakObjectPtr<AProjectile_Base> UVehicleWeaponLogicComponent::HandleShootProjec
 			FTransform MuzzleTransform;
 			FiredProjectile = UBS2FunctionLibrary::GetProjectileSystem(this)->AcquireProjectileFromPool(StaticWeaponData.WeaponFirePerformance.MunitionID);
 			SetupProjectileGuidance(FiredProjectile, StaticWeaponData.WeaponFunctionality.HomingFunctionality.HomingCapability, LockOnState, HitResult);
-			AActor* FiringVehicle = GetOwner();
-			FiredProjectile->MoveIgnoreActorAdd(FiringVehicle);
 			UE_LOG(LogTemp, Error, TEXT("[VWLC::HandleShootProjectileActor] Muzzle Index = %d"), MuzzleIndex);
 			MuzzleTransform = GetMuzzleTransform(VehicleWeaponState, SeatWeaponSystem, MuzzleIndex);
 			FiredProjectile->SetActorTransform(MuzzleTransform);

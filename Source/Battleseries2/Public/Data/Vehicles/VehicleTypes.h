@@ -96,16 +96,34 @@ struct FJetState
 	GENERATED_BODY()
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
-	float CurrentElevatorPitch = 0.0f;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
-	float CurrentAileronRoll = 0.0f;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
-	float CurrentRudderYaw = 0.0f;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	float CurrentThrottle = 0.0f;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	float CurrentPitch = 0.0f;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	float CurrentRoll = 0.0f;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	float CurrentYaw = 0.0f;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	float CurrentThrust = 0.0f;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	float CurrentElevator = 0.0f;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	float CurrentFlaperon = 0.0f;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	float CurrentRudder = 0.0f;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	float CurrentGForce = 0.0f;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	bool isBoostActive = false;
 };
 
 USTRUCT(BlueprintType)
