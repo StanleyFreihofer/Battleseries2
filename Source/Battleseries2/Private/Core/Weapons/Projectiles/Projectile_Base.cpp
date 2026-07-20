@@ -81,6 +81,8 @@ void AProjectile_Base::SetRuntimeContext(UPrimitiveComponent* AttachComponent, F
 		this->AttachToComponent(AttachComponent, FAttachmentTransformRules(EAttachmentRule::SnapToTarget, true), AttachSocket);
 		ProjectileState.PreFlightContext.AttachedComponent = AttachComponent;
 		ProjectileState.PreFlightContext.AttachSocket = AttachSocket;
+		ProjectileMeshComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		SetActorEnableCollision(false);
 	}
 	else
 	{
@@ -100,6 +102,8 @@ void AProjectile_Base::FireProjectile(FVector AimDirection)
 		//add impulse or something idk
 	}
 
+	GetWorldTimerManager().SetTimer(CollisionTimerHandle, this, &AProjectile_Base::EnableCollision, 0.5f, true);
+
 	ProjectileState.Origin = AimDirection;
 
 	StartFlightPlan();
@@ -112,6 +116,12 @@ void AProjectile_Base::StartFlightPlan()
 	ProjectileMovementComponent->Velocity = ProjectileState.Origin * ProjectileData->ProjectileFlightPlan[0].GuidanceParams.InitialSpeed;
 	ProjectileMovementComponent->Activate();
 	NiagaraComponent->Activate();
+}
+
+void AProjectile_Base::EnableCollision()
+{
+	ProjectileMeshComponent->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+	SetActorEnableCollision(true);
 }
 
 void AProjectile_Base::UpdateFlightPlan(int32 FlightStageIndex)

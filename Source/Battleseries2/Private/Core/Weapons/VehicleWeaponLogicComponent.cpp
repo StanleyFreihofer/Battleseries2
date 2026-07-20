@@ -259,6 +259,7 @@ void UVehicleWeaponLogicComponent::MountProjectiles(int32 SeatIndex, int32 Weapo
 		TWeakObjectPtr<AProjectile_Base> NewProjectile = UBS2FunctionLibrary::GetProjectileSystem(this)->AcquireProjectileFromPool(MunitionID);
 		NewProjectile->SetRuntimeContext(VehicleMeshComponent, SocketName);
 		NewProjectile->MoveIgnoreActorAdd(GetOwner());
+		NewProjectile->SetActorEnableCollision(false);
 		SeatWeaponToFill.VehicleWeaponState.CurrentMountedProjectiles.Add(NewProjectile);
 		//DONT INITIALIZE, PROJECTILES SHOULD ALREADY BE INITIALIZED BY POOL SUBYSTEM
 	}
@@ -1175,7 +1176,6 @@ TWeakObjectPtr<AProjectile_Base> UVehicleWeaponLogicComponent::HandleShootProjec
 	{
 		FiredProjectile = VehicleWeaponState.CurrentMountedProjectiles[0];
 		SetupProjectileGuidance(FiredProjectile, StaticWeaponData.WeaponFunctionality.HomingFunctionality.HomingCapability, LockOnState, HitResult);
-
 		FiredProjectile->FireProjectile(FiredProjectile->GetActorForwardVector());		//doesnt use aim direction if mounted right now
 		//call some sort of "drop from rack" function on projectile?
 		if (FiredProjectile.IsValid())

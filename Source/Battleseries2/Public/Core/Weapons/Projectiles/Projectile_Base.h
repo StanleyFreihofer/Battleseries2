@@ -60,6 +60,8 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void StartFlightPlan();
 	UFUNCTION(BlueprintCallable)
+	void EnableCollision();
+	UFUNCTION(BlueprintCallable)
 	void UpdateFlightPlan(int32 FlightStageIndex);
 	UFUNCTION(BlueprintCallable)
 	void HandleFlightStageTransition(const FProjectileFlightStage& FlightStage);
@@ -89,6 +91,7 @@ public:
 protected:
 	FTimerHandle StageTimerHandle;
 	FTimerHandle ManualGuidanceTimerHandle;
+	FTimerHandle CollisionTimerHandle;
 
 };
 
