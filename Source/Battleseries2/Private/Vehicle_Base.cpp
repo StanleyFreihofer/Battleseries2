@@ -177,7 +177,7 @@ void AVehicle_Base::Init_Helicopter()
 	VehicleCurrentState.GenericVehicleState.InteriorAudioComponent->SetActive(true);
 }
 
-void AVehicle_Base::Init_Jet()
+void AVehicle_Base::Init_Jet_Chaos()
 {
 	Init_Wheels(VehicleData->Aircraft_Data.LandingGear);
 	HandleChaosMovement(true);
@@ -364,7 +364,16 @@ void AVehicle_Base::Init_Vehicle()
 			break;
 		case E_MovementType::Jet:
 			UE_LOG(LogTemp, Log, TEXT("JET SETUP STARTED"));
-			Init_Jet();
+			switch (VehicleData->Jet_Data.FlightModelType)
+			{
+				case EFlightModelType::Chaos:
+					Init_Jet_Chaos();
+					break;
+				case EFlightModelType::Arcade:
+					VehicleMeshComponent->SetSimulatePhysics(false);
+					VehicleMeshComponent->SetEnableGravity(false);
+					break;
+			}
 			break;
 		case E_MovementType::Boat:
 			UE_LOG(LogTemp, Log, TEXT("BOAT SETUP STARTED"));
@@ -1083,31 +1092,77 @@ void AVehicle_Base::HandleThrottleInput_Jet(float InputValue)
 {
 	auto& AircraftState = VehicleCurrentState.AircraftState;
 	auto& JetState = AircraftState.JetState;
+	auto& JetData = VehicleData->Jet_Data;
 	JetState.CurrentThrottle = InputValue;
+	float UnclampedThrust;
 
-	//GET RID OF HARDCODED VALUES!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	if (!GetWorldTimerManager().IsTimerActive(ThrottleTimer))
+	switch (JetData.FlightModelType)
 	{
-		GetWorldTimerManager().SetTimer(ThrottleTimer, this, &AVehicle_Base::UpdateThrottle_Jet, GetWorld()->GetDeltaSeconds(), true);
+		case EFlightModelType::Arcade:
+			UnclampedThrust = (InputValue * GetWorld()->GetDeltaSeconds() * JetData.JetFlightData_Arcade.ThrustMultiplier) + JetState.CurrentThrust;
+			JetState.CurrentThrust = FMath::Clamp(UnclampedThrust, 0, JetData.JetFlightData_Arcade.MaxThrustSpeed);
+			if (!GetWorldTimerManager().IsTimerActive(ThrottleTimer))
+			{
+				GetWorldTimerManager().SetTimer(ThrottleTimer, this, &AVehicle_Base::UpdateThrottle_Jet_Arcade, GetWorld()->GetDeltaSeconds(), true);
+			}
+			break;
+		case EFlightModelType::Chaos:
+			if (!GetWorldTimerManager().IsTimerActive(ThrottleTimer))
+			{
+				GetWorldTimerManager().SetTimer(ThrottleTimer, this, &AVehicle_Base::UpdateThrottle_Jet_Chaos, GetWorld()->GetDeltaSeconds(), true);
+			}
+			break;
 	}
 }
 
-void AVehicle_Base::UpdateThrottle_Jet()
+void AVehicle_Base::HandlePitchInput_Jet(float InputValue)
 {
 	auto& AircraftState = VehicleCurrentState.AircraftState;
 	auto& JetState = AircraftState.JetState;
-	JetState.CurrentThrust = FMath::FInterpTo(JetState.CurrentThrust, JetState.CurrentThrottle, GetWorld()->GetDeltaSeconds(), VehicleData->Jet_Data.JetFlightData_Arcade.ThrottleInterpSpeed);
+	auto& JetData = VehicleData->Jet_Data;
+	switch (JetData.FlightModelType)
+	{
+		case EFlightModelType::Arcade:
+			UpdatePitch_Jet_Arcade(InputValue);
+			break;
+		case EFlightModelType::Chaos:
+			UpdatePitch_Jet_Chaos(InputValue);
+			break;
+	}
+}
+
+void AVehicle_Base::HandleRollInput_Jet(float InputValue)
+{
+	auto& AircraftState = VehicleCurrentState.AircraftState;
+	auto& JetState = AircraftState.JetState;
+	auto& JetData = VehicleData->Jet_Data;
+	switch (JetData.FlightModelType)
+	{
+		case EFlightModelType::Arcade:
+			UpdateRoll_Jet_Arcade(InputValue);
+			break;
+		case EFlightModelType::Chaos:
+			UpdateRoll_Jet_Chaos(InputValue);
+			break;
+	}
+}
+
+void AVehicle_Base::UpdateThrottle_Jet_Chaos()
+{
+	auto& AircraftState = VehicleCurrentState.AircraftState;
+	auto& JetState = AircraftState.JetState;
+	JetState.CurrentThrust = FMath::FInterpTo(JetState.CurrentThrust, JetState.CurrentThrottle, GetWorld()->GetDeltaSeconds(), VehicleData->Jet_Data.JetFlightData_Chaos.ThrottleInterpSpeed);
 
 	//do landing gear bool to select divide thruster by value here
 
-	UpdateThruster(JetState.CurrentThrust);
+	UpdateThruster_Chaos(JetState.CurrentThrust);
 	if (JetState.CurrentThrottle == JetState.CurrentThrust)
 	{
 		GetWorldTimerManager().ClearTimer(ThrottleTimer);
 	}
 }
 
-void AVehicle_Base::UpdateThruster(float Throttle)
+void AVehicle_Base::UpdateThruster_Chaos(float Throttle)
 {
 	auto& AircraftState = VehicleCurrentState.AircraftState;
 	//ChaosVehicleMovement->SetThrottleInput(JetState.CurrentThrottle / GearDivider);
@@ -1123,7 +1178,7 @@ void AVehicle_Base::UpdateThruster(float Throttle)
 	}
 }
 
-void AVehicle_Base::UpdatePitch_Jet(float InputValue)
+void AVehicle_Base::UpdatePitch_Jet_Chaos(float InputValue)
 {
 	auto& AircraftState = VehicleCurrentState.AircraftState;
 	auto& JetState = AircraftState.JetState;
@@ -1133,19 +1188,19 @@ void AVehicle_Base::UpdatePitch_Jet(float InputValue)
 
 	//const bool bSlow = (CurrentSpeed <= JetData.JetFlightData_Arcade.ControlAuthoritySpeedThreshold);
 
-	const float ClampValue = JetData.JetFlightData_Arcade.PitchClampCurve->GetFloatValue(CurrentSpeed);
+	const float ClampValue = JetData.JetFlightData_Chaos.PitchClampCurve->GetFloatValue(CurrentSpeed);
 
 	JetState.CurrentPitch = FMath::Clamp(InputValue, -0.6, 0.6);
 
-	JetState.CurrentElevator = FMath::FInterpTo(JetState.CurrentElevator, JetState.CurrentPitch, DeltaTime, JetData.JetFlightData_Arcade.ControlInterpSpeed);
+	JetState.CurrentElevator = FMath::FInterpTo(JetState.CurrentElevator, JetState.CurrentPitch, DeltaTime, JetData.JetFlightData_Chaos.ControlInterpSpeed);
 
-	if (CurrentSpeed > JetData.JetFlightData_Arcade.TakeoffVelocity)
+	if (CurrentSpeed > JetData.JetFlightData_Chaos.TakeoffVelocity)
 	{
 		ChaosVehicleMovement->SetPitchInput(JetState.CurrentElevator);
 	}
 }
 
-void AVehicle_Base::UpdateRoll_Jet(float InputValue)
+void AVehicle_Base::UpdateRoll_Jet_Chaos(float InputValue)
 {
 	auto& AircraftState = VehicleCurrentState.AircraftState;
 	auto& JetState = AircraftState.JetState;
@@ -1154,16 +1209,16 @@ void AVehicle_Base::UpdateRoll_Jet(float InputValue)
 
 	JetState.CurrentRoll = InputValue;
 
-	JetState.CurrentFlaperon = FMath::FInterpTo(JetState.CurrentFlaperon, InputValue, DeltaTime, JetData.JetFlightData_Arcade.ControlInterpSpeed);
+	JetState.CurrentFlaperon = FMath::FInterpTo(JetState.CurrentFlaperon, InputValue, DeltaTime, JetData.JetFlightData_Chaos.ControlInterpSpeed);
 
-	const float Effectiveness = FMath::GetMappedRangeValueClamped(FVector2D(0.0f, JetData.JetFlightData_Arcade.FlaperonFullEffectSpeed), FVector2D(0.0f, 1.0f), GetCurrentSpeed_Chaos());
+	const float Effectiveness = FMath::GetMappedRangeValueClamped(FVector2D(0.0f, JetData.JetFlightData_Chaos.FlaperonFullEffectSpeed), FVector2D(0.0f, 1.0f), GetCurrentSpeed_Chaos());
 
 	const float RollInput = FMath::Clamp(JetState.CurrentFlaperon * Effectiveness, -1.0f, 1.0f);
 
 	ChaosVehicleMovement->SetRollInput(RollInput);
 }
 
-void AVehicle_Base::UpdateYaw_Jet(float InputValue)
+void AVehicle_Base::UpdateYaw_Jet_Chaos(float InputValue)
 {
 	auto& AircraftState = VehicleCurrentState.AircraftState;
 	auto& JetState = AircraftState.JetState;
@@ -1173,27 +1228,82 @@ void AVehicle_Base::UpdateYaw_Jet(float InputValue)
 
 	JetState.CurrentYaw = InputValue;
 
-	JetState.CurrentRudder = FMath::FInterpTo(JetState.CurrentRudder, InputValue, DeltaTime, JetData.JetFlightData_Arcade.ControlInterpSpeed);
+	JetState.CurrentRudder = FMath::FInterpTo(JetState.CurrentRudder, InputValue, DeltaTime, JetData.JetFlightData_Chaos.ControlInterpSpeed);
 
-	const bool bAirborne = CurrentSpeed > JetData.JetFlightData_Arcade.TakeoffVelocity;
+	const bool bAirborne = CurrentSpeed > JetData.JetFlightData_Chaos.TakeoffVelocity;
 
 	if (bAirborne)
 	{
-		const bool bSlow = (CurrentSpeed <= JetData.JetFlightData_Arcade.ControlAuthoritySpeedThreshold);
-		const float YawClamp = bSlow ? JetData.JetFlightData_Arcade.YawMax_Slow : 1.0f;
+		const bool bSlow = (CurrentSpeed <= JetData.JetFlightData_Chaos.ControlAuthoritySpeedThreshold);
+		const float YawClamp = bSlow ? JetData.JetFlightData_Chaos.YawMax_Slow : 1.0f;
 
 		const float YawInput = FMath::Clamp(InputValue, -YawClamp, YawClamp);
 		ChaosVehicleMovement->SetYawInput(YawInput);
 	}
 	else
 	{
-		const float RudderInput = FMath::Clamp(JetState.CurrentRudder, -JetData.JetFlightData_Arcade.RudderGroundClamp, JetData.JetFlightData_Arcade.RudderGroundClamp);
+		const float RudderInput = FMath::Clamp(JetState.CurrentRudder, -JetData.JetFlightData_Chaos.RudderGroundClamp, JetData.JetFlightData_Chaos.RudderGroundClamp);
 		ChaosVehicleMovement->SetYawInput(RudderInput);
 	}
 }
 
 void AVehicle_Base::AutoLevel_Jet()
 {
+}
+
+void AVehicle_Base::UpdateThrottle_Jet_Arcade()
+{
+	const FJetFlightModel_Arcade& FlightModelData = VehicleData->Jet_Data.JetFlightData_Arcade;
+	auto& AircraftState = VehicleCurrentState.AircraftState;
+	auto& JetState = AircraftState.JetState;
+
+	float NewCurrentSpeed = FMath::FInterpTo(JetState.CurrentSpeed, JetState.CurrentThrust, GetWorld()->GetDeltaSeconds(), FlightModelData.ThrustDrag);
+	if (JetState.CurrentThrust < JetState.CurrentSpeed)
+	{
+		JetState.CurrentSpeed = NewCurrentSpeed;
+	}
+	else
+	{
+		JetState.CurrentSpeed = JetState.CurrentThrust;
+	}
+
+	FVector NewPosition = ((JetState.CurrentSpeed * GetWorld()->GetDeltaSeconds()) * GetActorForwardVector());
+	float Gravity = 981.0f;
+	float AppliedGravity = FMath::GetMappedRangeValueClamped(FVector2D(0.0f, FlightModelData.TakeOffSpeedReq), FVector2D(Gravity, 0.0f), JetState.CurrentSpeed);
+	float NewZ = NewPosition.Z - (AppliedGravity * GetWorld()->GetDeltaSeconds());
+	FVector DeltaLocation = FVector(NewPosition.X, NewPosition.Y, NewZ);
+	bool bSweep = true;
+	FHitResult* HitResult = nullptr;
+	AddActorWorldOffset(DeltaLocation, bSweep, HitResult, ETeleportType::None);
+}
+
+void AVehicle_Base::UpdatePitch_Jet_Arcade(float InputValue)
+{
+	const auto& JetData = VehicleData->Jet_Data;
+	auto& AircraftState = VehicleCurrentState.AircraftState;
+	auto& JetState = AircraftState.JetState;
+	if (JetState.CurrentThrust < JetData.JetFlightData_Arcade.TakeOffSpeedReq) { return; }
+
+	float TargetPitch = InputValue;
+
+	JetState.CurrentPitch = FMath::FInterpTo(JetState.CurrentPitch, TargetPitch, GetWorld()->GetDeltaSeconds(), JetData.JetFlightData_Arcade.PitchSpeed);
+	float NewDeltaPitch = JetState.CurrentPitch * GetWorld()->GetDeltaSeconds() * JetData.JetFlightData_Arcade.PitchMultiplier;
+
+	AddActorLocalRotation(FRotator(NewDeltaPitch, 0.0f, 0.0f));
+}
+
+void AVehicle_Base::UpdateRoll_Jet_Arcade(float InputValue)
+{
+	const auto& JetData = VehicleData->Jet_Data;
+	auto& AircraftState = VehicleCurrentState.AircraftState;
+	auto& JetState = AircraftState.JetState;
+
+	float TargetRoll = InputValue;
+
+	JetState.CurrentRoll = FMath::FInterpTo(JetState.CurrentRoll, TargetRoll, GetWorld()->GetDeltaSeconds(), JetData.JetFlightData_Arcade.RollSpeed);
+	float NewDeltaRoll = JetState.CurrentRoll * GetWorld()->GetDeltaSeconds() * JetData.JetFlightData_Arcade.RollMultipler;
+
+	AddActorLocalRotation(FRotator(0.0f, 0.0f, NewDeltaRoll));
 }
 
 #pragma endregion

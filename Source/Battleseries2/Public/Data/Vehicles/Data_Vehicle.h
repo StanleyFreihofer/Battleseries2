@@ -476,7 +476,7 @@ struct FFlightModel_Chaos
 };
 
 USTRUCT(BlueprintType)
-struct FJetFlightModel_Arcade
+struct FJetFlightModel_Chaos
 {
 	GENERATED_BODY()
 
@@ -569,16 +569,60 @@ struct FJetFlightModel_Arcade
 };
 
 USTRUCT(BlueprintType)
+struct FJetFlightModel_Arcade
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ToolTip = "minimum thrust needed to not stall (anything below will result in stall"))
+	float MinThrust = 0.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	float MaxThrustSpeed = 30000.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	float ThrustMultiplier = 2500.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	float TakeOffSpeedReq = 1000.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	float ThrustDrag = 0.25f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	float PitchSpeed = 10.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	float PitchMultiplier = 100.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	float RollSpeed = 10.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	float RollMultipler = 50.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	float YawSpeed = 10.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	float YawMultiplier = 50.0f;
+
+
+};
+
+USTRUCT(BlueprintType)
 struct FJetData
 {
 	GENERATED_BODY()
 
 	// The "Master Switch" for the whole aircraft's logic
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "General")
-	EFlightModelType FlightModelType = EFlightModelType::Dynamic;
+	EFlightModelType FlightModelType = EFlightModelType::Arcade;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	FJetFlightModel_Arcade JetFlightData_Arcade = FJetFlightModel_Arcade();
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	FJetFlightModel_Chaos JetFlightData_Chaos = FJetFlightModel_Chaos();
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	FFlightModel_Chaos ChaosFlightModelData = FFlightModel_Chaos();

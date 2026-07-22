@@ -133,7 +133,7 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void Init_Helicopter();
 	UFUNCTION(BlueprintCallable)
-	void Init_Jet();
+	void Init_Jet_Chaos();
 	UFUNCTION(BlueprintCallable)
 	void Init_Optic(int32 SeatIndex);
 	UFUNCTION(BlueprintCallable)
@@ -260,17 +260,29 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void HandleThrottleInput_Jet(float InputValue);
 	UFUNCTION(BlueprintCallable)
-	void UpdateThrottle_Jet();
+	void HandlePitchInput_Jet(float InputValue);
 	UFUNCTION(BlueprintCallable)
-	void UpdateThruster(float Throttle);
+	void HandleRollInput_Jet(float InputValue);
+
 	UFUNCTION(BlueprintCallable)
-	void UpdatePitch_Jet(float InputValue);
+	void UpdateThrottle_Jet_Chaos();
 	UFUNCTION(BlueprintCallable)
-	void UpdateRoll_Jet(float InputValue);
+	void UpdateThruster_Chaos(float Throttle);
 	UFUNCTION(BlueprintCallable)
-	void UpdateYaw_Jet(float InputValue);
+	void UpdatePitch_Jet_Chaos(float InputValue);
+	UFUNCTION(BlueprintCallable)
+	void UpdateRoll_Jet_Chaos(float InputValue);
+	UFUNCTION(BlueprintCallable)
+	void UpdateYaw_Jet_Chaos(float InputValue);
 	UFUNCTION(BlueprintCallable)
 	void AutoLevel_Jet();
+
+	UFUNCTION(BlueprintCallable)
+	void UpdateThrottle_Jet_Arcade();
+	UFUNCTION(BlueprintCallable)
+	void UpdatePitch_Jet_Arcade(float InputValue);
+	UFUNCTION(BlueprintCallable)
+	void UpdateRoll_Jet_Arcade(float InputValue);
 #pragma endregion
 
 	UFUNCTION(BlueprintCallable)

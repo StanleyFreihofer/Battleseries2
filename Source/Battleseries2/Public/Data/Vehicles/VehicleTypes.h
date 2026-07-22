@@ -95,7 +95,7 @@ struct FJetState
 {
 	GENERATED_BODY()
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)			//raw input value
 	float CurrentThrottle = 0.0f;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
@@ -124,6 +124,10 @@ struct FJetState
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	bool isBoostActive = false;
+
+
+	//arcade only (so far)
+	float CurrentSpeed = 0.0f;			//test if getvelocity or something matches this value (get rid of this/replace if thats the case)
 };
 
 USTRUCT(BlueprintType)

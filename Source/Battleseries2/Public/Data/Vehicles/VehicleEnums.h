@@ -46,9 +46,8 @@ ENUM_RANGE_BY_COUNT(EVehicleType, EVehicleType::MAX);
 UENUM(BlueprintType)
 enum class EFlightModelType : uint8
 {
-	Kinematic    UMETA(DisplayName = "Kinematic (Direct Velocity)"),
-	Dynamic      UMETA(DisplayName = "Dynamic (Forces)"),
-	LinearChaos  UMETA(DisplayName = "Linear Chaos (Velocity Impulse)")
+	Arcade    UMETA(DisplayName = "Arcade"),
+	Chaos      UMETA(DisplayName = "Chaos")
 };
 
 UENUM(BlueprintType)
@@ -65,9 +64,7 @@ UENUM(BlueprintType)					//the default method
 enum class E_ViewMethod : uint8
 {
 	Windowed		UMETA(DisplayName = "Windowed"),
-	Remote			UMETA(DisplayName = "Remote"),
-	//Separate
-	//TBD				UMETA(DisplayName = "TBD")
+	Remote			UMETA(DisplayName = "Remote")
 };
 
 
@@ -94,6 +91,14 @@ enum class EWindowedAimAnchor : uint8
 	FixedPoint			UMETA(DisplayName = "Fixed POint", ToolTip = "Aim direction fixed to socket on vehicle"),
 	Turret				UMETA(DisplayName = "Gimballed", ToolTip = "Follows turret (turret rotation based)"),
 	Hull				UMETA(DisplayName = "Fixed", ToolTip = "Aim direction fixed to Hull (direction vehicle is facing)")
+};
+
+UENUM(BlueprintType)
+enum class EAlternateViewType : uint8
+{
+	ThirdPerson			UMETA(DisplayName = "Third Person", ToolTip = "Switch to conventional 3rd person view"),
+	FirstPerson			UMETA(DisplayName = "First Person", ToolTip = "Switch to head/conventional view if in an alternate view. If already in first person view, this will do nothing"),
+	None				UMETA(DisplayName = "None", ToolTip = "no alternate view available")
 };
 
 UENUM(BlueprintType)						//denotes what specific mesh on a vehicle a camo MI/texture can be applied to
@@ -127,3 +132,5 @@ enum class ETargetedStatus : uint8
 	GettingLockedOn,
 	MissileIncoming
 };
+
+
