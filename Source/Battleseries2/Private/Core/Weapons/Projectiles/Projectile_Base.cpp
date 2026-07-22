@@ -224,6 +224,10 @@ void AProjectile_Base::HandleTransition_LimitedRange()
 
 void AProjectile_Base::HandleTransition_RangeToTarget()
 {
+	if (!ProjectileMovementComponent->HomingTargetComponent.Get())
+	{
+		return;		//do whatever missed target
+	}
 	FVector TargetLocation = ProjectileMovementComponent->HomingTargetComponent->GetComponentLocation();
 	float Distance = FVector::Dist(GetActorLocation(), TargetLocation);
 	if (Distance <= ProjectileData->ProjectileFlightPlan[ProjectileState.FlightStageIndex].RequiredValue)
