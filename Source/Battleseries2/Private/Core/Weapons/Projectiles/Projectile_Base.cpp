@@ -81,6 +81,7 @@ void AProjectile_Base::SetRuntimeContext(UPrimitiveComponent* AttachComponent, F
 		this->AttachToComponent(AttachComponent, FAttachmentTransformRules(EAttachmentRule::SnapToTarget, true), AttachSocket);
 		ProjectileState.PreFlightContext.AttachedComponent = AttachComponent;
 		ProjectileState.PreFlightContext.AttachSocket = AttachSocket;
+		MoveIgnoreActorAdd(GetAttachParentActor());			//do this somewhere else????????????????????????????????????????????????????????????????????????????????
 		ProjectileMeshComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 		SetActorEnableCollision(false);
 	}
@@ -92,36 +93,47 @@ void AProjectile_Base::SetRuntimeContext(UPrimitiveComponent* AttachComponent, F
 	}
 }
 
+void AProjectile_Base::EjectFromPylon()
+{
+	FVector VehicleVelocity = GetVelocity();					//FVector VehicleVelocity = GetAttachParentActor()->GetVelocity();
+	FVector DownVector = -GetAttachParentActor()->GetRootComponent()->GetUpVector();
+	FVector EjectionImpulse = DownVector * 850000.0f; // Scale to weapon mass
+	FVector FrontPistonLoc = ProjectileMeshComponent->GetCenterOfMass() + (GetAttachParentActor()->GetRootComponent()->GetForwardVector() * 25.0f);
+
+	UE_LOG(LogTemp, Warning, TEXT("[ProjectilePoolSubsystem::ReturnProjectileToPool] DetachFromActor"));
+	DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
+	ProjectileMeshComponent->SetSimulatePhysics(true);
+	ProjectileMeshComponent->SetPhysicsLinearVelocity(VehicleVelocity);
+	ProjectileMeshComponent->AddImpulseAtLocation(EjectionImpulse, FrontPistonLoc);
+}
+
 void AProjectile_Base::FireProjectile(FVector AimDirection)
 {
 	if (ProjectileState.PreFlightContext.AttachedComponent || GetParentComponent() != nullptr)
 	{
-		//FVector VehicleVelocity = GetAttachParentActor()->GetVelocity();
-		UE_LOG(LogTemp, Warning, TEXT("[ProjectilePoolSubsystem::ReturnProjectileToPool] DetachFromActor"));
-		DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
-		//add impulse or something idk
+		EjectFromPylon();
 	}
-
-	GetWorldTimerManager().SetTimer(CollisionTimerHandle, this, &AProjectile_Base::EnableCollision, 0.5f, true);
 
 	ProjectileState.Origin = AimDirection;
 
-	StartFlightPlan();
-	UpdateFlightPlan(0);
+	GetWorldTimerManager().SetTimer(CollisionTimerHandle, this, &AProjectile_Base::StartFlightPlan, 0.5f, true);
 }
 
 void AProjectile_Base::StartFlightPlan()
 {
+	ProjectileMeshComponent->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+	SetActorEnableCollision(true);
+	if (ProjectileMeshComponent->IsSimulatingPhysics())
+	{
+		ProjectileMeshComponent->SetSimulatePhysics(false);
+	}
+
 	ProjectileMeshComponent->OnComponentHit.AddDynamic(this, &AProjectile_Base::OnHit);		//should not explode if not in use yet (hanging on rack for example)
 	ProjectileMovementComponent->Velocity = ProjectileState.Origin * ProjectileData->ProjectileFlightPlan[0].GuidanceParams.InitialSpeed;
 	ProjectileMovementComponent->Activate();
 	NiagaraComponent->Activate();
-}
 
-void AProjectile_Base::EnableCollision()
-{
-	ProjectileMeshComponent->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-	SetActorEnableCollision(true);
+	UpdateFlightPlan(0);
 }
 
 void AProjectile_Base::UpdateFlightPlan(int32 FlightStageIndex)

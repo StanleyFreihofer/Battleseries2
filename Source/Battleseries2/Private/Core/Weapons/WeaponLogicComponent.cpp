@@ -231,7 +231,7 @@ void UWeaponLogicComponent::StopAim()
 void UWeaponLogicComponent::Rangefinder()
 {
 	FHitResult OutHit;
-	UBS2FunctionLibrary::PerformWeaponLineTrace(this, Cast<ACharacter_Base>(GetOwner())->FPCamera->GetComponentTransform(), OutHit, { GetOwner() });
+	UBS2FunctionLibrary::PerformWeaponLineTrace(this, Cast<ACharacter_Base>(GetOwner())->FPCamera->GetComponentTransform(), OutHit, { GetOwner() }, false);
 	TWeakObjectPtr<USkeletalMeshComponent>& WeaponMesh = WeaponSystem.InfantryWeaponSystem.WeaponState_FP[GetCWI()].WeaponMesh;
 
 	WeaponSystem.BaseWeaponSystem.EquippedWeaponState.RaycastData.RangefinderData = OutHit;
@@ -325,13 +325,24 @@ void UWeaponLogicComponent::ReloadWeapon()
 	FWeapon_Runtime& CurrentWeapon = *GetCurrentWeaponRuntime();
 	const FInfantryWeaponData* StaticWeaponData = GetCurrentWeaponStaticData();
 	FInfantryWeaponState& InfantryWeaponState_FP = WeaponSystem.InfantryWeaponSystem.WeaponState_FP[GetCWI()];
+	ReloadEndedDelegate.BindUObject(this, &UWeaponLogicComponent::OnReloadFinished);
 
 	if (CurrentWeapon.WeaponState.CurrentReserveAmmo > 0)
 	{ 
 		CurrentWeapon.WeaponState.isReloading = true;
 		bool bEmptyMag = CurrentWeapon.WeaponState.CurrentAmmoinMag <= 0;
+
+		TWeakObjectPtr<ACharacter_Base> Character = Cast<ACharacter_Base>(GetOwner());
+		USkeletalMeshComponent* FPArms = Character->FPArms;
+		FString SocketString = FString::Printf(TEXT("Socket_%s_R"), *GetCurrentWeaponRuntime()->WeaponID.ToString());
+		FName AttachSocketName = FName(*SocketString);
+		if (FPArms->DoesSocketExist(AttachSocketName))
+		{
+			InfantryWeaponState_FP.WeaponMesh->AttachToComponent(Character->FPArms, FAttachmentTransformRules(EAttachmentRule::SnapToTarget, EAttachmentRule::SnapToTarget, EAttachmentRule::SnapToTarget, true), AttachSocketName);
+		}
+
 		TSoftObjectPtr<UAnimMontage> FPReloadMontage = bEmptyMag ? StaticWeaponData->InfantryWeaponAnimData.FPWeaponAnimData.ReloadEmptyWeaponMontage : StaticWeaponData->InfantryWeaponAnimData.FPWeaponAnimData.ReloadWeaponMontage;
-		TSoftObjectPtr<UAnimSequence> WeaponReloadAnim = bEmptyMag ? StaticWeaponData->InfantryWeaponAnimData.WeaponAnimData.WeaponReload : StaticWeaponData->InfantryWeaponAnimData.WeaponAnimData.WeaponReloadEmpty;
+		TSoftObjectPtr<UAnimSequence> WeaponReloadAnim = bEmptyMag ? StaticWeaponData->InfantryWeaponAnimData.WeaponAnimData.WeaponReloadEmpty : StaticWeaponData->InfantryWeaponAnimData.WeaponAnimData.WeaponReload;
 		FPReloadMontage.LoadSynchronous();
 		WeaponReloadAnim.LoadSynchronous();
 
@@ -345,8 +356,23 @@ void UWeaponLogicComponent::ReloadWeapon()
 
 void UWeaponLogicComponent::OnReloadFinished(UAnimMontage* Montage, bool bInterrupted)
 {
+	UE_LOG(LogTemp, Warning, TEXT("[WLC::OnReloadFinished"));
 	FWeaponStats_Runtime& CurrentWeaponStats = GetCurrentWeaponStats();
 	FWeapon_Runtime& CurrentWeapon = *GetCurrentWeaponRuntime();
+	FInfantryWeaponState& InfantryWeaponState_FP = WeaponSystem.InfantryWeaponSystem.WeaponState_FP[GetCWI()];
+
+	TWeakObjectPtr<ACharacter_Base> Character = Cast<ACharacter_Base>(GetOwner());
+	USkeletalMeshComponent* FPArms = Character->FPArms;
+	FString ReloadSocketString = FString::Printf(TEXT("Socket_%s_R"), *GetCurrentWeaponRuntime()->WeaponID.ToString());
+	FString SocketString = FString::Printf(TEXT("Socket_%s"), *GetCurrentWeaponRuntime()->WeaponID.ToString());
+	FName ReloadAttachSocketName = FName(*ReloadSocketString);
+	FName AttachSocketName = FName(*SocketString);
+	if (FPArms->DoesSocketExist(ReloadAttachSocketName))			//assumes attached to ReloadSocket
+	{
+		InfantryWeaponState_FP.WeaponMesh->AttachToComponent(Character->FPArms, FAttachmentTransformRules(EAttachmentRule::SnapToTarget, EAttachmentRule::SnapToTarget, EAttachmentRule::SnapToTarget, true), AttachSocketName);
+	}
+
+
 	int32 NewCAM, NewCRA;
 	UBS2FunctionLibrary::CalculateReload(CurrentWeaponStats.MagSize, CurrentWeapon.WeaponState.CurrentAmmoinMag, CurrentWeapon.WeaponState.CurrentReserveAmmo, NewCAM, NewCRA);
 	CurrentWeapon.WeaponState.CurrentAmmoinMag = NewCAM;

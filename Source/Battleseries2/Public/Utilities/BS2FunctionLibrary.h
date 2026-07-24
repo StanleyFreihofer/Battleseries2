@@ -21,7 +21,7 @@ class BATTLESERIES2_API UBS2FunctionLibrary : public UBlueprintFunctionLibrary
 public:
 
     UFUNCTION(BlueprintCallable, Category = "Battleseries | Tools")
-    static bool PerformSphereTraceMulti(const UObject* WorldContextObject, const FTransform StartTransform, TArray<FHitResult>& OutHits, TArray<AActor*> ActorsToIgnore, float Radius, float Distance);
+    static bool PerformSphereTraceMulti(const UObject* WorldContextObject, const FTransform StartTransform, TArray<FHitResult>& OutHits, TArray<AActor*> ActorsToIgnore, float Radius, float Distance, bool Debug);
     UFUNCTION(BlueprintCallable, Category = "Vehicle|HUD")
     static void ConvertNamesToVehicleTypes(const TArray<FName>& VehicleTypeNames, TArray<EVehicleType>& OutVehicleTypes);
 
@@ -42,9 +42,9 @@ public:
     UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Battleseries | Weapon Functions")
     static float GetFireRate(float RateOfFire);
     UFUNCTION(BlueprintCallable, Category = "Battleseries | Weapon Functions")
-    static bool PerformWeaponLineTrace(const UObject* WorldContextObject, const FTransform& StartTransform, FHitResult& OutHit, TArray<AActor*> ActorsToIgnore);
+    static bool PerformWeaponLineTrace(const UObject* WorldContextObject, const FTransform& StartTransform, FHitResult& OutHit, TArray<AActor*> ActorsToIgnore, bool Debug);
     UFUNCTION(BlueprintCallable, Category = "Battleseries | Weapon Functions")
-    static bool PerformWeaponSphereTrace(const UObject* WorldContextObject, const FTransform& StartTransform, FHitResult& OutHit, TArray<AActor*> ActorsToIgnore, float Radius);
+    static bool PerformWeaponSphereTrace(const UObject* WorldContextObject, const FTransform& StartTransform, FHitResult& OutHit, TArray<AActor*> ActorsToIgnore, float Radius, bool Debug);
     UFUNCTION()
     static FTransform GetMuzzleTransform(FName MuzzleSocketName, TWeakObjectPtr<USkeletalMeshComponent> SocketMesh);
 

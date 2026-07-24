@@ -223,10 +223,11 @@ void ACharacter_Base::InteractTrace()
 	ActorsToIgnore.Add(this);
 	const float& TraceDistance = UBS2FunctionLibrary::GetDataSubsystem(GetWorld())->GetCharacterDefaults()->TraceDistance;
 	const float& InteractionDistance = UBS2FunctionLibrary::GetDataSubsystem(GetWorld())->GetCharacterDefaults()->InteractionDistance;
-	UBS2FunctionLibrary::PerformSphereTraceMulti(GetWorld(), FPCamera->GetComponentTransform(), HitResults, ActorsToIgnore, 1.0f, TraceDistance);
+	UBS2FunctionLibrary::PerformSphereTraceMulti(GetWorld(), FPCamera->GetComponentTransform(), HitResults, ActorsToIgnore, 1.0f, TraceDistance, false);
 	if (HitResults.Num() > 0 && HitResults[0].GetActor()->GetClass()->ImplementsInterface(UInteract::StaticClass()) && HitResults[0].Distance <= InteractionDistance)
 	{
 		CharacterState.InteractionState.HitInteractable = HitResults[0].GetActor();
+		if (!CharacterState.InteractionState.HitInteractable.Get()) { return; }
 		IInteract::Execute_HoverInteraction(CharacterState.InteractionState.HitInteractable.Get(), true);
 	}
 	else if (CharacterState.InteractionState.HitInteractable.IsValid())

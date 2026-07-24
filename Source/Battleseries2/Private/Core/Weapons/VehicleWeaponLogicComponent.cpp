@@ -691,8 +691,7 @@ void UVehicleWeaponLogicComponent::UpdateSeatRangefinder(int32 SeatIndex, FTrans
 	}
 	else
 	{
-		bool bHit;
-		bHit = UBS2FunctionLibrary::PerformWeaponLineTrace(this, TraceTransform, HitResult, ActorsToIgnore);
+		bool bHit = UBS2FunctionLibrary::PerformWeaponLineTrace(this, TraceTransform, HitResult, ActorsToIgnore, false);
 	}
 
 	if (OwnerDataAccessor->GetVehicleState().SeatStates[SeatIndex].UpdateHUD)
@@ -757,8 +756,8 @@ void UVehicleWeaponLogicComponent::HandleHoming(int32 SeatIndex, FTransform Trac
 	FVehicleWeapon_Runtime& CurrentWeapon = GetEquippedWeaponInSeat(SeatIndex);
 	FHitResult& HitResult = SystemPtr->VehicleWeaponSystemState.EquippedWeaponState.RaycastData.RangefinderData;
 
-	bool bHit;
-	bHit = UBS2FunctionLibrary::PerformWeaponSphereTrace(this, TraceTransform, HitResult, ActorsToIgnore, StaticWeaponData.WeaponFunctionality.HomingFunctionality.LockOnRadius);
+	bool bHit = UBS2FunctionLibrary::PerformWeaponSphereTrace(this, TraceTransform, HitResult, ActorsToIgnore, StaticWeaponData.WeaponFunctionality.HomingFunctionality.LockOnRadius, true);
+
 	FLockOnState& LockOnState = CurrentWeapon.VehicleWeaponState.BaseWeaponRuntimeData.WeaponState.LockOnState;
 
 	switch (StaticHomingData.HomingCapability)

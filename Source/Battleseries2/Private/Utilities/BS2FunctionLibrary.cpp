@@ -12,7 +12,7 @@
 #include "Save/SaveSubsystem.h"
 #include "Utilities/I_VehicleDataAccessor.h"
 
-bool UBS2FunctionLibrary::PerformSphereTraceMulti(const UObject* WorldContextObject, const FTransform StartTransform, TArray<FHitResult>& OutHits, TArray<AActor*> ActorsToIgnore, float Radius, float Distance)
+bool UBS2FunctionLibrary::PerformSphereTraceMulti(const UObject* WorldContextObject, const FTransform StartTransform, TArray<FHitResult>& OutHits, TArray<AActor*> ActorsToIgnore, float Radius, float Distance, bool Debug)
 {
 	UWorld* World = GEngine->GetWorldFromContextObject(WorldContextObject, EGetWorldErrorMode::LogAndReturnNull);
 	FVector Startpoint = StartTransform.GetLocation();
@@ -22,6 +22,7 @@ bool UBS2FunctionLibrary::PerformSphereTraceMulti(const UObject* WorldContextObj
 	FCollisionQueryParams Params;
 	FCollisionShape SphereShape = FCollisionShape::MakeSphere(Radius);
 	Params.AddIgnoredActors(ActorsToIgnore);
+	EDrawDebugTrace::Type DebugTrace = Debug ? EDrawDebugTrace::ForOneFrame : EDrawDebugTrace::None;					//<--namespaced enum
 
 	return UKismetSystemLibrary::SphereTraceMulti(
 		WorldContextObject,
@@ -31,7 +32,7 @@ bool UBS2FunctionLibrary::PerformSphereTraceMulti(const UObject* WorldContextObj
 		UEngineTypes::ConvertToTraceType(ECC_Visibility),
 		false,              // bTraceComplex
 		ActorsToIgnore,
-		EDrawDebugTrace::None,
+		DebugTrace,
 		OutHits,
 		true,               // bIgnoreSelf
 		FLinearColor::Red,  // Trace Color
@@ -104,7 +105,7 @@ float UBS2FunctionLibrary::GetFireRate(float RateOfFire)
 	return RateOfFire;
 }
 
-bool UBS2FunctionLibrary::PerformWeaponLineTrace(const UObject* WorldContextObject, const FTransform& StartTransform, FHitResult& OutHit, TArray<AActor*> ActorsToIgnore)
+bool UBS2FunctionLibrary::PerformWeaponLineTrace(const UObject* WorldContextObject, const FTransform& StartTransform, FHitResult& OutHit, TArray<AActor*> ActorsToIgnore, bool Debug)
 {
 	//if calling from any actor, WorldContextObject = this/self
 	UWorld* World = GEngine->GetWorldFromContextObject(WorldContextObject, EGetWorldErrorMode::LogAndReturnNull);
@@ -115,23 +116,26 @@ bool UBS2FunctionLibrary::PerformWeaponLineTrace(const UObject* WorldContextObje
 	FCollisionQueryParams Params;
 	Params.AddIgnoredActors(ActorsToIgnore);
 	bool bDidHit = World->LineTraceSingleByChannel(OutHit, Startpoint, Endpoint, ECC_Visibility, Params);
-	//DrawDebugLine(World, Startpoint, Endpoint, bDidHit ? FColor::Green : FColor::Red, false, 1.f, 0, 1.f);
+	if (Debug)
+	{
+		DrawDebugLine(World, Startpoint, Endpoint, bDidHit ? FColor::Green : FColor::Red, false, 1.f, 0, 1.f);
+	}
+
 	return bDidHit;
 }
 
-bool UBS2FunctionLibrary::PerformWeaponSphereTrace(const UObject* WorldContextObject, const FTransform& StartTransform, FHitResult& OutHit, TArray<AActor*> ActorsToIgnore, float Radius)
+bool UBS2FunctionLibrary::PerformWeaponSphereTrace(const UObject* WorldContextObject, const FTransform& StartTransform, FHitResult& OutHit, TArray<AActor*> ActorsToIgnore, float Radius, bool Debug)
 {
 	//if calling from any actor, WorldContextObject = this/self
 	UWorld* World = GEngine->GetWorldFromContextObject(WorldContextObject, EGetWorldErrorMode::LogAndReturnNull);
 	FVector Startpoint = StartTransform.GetLocation();
 	FVector GetRotationXVector = StartTransform.GetRotation().Rotator().Vector();
-	FVector Endpoint = GetRotationXVector * 50000.0f + Startpoint;
+	FVector Endpoint = GetRotationXVector * 1000000.0f + Startpoint;			//(1000000 = 6 miles)
 
 	FCollisionQueryParams Params;
 	FCollisionShape SphereShape = FCollisionShape::MakeSphere(Radius);
 	Params.AddIgnoredActors(ActorsToIgnore);
-	//bool bDidHit = World->SweepSingleByChannel(OutHit, Startpoint, Endpoint, FQuat::Identity, ECC_Visibility, SphereShape, Params);
-
+	EDrawDebugTrace::Type DebugTrace = Debug ? EDrawDebugTrace::ForOneFrame : EDrawDebugTrace::None;
 
 	return UKismetSystemLibrary::SphereTraceSingle(
 		WorldContextObject,
@@ -141,7 +145,7 @@ bool UBS2FunctionLibrary::PerformWeaponSphereTrace(const UObject* WorldContextOb
 		UEngineTypes::ConvertToTraceType(ECC_Visibility),
 		false,              // bTraceComplex
 		ActorsToIgnore,
-		EDrawDebugTrace::None,
+		DebugTrace,
 		OutHit,
 		true,               // bIgnoreSelf
 		FLinearColor::Red,  // Trace Color
