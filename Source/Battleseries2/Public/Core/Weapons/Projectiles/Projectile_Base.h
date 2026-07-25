@@ -54,13 +54,13 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void SetRuntimeContext(UPrimitiveComponent* AttachComponent, FName AttachSocket);
-	UFUNCTION(BlueprintCallable)
-	void EjectFromPylon();
 
 	UFUNCTION(BlueprintCallable)
 	void FireProjectile(FVector AimDirection);
 	UFUNCTION(BlueprintCallable)
 	void StartFlightPlan();
+	UFUNCTION(BlueprintCallable)
+	void EnableCollision();
 	UFUNCTION(BlueprintCallable)
 	void UpdateFlightPlan(int32 FlightStageIndex);
 	UFUNCTION(BlueprintCallable)
