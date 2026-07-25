@@ -54,7 +54,8 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void SetPreflightContext(UPrimitiveComponent* AttachComponent, FName AttachSocket);
-
+	UFUNCTION(BlueprintCallable)
+	void EjectFromPylon();
 	UFUNCTION(BlueprintCallable)
 	void FireProjectile(FVector AimDirection);
 	UFUNCTION(BlueprintCallable)

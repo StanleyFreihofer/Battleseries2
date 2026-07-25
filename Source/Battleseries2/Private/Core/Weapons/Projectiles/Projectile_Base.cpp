@@ -78,12 +78,26 @@ void AProjectile_Base::SetPreflightContext(UPrimitiveComponent* AttachComponent,
 	//PREFLIGHT CONTEXT
 	if (AttachComponent)
 	{
-		this->AttachToComponent(AttachComponent, FAttachmentTransformRules(EAttachmentRule::SnapToTarget, true), AttachSocket);
 		ProjectileState.PreFlightContext.AttachedComponent = AttachComponent;
 		ProjectileState.PreFlightContext.AttachSocket = AttachSocket;
-		MoveIgnoreActorAdd(GetAttachParentActor());			//do this somewhere else????????????????????????????????????????????????????????????????????????????????
-		ProjectileMeshComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-		SetActorEnableCollision(false);
+
+		ProjectileMeshComponent->SetSimulatePhysics(false);
+		//ProjectileMeshComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		ProjectileMeshComponent->SetCollisionResponseToAllChannels(ECR_Ignore);				//seemingly needed
+		//SetActorEnableCollision(false);
+
+		FAttachmentTransformRules AttachmentRules(EAttachmentRule::SnapToTarget, EAttachmentRule::SnapToTarget, EAttachmentRule::SnapToTarget, false);
+		AttachToComponent(AttachComponent, AttachmentRules, AttachSocket);
+
+		APawn* Actor = Cast<APawn>(AttachComponent->GetOwner());
+		SetOwner(Actor);
+		MoveIgnoreActorAdd(Actor);
+		Actor->MoveIgnoreActorAdd(this);
+		//ProjectileMeshComponent->IgnoreActorWhenMoving(Actor, true);
+
+		MoveIgnoreActorAdd(GetAttachParentActor());			
+		MoveIgnoreActorAdd(GetParentActor());
+		MoveIgnoreActorAdd(GetOwner());
 	}
 	else
 	{
@@ -93,14 +107,22 @@ void AProjectile_Base::SetPreflightContext(UPrimitiveComponent* AttachComponent,
 	}
 }
 
+void AProjectile_Base::EjectFromPylon()
+{
+	FVector VehicleVelocity = GetVelocity();					//FVector VehicleVelocity = GetAttachParentActor()->GetVelocity();
+	FVector DownVector = -GetAttachParentActor()->GetRootComponent()->GetUpVector();
+	FVector EjectionImpulse = DownVector * 850000.0f; // Scale to weapon mass
+	FVector FrontPistonLoc = ProjectileMeshComponent->GetCenterOfMass() + (GetAttachParentActor()->GetRootComponent()->GetForwardVector() * 25.0f);
+
+	UE_LOG(LogTemp, Warning, TEXT("[Projectile_Base::EjectFromPylon] DetachFromActor"));
+	GetRootComponent()->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
+}
+
 void AProjectile_Base::FireProjectile(FVector AimDirection)
 {
 	if (ProjectileState.PreFlightContext.AttachedComponent || GetParentComponent() != nullptr)
 	{
-		//FVector VehicleVelocity = GetAttachParentActor()->GetVelocity();
-		UE_LOG(LogTemp, Warning, TEXT("[ProjectilePoolSubsystem::ReturnProjectileToPool] DetachFromActor"));
-		DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
-		//add impulse or something idk
+		EjectFromPylon();
 	}
 
 	GetWorldTimerManager().SetTimer(CollisionTimerHandle, this, &AProjectile_Base::EnableCollision, 0.5f, true);
@@ -128,6 +150,7 @@ void AProjectile_Base::StartFlightPlan()
 void AProjectile_Base::EnableCollision()
 {
 	ProjectileMeshComponent->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+	ProjectileMeshComponent->SetCollisionResponseToAllChannels(ECR_Block);
 	SetActorEnableCollision(true);
 }
 

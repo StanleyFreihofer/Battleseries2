@@ -257,9 +257,8 @@ void UVehicleWeaponLogicComponent::MountProjectiles(int32 SeatIndex, int32 Weapo
 
 		FTransform SocketTransform = VehicleMeshComponent->GetSocketTransform(SocketName, RTS_World);	//transform offset is data (is that needed?)
 		TWeakObjectPtr<AProjectile_Base> NewProjectile = UBS2FunctionLibrary::GetProjectileSystem(this)->AcquireProjectileFromPool(MunitionID);
-		NewProjectile->SetRuntimeContext(VehicleMeshComponent, SocketName);
-		NewProjectile->MoveIgnoreActorAdd(GetOwner());
-		NewProjectile->SetActorEnableCollision(false);
+		NewProjectile->SetPreflightContext(VehicleMeshComponent, SocketName);
+		//OwnerDataAccessor->GetVehicle().MoveIgnoreActorAdd(NewProjectile.Get());
 		SeatWeaponToFill.VehicleWeaponState.CurrentMountedProjectiles.Add(NewProjectile);
 		//DONT INITIALIZE, PROJECTILES SHOULD ALREADY BE INITIALIZED BY POOL SUBYSTEM
 	}
@@ -452,7 +451,7 @@ void UVehicleWeaponLogicComponent::ClearWeaponSlotFromSeat(int32 SeatIndex, int3
 		{
 			TWeakObjectPtr<AProjectile_Base> Projectile = WeaponSlotToClear.VehicleWeaponState.CurrentMountedProjectiles[i];
 			UBS2FunctionLibrary::GetProjectileSystem(this)->ReturnProjectileToPool(WeaponSlotToClear.VehicleWeaponState.CurrentMountedProjectiles[i]);
-			WeaponSlotToClear.VehicleWeaponState.CurrentMountedProjectiles[i]->SetRuntimeContext(nullptr, FName());
+			WeaponSlotToClear.VehicleWeaponState.CurrentMountedProjectiles[i]->SetPreflightContext(nullptr, FName());
 			WeaponSlotToClear.VehicleWeaponState.CurrentMountedProjectiles[i] = nullptr;
 		}
 		WeaponSlotToClear.VehicleWeaponState.CurrentMountedProjectiles.Empty();
