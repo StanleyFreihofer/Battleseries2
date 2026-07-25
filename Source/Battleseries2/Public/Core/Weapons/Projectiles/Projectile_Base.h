@@ -53,7 +53,7 @@ public:
 	void Init_RocketExhaustVFX();
 
 	UFUNCTION(BlueprintCallable)
-	void SetRuntimeContext(UPrimitiveComponent* AttachComponent, FName AttachSocket);
+	void SetPreflightContext(UPrimitiveComponent* AttachComponent, FName AttachSocket);
 
 	UFUNCTION(BlueprintCallable)
 	void FireProjectile(FVector AimDirection);

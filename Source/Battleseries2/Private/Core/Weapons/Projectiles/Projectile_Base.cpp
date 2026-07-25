@@ -73,7 +73,7 @@ void AProjectile_Base::Init_RocketExhaustVFX()
 	}
 }
 
-void AProjectile_Base::SetRuntimeContext(UPrimitiveComponent* AttachComponent, FName AttachSocket)
+void AProjectile_Base::SetPreflightContext(UPrimitiveComponent* AttachComponent, FName AttachSocket)
 {
 	//PREFLIGHT CONTEXT
 	if (AttachComponent)
@@ -81,12 +81,13 @@ void AProjectile_Base::SetRuntimeContext(UPrimitiveComponent* AttachComponent, F
 		this->AttachToComponent(AttachComponent, FAttachmentTransformRules(EAttachmentRule::SnapToTarget, true), AttachSocket);
 		ProjectileState.PreFlightContext.AttachedComponent = AttachComponent;
 		ProjectileState.PreFlightContext.AttachSocket = AttachSocket;
+		MoveIgnoreActorAdd(GetAttachParentActor());			//do this somewhere else????????????????????????????????????????????????????????????????????????????????
 		ProjectileMeshComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 		SetActorEnableCollision(false);
 	}
 	else
 	{
-		UE_LOG(LogTemp, Error, TEXT("[Projectile_Base::SetRuntimeContext] AttachComponent invalid, should detach happen here?"));
+		UE_LOG(LogTemp, Error, TEXT("[Projectile_Base::SetPreflightContext] AttachComponent invalid, should detach happen here?"));
 		ProjectileState.PreFlightContext.AttachedComponent = nullptr;
 		ProjectileState.PreFlightContext.AttachSocket = NAME_None;
 	}
@@ -112,6 +113,12 @@ void AProjectile_Base::FireProjectile(FVector AimDirection)
 
 void AProjectile_Base::StartFlightPlan()
 {
+	ProjectileMeshComponent->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+	SetActorEnableCollision(true);
+	if (ProjectileMeshComponent->IsSimulatingPhysics())
+	{
+		ProjectileMeshComponent->SetSimulatePhysics(false);
+	}
 	ProjectileMeshComponent->OnComponentHit.AddDynamic(this, &AProjectile_Base::OnHit);		//should not explode if not in use yet (hanging on rack for example)
 	ProjectileMovementComponent->Velocity = ProjectileState.Origin * ProjectileData->ProjectileFlightPlan[0].GuidanceParams.InitialSpeed;
 	ProjectileMovementComponent->Activate();
