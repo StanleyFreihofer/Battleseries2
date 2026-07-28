@@ -2,6 +2,8 @@
 
 #include "CoreMinimal.h"
 #include "Engine/DataAsset.h"
+#include "Data/Items/ItemEnums.h"
+#include "Data/Core/CoreEnums.h"
 #include "Data/Core/CoreTypes.h"
 #include "CoreDefaults.generated.h"
 

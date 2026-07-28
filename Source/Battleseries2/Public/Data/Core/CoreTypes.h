@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Data/Items/ItemEnums.h"
 #include "Data/Core/CoreEnums.h"
 #include "CoreTypes.generated.h"
 

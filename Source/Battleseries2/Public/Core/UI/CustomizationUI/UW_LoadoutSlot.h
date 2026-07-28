@@ -7,7 +7,7 @@
 #include "Engine/DataTable.h"
 #include "Components/SizeBox.h"
 #include "Components/Image.h"
-#include "Data/Core/CoreTypes.h"
+#include "Data/Items/ItemEnums.h"
 #include "Utilities/DataManagerSubsystem.h"
 #include "UW_LoadoutSlot.generated.h"
 

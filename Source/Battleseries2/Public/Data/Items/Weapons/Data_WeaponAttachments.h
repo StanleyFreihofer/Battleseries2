@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "Engine/DataTable.h"
 #include "Data/Core/CoreTypes.h"
+#include "Data/Core/CoreEnums.h"
 #include "Data/Items/Weapons/WeaponEnums.h"
 #include "Data_WeaponAttachments.generated.h"
 
