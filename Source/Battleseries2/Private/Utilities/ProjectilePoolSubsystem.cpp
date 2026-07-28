@@ -6,8 +6,9 @@
 #include "NiagaraComponent.h"
 #include "Engine/StaticMeshActor.h"
 #include "Utilities/BS2FunctionLibrary.h"
+#include "Utilities/DataManagerSubsystem.h"
 #include "Core/Weapons/Projectiles/Projectile_Base.h"
-#include "Data/Weapons/Data_Projectile.h"
+#include "Data/Items/Weapons/Data_Projectile.h"
 
 void UProjectilePoolSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {

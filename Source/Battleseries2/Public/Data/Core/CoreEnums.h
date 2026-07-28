@@ -3,6 +3,8 @@
 #include "CoreMinimal.h"
 #include "CoreEnums.generated.h"
 
+//separate into loadout enums?????????????????????????????????
+
 //alot of this is used to route through data manager (gives it the data needed to look up the correct dt)
 
 UENUM(BlueprintType)
@@ -26,6 +28,18 @@ enum class ECharacterItemType : uint8
 	//knife
 	//specialization/upgrade
 	//camo
+};
+
+UENUM(BlueprintType)
+enum class ELoadoutSlot : uint8
+{
+	PrimaryWeapon		UMETA(DisplayName = "Primary Weapon"),
+	SecondaryWeapon		UMETA(DisplayName = "Secondary Weapon"),
+	Gadget1				UMETA(DisplayName = "Signature Class/Default Gadget", ToolTip = "Default Passive class defining gadget, shouldn't be changed (eg. Defib, Repair Tool, Ammo Box)"),		
+	Gadget2				UMETA(DisplayName = "Optional Gadget 1", ToolTip = "Secondary gadget that can be selected"),
+	Gadget3				UMETA(DisplayName = "Optional Gadget 2", ToolTip = "Tertiary gadget that can be selected (only an option if enought inventory/weight slots/room)"),
+	Grenade				UMETA(DisplayName = "Grenade"),
+	Melee				UMETA(DisplayName = "Melee")
 };
 
 UENUM(BlueprintType)

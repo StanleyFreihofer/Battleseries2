@@ -4,7 +4,7 @@
 #include "LoadoutPreviewStage.h"
 #include "Vehicle_Base.h"
 #include "Data/Data_Customization.h"
-#include "Data/Weapons/Data_InfantryWeapon.h"
+#include "Data/Items/Weapons/Data_InfantryWeapon.h"
 #include "Utilities/BS2FunctionLibrary.h"
 #include "Utilities/DataManagerSubsystem.h"
 #include "Camera/CameraActor.h"

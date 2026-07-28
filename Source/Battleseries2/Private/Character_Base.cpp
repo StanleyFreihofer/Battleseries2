@@ -10,7 +10,7 @@
 #include "EnhancedInputSubsystems.h"
 #include "EnhancedPlayerInput.h"
 #include "Data/Characters/CharacterDefaults.h"
-#include "Data/Weapons/Data_Weapon.h"
+#include "Data/Items/Weapons/Data_Weapon.h"
 #include "Core/Weapons/VehicleWeaponLogicComponent.h"
 #include "Core/Weapons/WeaponLogicComponent.h"
 #include "Core/UI/VehicleHUDs/UW_HUD_Vehicle_Base.h"

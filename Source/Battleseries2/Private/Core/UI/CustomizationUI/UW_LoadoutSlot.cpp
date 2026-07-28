@@ -7,8 +7,8 @@
 #include "Components/Button.h"          // For UButton
 #include "Components/TextBlock.h"       // For UTextBlock
 #include "Data/Core/CoreTypes.h"
-#include "Data/Weapons/Data_InfantryWeapon.h"
-#include "Data/Weapons/Data_VehicleWeapon.h"
+#include "Data/Items/Weapons/Data_InfantryWeapon.h"
+#include "Data/Items/Weapons/Data_VehicleWeapon.h"
 #include "Data/Data_Optics.h"
 #include "Data/Data_Camo.h"
 #include "Utilities/BS2FunctionLibrary.h"

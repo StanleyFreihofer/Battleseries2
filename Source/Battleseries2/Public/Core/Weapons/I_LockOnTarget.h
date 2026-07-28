@@ -2,7 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "UObject/Interface.h"
-#include "Data/Weapons/WeaponEnums.h"
+#include "Data/Items/Weapons/WeaponEnums.h"
 #include "I_LockOnTarget.generated.h"
 
 UINTERFACE(MinimalAPI, BlueprintType)

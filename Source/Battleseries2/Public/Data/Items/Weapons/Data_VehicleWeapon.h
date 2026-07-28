@@ -2,7 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "Engine/DataTable.h"
-#include "Data/Weapons/Data_Weapon.h"
+#include "Data/Items/Weapons/Data_Weapon.h"
 #include "Data_VehicleWeapon.generated.h"
 
 //list of ALL VEHICLE WEAPONS

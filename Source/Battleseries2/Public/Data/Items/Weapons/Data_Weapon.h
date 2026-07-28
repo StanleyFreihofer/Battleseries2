@@ -3,7 +3,7 @@
 #include "CoreMinimal.h"
 #include "Engine/DataTable.h"
 #include "NiagaraSystem.h"
-#include "Data/Weapons/WeaponEnums.h"
+#include "Data/Items/Weapons/WeaponEnums.h"
 #include "Data_Weapon.generated.h"
 
 //generic weapon data (to be expanded upon by vehicle and on-foot weaponry data)

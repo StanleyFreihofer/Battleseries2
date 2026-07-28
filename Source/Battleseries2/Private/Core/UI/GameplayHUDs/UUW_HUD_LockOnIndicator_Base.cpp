@@ -5,7 +5,7 @@
 #include "Components/TextBlock.h"
 #include "Components/Overlay.h"
 #include "Components/CanvasPanelSlot.h" 
-#include "Data/Weapons/WeaponEnums.h"
+#include "Data/Items/Weapons/WeaponEnums.h"
 
 void UUW_HUD_LockOnIndicator_Base::UpdateIndicatorPosition(FVector Location)
 {

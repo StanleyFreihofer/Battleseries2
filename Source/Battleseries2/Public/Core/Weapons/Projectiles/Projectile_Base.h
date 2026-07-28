@@ -7,7 +7,7 @@
 #include "NiagaraSystem.h"
 #include "NiagaraFunctionLibrary.h"
 #include "Components/PointLightComponent.h"
-#include "Data/Weapons/ProjectileTypes.h"
+#include "Data/Items/Weapons/ProjectileTypes.h"
 #include "Projectile_Base.generated.h"
 
 struct FProjectileData;

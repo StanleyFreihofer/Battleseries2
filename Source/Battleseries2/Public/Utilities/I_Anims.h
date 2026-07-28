@@ -2,7 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "UObject/Interface.h"
-#include "Data/Weapons/Data_InfantryWeapon.h"
+#include "Data/Items/Weapons/Data_InfantryWeapon.h"
 #include "I_Anims.generated.h"
 
 struct FInfantryWeaponAnimData_FP;

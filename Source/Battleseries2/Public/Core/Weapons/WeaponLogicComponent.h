@@ -5,7 +5,7 @@
 #include "Components/SceneCaptureComponent2D.h"
 #include "Utilities/ProjectilePoolSubsystem.h"
 #include "Utilities/DataManagerSubsystem.h"
-#include "Data/Weapons/WeaponTypes.h"
+#include "Data/Items/Weapons/WeaponTypes.h"
 #include "Data/Core/CoreTypes.h"
 #include "Data/Core/CoreEnums.h"
 #include "WeaponLogicComponent.generated.h"

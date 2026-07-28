@@ -6,7 +6,7 @@
 #include "InputMappingContext.h"
 #include "Components/SpotLightComponent.h"
 #include "Data/Characters/CharacterEnums.h"
-#include "Data/Weapons/WeaponEnums.h"
+#include "Data/Items/Weapons/WeaponEnums.h"
 #include "Data/Vehicles/VehicleEnums.h"
 #include "Data_Seat.generated.h"
 

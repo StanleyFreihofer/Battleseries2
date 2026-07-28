@@ -1,5 +1,5 @@
 #include "Core/Weapons/Projectiles/Projectile_Base.h"
-#include "Data/Weapons/Data_Projectile.h"
+#include "Data/Items/Weapons/Data_Projectile.h"
 #include "Utilities/DataManagerSubsystem.h"
 #include "Utilities/GameInstance_Base.h"
 #include "Utilities/ProjectilePoolSubsystem.h"

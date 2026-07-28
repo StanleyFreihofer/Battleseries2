@@ -5,7 +5,7 @@
 #include "CoreMinimal.h"
 #include "Engine/DataTable.h"
 #include "NiagaraSystem.h"
-#include "Data/Weapons/ProjectileEnums.h"
+#include "Data/Items/Weapons/ProjectileEnums.h"
 #include "Data_Projectile.generated.h"
 
 /**

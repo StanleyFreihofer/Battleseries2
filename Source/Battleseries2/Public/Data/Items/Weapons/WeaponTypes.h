@@ -1,8 +1,8 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Data/Weapons/WeaponEnums.h"
-#include "Data/Weapons/Data_Weapon.h"
+#include "Data/Items/Weapons/WeaponEnums.h"
+#include "Data/Items/Weapons/Data_Weapon.h"
 #include "WeaponTypes.generated.h"
 class AProjectile_Base;
 struct FBaseWeaponData;
