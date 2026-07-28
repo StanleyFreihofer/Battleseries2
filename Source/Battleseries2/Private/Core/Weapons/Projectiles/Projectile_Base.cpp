@@ -4,9 +4,6 @@
 #include "Utilities/GameInstance_Base.h"
 #include "Utilities/ProjectilePoolSubsystem.h"
 #include "Utilities/BS2FunctionLibrary.h"
-#include "NiagaraSystem.h"
-#include "NiagaraFunctionLibrary.h"
-#include "NiagaraComponent.h"
 #include "Kismet/GameplayStatics.h"
 
 AProjectile_Base::AProjectile_Base()
@@ -75,35 +72,28 @@ void AProjectile_Base::Init_RocketExhaustVFX()
 
 void AProjectile_Base::SetPreflightContext(UPrimitiveComponent* AttachComponent, FName AttachSocket)
 {
-	//PREFLIGHT CONTEXT
-	if (AttachComponent)
+	if (!AttachComponent)
 	{
-		ProjectileState.PreFlightContext.AttachedComponent = AttachComponent;
-		ProjectileState.PreFlightContext.AttachSocket = AttachSocket;
-
-		ProjectileMeshComponent->SetSimulatePhysics(false);
-		//ProjectileMeshComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-		ProjectileMeshComponent->SetCollisionResponseToAllChannels(ECR_Ignore);				//seemingly needed
-		//SetActorEnableCollision(false);
-
-		FAttachmentTransformRules AttachmentRules(EAttachmentRule::SnapToTarget, EAttachmentRule::SnapToTarget, EAttachmentRule::SnapToTarget, false);
-		AttachToComponent(AttachComponent, AttachmentRules, AttachSocket);
-
-		APawn* Actor = Cast<APawn>(AttachComponent->GetOwner());
-		SetOwner(Actor);
-		MoveIgnoreActorAdd(Actor);
-		Actor->MoveIgnoreActorAdd(this);
-		//ProjectileMeshComponent->IgnoreActorWhenMoving(Actor, true);
-
-		MoveIgnoreActorAdd(GetAttachParentActor());			
-		MoveIgnoreActorAdd(GetParentActor());
-		MoveIgnoreActorAdd(GetOwner());
-	}
-	else
-	{
-		UE_LOG(LogTemp, Error, TEXT("[Projectile_Base::SetPreflightContext] AttachComponent invalid, should detach happen here?"));
 		ProjectileState.PreFlightContext.AttachedComponent = nullptr;
 		ProjectileState.PreFlightContext.AttachSocket = NAME_None;
+		return;
+	}
+
+	ProjectileState.PreFlightContext.AttachedComponent = AttachComponent;
+	ProjectileState.PreFlightContext.AttachSocket = AttachSocket;
+
+	// Turn off physics/collision while attached to hardpoint
+	ProjectileMeshComponent->SetSimulatePhysics(false);
+	ProjectileMeshComponent->SetCollisionResponseToAllChannels(ECR_Ignore);
+	ProjectileMeshComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	FAttachmentTransformRules AttachmentRules(EAttachmentRule::SnapToTarget, EAttachmentRule::SnapToTarget, EAttachmentRule::SnapToTarget, false);
+	AttachToComponent(AttachComponent, AttachmentRules, AttachSocket);
+
+	AActor* FiringVehicleOrPawn = AttachComponent->GetOwner();
+	if (FiringVehicleOrPawn)
+	{
+		UpdateCollisionIgnores(FiringVehicleOrPawn);
 	}
 }
 
@@ -116,6 +106,7 @@ void AProjectile_Base::EjectFromPylon()
 
 	UE_LOG(LogTemp, Warning, TEXT("[Projectile_Base::EjectFromPylon] DetachFromActor"));
 	GetRootComponent()->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
+	GetWorldTimerManager().SetTimer(CollisionTimerHandle, this, &AProjectile_Base::EnableCollision, 0.5f, false);
 }
 
 void AProjectile_Base::FireProjectile(FVector AimDirection)
@@ -124,8 +115,8 @@ void AProjectile_Base::FireProjectile(FVector AimDirection)
 	{
 		EjectFromPylon();
 	}
-
-	GetWorldTimerManager().SetTimer(CollisionTimerHandle, this, &AProjectile_Base::EnableCollision, 0.5f, true);
+	//GetWorldTimerManager().SetTimer(CollisionTimerHandle, this, &AProjectile_Base::EnableCollision, 0.5f, false);
+	ImpactVFX = ProjectileData->ProjectileVisualData.ImpactVFX.LoadSynchronous();	
 
 	ProjectileState.Origin = AimDirection;
 
@@ -152,6 +143,24 @@ void AProjectile_Base::EnableCollision()
 	ProjectileMeshComponent->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 	ProjectileMeshComponent->SetCollisionResponseToAllChannels(ECR_Block);
 	SetActorEnableCollision(true);
+}
+
+void AProjectile_Base::UpdateCollisionIgnores(AActor* ActorToIgnore)
+{
+	SetOwner(ActorToIgnore);
+	SetInstigator(Cast<APawn>(ActorToIgnore));
+
+	MoveIgnoreActorAdd(ActorToIgnore);
+	ProjectileMeshComponent->IgnoreActorWhenMoving(ActorToIgnore, true);
+	Cast<APawn>(ActorToIgnore)->MoveIgnoreActorAdd(this);
+
+	// If firing actor is a weapon or sub-component, also ignore its outer vehicle
+	if (APawn* VehicleOwner = Cast<APawn>(ActorToIgnore->GetOwner()))
+	{
+		MoveIgnoreActorAdd(VehicleOwner);
+		ProjectileMeshComponent->IgnoreActorWhenMoving(VehicleOwner, true);
+		VehicleOwner->MoveIgnoreActorAdd(Cast<APawn>(this));
+	}
 }
 
 void AProjectile_Base::UpdateFlightPlan(int32 FlightStageIndex)
@@ -318,10 +327,13 @@ void AProjectile_Base::StartGPSGuidance()
 
 void AProjectile_Base::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
-	UNiagaraSystem* SelectedVFX = ProjectileData->ProjectileVisualData.ImpactVFX.LoadSynchronous();		//move this somewhere before impact so has time to load?
-	if (SelectedVFX)
+	if (OtherActor && (OtherActor == GetOwner() || OtherActor == GetInstigator()))
 	{
-		UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), SelectedVFX, Hit.ImpactPoint, Hit.ImpactNormal.Rotation());
+		return; // Safety guard: ignore firing entity
+	}
+	if (ImpactVFX)
+	{
+		UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), ImpactVFX, GetActorLocation(), GetActorRotation());
 	}
 
 	if (OtherActor && OtherActor != this)

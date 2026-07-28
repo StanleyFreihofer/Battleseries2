@@ -4,6 +4,8 @@
 #include "GameFramework/Pawn.h"
 #include "GameFramework/ProjectileMovementComponent.h"
 #include "NiagaraComponent.h"
+#include "NiagaraSystem.h"
+#include "NiagaraFunctionLibrary.h"
 #include "Components/PointLightComponent.h"
 #include "Data/Weapons/ProjectileTypes.h"
 #include "Projectile_Base.generated.h"
@@ -63,6 +65,8 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void EnableCollision();
 	UFUNCTION(BlueprintCallable)
+	void UpdateCollisionIgnores(AActor* ActorToIgnore);
+	UFUNCTION(BlueprintCallable)
 	void UpdateFlightPlan(int32 FlightStageIndex);
 	UFUNCTION(BlueprintCallable)
 	void HandleFlightStageTransition(const FProjectileFlightStage& FlightStage);
@@ -90,6 +94,8 @@ public:
 	void OnImpact();
 
 protected:
+	UNiagaraSystem* ImpactVFX = nullptr;
+
 	FTimerHandle StageTimerHandle;
 	FTimerHandle ManualGuidanceTimerHandle;
 	FTimerHandle CollisionTimerHandle;
