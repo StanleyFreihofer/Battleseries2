@@ -902,32 +902,28 @@ void AVehicle_Base::UpdateRotorRPM()
 
 void AVehicle_Base::HandleApplyThrottle_GV(float RawInputValue)
 {
-	if (RawInputValue != 0)
-	{
-		if (ChaosVehicleMovement->GetHandbrakeInput())
-		{
-			ChaosVehicleMovement->SetHandbrakeInput(false);
-		}
-		UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateSpeedHUD_Vehicle(GetVelocity().Size());		//block behind updatehud check?
-	}
+    const bool bInDeadzone = FMath::IsNearlyZero(RawInputValue, 0.15);		//hardcode for now but should be throttle deadzone
+    const bool bGearMidShift = ChaosVehicleMovement->GetTargetGear() != ChaosVehicleMovement->GetCurrentGear();
 
-	if (FMath::IsNearlyZero(RawInputValue, 0.15) || ChaosVehicleMovement->GetTargetGear() != ChaosVehicleMovement->GetCurrentGear())
-	{
-		UpdateThrottle_GV_Stop();
+    if (bInDeadzone || bGearMidShift)
+    {
+        UpdateThrottle_GV_Stop();
+        return; 
+    }
 
-	}
-	else
-	{
-		if (RawInputValue > 0)
-		{
-			UpdateThrottle_GV_Forward(RawInputValue);
+    if (ChaosVehicleMovement->GetHandbrakeInput())
+    {
+        ChaosVehicleMovement->SetHandbrakeInput(false);
+    }
 
-		}
-		else if (RawInputValue < 0)
-		{
-			UpdateThrottle_GV_Reverse(RawInputValue);
-		}
-	}
+    if (RawInputValue > 0.f)
+    {
+        UpdateThrottle_GV_Forward(RawInputValue);
+    }
+    else
+    {
+        UpdateThrottle_GV_Reverse(RawInputValue);
+    }
 }
 
 void AVehicle_Base::UpdateThrottle_GV_Forward(float InputValue)
@@ -1459,6 +1455,8 @@ void AVehicle_Base::ToggleMagnificationOptic(int32 SeatIndex, float ZoomMagnific
 	//when change 90 to default data, put it behind an if to see if cam's current fov = default fov
 	FOpticState& OpticState = VehicleCurrentState.SeatStates[SeatIndex].OpticState;
 	float& CurrentFOV = GetRemoteActiveCam(SeatIndex)->FieldOfView;
+	float ReticleScale = VehicleWeaponLogicComponent->GetVWID(SeatIndex, VehicleWeaponLogicComponent->GetCWIForSeat(SeatIndex), VehicleWeaponLogicComponent->GetEquippedWeaponInSeat(SeatIndex).VehicleWeaponState.BaseWeaponRuntimeData.WeaponID).WeaponUIInstanceData.ReticleScale;
+
 	if (ZoomMagnification != 1.0f)
 	{
 		//zoom optic
@@ -1471,7 +1469,9 @@ void AVehicle_Base::ToggleMagnificationOptic(int32 SeatIndex, float ZoomMagnific
 			UGameplayStatics::PlaySound2D(GetWorld(), CurrentOpticData.PowerOnSound);
 			if (VehicleCurrentState.SeatStates[SeatIndex].UpdateHUD)
 			{
+				
 				UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateOpticMagnificationHUD_Vehicle(ZoomMagnification);
+				UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateWeaponReticleSize_Vehicle(ZoomMagnification * ReticleScale * 0.75f);
 			}
 		}
 	}
@@ -1488,6 +1488,7 @@ void AVehicle_Base::ToggleMagnificationOptic(int32 SeatIndex, float ZoomMagnific
 			if (VehicleCurrentState.SeatStates[SeatIndex].UpdateHUD)
 			{
 				UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateOpticMagnificationHUD_Vehicle(ZoomMagnification);
+				UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateWeaponReticleSize_Vehicle(ReticleScale);
 			}
 		}
 	}
