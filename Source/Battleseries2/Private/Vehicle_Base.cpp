@@ -900,33 +900,81 @@ void AVehicle_Base::UpdateRotorRPM()
 
 #pragma region MovementInput
 
-void AVehicle_Base::UpdateThrottle_GV(float InputValue)
+void AVehicle_Base::HandleApplyThrottle_GV(float RawInputValue)
 {
-	//if this doesnt work reference that 1 tutorial you did
-	if (InputValue > 0)
+	if (RawInputValue != 0)
 	{
-		ChaosVehicleMovement->SetThrottleInput(InputValue);
-		UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateSpeedHUD_Vehicle(GetVelocity().Size());		//block behind updatehud check?
-	}
-	else if (InputValue < 0)
-	{
-		ChaosVehicleMovement->SetThrottleInput(0.0f);
-		ChaosVehicleMovement->SetBrakeInput(FMath::Abs(InputValue));
-		UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateSpeedHUD_Vehicle(GetVelocity().Size());		//block behind updatehud check?
-	}
-	else if (InputValue == 0)
-	{
-		ChaosVehicleMovement->SetThrottleInput(0);
-		ChaosVehicleMovement->SetBrakeInput(0);
-		
-		GetWorld()->GetTimerManager().SetTimer(SpeedTimer, [this]()
+		if (ChaosVehicleMovement->GetHandbrakeInput())
 		{
-			UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateSpeedHUD_Vehicle(GetVelocity().Size());		//block behind updatehud check?
-		}, 0.05f, true);
-		if (GetVelocity().Size() <= 0.0f)
-		{
-			GetWorld()->GetTimerManager().ClearTimer(SpeedTimer);
+			ChaosVehicleMovement->SetHandbrakeInput(false);
 		}
+		UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateSpeedHUD_Vehicle(GetVelocity().Size());		//block behind updatehud check?
+	}
+
+	if (FMath::IsNearlyZero(RawInputValue, 0.15) || ChaosVehicleMovement->GetTargetGear() != ChaosVehicleMovement->GetCurrentGear())
+	{
+		UpdateThrottle_GV_Stop();
+
+	}
+	else
+	{
+		if (RawInputValue > 0)
+		{
+			UpdateThrottle_GV_Forward(RawInputValue);
+
+		}
+		else if (RawInputValue < 0)
+		{
+			UpdateThrottle_GV_Reverse(RawInputValue);
+		}
+	}
+}
+
+void AVehicle_Base::UpdateThrottle_GV_Forward(float InputValue)
+{
+	switch (ChaosVehicleMovement->GetCurrentGear())
+	{
+		case -1:
+			ChaosVehicleMovement->SetTargetGear(0, true);
+			break;
+		case 0:
+			ChaosVehicleMovement->SetTargetGear(1, true);
+			break;
+	}
+
+	ChaosVehicleMovement->SetThrottleInput(InputValue);
+}
+
+void AVehicle_Base::UpdateThrottle_GV_Reverse(float RawInputValue)
+{
+	float ThrottleValue = FMath::Abs(RawInputValue);
+	switch (ChaosVehicleMovement->GetCurrentGear())
+	{
+		case 0:
+			ChaosVehicleMovement->SetTargetGear(-1, true);
+			break;
+		case 1:
+			ChaosVehicleMovement->SetTargetGear(0, true);
+			break;
+	}
+	ChaosVehicleMovement->SetBrakeInput(ThrottleValue);
+	ChaosVehicleMovement->SetThrottleInput(0.0f);
+}
+
+void AVehicle_Base::UpdateThrottle_GV_Stop()
+{
+	ChaosVehicleMovement->SetTargetGear(0, true);
+	ChaosVehicleMovement->SetHandbrakeInput(true);
+	ChaosVehicleMovement->SetThrottleInput(0.0f);
+	ChaosVehicleMovement->SetBrakeInput(0.0f);
+
+	GetWorld()->GetTimerManager().SetTimer(SpeedTimer, [this]()
+	{
+		UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateSpeedHUD_Vehicle(GetVelocity().Size());		//block behind updatehud check?
+	}, 0.05f, true);
+	if (GetVelocity().Size() <= 0.0f)
+	{
+		GetWorld()->GetTimerManager().ClearTimer(SpeedTimer);
 	}
 }
 
@@ -1308,13 +1356,13 @@ void AVehicle_Base::UpdateRoll_Jet_Arcade(float InputValue)
 
 #pragma endregion
 
-void AVehicle_Base::Input_HandleThrottle(float ThrottleValue)
+void AVehicle_Base::Input_HandleApplyThrottle(float ThrottleValue)
 {
 	const E_MovementType& MovementType = VehicleData->Movement_Type;
 	switch (MovementType)
 	{
 		case E_MovementType::GroundVehicle:
-			UpdateThrottle_GV(ThrottleValue);
+			HandleApplyThrottle_GV(ThrottleValue);
 			break;
 		case E_MovementType::Helicopter:
 			UpdateThrottle_Heli(ThrottleValue);
@@ -1325,14 +1373,14 @@ void AVehicle_Base::Input_HandleThrottle(float ThrottleValue)
 	}
 }
 
-void AVehicle_Base::Input_ReleaseThrottle()
+void AVehicle_Base::Input_HandleReleaseThrottle()
 {
 	const E_MovementType& MovementType = VehicleData->Movement_Type;
 	switch (MovementType)
 	{
-	case E_MovementType::GroundVehicle:
-		UpdateThrottle_GV(0);
-		break;
+		case E_MovementType::GroundVehicle:
+			UpdateThrottle_GV_Stop();
+			break;
 	}
 }
 
