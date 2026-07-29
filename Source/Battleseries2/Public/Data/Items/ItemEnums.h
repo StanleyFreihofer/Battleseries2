@@ -3,6 +3,8 @@
 #include "CoreMinimal.h"
 #include "ItemEnums.generated.h"
 
+//items & loadout enums
+
 UENUM(BlueprintType)
 enum class ECoreItemType : uint8
 {
@@ -30,12 +32,12 @@ enum class EVehicleItemType : uint8
 };
 
 UENUM(BlueprintType)
-enum class ECharacterItemType : uint8
+enum class ECharacterItemType : uint8				//characterloadoutitemcategory
 {
-	Weapon				UMETA(DisplayName = "Weapon"),
-	Gadget				UMETA(DisplayName = "Gadget"),
-	Grenade				UMETA(DisplayName = "Grenade")
-	//knife
+	Weapon				UMETA(DisplayName = "Weapon"),		//fires something
+	Gadget				UMETA(DisplayName = "Gadget"),		//placeable gadget
+	Grenade				UMETA(DisplayName = "Grenade"),		
+	Melee				UMETA(DisplayName = "Melee")
 	//specialization/upgrade
 	//camo
 };
