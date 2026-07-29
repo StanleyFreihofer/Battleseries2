@@ -44,8 +44,11 @@ struct FInfantryWeaponAmmoData
 {
 	GENERATED_BODY()
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	FAmmoData BaseAmmoData = FAmmoData();
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (tooltip = "if the weapon mesh has a projectile/munition as part of it, this will hide unless reloading"))
+	FName ProjectileBoneToHide = NAME_None;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	bool bCanRoundBeChambered = true;

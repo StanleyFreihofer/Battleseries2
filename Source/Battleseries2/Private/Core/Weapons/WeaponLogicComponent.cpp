@@ -332,6 +332,11 @@ void UWeaponLogicComponent::ReloadWeapon()
 		CurrentWeapon.WeaponState.isReloading = true;
 		bool bEmptyMag = CurrentWeapon.WeaponState.CurrentAmmoinMag <= 0;
 
+		if (!StaticWeaponData->InfantryWeaponAmmoData.ProjectileBoneToHide.IsNone())
+		{
+			InfantryWeaponState_FP.WeaponMesh->UnHideBoneByName(StaticWeaponData->InfantryWeaponAmmoData.ProjectileBoneToHide);
+		}
+
 		TWeakObjectPtr<ACharacter_Base> Character = Cast<ACharacter_Base>(GetOwner());
 		USkeletalMeshComponent* FPArms = Character->FPArms;
 		FString SocketString = FString::Printf(TEXT("Socket_%s_R"), *GetCurrentWeaponRuntime()->WeaponID.ToString());
@@ -359,6 +364,7 @@ void UWeaponLogicComponent::OnReloadFinished(UAnimMontage* Montage, bool bInterr
 	UE_LOG(LogTemp, Warning, TEXT("[WLC::OnReloadFinished"));
 	FWeaponStats_Runtime& CurrentWeaponStats = GetCurrentWeaponStats();
 	FWeapon_Runtime& CurrentWeapon = *GetCurrentWeaponRuntime();
+	const FInfantryWeaponData* StaticWeaponData = GetCurrentWeaponStaticData();
 	FInfantryWeaponState& InfantryWeaponState_FP = WeaponSystem.InfantryWeaponSystem.WeaponState_FP[GetCWI()];
 
 	TWeakObjectPtr<ACharacter_Base> Character = Cast<ACharacter_Base>(GetOwner());
@@ -371,7 +377,10 @@ void UWeaponLogicComponent::OnReloadFinished(UAnimMontage* Montage, bool bInterr
 	{
 		InfantryWeaponState_FP.WeaponMesh->AttachToComponent(Character->FPArms, FAttachmentTransformRules(EAttachmentRule::SnapToTarget, EAttachmentRule::SnapToTarget, EAttachmentRule::SnapToTarget, true), AttachSocketName);
 	}
-
+	if (!StaticWeaponData->InfantryWeaponAmmoData.ProjectileBoneToHide.IsNone())
+	{
+		InfantryWeaponState_FP.WeaponMesh->HideBoneByName(StaticWeaponData->InfantryWeaponAmmoData.ProjectileBoneToHide, EPhysBodyOp::PBO_None);
+	}
 
 	int32 NewCAM, NewCRA;
 	UBS2FunctionLibrary::CalculateReload(CurrentWeaponStats.MagSize, CurrentWeapon.WeaponState.CurrentAmmoinMag, CurrentWeapon.WeaponState.CurrentReserveAmmo, NewCAM, NewCRA);
@@ -438,6 +447,8 @@ void UWeaponLogicComponent::EquipWeapon(int32 WeaponIndex, bool InitialEquip)
 {
 	TWeakObjectPtr<ACharacter_Base> Character = Cast<ACharacter_Base>(GetOwner());
 	TWeakObjectPtr<UAnimInstance> FPArmsAnimInstance = Character->FPArms->GetAnimInstance();
+	const FInfantryWeaponData* StaticWeaponData = GetCurrentWeaponStaticData();
+	FInfantryWeaponState& InfantryWeaponState_FP = WeaponSystem.InfantryWeaponSystem.WeaponState_FP[WeaponIndex];
 	TObjectPtr<USkeletalMeshComponent> NewWeaponMesh = WeaponSystem.InfantryWeaponSystem.WeaponState_FP[WeaponIndex].WeaponMesh.Get();
 	UpdateWeaponVisibility(WeaponIndex, false);
 	TSoftObjectPtr<UAnimMontage> FPEquipWeaponMontage;
@@ -457,6 +468,10 @@ void UWeaponLogicComponent::EquipWeapon(int32 WeaponIndex, bool InitialEquip)
 	FPEquipWeaponMontage.LoadSynchronous();
 	FPArmsAnimInstance->Montage_Play(FPEquipWeaponMontage.Get(), 1.0f);
 	IAnims::Execute_OnEquipWeapon_FP(FPArmsAnimInstance.Get(), GetCurrentWeaponStaticData()->InfantryWeaponAnimData.FPWeaponAnimData);
+	if (!StaticWeaponData->InfantryWeaponAmmoData.ProjectileBoneToHide.IsNone())
+	{
+		InfantryWeaponState_FP.WeaponMesh->HideBoneByName(StaticWeaponData->InfantryWeaponAmmoData.ProjectileBoneToHide, EPhysBodyOp::PBO_None);
+	}
 	UpdateScopeCamera();
 }
 
