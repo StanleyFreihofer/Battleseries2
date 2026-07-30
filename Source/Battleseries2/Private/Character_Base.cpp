@@ -523,6 +523,7 @@ void ACharacter_Base::UpdateSeatList(TArray<ACharacter_Base*> Characters)
 
 void ACharacter_Base::CharacterEnterVehicle()
 {
+	//if Vehicle RC Data does actually become a thing, certain things here need to be blocked based on that new property's value
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Vehicle, ECR_Ignore);
 	GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Vehicle, ECollisionResponse::ECR_Ignore);
 	FPArms->SetCollisionResponseToChannel(ECC_Vehicle, ECR_Ignore);
@@ -575,6 +576,7 @@ void ACharacter_Base::CharacterExitVehicle()
 
 void ACharacter_Base::CharacterEnterSeat(const FCharacterSeatContext& SeatContext)
 {
+	//if Vehicle RC Data does actually become a thing, Character transform should not be set (block switch behind if)
 	switch (GetCurrentVehicle()->GetVehicleData().Seats[GetCSI()].SeatRole)
 	{
 		case E_SeatRole::Driver:
