@@ -6,6 +6,7 @@
 #include "Utilities/ProjectilePoolSubsystem.h"
 #include "Utilities/DataManagerSubsystem.h"
 #include "Data/Items/Weapons/WeaponTypes.h"
+#include "Data/Items/Gadgets/GadgetTypes.h"
 #include "Data/Core/CoreTypes.h"
 #include "Data/Core/CoreEnums.h"
 #include "WeaponLogicComponent.generated.h"
@@ -68,8 +69,7 @@ struct FOnFootWeaponSystem_Runtime
 	GENERATED_BODY()
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	FBaseWeaponSystem_Runtime BaseWeaponSystem = FBaseWeaponSystem_Runtime();			//contains WeaponID and other basic runtime data for both weapons
-
+	FBaseWeaponSystem_Runtime BaseWeaponSystem = FBaseWeaponSystem_Runtime();			//contains WeaponID, Equipped WeaponState (CWI) and other basic runtime data for both weapons
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FInfantryWeaponSystem InfantryWeaponSystem = FInfantryWeaponSystem();
@@ -82,10 +82,30 @@ struct FOnFootWeaponSystem_Runtime
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	int32 PreviousWeaponIndex = 0;
-
-
 };
 
+USTRUCT(BlueprintType) 
+struct FLoadoutItemState 
+{ 
+	GENERATED_BODY() 
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite) 
+	ECharacterItemType CurrentCategory = ECharacterItemType::Weapon; 
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)			//for weapons this conflicts with/does the same thing as "CurrentWeaponIndex" <----problem
+	int32 CurrentItemIndex = 0;
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta= (ToolTip = "Weapon System, also contains any 'gadgets' that are Weapons"))				//contains "weapon" gadgets
+	FOnFootWeaponSystem_Runtime WeaponSystem = FOnFootWeaponSystem_Runtime(); 
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite) 
+	TArray<FGadgetState> Gadgets; 
+	
+	//grenade
+	//melee
+};
+
+//RENAME TO LOADOUTMANAGER!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 UCLASS(Blueprintable, BlueprintType)
 class BATTLESERIES2_API UWeaponLogicComponent : public UActorComponent
 {
@@ -96,8 +116,8 @@ class BATTLESERIES2_API UWeaponLogicComponent : public UActorComponent
 		virtual void BeginPlay() override;
 		virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
-		UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Runtime")
-		FOnFootWeaponSystem_Runtime WeaponSystem;
+		UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Runtime")
+		FLoadoutItemState Loadout = FLoadoutItemState();
 
 		UFUNCTION(BlueprintCallable)
 		void Init_WeaponLoadout(FPlayerLoadoutConfig_Class ClassLoadout, TArray<FPlayerLoadoutConfig_Weapon> WeaponLoadouts);

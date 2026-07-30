@@ -7,6 +7,8 @@
 class AProjectile_Base;
 struct FBaseWeaponData;
 
+//shared base layer of weapon runtime data/state
+
 USTRUCT(BlueprintType)
 struct FLockOnState
 {
@@ -57,11 +59,10 @@ struct FWeaponState
 	FLockOnState LockOnState = FLockOnState();
 };
 
-//1 weapon's runtime data
-//gets set from Data_VehicleWeapon @runtime
 USTRUCT(BlueprintType)
 struct FWeapon_Runtime
 {
+	//DEPRECIATE/MOVE WEAPONID INTO FWEAPONSTATE
 	GENERATED_BODY()
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)

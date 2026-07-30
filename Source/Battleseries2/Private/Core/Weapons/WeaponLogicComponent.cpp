@@ -36,11 +36,11 @@ void UWeaponLogicComponent::TickComponent(float DeltaTime, ELevelTick TickType, 
 void UWeaponLogicComponent::Init_WeaponLoadout(FPlayerLoadoutConfig_Class ClassLoadout, TArray<FPlayerLoadoutConfig_Weapon> WeaponLoadouts)
 {
 	TArray<FName>& Weapons = ClassLoadout.Weapons;
-	WeaponSystem.BaseWeaponSystem.Weapons.SetNum(Weapons.Num());
+	Loadout.WeaponSystem.BaseWeaponSystem.Weapons.SetNum(Weapons.Num());
 	StaticWeaponDataCache.SetNum(Weapons.Num());
-	WeaponSystem.InfantryWeaponSystem.WeaponState_FP.SetNum(Weapons.Num());
-	WeaponSystem.InfantryWeaponSystem.WeaponState_TP.SetNum(Weapons.Num());
-	WeaponSystem.InfantryWeaponSystem.CurrentWeaponStats.SetNum(Weapons.Num());
+	Loadout.WeaponSystem.InfantryWeaponSystem.WeaponState_FP.SetNum(Weapons.Num());
+	Loadout.WeaponSystem.InfantryWeaponSystem.WeaponState_TP.SetNum(Weapons.Num());
+	Loadout.WeaponSystem.InfantryWeaponSystem.CurrentWeaponStats.SetNum(Weapons.Num());
 
 	for (int32 i = 0; i < Weapons.Num(); i++)
 	{
@@ -52,12 +52,13 @@ void UWeaponLogicComponent::Init_WeaponLoadout(FPlayerLoadoutConfig_Class ClassL
 
 void UWeaponLogicComponent::Init_ScopeCamera()
 {
-	WeaponSystem.ScopeCamera = NewObject<USceneCaptureComponent2D>(GetOwner());
-	WeaponSystem.ScopeCamera->RegisterComponent();
-	WeaponSystem.ScopeCamera->TextureTarget = UKismetRenderingLibrary::CreateRenderTarget2D(this, 256, 256, RTF_RGBA16f);
-	WeaponSystem.ScopeCamera->HideActorComponents(GetOwner(), true);
-	WeaponSystem.ScopeCamera->bCaptureEveryFrame = true;
-	WeaponSystem.ScopeCamera->CaptureSource = ESceneCaptureSource::SCS_SceneColorHDR;
+	Loadout.WeaponSystem.ScopeCamera = NewObject<USceneCaptureComponent2D>(GetOwner());
+	TObjectPtr<USceneCaptureComponent2D>& ScopeCamera = Loadout.WeaponSystem.ScopeCamera;
+	ScopeCamera->RegisterComponent();
+	ScopeCamera->TextureTarget = UKismetRenderingLibrary::CreateRenderTarget2D(this, 256, 256, RTF_RGBA16f);
+	ScopeCamera->HideActorComponents(GetOwner(), true);
+	ScopeCamera->bCaptureEveryFrame = true;
+	ScopeCamera->CaptureSource = ESceneCaptureSource::SCS_SceneColorHDR;
 	UpdateScope(0);
 }
 
@@ -69,14 +70,14 @@ void UWeaponLogicComponent::Init_Weapon(FName WeaponID, int32 WeaponIndex, FPlay
 	NewFPState.WeaponMesh->SetOnlyOwnerSee(true);
 	UpdateWeaponMesh(WeaponID, NewFPState.WeaponMesh);
 	NewFPState.WeaponMesh->FirstPersonPrimitiveType = EFirstPersonPrimitiveType::FirstPerson;
-	WeaponSystem.InfantryWeaponSystem.WeaponState_FP[WeaponIndex] = NewFPState;
+	Loadout.WeaponSystem.InfantryWeaponSystem.WeaponState_FP[WeaponIndex] = NewFPState;
 	
 	FString SocketString = FString::Printf(TEXT("Socket_%s"), *WeaponID.ToString());
 	FName AttachSocketName = FName(*SocketString);
 
-	WeaponSystem.InfantryWeaponSystem.WeaponState_FP[WeaponIndex].WeaponMesh->AttachToComponent(Cast<ACharacter_Base>(GetOwner())->FPArms, FAttachmentTransformRules(EAttachmentRule::SnapToTarget, EAttachmentRule::SnapToTarget, EAttachmentRule::SnapToTarget, true), AttachSocketName);
+	Loadout.WeaponSystem.InfantryWeaponSystem.WeaponState_FP[WeaponIndex].WeaponMesh->AttachToComponent(Cast<ACharacter_Base>(GetOwner())->FPArms, FAttachmentTransformRules(EAttachmentRule::SnapToTarget, EAttachmentRule::SnapToTarget, EAttachmentRule::SnapToTarget, true), AttachSocketName);
 	
-	WeaponSystem.BaseWeaponSystem.Weapons[WeaponIndex].WeaponID = WeaponID;
+	Loadout.WeaponSystem.BaseWeaponSystem.Weapons[WeaponIndex].WeaponID = WeaponID;
 	StaticWeaponDataCache[WeaponIndex] = UBS2FunctionLibrary::GetDataSubsystem(this)->GetInfantryWeaponDataRow(WeaponID);
 
 	//setup custom weapon (attachments, stats, etc)
@@ -87,7 +88,7 @@ void UWeaponLogicComponent::Init_Weapon(FName WeaponID, int32 WeaponIndex, FPlay
 	UpdateCurrentWeaponStats(WeaponIndex);
 
 	//weaponstate
-	FWeaponStats_Runtime& CurrentWeaponStats = WeaponSystem.InfantryWeaponSystem.CurrentWeaponStats[WeaponIndex];
+	FWeaponStats_Runtime& CurrentWeaponStats = Loadout.WeaponSystem.InfantryWeaponSystem.CurrentWeaponStats[WeaponIndex];
 	FWeapon_Runtime& BaseWeaponState = GetBaseWeaponState(WeaponIndex);
 	BaseWeaponState.WeaponState.CurrentAmmoinMag = CurrentWeaponStats.MagSize;
 	BaseWeaponState.WeaponState.CurrentReserveAmmo = CurrentWeaponStats.MaxReserveAmmo;
@@ -115,7 +116,7 @@ void UWeaponLogicComponent::Init_Attachment(FWeaponAttachmentState& RuntimeSlotS
 
 void UWeaponLogicComponent::ApplyAttachments(const FPlayerLoadoutConfig_Weapon& AttachmentsToApply, int32 WeaponIndex)
 {
-	FInfantryWeaponState& WeaponToApplyTo = WeaponSystem.InfantryWeaponSystem.WeaponState_FP[WeaponIndex];
+	FInfantryWeaponState& WeaponToApplyTo = Loadout.WeaponSystem.InfantryWeaponSystem.WeaponState_FP[WeaponIndex];
 	for (auto& Slot : AttachmentsToApply.WeaponAttachments)
 	{
 		const EAttachmentSlot& SlotType = Slot.Key;
@@ -136,27 +137,27 @@ void UWeaponLogicComponent::UpdateWeaponMesh(FName WeaponID, TWeakObjectPtr<USke
 
 void UWeaponLogicComponent::UpdateWeaponData(int32 WeaponIndex, FName WeaponID, FInfantryWeaponState WeaponState)
 {
-	WeaponSystem.BaseWeaponSystem.Weapons[WeaponIndex].WeaponID = WeaponID;
+	Loadout.WeaponSystem.BaseWeaponSystem.Weapons[WeaponIndex].WeaponID = WeaponID;
 	StaticWeaponDataCache[WeaponIndex] = UBS2FunctionLibrary::GetDataSubsystem(this)->GetInfantryWeaponDataRow(WeaponID);
 
 	//add a bool or an int if it should fp, tp or both
-	WeaponSystem.InfantryWeaponSystem.WeaponState_FP[WeaponIndex] = WeaponState;
+	Loadout.WeaponSystem.InfantryWeaponSystem.WeaponState_FP[WeaponIndex] = WeaponState;
 }
 
 void UWeaponLogicComponent::UpdateScopeCamera()
 {
 	//called on equip weapon
-	WeaponSystem.ScopeCamera->AttachToComponent(WeaponSystem.InfantryWeaponSystem.WeaponState_FP[GetCWI()].WeaponMesh.Get(), FAttachmentTransformRules(EAttachmentRule::SnapToTarget, EAttachmentRule::SnapToTarget, EAttachmentRule::SnapToTarget, true), FName("PIP"));
+	Loadout.WeaponSystem.ScopeCamera->AttachToComponent(Loadout.WeaponSystem.InfantryWeaponSystem.WeaponState_FP[GetCWI()].WeaponMesh.Get(), FAttachmentTransformRules(EAttachmentRule::SnapToTarget, EAttachmentRule::SnapToTarget, EAttachmentRule::SnapToTarget, true), FName("PIP"));
 
-	if (WeaponSystem.InfantryWeaponSystem.WeaponState_FP[GetCWI()].WeaponAttachmentStates.Find(EAttachmentSlot::Scope))
+	if (Loadout.WeaponSystem.InfantryWeaponSystem.WeaponState_FP[GetCWI()].WeaponAttachmentStates.Find(EAttachmentSlot::Scope))
 	{
 
-		FWeaponAttachmentState& WeaponAttachmentState = *WeaponSystem.InfantryWeaponSystem.WeaponState_FP[GetCWI()].WeaponAttachmentStates.Find(EAttachmentSlot::Scope);
+		FWeaponAttachmentState& WeaponAttachmentState = *Loadout.WeaponSystem.InfantryWeaponSystem.WeaponState_FP[GetCWI()].WeaponAttachmentStates.Find(EAttachmentSlot::Scope);
 		int32 PIPMatIndex = UBS2FunctionLibrary::GetDataSubsystem(this)->GetWeaponAttachmentDataRow(WeaponAttachmentState.BaseAttachmentState.AttachmentID)->WeaponSightData.PIPMaterialIndex;
 		if (PIPMatIndex < 0) { return; }
 		UMaterialInstanceDynamic* MID = WeaponAttachmentState.SpawnedAttachment->CreateDynamicMaterialInstance(PIPMatIndex, WeaponAttachmentState.SpawnedAttachment->GetMaterial(PIPMatIndex));
 		WeaponAttachmentState.SpawnedAttachment->SetMaterial(PIPMatIndex, MID);
-		MID->SetTextureParameterValue(FName("RenderTarget"), WeaponSystem.ScopeCamera->TextureTarget);
+		MID->SetTextureParameterValue(FName("RenderTarget"), Loadout.WeaponSystem.ScopeCamera->TextureTarget);
 	}
 }
 
@@ -174,8 +175,8 @@ void UWeaponLogicComponent::UpdateAttachment(FWeaponAttachmentState& RuntimeSlot
 
 void UWeaponLogicComponent::UpdateWeaponCollision(ECollisionChannel CollisionChannel, ECollisionResponse CollisionResponse, int32 WeaponIndex)
 {
-	WeaponSystem.InfantryWeaponSystem.WeaponState_FP[WeaponIndex].WeaponMesh->SetCollisionResponseToChannel(CollisionChannel, CollisionResponse);
-	for (auto& Attachment : WeaponSystem.InfantryWeaponSystem.WeaponState_FP[WeaponIndex].WeaponAttachmentStates)
+	Loadout.WeaponSystem.InfantryWeaponSystem.WeaponState_FP[WeaponIndex].WeaponMesh->SetCollisionResponseToChannel(CollisionChannel, CollisionResponse);
+	for (auto& Attachment : Loadout.WeaponSystem.InfantryWeaponSystem.WeaponState_FP[WeaponIndex].WeaponAttachmentStates)
 	{
 		Attachment.Value.SpawnedAttachment.Get()->SetCollisionResponseToChannel(CollisionChannel, CollisionResponse);
 	}
@@ -184,7 +185,7 @@ void UWeaponLogicComponent::UpdateWeaponCollision(ECollisionChannel CollisionCha
 
 void UWeaponLogicComponent::UpdateWeaponVisibility(int32 WeaponIndex, bool Hide)
 {
-	FInfantryWeaponState& Weapon = WeaponSystem.InfantryWeaponSystem.WeaponState_FP[WeaponIndex];
+	FInfantryWeaponState& Weapon = Loadout.WeaponSystem.InfantryWeaponSystem.WeaponState_FP[WeaponIndex];
 	Weapon.WeaponMesh->SetHiddenInGame(Hide);
 	for (auto& AttachmentSlot : Weapon.WeaponAttachmentStates)
 	{
@@ -208,14 +209,14 @@ void UWeaponLogicComponent::StartAim()
 			GetCurrentInfantryWeaponState_FP().WeaponMesh->AttachToComponent(Character->FPArms, FAttachmentTransformRules(EAttachmentRule::SnapToTarget, EAttachmentRule::SnapToTarget, EAttachmentRule::SnapToTarget, true), AttachSocketName);
 		}
 	}
-	WeaponSystem.isAiming = true;
+	Loadout.WeaponSystem.isAiming = true;
 }
 
 void UWeaponLogicComponent::StopAim()
 {
 	const FInfantryWeaponAimData& AimData = GetCurrentWeaponStaticData()->InfantryWeaponAimData;
 	if (!AimData.canAim) { return; }
-	if (!WeaponSystem.isAiming) { return; }
+	if (!Loadout.WeaponSystem.isAiming) { return; }
 	if (AimData.HideArms)
 	{
 		TWeakObjectPtr<ACharacter_Base> Character = Cast<ACharacter_Base>(GetOwner());
@@ -225,17 +226,17 @@ void UWeaponLogicComponent::StopAim()
 		FName AttachSocketName = FName(*SocketString);
 		GetCurrentInfantryWeaponState_FP().WeaponMesh->AttachToComponent(Character->FPArms, FAttachmentTransformRules(EAttachmentRule::SnapToTarget, EAttachmentRule::SnapToTarget, EAttachmentRule::SnapToTarget, true), AttachSocketName);
 	}
-	WeaponSystem.isAiming = false;
+	Loadout.WeaponSystem.isAiming = false;
 }
 
 void UWeaponLogicComponent::Rangefinder()
 {
 	FHitResult OutHit;
 	UBS2FunctionLibrary::PerformWeaponLineTrace(this, Cast<ACharacter_Base>(GetOwner())->FPCamera->GetComponentTransform(), OutHit, { GetOwner() }, false);
-	TWeakObjectPtr<USkeletalMeshComponent>& WeaponMesh = WeaponSystem.InfantryWeaponSystem.WeaponState_FP[GetCWI()].WeaponMesh;
+	TWeakObjectPtr<USkeletalMeshComponent>& WeaponMesh = Loadout.WeaponSystem.InfantryWeaponSystem.WeaponState_FP[GetCWI()].WeaponMesh;
 
-	WeaponSystem.BaseWeaponSystem.EquippedWeaponState.RaycastData.RangefinderData = OutHit;
-	WeaponSystem.BaseWeaponSystem.EquippedWeaponState.RaycastData.MuzzleAimDirections[0] = UBS2FunctionLibrary::GetAimDirectionFromMuzzle(OutHit, FName("Muzzle"), WeaponMesh);
+	Loadout.WeaponSystem.BaseWeaponSystem.EquippedWeaponState.RaycastData.RangefinderData = OutHit;
+	Loadout.WeaponSystem.BaseWeaponSystem.EquippedWeaponState.RaycastData.MuzzleAimDirections[0] = UBS2FunctionLibrary::GetAimDirectionFromMuzzle(OutHit, FName("Muzzle"), WeaponMesh);
 }
 
 void UWeaponLogicComponent::HandleStartFire()
@@ -283,7 +284,7 @@ void UWeaponLogicComponent::HandleShootProjectileActor()
 	{
 		FiredProjectile = UBS2FunctionLibrary::GetProjectileSystem(this)->AcquireProjectileFromPool(StaticWeaponData.WeaponFirePerformanceData.MunitionID);
 		FiredProjectile->MoveIgnoreActorAdd(GetOwner());
-		FVector& AimDirection = WeaponSystem.BaseWeaponSystem.EquippedWeaponState.RaycastData.MuzzleAimDirections[0];
+		FVector& AimDirection = Loadout.WeaponSystem.BaseWeaponSystem.EquippedWeaponState.RaycastData.MuzzleAimDirections[0];
 		FTransform MuzzleTransform = UBS2FunctionLibrary::GetMuzzleTransform(FName("Muzzle"), GetCurrentInfantryWeaponState_FP().WeaponMesh);
 		FiredProjectile->SetActorTransform(MuzzleTransform);
 		FiredProjectile->FireProjectile(AimDirection);
@@ -324,7 +325,7 @@ void UWeaponLogicComponent::ReloadWeapon()
 {
 	FWeapon_Runtime& CurrentWeapon = *GetCurrentWeaponRuntime();
 	const FInfantryWeaponData* StaticWeaponData = GetCurrentWeaponStaticData();
-	FInfantryWeaponState& InfantryWeaponState_FP = WeaponSystem.InfantryWeaponSystem.WeaponState_FP[GetCWI()];
+	FInfantryWeaponState& InfantryWeaponState_FP = Loadout.WeaponSystem.InfantryWeaponSystem.WeaponState_FP[GetCWI()];
 	ReloadEndedDelegate.BindUObject(this, &UWeaponLogicComponent::OnReloadFinished);
 
 	if (CurrentWeapon.WeaponState.CurrentReserveAmmo > 0)
@@ -365,7 +366,7 @@ void UWeaponLogicComponent::OnReloadFinished(UAnimMontage* Montage, bool bInterr
 	FWeaponStats_Runtime& CurrentWeaponStats = GetCurrentWeaponStats();
 	FWeapon_Runtime& CurrentWeapon = *GetCurrentWeaponRuntime();
 	const FInfantryWeaponData* StaticWeaponData = GetCurrentWeaponStaticData();
-	FInfantryWeaponState& InfantryWeaponState_FP = WeaponSystem.InfantryWeaponSystem.WeaponState_FP[GetCWI()];
+	FInfantryWeaponState& InfantryWeaponState_FP = Loadout.WeaponSystem.InfantryWeaponSystem.WeaponState_FP[GetCWI()];
 
 	TWeakObjectPtr<ACharacter_Base> Character = Cast<ACharacter_Base>(GetOwner());
 	USkeletalMeshComponent* FPArms = Character->FPArms;
@@ -393,14 +394,14 @@ void UWeaponLogicComponent::SwitchWeapon_AutoIncrement()
 {
 	//use to auto switch/revolve/rotate between weapons in a list
 	int32 NewWeaponIndex = 0;
-	UBS2FunctionLibrary::UpdateWeaponIndex(WeaponSystem.BaseWeaponSystem.Weapons, GetCWI(), NewWeaponIndex);
+	UBS2FunctionLibrary::UpdateWeaponIndex(Loadout.WeaponSystem.BaseWeaponSystem.Weapons, GetCWI(), NewWeaponIndex);
 	StartSwitchWeapon(GetCWI(), NewWeaponIndex);
 }
 
 void UWeaponLogicComponent::StartSwitchWeapon(int32 LastWeaponIndex, int32 NewWeaponIndex)
 {
 	//main switch weapon function, can be used to directly equip a given index (manual) or auto increment (via SwitchWeapon_AutoIncrement)
-	WeaponSystem.PreviousWeaponIndex = LastWeaponIndex;
+	Loadout.WeaponSystem.PreviousWeaponIndex = LastWeaponIndex;
 	GetCWI() = NewWeaponIndex;
 	TSoftObjectPtr<UAnimMontage> FPUnequipWeaponMontage = StaticWeaponDataCache[LastWeaponIndex]->InfantryWeaponAnimData.FPWeaponAnimData.UnequipWeaponMontage;
 	FPUnequipWeaponMontage.LoadSynchronous();
@@ -419,7 +420,7 @@ void UWeaponLogicComponent::TransitionWeapon()
 {
 	TWeakObjectPtr<ACharacter_Base> Character = Cast<ACharacter_Base>(GetOwner());
 	Character->FPArms->SetVisibility(false);
-	UpdateWeaponVisibility(WeaponSystem.PreviousWeaponIndex, true);
+	UpdateWeaponVisibility(Loadout.WeaponSystem.PreviousWeaponIndex, true);
 	GetWorld()->GetTimerManager().SetTimer(SwitchWeaponTimer, [this, Character]()
 	{
 		Character->FPArms->SetVisibility(true);
@@ -432,7 +433,7 @@ void UWeaponLogicComponent::OnUnequipBlendOut(UAnimMontage* Montage, bool bInter
 {
 	TWeakObjectPtr<ACharacter_Base> Character = Cast<ACharacter_Base>(GetOwner());
 	TWeakObjectPtr<UAnimInstance> FPArmsAnimInstance = Character->FPArms->GetAnimInstance();
-	TSoftObjectPtr<UAnimMontage> FPUnequipWeaponMontage = StaticWeaponDataCache[WeaponSystem.PreviousWeaponIndex]->InfantryWeaponAnimData.FPWeaponAnimData.UnequipWeaponMontage;
+	TSoftObjectPtr<UAnimMontage> FPUnequipWeaponMontage = StaticWeaponDataCache[Loadout.WeaponSystem.PreviousWeaponIndex]->InfantryWeaponAnimData.FPWeaponAnimData.UnequipWeaponMontage;
 	if (!FPUnequipWeaponMontage.Get())
 	{
 		EquipWeapon(GetCWI(), false);
@@ -448,8 +449,8 @@ void UWeaponLogicComponent::EquipWeapon(int32 WeaponIndex, bool InitialEquip)
 	TWeakObjectPtr<ACharacter_Base> Character = Cast<ACharacter_Base>(GetOwner());
 	TWeakObjectPtr<UAnimInstance> FPArmsAnimInstance = Character->FPArms->GetAnimInstance();
 	const FInfantryWeaponData* StaticWeaponData = GetCurrentWeaponStaticData();
-	FInfantryWeaponState& InfantryWeaponState_FP = WeaponSystem.InfantryWeaponSystem.WeaponState_FP[WeaponIndex];
-	TObjectPtr<USkeletalMeshComponent> NewWeaponMesh = WeaponSystem.InfantryWeaponSystem.WeaponState_FP[WeaponIndex].WeaponMesh.Get();
+	FInfantryWeaponState& InfantryWeaponState_FP = Loadout.WeaponSystem.InfantryWeaponSystem.WeaponState_FP[WeaponIndex];
+	TObjectPtr<USkeletalMeshComponent> NewWeaponMesh = Loadout.WeaponSystem.InfantryWeaponSystem.WeaponState_FP[WeaponIndex].WeaponMesh.Get();
 	UpdateWeaponVisibility(WeaponIndex, false);
 	TSoftObjectPtr<UAnimMontage> FPEquipWeaponMontage;
 	if (InitialEquip)
@@ -518,9 +519,9 @@ void UWeaponLogicComponent::ToggleFireMode()
 
 void UWeaponLogicComponent::ToggleScope()
 {
-	if (!WeaponSystem.isAiming) { return; }
+	if (!Loadout.WeaponSystem.isAiming) { return; }
 	const FWeaponAttachmentData& WeaponAttachmentData = *UBS2FunctionLibrary::GetDataSubsystem(this)->GetWeaponAttachmentDataRow(GetCurrentAttachmentInSlot(EAttachmentSlot::Scope).BaseAttachmentState.AttachmentID);
-	int32& CurrentOpticIndex = WeaponSystem.InfantryWeaponSystem.WeaponState_FP[GetCWI()].CurrentOpticIndex;
+	int32& CurrentOpticIndex = Loadout.WeaponSystem.InfantryWeaponSystem.WeaponState_FP[GetCWI()].CurrentOpticIndex;
 	if (WeaponAttachmentData.WeaponSightData.OpticIDs.Num() > 1)
 	{
 		int32 TotalOpticLevels = WeaponAttachmentData.WeaponSightData.OpticIDs.Num();
@@ -540,23 +541,23 @@ void UWeaponLogicComponent::UpdateScope(int32 NewOpticIndex)
 	//post process settings for scope camera, if any. If no post process settings are defined, set capture source to HDR scene color to avoid weirdness with the render target.
 	if (OpticData.OpticPPSettings.WeightedBlendables.Array.Num() > 0)
 	{
-		if (WeaponSystem.ScopeCamera->CaptureSource != ESceneCaptureSource::SCS_FinalColorLDR)
+		if (Loadout.WeaponSystem.ScopeCamera->CaptureSource != ESceneCaptureSource::SCS_FinalColorLDR)
 		{
-			WeaponSystem.ScopeCamera->CaptureSource = ESceneCaptureSource::SCS_FinalColorLDR;
+			Loadout.WeaponSystem.ScopeCamera->CaptureSource = ESceneCaptureSource::SCS_FinalColorLDR;
 		}
 	}
-	else if (WeaponSystem.ScopeCamera->CaptureSource != ESceneCaptureSource::SCS_SceneColorHDR)
+	else if (Loadout.WeaponSystem.ScopeCamera->CaptureSource != ESceneCaptureSource::SCS_SceneColorHDR)
 	{
-		WeaponSystem.ScopeCamera->CaptureSource = ESceneCaptureSource::SCS_SceneColorHDR;
+		Loadout.WeaponSystem.ScopeCamera->CaptureSource = ESceneCaptureSource::SCS_SceneColorHDR;
 	}
 
-	UBS2FunctionLibrary::HandleUpdateOptic(DefaultFOV, OpticData.ZoomMagnification, WeaponSystem.ScopeCamera->FOVAngle, OpticData.OpticPPSettings, WeaponSystem.ScopeCamera->PostProcessSettings, WeaponSystem.ScopeCamera->PostProcessBlendWeight);
+	UBS2FunctionLibrary::HandleUpdateOptic(DefaultFOV, OpticData.ZoomMagnification, Loadout.WeaponSystem.ScopeCamera->FOVAngle, OpticData.OpticPPSettings, Loadout.WeaponSystem.ScopeCamera->PostProcessSettings, Loadout.WeaponSystem.ScopeCamera->PostProcessBlendWeight);
 }
 
 void UWeaponLogicComponent::UpdateCurrentWeaponStats(int32 WeaponIndex)
 {
-	FWeaponStats_Runtime& RuntimeStats = WeaponSystem.InfantryWeaponSystem.CurrentWeaponStats[WeaponIndex];
-	FName& WeaponID = WeaponSystem.BaseWeaponSystem.Weapons[WeaponIndex].WeaponID;
+	FWeaponStats_Runtime& RuntimeStats = Loadout.WeaponSystem.InfantryWeaponSystem.CurrentWeaponStats[WeaponIndex];
+	FName& WeaponID = Loadout.WeaponSystem.BaseWeaponSystem.Weapons[WeaponIndex].WeaponID;
 	const FInfantryWeaponData* StaticWeaponData = StaticWeaponDataCache[WeaponIndex];
 
 	RuntimeStats.AimInSpeed = StaticWeaponData->InfantryWeaponAimData.DefaultAimInSpeed;
@@ -565,7 +566,7 @@ void UWeaponLogicComponent::UpdateCurrentWeaponStats(int32 WeaponIndex)
 	RuntimeStats.MagSize = StaticWeaponData->InfantryWeaponAmmoData.BaseAmmoData.MagSize;
 	RuntimeStats.MaxReserveAmmo = StaticWeaponData->InfantryWeaponAmmoData.BaseAmmoData.MaxReserveAmmo;
 
-	TMap<EAttachmentSlot, FWeaponAttachmentState>& WeaponAttachmentStates = WeaponSystem.InfantryWeaponSystem.WeaponState_FP[WeaponIndex].WeaponAttachmentStates;
+	TMap<EAttachmentSlot, FWeaponAttachmentState>& WeaponAttachmentStates = Loadout.WeaponSystem.InfantryWeaponSystem.WeaponState_FP[WeaponIndex].WeaponAttachmentStates;
 	for (auto& SlotPair : WeaponAttachmentStates)
 	{
 		FName& AttachmentID = SlotPair.Value.BaseAttachmentState.AttachmentID;
@@ -712,8 +713,8 @@ FName UWeaponLogicComponent::GetSocketNameForSlot(EAttachmentSlot Slot)
 
 FTransform UWeaponLogicComponent::GetSightTransform()
 {
-	FTransform SightTransform = WeaponSystem.InfantryWeaponSystem.WeaponState_FP[GetCWI()].WeaponMesh->GetSocketTransform(FName("Aimpoint"), ERelativeTransformSpace::RTS_Component);
-	FInfantryWeaponState& InfantryWeaponState = WeaponSystem.InfantryWeaponSystem.WeaponState_FP[GetCWI()];
+	FTransform SightTransform = Loadout.WeaponSystem.InfantryWeaponSystem.WeaponState_FP[GetCWI()].WeaponMesh->GetSocketTransform(FName("Aimpoint"), ERelativeTransformSpace::RTS_Component);
+	FInfantryWeaponState& InfantryWeaponState = Loadout.WeaponSystem.InfantryWeaponSystem.WeaponState_FP[GetCWI()];
 	float VerticalAimpointOffset = 0.0f;
 	FName AttachmentID = NAME_None;
 	if (FWeaponAttachmentState* OpticState = InfantryWeaponState.WeaponAttachmentStates.Find(EAttachmentSlot::Scope))
@@ -736,9 +737,9 @@ FTransform UWeaponLogicComponent::GetSightTransform()
 
 float UWeaponLogicComponent::GetSightDistance()
 {
-	FName& WeaponID = WeaponSystem.BaseWeaponSystem.Weapons[GetCWI()].WeaponID;
+	FName& WeaponID = Loadout.WeaponSystem.BaseWeaponSystem.Weapons[GetCWI()].WeaponID;
 	const float& DefaultSightDistance = UBS2FunctionLibrary::GetDataSubsystem(this)->GetInfantryWeaponDataRow(WeaponID)->InfantryWeaponAimData.DefaultSightDistance;
-	FInfantryWeaponState& InfantryWeaponState = WeaponSystem.InfantryWeaponSystem.WeaponState_FP[GetCWI()];
+	FInfantryWeaponState& InfantryWeaponState = Loadout.WeaponSystem.InfantryWeaponSystem.WeaponState_FP[GetCWI()];
 	FName AttachmentID = NAME_None;
 	if (FWeaponAttachmentState* OpticState = InfantryWeaponState.WeaponAttachmentStates.Find(EAttachmentSlot::Scope))
 	{
@@ -759,10 +760,10 @@ float UWeaponLogicComponent::GetSightDistance()
 
 void UWeaponLogicComponent::GetAimSpeeds(float& AimInSpeed, float& AimOutSpeed)
 {
-	FName& WeaponID = WeaponSystem.BaseWeaponSystem.Weapons[GetCWI()].WeaponID;
+	FName& WeaponID = Loadout.WeaponSystem.BaseWeaponSystem.Weapons[GetCWI()].WeaponID;
 	const float& DefaultAimInSpeed = UBS2FunctionLibrary::GetDataSubsystem(this)->GetInfantryWeaponDataRow(WeaponID)->InfantryWeaponAimData.DefaultAimInSpeed;
 	const float& DefaultAimOutSpeed = UBS2FunctionLibrary::GetDataSubsystem(this)->GetInfantryWeaponDataRow(WeaponID)->InfantryWeaponAimData.DefaultAimOutSpeed;
-	TMap<EAttachmentSlot, FWeaponAttachmentState>& WeaponAttachmentStates = WeaponSystem.InfantryWeaponSystem.WeaponState_FP[GetCWI()].WeaponAttachmentStates;
+	TMap<EAttachmentSlot, FWeaponAttachmentState>& WeaponAttachmentStates = Loadout.WeaponSystem.InfantryWeaponSystem.WeaponState_FP[GetCWI()].WeaponAttachmentStates;
 	TArray<FStatModifierData> ADSModifiers;
 	GetAllAttachmentModifierDataOfTypeForWeapon(WeaponAttachmentStates, EWeaponStat::ADSInSpeed, ADSModifiers);
 	float CurrentAimInSpeed = CalculateFinalStatValue(DefaultAimInSpeed, ADSModifiers);
@@ -788,9 +789,9 @@ void UWeaponLogicComponent::GetAllAttachmentModifierDataOfTypeForWeapon(TMap<EAt
 
 FWeaponAttachmentState& UWeaponLogicComponent::GetCurrentAttachmentInSlot(EAttachmentSlot Slot)
 {
-	if (WeaponSystem.InfantryWeaponSystem.WeaponState_FP[GetCWI()].WeaponAttachmentStates.Contains(Slot))
+	if (Loadout.WeaponSystem.InfantryWeaponSystem.WeaponState_FP[GetCWI()].WeaponAttachmentStates.Contains(Slot))
 	{
-		return WeaponSystem.InfantryWeaponSystem.WeaponState_FP[GetCWI()].WeaponAttachmentStates[Slot];
+		return Loadout.WeaponSystem.InfantryWeaponSystem.WeaponState_FP[GetCWI()].WeaponAttachmentStates[Slot];
 	}
 	else
 	{
@@ -801,12 +802,12 @@ FWeaponAttachmentState& UWeaponLogicComponent::GetCurrentAttachmentInSlot(EAttac
 
 FWeapon_Runtime& UWeaponLogicComponent::GetBaseWeaponState(int32 WeaponIndex)
 {
-	return WeaponSystem.BaseWeaponSystem.Weapons[WeaponIndex];
+	return Loadout.WeaponSystem.BaseWeaponSystem.Weapons[WeaponIndex];
 }
 
 FInfantryWeaponState& UWeaponLogicComponent::GetCurrentInfantryWeaponState_FP()
 {
-	return WeaponSystem.InfantryWeaponSystem.WeaponState_FP[GetCWI()];
+	return Loadout.WeaponSystem.InfantryWeaponSystem.WeaponState_FP[GetCWI()];
 }
 
 FVector UWeaponLogicComponent::GetAttachmentDefaultOffset(FName WeaponID, EAttachmentSlot Slot, FName AttachmentID)
@@ -817,13 +818,13 @@ FVector UWeaponLogicComponent::GetAttachmentDefaultOffset(FName WeaponID, EAttac
 
 FWeapon_Runtime* UWeaponLogicComponent::GetCurrentWeaponRuntime()
 {
-	FWeapon_Runtime* CurrentWeapon = &WeaponSystem.BaseWeaponSystem.Weapons[GetCWI()];
+	FWeapon_Runtime* CurrentWeapon = &Loadout.WeaponSystem.BaseWeaponSystem.Weapons[GetCWI()];
 	return CurrentWeapon;
 }
 
 const FInfantryWeaponData* UWeaponLogicComponent::GetCurrentWeaponStaticData() const
 {
-	const FInfantryWeaponData* StaticWeaponData = StaticWeaponDataCache[WeaponSystem.BaseWeaponSystem.EquippedWeaponState.CurrentWeaponIndex];
+	const FInfantryWeaponData* StaticWeaponData = StaticWeaponDataCache[Loadout.WeaponSystem.BaseWeaponSystem.EquippedWeaponState.CurrentWeaponIndex];
 	return StaticWeaponData;
 }
 
@@ -835,12 +836,12 @@ FInfantryWeaponData UWeaponLogicComponent::GetCurrentWeaponStaticData_BP()
 
 FWeaponStats_Runtime& UWeaponLogicComponent::GetCurrentWeaponStats()
 {
-	return WeaponSystem.InfantryWeaponSystem.CurrentWeaponStats[GetCWI()];
+	return Loadout.WeaponSystem.InfantryWeaponSystem.CurrentWeaponStats[GetCWI()];
 }
 
 int32& UWeaponLogicComponent::GetCWI()
 {
-	return WeaponSystem.BaseWeaponSystem.EquippedWeaponState.CurrentWeaponIndex;
+	return Loadout.WeaponSystem.BaseWeaponSystem.EquippedWeaponState.CurrentWeaponIndex;
 }
 
 #pragma endregion

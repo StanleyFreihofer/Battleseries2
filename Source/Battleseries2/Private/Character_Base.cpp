@@ -368,7 +368,7 @@ void ACharacter_Base::UpdateMovementMode(ECharacterMovementMode NewMode)
 		}
 		case ECharacterMovementMode::Sprinting:
 		{
-			if (WeaponManager->WeaponSystem.isAiming) { return; }
+			if (WeaponManager->Loadout.WeaponSystem.isAiming) { return; }
 			else if (CurrentMovementMode == ECharacterMovementMode::Walking)
 			{
 				StartSprint();
@@ -528,7 +528,7 @@ void ACharacter_Base::CharacterEnterVehicle()
 	GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Vehicle, ECollisionResponse::ECR_Ignore);
 	FPArms->SetCollisionResponseToChannel(ECC_Vehicle, ECR_Ignore);
 	FPLegs->SetCollisionResponseToChannel(ECC_Vehicle, ECR_Ignore);
-	for (int32 i = 0; i < WeaponManager->WeaponSystem.BaseWeaponSystem.Weapons.Num(); i++)
+	for (int32 i = 0; i < WeaponManager->Loadout.WeaponSystem.BaseWeaponSystem.Weapons.Num(); i++)
 	{
 		WeaponManager->UpdateWeaponCollision(ECC_Vehicle, ECR_Ignore, i);
 	}

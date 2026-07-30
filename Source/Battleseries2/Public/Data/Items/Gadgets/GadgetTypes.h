@@ -14,12 +14,12 @@ struct FGadgetState
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta = (ToolTip = "current number of this gadget at runtime"))
 	int32 CurrentInventory = 0;
 	
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	UPROPERTY(VisibleAnywhere)
 	TArray<TWeakObjectPtr<AActor>> ActivePlacedInstances;
 	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	TWeakObjectPtr<UStaticMeshComponent> HeldMesh_FP = nullptr;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	TWeakObjectPtr<UStaticMeshComponent> HeldMesh_TP = nullptr;
 };
