@@ -542,11 +542,11 @@ struct FJetFlightModel_Chaos
 	int32 AutoLevelMaxSpeed = 100;
 
 	// Dot product threshold for "how inverted." WorldZ=1.0 means upright,
-	// -1.0 means fully inverted. 0.25 means "more than ~75° tilted."
+	// -1.0 means fully inverted. 0.25 means "more than ~75ï¿½ tilted."
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Flight|AutoLevel")
 	float AutoLevelDotThreshold = 0.25f;
 
-	// RInterpTo speed for the auto-level rotation — smooth recovery.
+	// RInterpTo speed for the auto-level rotation ï¿½ smooth recovery.
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Flight|AutoLevel")
 	float AutoLevelInterpSpeed = 2.0f;
 
@@ -628,30 +628,31 @@ struct FJetData
 	FFlightModel_Chaos ChaosFlightModelData = FFlightModel_Chaos();
 };
 
-
-//THE ONE THAT WE MAKE DATA TABLE OUT OF
 USTRUCT(BlueprintType)
-struct FVehicleData : public FTableRowBase			//<-- makes it accessible for data tables
+struct FVehicleData : public FTableRowBase		
 {
 	GENERATED_BODY()
-
-	//generic stuff/things applied to all vehicles
-	//THE FOLLOWING DATA SHOULD NOT BE RUNTIME DATA
+	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	FText Vehicle_DisplayName = FText();
-
-	//NOT VEHICLE TYPE, MOVEMENT TYPE (GROUNDVEHICLE, JET, HELICOPTER, BOAT)
+	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	E_MovementType Movement_Type = E_MovementType::GroundVehicle;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	EVehicleType Vehicle_Type = EVehicleType::Tank;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	bool bCanRemoteControl = false;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	TSoftObjectPtr<UTexture2D> VehicleIcon = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	TSoftObjectPtr<USkeletalMesh> Vehicle_Mesh = nullptr;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	TSoftObjectPtr<UStaticMesh> DestroyedMesh = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	TSoftObjectPtr<UPhysicsAsset> Preview_PhysicsAsset = nullptr;

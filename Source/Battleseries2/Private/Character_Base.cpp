@@ -524,23 +524,27 @@ void ACharacter_Base::UpdateSeatList(TArray<ACharacter_Base*> Characters)
 void ACharacter_Base::CharacterEnterVehicle()
 {
 	//if Vehicle RC Data does actually become a thing, certain things here need to be blocked based on that new property's value
-	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Vehicle, ECR_Ignore);
-	GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Vehicle, ECollisionResponse::ECR_Ignore);
-	FPArms->SetCollisionResponseToChannel(ECC_Vehicle, ECR_Ignore);
-	FPLegs->SetCollisionResponseToChannel(ECC_Vehicle, ECR_Ignore);
-	for (int32 i = 0; i < WeaponManager->Loadout.WeaponSystem.BaseWeaponSystem.Weapons.Num(); i++)
+	if (!GetCurrentVehicle()->VehicleData->bCanRemoteControl)
 	{
-		WeaponManager->UpdateWeaponCollision(ECC_Vehicle, ECR_Ignore, i);
+		//only if physically enters vehicle
+		GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Vehicle, ECR_Ignore);
+		GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Vehicle, ECollisionResponse::ECR_Ignore);
+		FPArms->SetCollisionResponseToChannel(ECC_Vehicle, ECR_Ignore);
+		FPLegs->SetCollisionResponseToChannel(ECC_Vehicle, ECR_Ignore);
+		for (int32 i = 0; i < WeaponManager->Loadout.WeaponSystem.BaseWeaponSystem.Weapons.Num(); i++)
+		{
+			WeaponManager->UpdateWeaponCollision(ECC_Vehicle, ECR_Ignore, i);
+		}
+		GetCharacterMovement()->SetMovementMode(MOVE_None);
+		AttachToActor(GetCurrentVehicle(), FAttachmentTransformRules::KeepRelativeTransform);
+		
+		FPArmsSpringArm->bUsePawnControlRotation = false;
+		FPArmsSpringArm->bInheritRoll = true;
+		FPArmsSpringArm->bEnableCameraLag = false;
+		FPCamera->bUsePawnControlRotation = false;
+		FPCamera->SetRelativeRotation(FRotator());
+		bUseControllerRotationYaw = false;
 	}
-	GetCharacterMovement()->SetMovementMode(MOVE_None);
-	AttachToActor(GetCurrentVehicle(), FAttachmentTransformRules::KeepRelativeTransform);
-
-	FPArmsSpringArm->bUsePawnControlRotation = false;
-	FPArmsSpringArm->bInheritRoll = true;
-	FPArmsSpringArm->bEnableCameraLag = false;
-	FPCamera->bUsePawnControlRotation = false;
-	FPCamera->SetRelativeRotation(FRotator());
-	bUseControllerRotationYaw = false;
 
 	ManageIMC(UBS2FunctionLibrary::GetDataSubsystem(this)->GetCharacterDefaults()->DefaultGameplayIMC.Get(), nullptr, -1);
 }
@@ -549,23 +553,27 @@ void ACharacter_Base::CharacterExitVehicle()
 {
 	if (GetCurrentVehicle())
 	{
-		CharacterExitSeat(GetCurrentVehicle()->VehicleData->Seats[GetCSI()].DefaultCharacterContext);
+		//CharacterExitSeat(GetCurrentVehicle()->VehicleData->Seats[GetCSI()].DefaultCharacterContext);
 		GetCurrentVehicle()->DropSeat(this, GetCSI());
-		DetachFromActor(FDetachmentTransformRules::KeepRelativeTransform);
+		
+		if (!GetCurrentVehicle()->VehicleData->bCanRemoteControl)
+		{
+			DetachFromActor(FDetachmentTransformRules::KeepRelativeTransform);
 
-		FVector ExitLocation = CalculateSafeExitLocation(GetCurrentVehicle());
-		SetActorLocation(ExitLocation);
+			FVector ExitLocation = CalculateSafeExitLocation(GetCurrentVehicle());
+			SetActorLocation(ExitLocation);
 
-		HandleUpdateStance(ECharacterStance::Standing);
-		GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Vehicle, ECR_Block);
-		GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Vehicle, ECollisionResponse::ECR_Block);
-		GetCharacterMovement()->SetMovementMode(MOVE_Walking);		//make this more dynamic (are we falling out of ejecting from a jet for example)
+			HandleUpdateStance(ECharacterStance::Standing);
+			GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Vehicle, ECR_Block);
+			GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Vehicle, ECollisionResponse::ECR_Block);
+			GetCharacterMovement()->SetMovementMode(MOVE_Walking);		//make this more dynamic (are we falling out of ejecting from a jet for example)
 
-		FPCamera->bUsePawnControlRotation = true;
-		bUseControllerRotationYaw = true;
-		FPArmsSpringArm->bUsePawnControlRotation = true;
-		FPArmsSpringArm->bInheritRoll = false;
-		FPArmsSpringArm->bEnableCameraLag = true;
+			FPCamera->bUsePawnControlRotation = true;
+			bUseControllerRotationYaw = true;
+			FPArmsSpringArm->bUsePawnControlRotation = true;
+			FPArmsSpringArm->bInheritRoll = false;
+			FPArmsSpringArm->bEnableCameraLag = true;
+		}
 
 		UpdateViewTarget(this, FPCamera);
 		CharacterState.CharacterVehicleState = FCharacterVehicleState();
@@ -577,33 +585,38 @@ void ACharacter_Base::CharacterExitVehicle()
 void ACharacter_Base::CharacterEnterSeat(const FCharacterSeatContext& SeatContext)
 {
 	//if Vehicle RC Data does actually become a thing, Character transform should not be set (block switch behind if)
-	switch (GetCurrentVehicle()->GetVehicleData().Seats[GetCSI()].SeatRole)
+	if (!GetCurrentVehicle()->VehicleData->bCanRemoteControl)
 	{
-		case E_SeatRole::Driver:
-		case E_SeatRole::Passenger:
-			SetActorRelativeTransform(SeatContext.SeatTransform);
-			break;
-		case E_SeatRole::DriverGunner:
-		case E_SeatRole::Gunner:
-			TObjectPtr<UVehicleWeaponLogicComponent> VWLC = GetCurrentVehicle()->VehicleWeaponLogicComponent;
-			const FVehicleWeaponInstanceData& VWID = VWLC->GetVWID(GetCSI(), VWLC->GetCWIForSeat(GetCSI()), VWLC->GetEquippedWeaponInSeat(GetCSI()).VehicleWeaponState.BaseWeaponRuntimeData.WeaponID);
-			if (VWID.AttachmentInstanceData.bAttachCharacter)
-			{
-				TWeakObjectPtr<USkeletalMeshComponent> WeaponMesh = VWLC->VehicleWeaponSystem.Find(GetCSI())->VehicleWeaponSystemState.WeaponSystemMesh;
-				FAttachmentTransformRules AttachmentRules(EAttachmentRule::SnapToTarget, false);
-				GetRootComponent()->AttachToComponent(WeaponMesh.Get(), AttachmentRules, FName("Test"));
-				SetActorRelativeTransform(VWID.AttachmentInstanceData.CharacterTransform);
-			}
-			else
-			{
+		switch (GetCurrentVehicle()->GetVehicleData().Seats[GetCSI()].SeatRole)
+		{
+			case E_SeatRole::Driver:
+			case E_SeatRole::Passenger:
 				SetActorRelativeTransform(SeatContext.SeatTransform);
-			}
-			break;
-	}
+				break;
+			case E_SeatRole::DriverGunner:
+			case E_SeatRole::Gunner:
+				TObjectPtr<UVehicleWeaponLogicComponent> VWLC = GetCurrentVehicle()->VehicleWeaponLogicComponent;
+				const FVehicleWeaponInstanceData& VWID = VWLC->GetVWID(GetCSI(), VWLC->GetCWIForSeat(GetCSI()), VWLC->GetEquippedWeaponInSeat(GetCSI()).VehicleWeaponState.BaseWeaponRuntimeData.WeaponID);
+				if (VWID.AttachmentInstanceData.bAttachCharacter)
+				{
+					TWeakObjectPtr<USkeletalMeshComponent> WeaponMesh = VWLC->VehicleWeaponSystem.Find(GetCSI())->VehicleWeaponSystemState.WeaponSystemMesh;
+					FAttachmentTransformRules AttachmentRules(EAttachmentRule::SnapToTarget, false);
+					GetRootComponent()->AttachToComponent(WeaponMesh.Get(), AttachmentRules, FName("Test"));
+					SetActorRelativeTransform(VWID.AttachmentInstanceData.CharacterTransform);
+				}
+				else
+				{
+					SetActorRelativeTransform(SeatContext.SeatTransform);
+				}
+				break;
+		}
 
-	HandleUpdateStance(SeatContext.SeatStance);
+		HandleUpdateStance(SeatContext.SeatStance);
+		UpdateCharacterMeshVisibility(SeatContext.bIsCharacterVisible);
+	}
+	
 	ManageIMC(nullptr, SeatContext.InputMappingContext, 1);
-	UpdateCharacterMeshVisibility(SeatContext.bIsCharacterVisible);
+
 	if (SeatContext.SeatHMD)
 	{
 		UpdateVehicleHUD(SeatContext.SeatHMD);
@@ -615,11 +628,15 @@ void ACharacter_Base::CharacterEnterSeat(const FCharacterSeatContext& SeatContex
 
 void ACharacter_Base::CharacterExitSeat(const FCharacterSeatContext& SeatContext)
 {
-	if (GetAttachParentActor()->GetRootComponent() != GetRootComponent()->GetAttachParent())
+	if (!GetCurrentVehicle()->VehicleData->bCanRemoteControl)
 	{
-		GetRootComponent()->DetachFromComponent(FDetachmentTransformRules::KeepRelativeTransform);
-		AttachToActor(GetCurrentVehicle(), FAttachmentTransformRules::KeepRelativeTransform);
+		if (GetAttachParentActor()->GetRootComponent() != GetRootComponent()->GetAttachParent())
+		{
+			GetRootComponent()->DetachFromComponent(FDetachmentTransformRules::KeepRelativeTransform);
+			AttachToActor(GetCurrentVehicle(), FAttachmentTransformRules::KeepRelativeTransform);
+		}
 	}
+
 	UpdateVehicleHUD(nullptr);
 	ManageIMC(SeatContext.InputMappingContext, nullptr, 0);
 }
