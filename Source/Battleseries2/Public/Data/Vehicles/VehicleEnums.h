@@ -32,14 +32,15 @@ enum class EVehicleType : uint8
 	TransportHeli			UMETA(DisplayName = "Transport Helicopter"),
 	RHIB					UMETA(DisplayName = "RHIB"),
 	MobileArtillery			UMETA(DisplayName = "Mobile Artillery"),
+	Other					UMETA(DisplayName = "Other", ToolTip = "Other miscellanious things that just happen to be vehicles (turrets, gadgets such as EOD Bots and Drones)"),
 	MAX						UMETA(Hidden)
 
 	//Attack Boat
 	//Multirole Jet
 	//Bomber
+	//gunship
 	//VTOL
 	//stationary turret?
-	//other
 };
 ENUM_RANGE_BY_COUNT(EVehicleType, EVehicleType::MAX);
 
