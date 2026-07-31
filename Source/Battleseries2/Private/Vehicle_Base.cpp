@@ -79,19 +79,22 @@ void AVehicle_Base::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
 
 #pragma region Initalization/Factory
 
-void AVehicle_Base::Init_Wheels(const TArray<FChaosWheelSetup>& WheelData)
+void AVehicle_Base::Init_Wheels(const FWheelSetup& WheelSetup)
 {
+	ChaosVehicleMovement->bSuspensionEnabled = WheelSetup.SuspensionEnabled;
+	ChaosVehicleMovement->EnableWheelFriction(WheelSetup.WheelFrictionEnabled);
+	ChaosVehicleMovement->bLegacyWheelFrictionPosition = WheelSetup.LegacyWheelFrictionPosition;
+	
 	ChaosVehicleMovement->WheelSetups.Empty();
 	ChaosVehicleMovement->Wheels.Empty();
-
-	ChaosVehicleMovement->WheelSetups.SetNum(WheelData.Num());
-	for (int32 i = 0; i < WheelData.Num(); i++)
+	ChaosVehicleMovement->WheelSetups.SetNum(WheelSetup.WheelData.Num());
+	for (int32 i = 0; i < WheelSetup.WheelData.Num(); i++)
 	{
-		const FChaosWheelSetup& SourceData = WheelData[i];				//the data we are pulling from
-		FChaosWheelSetup& Setup = ChaosVehicleMovement->WheelSetups[i];	//the properties we are applying to
+		const FChaosWheelSetup& SourceData = WheelSetup.WheelData[i];				//the data we are pulling from
+		FChaosWheelSetup& Setup = ChaosVehicleMovement->WheelSetups[i];				//the properties we are applying to
 		Setup.WheelClass = SourceData.WheelClass;
-		Setup.BoneName = SourceData.BoneName;							//set bone name
-		Setup.AdditionalOffset = SourceData.AdditionalOffset;			//set additional offset
+		Setup.BoneName = SourceData.BoneName;										//set bone name
+		Setup.AdditionalOffset = SourceData.AdditionalOffset;						//set additional offset
 	}
 }
 
@@ -104,7 +107,7 @@ void AVehicle_Base::Init_GroundVehicle()
 	VehicleMeshComponent->RecreatePhysicsState();
 	//ChaosVehicleMovement->UnregisterComponent();
 	//ChaosVehicleMovement->SetUpdatedComponent(VehicleMeshComponent);
-	Init_Wheels(VehicleData->GroundVehicle_Data.WheelData);
+	Init_Wheels(VehicleData->GroundVehicle_Data.WheelSetup);
 
 	//Mechanical Setup
 	ChaosVehicleMovement->EnableMechanicalSim(true);	//true by default, not in DTs
@@ -420,6 +423,7 @@ void AVehicle_Base::SetVehicleAndInit(FVehicleStartingData InputVehicleStartingD
 
 void AVehicle_Base::PlayHorn()
 {
+	if (!VehicleCurrentState.GenericVehicleState.HornAudioComponent)	{return;}
 	VehicleCurrentState.GenericVehicleState.HornAudioComponent->Play(0.0f);
 	FTimerHandle TimerHandle;
 	GetWorldTimerManager().SetTimer(TimerHandle, this, &AVehicle_Base::StopHorn, 4.0f, false);
@@ -427,6 +431,7 @@ void AVehicle_Base::PlayHorn()
 
 void AVehicle_Base::StopHorn()
 {
+	if (!VehicleCurrentState.GenericVehicleState.HornAudioComponent)	{return;}
 	VehicleCurrentState.GenericVehicleState.HornAudioComponent->Stop();
 }
 
@@ -457,6 +462,7 @@ void AVehicle_Base::UpdateSeatList_AllOccupants()
 
 void AVehicle_Base::Interact_Implementation(ACharacter_Base* CharacterInteracting)
 {
+	if (VehicleData->bCanRemoteControl)		{ return; }		//cant enter an RC Vehicle via in person interaction
 	AttemptEnterVehicle(CharacterInteracting);
 	InteractionWidgetComponent->SetVisibility(false, false);
 }

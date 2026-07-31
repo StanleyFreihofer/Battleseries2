@@ -233,6 +233,24 @@ struct FIdleTurnData
 };
 
 USTRUCT(BlueprintType)
+struct FWheelSetup
+{
+	GENERATED_BODY()
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	bool SuspensionEnabled = true;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	bool WheelFrictionEnabled = true;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	bool LegacyWheelFrictionPosition = false;
+	
+	UPROPERTY(EditAnywhere)
+	TArray<FChaosWheelSetup> WheelData;
+};
+
+USTRUCT(BlueprintType)
 struct FVehicleSetup
 {
 	//STRUCT THAT LIFTS/COPIES PROPERTIES FROM CHAOS "VEHICLE SETUP" section
@@ -343,8 +361,9 @@ struct FGroundVehicleData
 
 	//THE FOLLOWING ARE CHAOSWHEELEDVEHICLEMOVEMENT PROPERTIES/DATA & SHOULD BE BAKED/COPIED ACCORDINGLY
 
-	UPROPERTY(EditAnywhere)
-	TArray<FChaosWheelSetup> WheelData;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	FWheelSetup WheelSetup = FWheelSetup();
+	
 	//Engine Setup
 	UPROPERTY(EditAnywhere)
 	FVehicleEngineConfig EngineData = FVehicleEngineConfig();
@@ -399,7 +418,7 @@ struct FAircraftData
 	GENERATED_BODY()
 
 	UPROPERTY(EditAnywhere)
-	TArray<FChaosWheelSetup> LandingGear;
+	FWheelSetup LandingGear = FWheelSetup();
 };
 
 USTRUCT(BlueprintType)
