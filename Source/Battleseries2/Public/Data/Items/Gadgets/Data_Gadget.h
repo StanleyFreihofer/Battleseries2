@@ -2,13 +2,29 @@
 
 #include "CoreMinimal.h"
 #include "Engine/DataTable.h"
+#include "Data/Items/Gadgets/GadgetEnums.h"
 #include "Data_Gadget.generated.h"
 
 
 /** 
- * data FOR CLASSIC GADGETS ONLY
- * gadgets that are weapons or vehicles in some manner should be listed in their respective data
+ * data FOR CLASSIC GADGETS AND VEHICLE GADGETS ONLY
+ * gadgets that are weapons should be listed in their respective data
 **/
+
+USTRUCT(BlueprintType)
+struct FGadgetAnimData
+{
+	GENERATED_BODY()
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	TSoftObjectPtr<UAnimSequence> EquipGadget = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	TSoftObjectPtr<UAnimSequence> UnequipGadget = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	TSoftObjectPtr<UAnimSequence> DeployGadget = nullptr;
+};
 
 USTRUCT(BlueprintType)
 struct FGadgetData : public FTableRowBase
@@ -21,8 +37,17 @@ struct FGadgetData : public FTableRowBase
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	FText Description = FText();
 	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (ToolTip = "mesh that you hold"))
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	EGadgetType GadgetType = EGadgetType::Gadget;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ToolTip = "if the gadget is a vehicle or weapon, this is the ID for their respective DT", EditCondition = "GadgetType == EGadgetType::Vehicle || GadgetType == EGadgetType::Weapon", EditConditionHides))
+	FName ItemID = NAME_None;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ToolTip = "mesh that you hold"))
 	TSoftObjectPtr<UStaticMesh> GadgetMesh = nullptr;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	FGadgetAnimData GadgetAnimData = FGadgetAnimData();
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ToolTip = "if true, will automatically drop gadget on equip"))
 	bool AutoDrop = false;

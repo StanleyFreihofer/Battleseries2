@@ -33,9 +33,13 @@ void UWeaponLogicComponent::TickComponent(float DeltaTime, ELevelTick TickType, 
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 }
 
-void UWeaponLogicComponent::Init_WeaponLoadout(FPlayerLoadoutConfig_Class ClassLoadout, TArray<FPlayerLoadoutConfig_Weapon> WeaponLoadouts)
+void UWeaponLogicComponent::Init_Loadout(TArray<FName> Weapons, TArray<FPlayerLoadoutConfig_Weapon> WeaponLoadouts, TArray<FName> Gadgets)
 {
-	TArray<FName>& Weapons = ClassLoadout.Weapons;
+	
+}
+
+void UWeaponLogicComponent::Init_WeaponLoadout(TArray<FName> Weapons, TArray<FPlayerLoadoutConfig_Weapon> WeaponLoadouts)
+{
 	Loadout.WeaponSystem.BaseWeaponSystem.Weapons.SetNum(Weapons.Num());
 	StaticWeaponDataCache.SetNum(Weapons.Num());
 	Loadout.WeaponSystem.InfantryWeaponSystem.WeaponState_FP.SetNum(Weapons.Num());
@@ -151,7 +155,6 @@ void UWeaponLogicComponent::UpdateScopeCamera()
 
 	if (Loadout.WeaponSystem.InfantryWeaponSystem.WeaponState_FP[GetCWI()].WeaponAttachmentStates.Find(EAttachmentSlot::Scope))
 	{
-
 		FWeaponAttachmentState& WeaponAttachmentState = *Loadout.WeaponSystem.InfantryWeaponSystem.WeaponState_FP[GetCWI()].WeaponAttachmentStates.Find(EAttachmentSlot::Scope);
 		int32 PIPMatIndex = UBS2FunctionLibrary::GetDataSubsystem(this)->GetWeaponAttachmentDataRow(WeaponAttachmentState.BaseAttachmentState.AttachmentID)->WeaponSightData.PIPMaterialIndex;
 		if (PIPMatIndex < 0) { return; }
@@ -193,6 +196,8 @@ void UWeaponLogicComponent::UpdateWeaponVisibility(int32 WeaponIndex, bool Hide)
 	}
 }
 
+#pragma region Aiming
+
 void UWeaponLogicComponent::StartAim()
 {
 	const FInfantryWeaponAimData& AimData = GetCurrentWeaponStaticData()->InfantryWeaponAimData;
@@ -229,6 +234,8 @@ void UWeaponLogicComponent::StopAim()
 	Loadout.WeaponSystem.isAiming = false;
 }
 
+# pragma endregion 
+
 void UWeaponLogicComponent::Rangefinder()
 {
 	FHitResult OutHit;
@@ -238,6 +245,8 @@ void UWeaponLogicComponent::Rangefinder()
 	Loadout.WeaponSystem.BaseWeaponSystem.EquippedWeaponState.RaycastData.RangefinderData = OutHit;
 	Loadout.WeaponSystem.BaseWeaponSystem.EquippedWeaponState.RaycastData.MuzzleAimDirections[0] = UBS2FunctionLibrary::GetAimDirectionFromMuzzle(OutHit, FName("Muzzle"), WeaponMesh);
 }
+
+#pragma region WeaponFire
 
 void UWeaponLogicComponent::HandleStartFire()
 {
@@ -321,6 +330,10 @@ void UWeaponLogicComponent::FireWeapon()
 	}
 }
 
+#pragma endregion
+
+#pragma region WeaponReload
+
 void UWeaponLogicComponent::ReloadWeapon()
 {
 	FWeapon_Runtime& CurrentWeapon = *GetCurrentWeaponRuntime();
@@ -340,12 +353,15 @@ void UWeaponLogicComponent::ReloadWeapon()
 
 		TWeakObjectPtr<ACharacter_Base> Character = Cast<ACharacter_Base>(GetOwner());
 		USkeletalMeshComponent* FPArms = Character->FPArms;
+		
+		/**
 		FString SocketString = FString::Printf(TEXT("Socket_%s_R"), *GetCurrentWeaponRuntime()->WeaponID.ToString());
 		FName AttachSocketName = FName(*SocketString);
 		if (FPArms->DoesSocketExist(AttachSocketName))
 		{
 			InfantryWeaponState_FP.WeaponMesh->AttachToComponent(Character->FPArms, FAttachmentTransformRules(EAttachmentRule::SnapToTarget, EAttachmentRule::SnapToTarget, EAttachmentRule::SnapToTarget, true), AttachSocketName);
 		}
+		**/
 
 		TSoftObjectPtr<UAnimMontage> FPReloadMontage = bEmptyMag ? StaticWeaponData->InfantryWeaponAnimData.FPWeaponAnimData.ReloadEmptyWeaponMontage : StaticWeaponData->InfantryWeaponAnimData.FPWeaponAnimData.ReloadWeaponMontage;
 		TSoftObjectPtr<UAnimSequence> WeaponReloadAnim = bEmptyMag ? StaticWeaponData->InfantryWeaponAnimData.WeaponAnimData.WeaponReloadEmpty : StaticWeaponData->InfantryWeaponAnimData.WeaponAnimData.WeaponReload;
@@ -370,6 +386,8 @@ void UWeaponLogicComponent::OnReloadFinished(UAnimMontage* Montage, bool bInterr
 
 	TWeakObjectPtr<ACharacter_Base> Character = Cast<ACharacter_Base>(GetOwner());
 	USkeletalMeshComponent* FPArms = Character->FPArms;
+	
+	/**
 	FString ReloadSocketString = FString::Printf(TEXT("Socket_%s_R"), *GetCurrentWeaponRuntime()->WeaponID.ToString());
 	FString SocketString = FString::Printf(TEXT("Socket_%s"), *GetCurrentWeaponRuntime()->WeaponID.ToString());
 	FName ReloadAttachSocketName = FName(*ReloadSocketString);
@@ -382,6 +400,7 @@ void UWeaponLogicComponent::OnReloadFinished(UAnimMontage* Montage, bool bInterr
 	{
 		InfantryWeaponState_FP.WeaponMesh->HideBoneByName(StaticWeaponData->InfantryWeaponAmmoData.ProjectileBoneToHide, EPhysBodyOp::PBO_None);
 	}
+	**/
 
 	int32 NewCAM, NewCRA;
 	UBS2FunctionLibrary::CalculateReload(CurrentWeaponStats.MagSize, CurrentWeapon.WeaponState.CurrentAmmoinMag, CurrentWeapon.WeaponState.CurrentReserveAmmo, NewCAM, NewCRA);
@@ -389,6 +408,8 @@ void UWeaponLogicComponent::OnReloadFinished(UAnimMontage* Montage, bool bInterr
 	CurrentWeapon.WeaponState.CurrentReserveAmmo = NewCRA;
 	CurrentWeapon.WeaponState.isReloading = false;
 }
+
+#pragma endregion
 
 void UWeaponLogicComponent::SwitchWeapon_AutoIncrement()
 {

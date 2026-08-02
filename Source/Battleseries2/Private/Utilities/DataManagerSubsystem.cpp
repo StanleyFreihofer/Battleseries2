@@ -8,6 +8,7 @@
 #include "Data/Items/Weapons/Data_Weapon.h"
 #include "Data/Items/Weapons/Data_InfantryWeapon.h"
 #include "Data/Items/Weapons/Data_WeaponAttachments.h"
+#include "Data/Items/Gadgets/Data_Gadget.h"
 #include "Data/Vehicles/Data_Vehicle.h"
 #include "Data/Items/Weapons/Data_VehicleWeapon.h"
 #include "Data/Items/Weapons/Data_Projectile.h"
@@ -59,6 +60,7 @@ void UDataManagerSubsystem::LoadDataTables()
 
     InfantryWeaponDataTable = InfantryWeaponDataTableAsset.LoadSynchronous();
     WeaponAttachmentDataTable = WeaponAttachmentDataTableAsset.LoadSynchronous();
+    GadgetDataTable = GadgetDataTableAsset.LoadSynchronous();
     VehicleDataTable = VehicleDataTableAsset.LoadSynchronous();
     VehicleWeaponDataTable = VehicleWeaponDataTableAsset.LoadSynchronous();
     ProjectileDataTable = ProjectileDataTableAsset.LoadSynchronous();
@@ -112,6 +114,12 @@ FWeaponAttachmentData UDataManagerSubsystem::GetWeaponAttachmentDataRowCopy(FNam
     return *WeaponAttachmentData;
 }
 
+FGadgetData UDataManagerSubsystem::GetGadgetDataRowCopy(FName RowName) const
+{
+    const FGadgetData* GadgetData = GadgetDataTable->FindRow<FGadgetData>(RowName, TEXT("GadgetDataLookup"));
+    return *GadgetData;
+}
+
 FProjectileData UDataManagerSubsystem::GetProjectileDataRowCopy(FName RowName) const
 {
     const FProjectileData* ProjectileData = ProjectileDataTable->FindRow<FProjectileData>(RowName, TEXT("ProjectileDataLookup"));
@@ -135,6 +143,12 @@ const FWeaponAttachmentData* UDataManagerSubsystem::GetWeaponAttachmentDataRow(F
 {
     const FWeaponAttachmentData* WeaponAttachmentData = WeaponAttachmentDataTable->FindRow<FWeaponAttachmentData>(RowName, TEXT("WeaponAttachmentDataLookup"));
     return WeaponAttachmentData;
+}
+
+const FGadgetData* UDataManagerSubsystem::GetGadgetDataRow(FName RowName) const
+{
+    const FGadgetData* GadgetData = GadgetDataTable->FindRow<FGadgetData>(RowName, TEXT("GadgetDataLookup"));
+    return GadgetData;
 }
 
 //const because we want the pointer to be read-only (dont wanna modify table data)

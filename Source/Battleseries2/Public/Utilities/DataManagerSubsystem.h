@@ -8,6 +8,7 @@
 
 struct FInfantryWeaponData;
 struct FWeaponAttachmentData;
+struct FGadgetData;
 struct FVehicleData;
 struct FVehicleTypeDefintion;
 struct FVehicleWeaponData;
@@ -35,6 +36,9 @@ public:
     // Editor-assigned soft references
     UPROPERTY(EditAnywhere, Category = "Data Tables")
     TSoftObjectPtr<UDataTable> InfantryWeaponDataTableAsset;
+    
+    UPROPERTY(EditAnywhere, Category = "Data Tables")
+    TSoftObjectPtr<UDataTable> GadgetDataTableAsset;
 
     UPROPERTY(EditAnywhere, Category = "Data Tables")
     TSoftObjectPtr<UDataTable> WeaponAttachmentDataTableAsset;
@@ -137,7 +141,7 @@ public:
 #pragma region BlueprintCallableRowGetters
     //USTRUCTs are value types, not objects like UCLASS.
     //UFUNCTIONs exposed to Blueprints cannot return raw pointers or references to USTRUCTs.
-    //Unreal doesn’t allow exposing memory addresses of value types to Blueprints.
+    //Unreal doesnï¿½t allow exposing memory addresses of value types to Blueprints.
     //in conclusion, another Blueprint L
     UFUNCTION(BlueprintCallable, Category = "Data")
     FVehicleData GetVehicleDataRowCopy(FName RowName) const;
@@ -149,6 +153,8 @@ public:
     FInfantryWeaponData GetInfantryWeaponDataRowCopy(FName RowName) const;
     UFUNCTION(BlueprintCallable, Category = "Data")
     FWeaponAttachmentData GetWeaponAttachmentDataRowCopy(FName RowName) const;
+    UFUNCTION(BlueprintCallable, Category = "Data")
+    FGadgetData GetGadgetDataRowCopy(FName RowName) const;
     UFUNCTION(BlueprintCallable, Category = "Data")
     FProjectileData GetProjectileDataRowCopy(FName RowName) const;
     UFUNCTION(BlueprintCallable, Category = "Data")
@@ -174,6 +180,7 @@ public:
     //CPP Only Functions
     const FInfantryWeaponData* GetInfantryWeaponDataRow(FName RowName) const;
     const FWeaponAttachmentData* GetWeaponAttachmentDataRow(FName RowName) const;
+    const FGadgetData* GetGadgetDataRow(FName RowName) const;
     const FVehicleData* GetVehicleDataRow(FName RowName) const;
     const FVehicleWeaponData* GetVehicleWeaponDataRow(FName RowName) const;
     const FVehicleAttachmentData* GetVehicleAttachmentDataRow(FName RowName) const;
@@ -189,7 +196,10 @@ private:
 
     UPROPERTY()
     UDataTable* WeaponAttachmentDataTable;
-
+    
+    UPROPERTY()
+    UDataTable* GadgetDataTable;
+    
     UPROPERTY()
     UDataTable* VehicleDataTable;
 

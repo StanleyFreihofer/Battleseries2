@@ -120,7 +120,9 @@ class BATTLESERIES2_API UWeaponLogicComponent : public UActorComponent
 		FLoadoutItemState Loadout = FLoadoutItemState();
 
 		UFUNCTION(BlueprintCallable)
-		void Init_WeaponLoadout(FPlayerLoadoutConfig_Class ClassLoadout, TArray<FPlayerLoadoutConfig_Weapon> WeaponLoadouts);
+		void Init_Loadout(TArray<FName> Weapons, TArray<FPlayerLoadoutConfig_Weapon> WeaponLoadouts, TArray<FName> Gadgets);
+		UFUNCTION(BlueprintCallable)
+		void Init_WeaponLoadout(TArray<FName> Weapons, TArray<FPlayerLoadoutConfig_Weapon> WeaponLoadouts);
 		UFUNCTION(BlueprintCallable)
 		void Init_ScopeCamera();
 		UFUNCTION(BlueprintCallable)
