@@ -79,9 +79,6 @@ struct FOnFootWeaponSystem_Runtime
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	bool isAiming = false;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
-	int32 PreviousWeaponIndex = 0;
 };
 
 USTRUCT(BlueprintType) 
@@ -89,11 +86,8 @@ struct FLoadoutItemState
 { 
 	GENERATED_BODY() 
 	
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite) 
-	ECharacterItemType CurrentCategory = ECharacterItemType::Weapon; 
-	
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)			//for weapons this conflicts with/does the same thing as "CurrentWeaponIndex" <----problem
-	int32 CurrentItemIndex = 0;
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)				//this 1 enum tells what category and slot/index 
+	ELoadoutSlot CurrentSlot = ELoadoutSlot::PrimaryWeapon; 
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta= (ToolTip = "Weapon System, also contains any 'gadgets' that are Weapons"))				//contains "weapon" gadgets
 	FOnFootWeaponSystem_Runtime WeaponSystem = FOnFootWeaponSystem_Runtime(); 
@@ -103,6 +97,9 @@ struct FLoadoutItemState
 	
 	//grenade
 	//melee
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	int32 PreviousItemIndex = 0;
 };
 
 //RENAME TO LOADOUTMANAGER!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -124,6 +121,8 @@ class BATTLESERIES2_API UWeaponLogicComponent : public UActorComponent
 		UFUNCTION(BlueprintCallable)
 		void Init_WeaponLoadout(TArray<FName> Weapons, TArray<FPlayerLoadoutConfig_Weapon> WeaponLoadouts);
 		UFUNCTION(BlueprintCallable)
+		void Init_GadgetLoadout(TArray<FName> Gadgets);
+		UFUNCTION(BlueprintCallable)
 		void Init_ScopeCamera();
 		UFUNCTION(BlueprintCallable)
 		void Init_Weapon(FName WeaponID, int32 WeaponIndex, FPlayerLoadoutConfig_Weapon WeaponLoadout);
@@ -131,6 +130,12 @@ class BATTLESERIES2_API UWeaponLogicComponent : public UActorComponent
 		void Init_WeaponMesh(TWeakObjectPtr<USkeletalMeshComponent>& WeaponMesh);
 		UFUNCTION(BlueprintCallable)
 		void Init_Attachment(FWeaponAttachmentState& RuntimeSlotState, FInfantryWeaponState& WeaponToApplyTo, EAttachmentSlot AttachmentSlot);
+		UFUNCTION(BlueprintCallable)
+		void Init_Gadget(FName GadgetID, int32 GadgetIndex);
+		UFUNCTION()
+		void Init_GadgetMesh(TWeakObjectPtr<UStaticMeshComponent>& HeldGadgetMesh);
+		UFUNCTION(BlueprintCallable)
+		void SetupCustomWeapon(int32 WeaponIndex, FPlayerLoadoutConfig_Weapon WeaponLoadout);
 		UFUNCTION(BlueprintCallable)
 		void ApplyAttachments(const FPlayerLoadoutConfig_Weapon& AttachmentsToApply, int32 WeaponIndex);
 		UFUNCTION()
@@ -166,11 +171,13 @@ class BATTLESERIES2_API UWeaponLogicComponent : public UActorComponent
 		UFUNCTION(BlueprintCallable)
 		void ReloadWeapon();
 		UFUNCTION(BlueprintCallable)
-		void SwitchWeapon_AutoIncrement();
+		void AutoSwitchItem();
 		UFUNCTION(BlueprintCallable)
-		void StartSwitchWeapon(int32 LastWeaponIndex, int32 NewWeaponIndex);
+		void HandleSwitchItem(ELoadoutSlot NewLoadoutSlot);
 		UFUNCTION(BlueprintCallable)
-		void TransitionWeapon();
+		void TransitionWeapon(int32 PreviousWeaponIndex);
+		UFUNCTION(BlueprintCallable)
+		void UnequipWeapon(int32 PreviousWeaponIndex);
 		UFUNCTION(BlueprintCallable)
 		void EquipWeapon(int32 WeaponIndex, bool InitalEquip);
 		UFUNCTION(BlueprintCallable)
@@ -179,15 +186,23 @@ class BATTLESERIES2_API UWeaponLogicComponent : public UActorComponent
 		void ToggleScope();
 		UFUNCTION(BlueprintCallable)
 		void UpdateScope(int32 NewOpticIndex);
-
 		UFUNCTION(BlueprintCallable)
 		void UpdateCurrentWeaponStats(int32 WeaponIndex);
 		UFUNCTION(BlueprintCallable)
 		void ApplyAttachmentModifier(FWeaponStats_Runtime& RuntimeStats, EWeaponStat WeaponStat, const FStatModifierData& Modifier);
-
 		UFUNCTION(BlueprintCallable)
 		float CalculateFinalStatValue(float BaseValue, TArray<FStatModifierData>& ModifierArray);
+	
+		UFUNCTION(BlueprintCallable)
+		void UnequipGadget(TSoftObjectPtr<UAnimMontage> FPUnequipItemMontage);
 
+	
+		UFUNCTION(BlueprintCallable, BlueprintPure)
+		ECharacterItemType GetCategoryForSlot(ELoadoutSlot LoadoutSlot);
+		UFUNCTION(BlueprintCallable, BlueprintPure)
+		int32 GetArrayIndex(ELoadoutSlot LoadoutSlot);
+		UFUNCTION(BlueprintCallable, BlueprintPure)
+		ECharacterItemType GetActualGadgetItemType(int32 GadgetIndex);
 		UFUNCTION(BlueprintCallable, BlueprintPure)
 		FName GetSocketNameForSlot(EAttachmentSlot Slot);
 		UFUNCTION(BlueprintCallable, BlueprintPure)
@@ -211,19 +226,21 @@ class BATTLESERIES2_API UWeaponLogicComponent : public UActorComponent
 		UFUNCTION(BlueprintCallable, BlueprintPure)
 		FWeaponStats_Runtime& GetCurrentWeaponStats();
 		UFUNCTION(BlueprintCallable, BlueprintPure)
-		int32& GetCWI();
+		int32 GetCWI();
 
 	protected:
-		TArray<const FInfantryWeaponData*> StaticWeaponDataCache;
+		TArray<const FInfantryWeaponData*> StaticWeaponDataCache;				//includes THE WEAPON DATA of gadgets that are weapons
+		TArray<const FGadgetData*> StaticGadgetDataCache;
 
 		FWeapon_Runtime* GetCurrentWeaponRuntime();
-		const FInfantryWeaponData* GetCurrentWeaponStaticData() const;
+		const FInfantryWeaponData* GetCurrentWeaponStaticData();
 
 		FTimerHandle SwitchWeaponTimer;
 
 	private:
 		void OnReloadFinished(UAnimMontage* Montage, bool bInterrupted);
-		void OnUnequipBlendOut(UAnimMontage* Montage, bool bInterrupted);
+		void OnUnequipWeapon_BlendOutToWeapon(UAnimMontage* Montage, bool bInterrupted);
+		void OnUnequipWeapon_BlendOutToGadget(UAnimMontage* Montage, bool bInterrupted);
 		FOnMontageEnded ReloadEndedDelegate;
 		FOnMontageBlendingOutStarted UnequipBlendOutDelegate;
 };

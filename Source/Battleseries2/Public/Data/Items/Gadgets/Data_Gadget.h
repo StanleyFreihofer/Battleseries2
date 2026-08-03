@@ -20,7 +20,7 @@ struct FGadgetAnimData
 	TSoftObjectPtr<UAnimSequence> EquipGadget = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	TSoftObjectPtr<UAnimSequence> UnequipGadget = nullptr;
+	TSoftObjectPtr<UAnimMontage> UnequipGadget = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	TSoftObjectPtr<UAnimSequence> DeployGadget = nullptr;
