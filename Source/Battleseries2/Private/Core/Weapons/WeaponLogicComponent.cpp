@@ -980,7 +980,7 @@ void UWeaponLogicComponent::DeployGadget()
 void UWeaponLogicComponent::UseGadget()
 {
 	//gadget is NOT a weapon
-	//calls whatever event on every active placed instance (detonate c4 for example)
+	//calls whatever event on every active placed instance (detonate c4 or control drone for example)
 	int32 GadgetIndex = GetArrayIndex(Loadout.CurrentSlot);
 	FGadgetState& GadgetState = Loadout.Gadgets[GadgetIndex];
 	const FGadgetData& GadgetData = *StaticGadgetDataCache[GadgetIndex];
@@ -990,10 +990,28 @@ void UWeaponLogicComponent::UseGadget()
 		case EGadgetType::Gadget:
 			break;
 		case EGadgetType::Vehicle:
-			Cast<AVehicle_Base>(GadgetState.ActivePlacedInstances[0])->AttemptEnterVehicle(GetOwnerCharacter());
+			TObjectPtr<AVehicle_Base> VehicleGadget = Cast<AVehicle_Base>(GadgetState.ActivePlacedInstances[0]);
+			if (VehicleGadget->IsInitialized())
+			{
+				VehicleGadget->AttemptEnterVehicle(GetOwnerCharacter());
+			}
+			else
+			{
+				VehicleGadget->OnVehicleInitialized.AddDynamic(this, &UWeaponLogicComponent::OnDeployedVehicleGadgetReady);
+			}
 			break;
 	}
 	
+}
+
+void UWeaponLogicComponent::OnDeployedVehicleGadgetReady()
+{
+	int32 GadgetIndex = GetArrayIndex(Loadout.CurrentSlot);
+	FGadgetState& GadgetState = Loadout.Gadgets[GadgetIndex];
+	TObjectPtr<AVehicle_Base> VehicleGadget = Cast<AVehicle_Base>(GadgetState.ActivePlacedInstances[0]);
+	check (VehicleGadget);
+	VehicleGadget->OnVehicleInitialized.RemoveDynamic(this, &UWeaponLogicComponent::OnDeployedVehicleGadgetReady);
+	VehicleGadget->AttemptEnterVehicle(GetOwnerCharacter());
 }
 
 #pragma region Getters

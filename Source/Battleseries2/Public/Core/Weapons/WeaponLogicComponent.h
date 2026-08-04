@@ -209,6 +209,8 @@ class BATTLESERIES2_API UWeaponLogicComponent : public UActorComponent
 		void DeployGadget();
 		UFUNCTION(BlueprintCallable)
 		void UseGadget();
+		UFUNCTION()
+		void OnDeployedVehicleGadgetReady();
 	
 		UFUNCTION(BlueprintCallable, BlueprintPure)
 		ECharacterItemType GetCategoryForSlot(ELoadoutSlot LoadoutSlot);

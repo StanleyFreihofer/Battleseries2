@@ -176,7 +176,7 @@ struct FVehicleCurrentState
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FGroundVehicleState GroundVehicleState = FGroundVehicleState();
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	FAircraftState AircraftState = FAircraftState()
+	FAircraftState AircraftState = FAircraftState();
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "__Runtime")
 	bool bIsInitialized = false;
