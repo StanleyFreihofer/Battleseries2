@@ -176,7 +176,10 @@ struct FVehicleCurrentState
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FGroundVehicleState GroundVehicleState = FGroundVehicleState();
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	FAircraftState AircraftState = FAircraftState();
+	FAircraftState AircraftState = FAircraftState()
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "__Runtime")
+	bool bIsInitialized = false;
 	//combat state (is lazed/designated?)
 	//armor?
 	//countermeasure?

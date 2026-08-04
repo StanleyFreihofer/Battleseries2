@@ -33,6 +33,7 @@ class UAnimInstance;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnSeatsInitialized);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnMeshReady);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnVehicleInitialized);
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnVehicleYawUpdate, float, Yaw);		//broadcast when vehicle is turned/steered/yawed
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnVehicleSpeedUpdate, float, Speed);		//broadcast on when throttle input
@@ -100,12 +101,14 @@ public:
 	FVehicleCurrentState VehicleCurrentState = FVehicleCurrentState();
 
 	//Static Data
-	const FVehicleData* VehicleData;				//not a pointer
+	const FVehicleData* VehicleData;			
 
 	UPROPERTY(BlueprintAssignable, Category = "Event Dispatchers")
 	FOnSeatsInitialized OnSeatsInitialized;
 	UPROPERTY(BlueprintAssignable, Category = "Event Dispatchers")
 	FOnMeshReady OnMeshReady;
+	UPROPERTY(BlueprintAssignable, Category = "Event Dispatchers")
+	FOnVehicleInitialized OnVehicleInitialized;
 
 	UPROPERTY(BlueprintAssignable, Category = "Event Dispatchers")
 	FOnVehicleYawUpdate OnVehicleYawUpdate;
@@ -154,17 +157,17 @@ public:
 	void Init_Vehicle();
 	UFUNCTION(BlueprintCallable)
 	void Init_Horn(USoundBase* HornAudio);
+	UFUNCTION(BlueprintCallable)
+	void Init_Vehicle_Preview();
+	UFUNCTION(BlueprintCallable)
+	void Init_VehicleMesh_Preview(USkeletalMesh* LoadedSkeletalMesh);
 
 	UFUNCTION(BlueprintCallable)
 	void PlayHorn();
 	UFUNCTION(BlueprintCallable)
 	void StopHorn();
 
-	UFUNCTION(BlueprintCallable)
-	void Init_Vehicle_Preview();
 
-	UFUNCTION(BlueprintCallable)
-	void Init_VehicleMesh_Preview(USkeletalMesh* LoadedSkeletalMesh);
 
 
 	//RUNTIME FUNCTIONS
@@ -322,6 +325,8 @@ public:
 	UCameraComponent* GetRemoteActiveCam(int32 SeatIndex);
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	float GetCurrentSpeed_Chaos();
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	bool IsInitialized() const { return VehicleCurrentState.bIsInitialized; }
 
 #pragma region InterfaceGetters
 	virtual USkeletalMeshComponent* GetMesh() const override;
@@ -348,6 +353,8 @@ public:
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
+	
+	void Init_Vehicle_Finalize();
 
 public:	
 	// Called every frame

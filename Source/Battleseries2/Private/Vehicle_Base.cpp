@@ -385,6 +385,8 @@ void AVehicle_Base::Init_Vehicle()
 	Init_VehicleAnim(VehicleData->Anim_Class.Get());
 	ApplyCamoToVehicle(VehicleStartingData.StartingVehicleLoadout.VehicleCamo);
 	SpawnComponent->Init_SpawnData(VehicleData->Vehicle_DisplayName, VehicleData->VehicleIcon.Get(), ESpawnType::Vehicle);
+	
+	Init_Vehicle_Finalize();
 }
 
 void AVehicle_Base::Init_Horn(USoundBase* HornAudio)
@@ -407,6 +409,14 @@ void AVehicle_Base::Init_Vehicle_Preview()
 	VehicleWeaponLogicComponent->SetComponentTickEnabled(false);
 	VehicleWeaponLogicComponent->Init_VehicleWeaponSystem(VehicleStartingData.StartingVehicleLoadout.SeatLoadout);		//weapons and turrets
 	ApplyCamoToVehicle(VehicleStartingData.StartingVehicleLoadout.VehicleCamo);
+	
+	Init_Vehicle_Finalize();
+}
+
+void AVehicle_Base::Init_Vehicle_Finalize()
+{
+	VehicleCurrentState.bIsInitialized = true;
+	OnVehicleInitialized.Broadcast();
 }
 
 void AVehicle_Base::SetVehicleAndInit(FVehicleStartingData InputVehicleStartingData)
