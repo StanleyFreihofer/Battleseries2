@@ -538,15 +538,33 @@ void UWeaponLogicComponent::HandleSwitchItem(ELoadoutSlot NewLoadoutSlot)
 			}
 			break;
 		case ECharacterItemType::Gadget:
+			switch (NewItemType)
+			{
+				case ECharacterItemType::Gadget:
+					UnequipGadget(Loadout.PreviousItemIndex);
+					break;
+				case ECharacterItemType::Weapon:
+					UnequipGadget(Loadout.PreviousItemIndex);
+					break;
+			}
 			break;
 	}
 }
 
-void UWeaponLogicComponent::TransitionFromWeapon(int32 PreviousWeaponIndex)
+void UWeaponLogicComponent::TransitionFromItem(int32 PreviousItemIndex, ECharacterItemType LoadoutCategory)
 {
+	//basically unequip for everything non-anim related
 	TWeakObjectPtr<ACharacter_Base> Character = Cast<ACharacter_Base>(GetOwner());
 	Character->FPArms->SetVisibility(false);
-	UpdateWeaponVisibility(PreviousWeaponIndex, true);
+	switch (LoadoutCategory)
+	{
+		case ECharacterItemType::Weapon:
+			UpdateWeaponVisibility(PreviousItemIndex, true);
+			break;
+		case ECharacterItemType::Gadget:
+			UpdateGadgetVisibility(PreviousItemIndex, true);
+			break;
+	}
 	GetWorld()->GetTimerManager().SetTimer(SwitchWeaponTimer, [this, Character]()
 	{
 		Character->FPArms->SetVisibility(true);
@@ -557,6 +575,7 @@ void UWeaponLogicComponent::TransitionFromWeapon(int32 PreviousWeaponIndex)
 
 void UWeaponLogicComponent::TransitionToItem()
 {
+	//basically equip for everything non-anim related
 	int32 ItemIndex;
 	switch (Loadout.CurrentSlot)
 	{
@@ -590,12 +609,7 @@ void UWeaponLogicComponent::UnequipWeapon(int32 PreviousWeaponIndex)
 	ECharacterItemType CurrentItemType = GetCategoryForSlot(Loadout.CurrentSlot);
 	if (!FPUnequipItemMontage.Get())
 	{
-		switch (CurrentItemType)
-		{
-			case ECharacterItemType::Weapon:
-				TransitionFromWeapon(PreviousWeaponIndex);
-				break;
-		}
+		TransitionFromItem(PreviousWeaponIndex, ECharacterItemType::Weapon);
 		return;
 	}
 	TWeakObjectPtr<UAnimInstance> FPArmsAnimInstance = Cast<ACharacter_Base>(GetOwner())->FPArms->GetAnimInstance();
@@ -617,7 +631,7 @@ void UWeaponLogicComponent::OnUnequipWeapon_BlendOutToWeapon(UAnimMontage* Monta
 	}
 	FPArmsAnimInstance->Montage_Play(FPUnequipWeaponMontage.Get(), 0.0f, EMontagePlayReturnType::MontageLength, FPUnequipWeaponMontage->GetPlayLength());
 
-	TransitionFromWeapon(Loadout.PreviousItemIndex);	//remember, this function calls equip weapon in it
+	TransitionFromItem(Loadout.PreviousItemIndex, ECharacterItemType::Weapon);	//remember, this function calls equip weapon in it
 }
 
 void UWeaponLogicComponent::OnUnequipWeapon_BlendOutToGadget(UAnimMontage* Montage, bool bInterrupted)
@@ -632,7 +646,7 @@ void UWeaponLogicComponent::OnUnequipWeapon_BlendOutToGadget(UAnimMontage* Monta
 		return;
 	}
 	FPArmsAnimInstance->Montage_Play(FPUnequipGadgetMontage.Get(), 0.0f, EMontagePlayReturnType::MontageLength, FPUnequipGadgetMontage->GetPlayLength());
-	TransitionFromWeapon(Loadout.PreviousItemIndex);
+	TransitionFromItem(Loadout.PreviousItemIndex, ECharacterItemType::Weapon);
 }
 
 void UWeaponLogicComponent::EquipWeapon(int32 WeaponIndex, bool InitialEquip)
@@ -877,9 +891,21 @@ float UWeaponLogicComponent::CalculateFinalStatValue(float BaseValue, TArray<FSt
 
 #pragma endregion 
 
-void UWeaponLogicComponent::UnequipGadget(TSoftObjectPtr<UAnimMontage> FPUnequipItemMontage)
+void UWeaponLogicComponent::UnequipGadget(int32 PreviousGadgetIndex)
 {
+	TSoftObjectPtr<UAnimMontage> FPUnequipItemMontage = StaticGadgetDataCache[PreviousGadgetIndex]->GadgetAnimData.UnequipGadget;
 	FPUnequipItemMontage.LoadSynchronous();
+	ECharacterItemType CurrentItemType = GetCategoryForSlot(Loadout.CurrentSlot);
+	if (!FPUnequipItemMontage.Get())
+	{
+		TransitionFromItem(PreviousGadgetIndex, ECharacterItemType::Gadget);
+		return;
+	}
+	
+	TWeakObjectPtr<UAnimInstance> FPArmsAnimInstance = Cast<ACharacter_Base>(GetOwner())->FPArms->GetAnimInstance();
+	
+	FPArmsAnimInstance->Montage_Play(FPUnequipItemMontage.Get(), 1.0f, EMontagePlayReturnType::MontageLength, 0.0f);
+	FPArmsAnimInstance->Montage_SetBlendingOutDelegate(UnequipBlendOutDelegate, FPUnequipItemMontage.Get());		//BINDING SHOULDVE HAPPENED BEFORE THIS FUNCTION IS CALLED
 }
 
 void UWeaponLogicComponent::EquipGadget(int32 GadgetIndex)

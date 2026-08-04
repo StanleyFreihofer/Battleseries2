@@ -179,7 +179,7 @@ class BATTLESERIES2_API UWeaponLogicComponent : public UActorComponent
 		UFUNCTION(BlueprintCallable)
 		void HandleSwitchItem(ELoadoutSlot NewLoadoutSlot);
 		UFUNCTION(BlueprintCallable)
-		void TransitionFromWeapon(int32 PreviousWeaponIndex);
+		void TransitionFromItem(int32 PreviousItemIndex, ECharacterItemType LoadoutCategory);
 		UFUNCTION(BlueprintCallable)
 		void TransitionToItem();
 		UFUNCTION(BlueprintCallable)
@@ -200,7 +200,7 @@ class BATTLESERIES2_API UWeaponLogicComponent : public UActorComponent
 		float CalculateFinalStatValue(float BaseValue, TArray<FStatModifierData>& ModifierArray);
 	
 		UFUNCTION(BlueprintCallable)
-		void UnequipGadget(TSoftObjectPtr<UAnimMontage> FPUnequipItemMontage);
+		void UnequipGadget(int32 PreviousGadgetIndex);
 		UFUNCTION(BlueprintCallable)	
 		void EquipGadget(int32 GadgetIndex);
 		UFUNCTION(BlueprintCallable)
