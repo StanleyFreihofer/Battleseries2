@@ -919,7 +919,54 @@ void UWeaponLogicComponent::EquipGadget(int32 GadgetIndex)
 	UpdateGadgetVisibility(GadgetIndex, false);
 	
 	AnimData.EquipGadget.LoadSynchronous();
+	EquipGadgetBlendOutDelegate.BindUObject(this, &UWeaponLogicComponent::OnEquipGadget_BlendOut);
 	FPArmsAnimInstance->Montage_Play(AnimData.EquipGadget.Get(), 1.0f);
+	FPArmsAnimInstance->Montage_SetBlendingOutDelegate(EquipGadgetBlendOutDelegate, AnimData.EquipGadget.Get());
+}
+
+void UWeaponLogicComponent::HandleDeployGadgetInput()
+{
+	int32 GadgetIndex = GetArrayIndex(Loadout.CurrentSlot);
+	FGadgetState& GadgetState = Loadout.Gadgets[GadgetIndex];
+	const FGadgetData& GadgetData = *StaticGadgetDataCache[GadgetIndex];
+	
+	switch (GadgetData.GadgetType)
+	{
+		case EGadgetType::Gadget:
+			StartDeployGadget();
+			break;
+		case EGadgetType::Vehicle:
+			//vehicle is a wierd case where only 1 should be deployed at a time so therefore use it
+			if (GadgetState.ActivePlacedInstances.Num() > 0)
+			{
+				UseGadget();
+			}
+			else
+			{
+				StartDeployGadget();
+			}
+			break;
+	}
+}
+
+void UWeaponLogicComponent::OnEquipGadget_BlendOut(UAnimMontage* Montage, bool bInterrupted)
+{
+	int32 GadgetIndex = GetArrayIndex(Loadout.CurrentSlot);
+	const FGadgetData& GadgetData = *StaticGadgetDataCache[GadgetIndex];
+	FGadgetState& GadgetState = Loadout.Gadgets[GadgetIndex];
+	
+	if (GadgetData.GadgetType == EGadgetType::Vehicle && GadgetState.ActivePlacedInstances.Num() > 0)
+	{
+		if (GadgetData.AutoUse)
+		{
+			UseGadget();
+		}
+	}
+	
+	if (GadgetData.AutoDrop)
+	{
+		StartDeployGadget();
+	}
 }
 
 void UWeaponLogicComponent::StartDeployGadget()
@@ -927,10 +974,13 @@ void UWeaponLogicComponent::StartDeployGadget()
 	if (GetCategoryForSlot(Loadout.CurrentSlot) != ECharacterItemType::Gadget)	{ return;}
 	int32 GadgetIndex = GetArrayIndex(Loadout.CurrentSlot);
 	if (GetActualGadgetItemType(GadgetIndex) == ECharacterItemType::Weapon)	{  return; }
+	FGadgetState& GadgetState = Loadout.Gadgets[GadgetIndex];
+	const FGadgetData& GadgetData = *StaticGadgetDataCache[GadgetIndex];
+	if (GadgetData.GadgetType == EGadgetType::Vehicle && !GadgetState.ActivePlacedInstances.IsEmpty())	{return;}		//if this gadget is a vehicle & there's 1 deployed, dont deploy another
 	
 	TWeakObjectPtr<ACharacter_Base> Character = Cast<ACharacter_Base>(GetOwner());
 	TWeakObjectPtr<UAnimInstance> FPArmsAnimInstance = Character->FPArms->GetAnimInstance();
-	const FGadgetData& GadgetData = *StaticGadgetDataCache[GadgetIndex];
+
 	const FGadgetAnimData& AnimData = GadgetData.GadgetAnimData;
 	AnimData.DeployGadget.LoadSynchronous();
 	UnequipBlendOutDelegate.BindUObject(this, &UWeaponLogicComponent::OnStartDeployGadget_BlendOut);
@@ -960,11 +1010,12 @@ void UWeaponLogicComponent::DeployGadget()
 		case EGadgetType::Gadget:
 			break;
 		case EGadgetType::Vehicle:
+			//vehicle is a wierd case where only 1 should be deployed at a time so therefore dont deploy 1 if 1 is already deployed/placed
+			if (!GadgetState.ActivePlacedInstances.IsEmpty())	{return;}
 			TObjectPtr<AVehicle_Base> VehicleGadget = GetWorld()->SpawnActorDeferred<AVehicle_Base>(AVehicle_Base::StaticClass(), GetOwner()->GetActorTransform(), GetOwner(), GetOwnerCharacter(), ESpawnActorCollisionHandlingMethod::AlwaysSpawn);
 			VehicleGadget->VehicleStartingData.VehicleID = GadgetData.ItemID;
 			VehicleGadget->FinishSpawning(GetOwner()->GetActorTransform());
 			check(VehicleGadget);
-			//might need new delegate on vehicle that shows its setup and ready to go
 			NewGadget = VehicleGadget;
 			break;
 	}
@@ -984,6 +1035,7 @@ void UWeaponLogicComponent::UseGadget()
 	int32 GadgetIndex = GetArrayIndex(Loadout.CurrentSlot);
 	FGadgetState& GadgetState = Loadout.Gadgets[GadgetIndex];
 	const FGadgetData& GadgetData = *StaticGadgetDataCache[GadgetIndex];
+	if (GadgetState.ActivePlacedInstances.IsEmpty())	{ return; }
 	
 	switch (GadgetData.GadgetType)
 	{

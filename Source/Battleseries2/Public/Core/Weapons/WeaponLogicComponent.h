@@ -204,6 +204,8 @@ class BATTLESERIES2_API UWeaponLogicComponent : public UActorComponent
 		UFUNCTION(BlueprintCallable)	
 		void EquipGadget(int32 GadgetIndex);
 		UFUNCTION(BlueprintCallable)
+		void HandleDeployGadgetInput();
+		UFUNCTION(BlueprintCallable)
 		void StartDeployGadget();
 		UFUNCTION(BlueprintCallable)
 		void DeployGadget();
@@ -260,9 +262,11 @@ class BATTLESERIES2_API UWeaponLogicComponent : public UActorComponent
 		void OnReloadFinished(UAnimMontage* Montage, bool bInterrupted);
 		void OnUnequipWeapon_BlendOutToWeapon(UAnimMontage* Montage, bool bInterrupted);
 		void OnUnequipWeapon_BlendOutToGadget(UAnimMontage* Montage, bool bInterrupted);
+		void OnEquipGadget_BlendOut(UAnimMontage* Montage, bool bInterrupted);
 		void OnStartDeployGadget_BlendOut(UAnimMontage* Montage, bool bInterrupted);
 		FOnMontageEnded ReloadEndedDelegate;
 		FOnMontageBlendingOutStarted UnequipBlendOutDelegate;
+		FOnMontageBlendingOutStarted EquipGadgetBlendOutDelegate;
 		FOnMontageBlendingOutStarted DeployGadgetBlendOutDelegate;
 };
 
