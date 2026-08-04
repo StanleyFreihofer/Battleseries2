@@ -44,6 +44,7 @@ void UWeaponLogicComponent::Init_Loadout(TArray<FName> Weapons, TArray<FPlayerLo
 	for (int32 i = 0; i < Gadgets.Num(); i++)
 	{
 		const FGadgetData* NewGadgetData = UBS2FunctionLibrary::GetDataSubsystem(this)->GetGadgetDataRow(Gadgets[i]);
+		check (NewGadgetData);
 		switch (NewGadgetData->GadgetType)
 		{
 			case EGadgetType::Weapon:
@@ -53,6 +54,7 @@ void UWeaponLogicComponent::Init_Loadout(TArray<FName> Weapons, TArray<FPlayerLo
 		}
 	}
 	Init_WeaponLoadout(WeaponIDs, WeaponLoadouts);
+	Init_GadgetLoadout(Gadgets);
 }
 
 void UWeaponLogicComponent::Init_WeaponLoadout(TArray<FName> Weapons, TArray<FPlayerLoadoutConfig_Weapon> WeaponLoadouts)
@@ -146,6 +148,8 @@ void UWeaponLogicComponent::Init_Gadget(FName GadgetID, int32 GadgetIndex)
 	StaticGadgetDataCache[GadgetIndex] = UBS2FunctionLibrary::GetDataSubsystem(this)->GetGadgetDataRow(GadgetID);
 	
 	Init_GadgetMesh(GadgetState.HeldMesh_FP);
+	GadgetState.HeldMesh_FP->SetOnlyOwnerSee(true);
+	UpdateGadgetMesh(GadgetID, GadgetState.HeldMesh_FP);
 	
 	FString SocketString = FString::Printf(TEXT("Socket_%s"), *GadgetID.ToString());
 	FName AttachSocketName = FName(*SocketString);
@@ -193,6 +197,13 @@ void UWeaponLogicComponent::UpdateWeaponMesh(FName WeaponID, TWeakObjectPtr<USke
 	WeaponMeshComp->SetSkeletalMesh(WeaponMesh.Get());
 }
 
+void UWeaponLogicComponent::UpdateGadgetMesh(FName GadgetID, TWeakObjectPtr<UStaticMeshComponent>& GadgetMeshComp)
+{
+	const FGadgetData& GadgetData = *UBS2FunctionLibrary::GetDataSubsystem(this)->GetGadgetDataRow(GadgetID);
+	TWeakObjectPtr<UStaticMesh> GadgetMesh = GadgetData.GadgetMesh.LoadSynchronous();
+	GadgetMeshComp->SetStaticMesh(GadgetMesh.Get());
+}
+
 void UWeaponLogicComponent::UpdateWeaponData(int32 WeaponIndex, FName WeaponID, FInfantryWeaponState WeaponState)
 {
 	Loadout.WeaponSystem.BaseWeaponSystem.Weapons[WeaponIndex].WeaponID = WeaponID;
@@ -205,11 +216,11 @@ void UWeaponLogicComponent::UpdateWeaponData(int32 WeaponIndex, FName WeaponID, 
 void UWeaponLogicComponent::UpdateScopeCamera()
 {
 	//called on equip weapon
-	Loadout.WeaponSystem.ScopeCamera->AttachToComponent(Loadout.WeaponSystem.InfantryWeaponSystem.WeaponState_FP[GetCWI()].WeaponMesh.Get(), FAttachmentTransformRules(EAttachmentRule::SnapToTarget, EAttachmentRule::SnapToTarget, EAttachmentRule::SnapToTarget, true), FName("PIP"));
+	Loadout.WeaponSystem.ScopeCamera->AttachToComponent(Loadout.WeaponSystem.InfantryWeaponSystem.WeaponState_FP[GetCII()].WeaponMesh.Get(), FAttachmentTransformRules(EAttachmentRule::SnapToTarget, EAttachmentRule::SnapToTarget, EAttachmentRule::SnapToTarget, true), FName("PIP"));
 
-	if (Loadout.WeaponSystem.InfantryWeaponSystem.WeaponState_FP[GetCWI()].WeaponAttachmentStates.Find(EAttachmentSlot::Scope))
+	if (Loadout.WeaponSystem.InfantryWeaponSystem.WeaponState_FP[GetCII()].WeaponAttachmentStates.Find(EAttachmentSlot::Scope))
 	{
-		FWeaponAttachmentState& WeaponAttachmentState = *Loadout.WeaponSystem.InfantryWeaponSystem.WeaponState_FP[GetCWI()].WeaponAttachmentStates.Find(EAttachmentSlot::Scope);
+		FWeaponAttachmentState& WeaponAttachmentState = *Loadout.WeaponSystem.InfantryWeaponSystem.WeaponState_FP[GetCII()].WeaponAttachmentStates.Find(EAttachmentSlot::Scope);
 		int32 PIPMatIndex = UBS2FunctionLibrary::GetDataSubsystem(this)->GetWeaponAttachmentDataRow(WeaponAttachmentState.BaseAttachmentState.AttachmentID)->WeaponSightData.PIPMaterialIndex;
 		if (PIPMatIndex < 0) { return; }
 		UMaterialInstanceDynamic* MID = WeaponAttachmentState.SpawnedAttachment->CreateDynamicMaterialInstance(PIPMatIndex, WeaponAttachmentState.SpawnedAttachment->GetMaterial(PIPMatIndex));
@@ -294,7 +305,7 @@ void UWeaponLogicComponent::Rangefinder()
 {
 	FHitResult OutHit;
 	UBS2FunctionLibrary::PerformWeaponLineTrace(this, Cast<ACharacter_Base>(GetOwner())->FPCamera->GetComponentTransform(), OutHit, { GetOwner() }, false);
-	TWeakObjectPtr<USkeletalMeshComponent>& WeaponMesh = Loadout.WeaponSystem.InfantryWeaponSystem.WeaponState_FP[GetCWI()].WeaponMesh;
+	TWeakObjectPtr<USkeletalMeshComponent>& WeaponMesh = Loadout.WeaponSystem.InfantryWeaponSystem.WeaponState_FP[GetCII()].WeaponMesh;
 
 	Loadout.WeaponSystem.BaseWeaponSystem.EquippedWeaponState.RaycastData.RangefinderData = OutHit;
 	Loadout.WeaponSystem.BaseWeaponSystem.EquippedWeaponState.RaycastData.MuzzleAimDirections[0] = UBS2FunctionLibrary::GetAimDirectionFromMuzzle(OutHit, FName("Muzzle"), WeaponMesh);
@@ -392,7 +403,7 @@ void UWeaponLogicComponent::ReloadWeapon()
 {
 	FWeapon_Runtime& CurrentWeapon = *GetCurrentWeaponRuntime();
 	const FInfantryWeaponData* StaticWeaponData = GetCurrentWeaponStaticData();
-	FInfantryWeaponState& InfantryWeaponState_FP = Loadout.WeaponSystem.InfantryWeaponSystem.WeaponState_FP[GetCWI()];
+	FInfantryWeaponState& InfantryWeaponState_FP = Loadout.WeaponSystem.InfantryWeaponSystem.WeaponState_FP[GetCII()];
 	ReloadEndedDelegate.BindUObject(this, &UWeaponLogicComponent::OnReloadFinished);
 
 	if (CurrentWeapon.WeaponState.CurrentReserveAmmo > 0)
@@ -436,7 +447,7 @@ void UWeaponLogicComponent::OnReloadFinished(UAnimMontage* Montage, bool bInterr
 	FWeaponStats_Runtime& CurrentWeaponStats = GetCurrentWeaponStats();
 	FWeapon_Runtime& CurrentWeapon = *GetCurrentWeaponRuntime();
 	const FInfantryWeaponData* StaticWeaponData = GetCurrentWeaponStaticData();
-	FInfantryWeaponState& InfantryWeaponState_FP = Loadout.WeaponSystem.InfantryWeaponSystem.WeaponState_FP[GetCWI()];
+	FInfantryWeaponState& InfantryWeaponState_FP = Loadout.WeaponSystem.InfantryWeaponSystem.WeaponState_FP[GetCII()];
 
 	TWeakObjectPtr<ACharacter_Base> Character = Cast<ACharacter_Base>(GetOwner());
 	USkeletalMeshComponent* FPArms = Character->FPArms;
@@ -516,7 +527,8 @@ void UWeaponLogicComponent::HandleSwitchItem(ELoadoutSlot NewLoadoutSlot)
 					UnequipWeapon(Loadout.PreviousItemIndex);
 					break;
 				case ECharacterItemType::Gadget:
-					
+					UnequipBlendOutDelegate.BindUObject(this, &UWeaponLogicComponent::OnUnequipWeapon_BlendOutToGadget);
+					UnequipWeapon(Loadout.PreviousItemIndex);
 					break;
 			}
 			break;
@@ -525,7 +537,7 @@ void UWeaponLogicComponent::HandleSwitchItem(ELoadoutSlot NewLoadoutSlot)
 	}
 }
 
-void UWeaponLogicComponent::TransitionWeapon(int32 PreviousWeaponIndex)
+void UWeaponLogicComponent::TransitionFromWeapon(int32 PreviousWeaponIndex)
 {
 	TWeakObjectPtr<ACharacter_Base> Character = Cast<ACharacter_Base>(GetOwner());
 	Character->FPArms->SetVisibility(false);
@@ -535,8 +547,35 @@ void UWeaponLogicComponent::TransitionWeapon(int32 PreviousWeaponIndex)
 		Character->FPArms->SetVisibility(true);
 	}, 0.05f, false);
 	
-	int32 WeaponIndex = GetArrayIndex(Loadout.CurrentSlot);
-	EquipWeapon(WeaponIndex, false);
+	TransitionToItem();
+}
+
+void UWeaponLogicComponent::TransitionToItem()
+{
+	int32 ItemIndex;
+	switch (Loadout.CurrentSlot)
+	{
+		case ELoadoutSlot::PrimaryWeapon:
+		case ELoadoutSlot::SecondaryWeapon:
+			ItemIndex = GetWeaponIndexForSlot(Loadout.CurrentSlot);
+			EquipWeapon(ItemIndex, false);
+			break;
+		case ELoadoutSlot::Gadget1:
+		case ELoadoutSlot::Gadget2:
+		case ELoadoutSlot::Gadget3:
+			ItemIndex = GetWeaponIndexForSlot(Loadout.CurrentSlot);
+			if (ItemIndex == INDEX_NONE)
+			{
+				//equip gadget
+				EquipGadget(GetArrayIndex(Loadout.CurrentSlot));
+			}
+			else
+			{
+				//equip weapon gadget works the same as any other weapon
+				EquipWeapon(ItemIndex, false);
+			}
+			break;
+	}
 }
 
 void UWeaponLogicComponent::UnequipWeapon(int32 PreviousWeaponIndex)
@@ -549,7 +588,7 @@ void UWeaponLogicComponent::UnequipWeapon(int32 PreviousWeaponIndex)
 		switch (CurrentItemType)
 		{
 			case ECharacterItemType::Weapon:
-				TransitionWeapon(PreviousWeaponIndex);
+				TransitionFromWeapon(PreviousWeaponIndex);
 				break;
 		}
 		return;
@@ -573,14 +612,22 @@ void UWeaponLogicComponent::OnUnequipWeapon_BlendOutToWeapon(UAnimMontage* Monta
 	}
 	FPArmsAnimInstance->Montage_Play(FPUnequipWeaponMontage.Get(), 0.0f, EMontagePlayReturnType::MontageLength, FPUnequipWeaponMontage->GetPlayLength());
 
-	TransitionWeapon(Loadout.PreviousItemIndex);
+	TransitionFromWeapon(Loadout.PreviousItemIndex);	//remember, this function calls equip weapon in it
 }
 
 void UWeaponLogicComponent::OnUnequipWeapon_BlendOutToGadget(UAnimMontage* Montage, bool bInterrupted)
 {
+	//old slot was weapon , new slot is gadget
 	TWeakObjectPtr<ACharacter_Base> Character = Cast<ACharacter_Base>(GetOwner());
 	TWeakObjectPtr<UAnimInstance> FPArmsAnimInstance = Character->FPArms->GetAnimInstance();
 	TSoftObjectPtr<UAnimMontage> FPUnequipGadgetMontage = StaticGadgetDataCache[Loadout.PreviousItemIndex]->GadgetAnimData.UnequipGadget;
+	if (!FPUnequipGadgetMontage.Get())
+	{
+		EquipGadget(GetArrayIndex(Loadout.CurrentSlot));	
+		return;
+	}
+	FPArmsAnimInstance->Montage_Play(FPUnequipGadgetMontage.Get(), 0.0f, EMontagePlayReturnType::MontageLength, FPUnequipGadgetMontage->GetPlayLength());
+	TransitionFromWeapon(Loadout.PreviousItemIndex);
 }
 
 void UWeaponLogicComponent::EquipWeapon(int32 WeaponIndex, bool InitialEquip)
@@ -598,6 +645,7 @@ void UWeaponLogicComponent::EquipWeapon(int32 WeaponIndex, bool InitialEquip)
 		TSoftObjectPtr<UAnimSequence> WeaponEquipAnim = AnimData.WeaponAnimData.WeaponEquip;
 		WeaponEquipAnim.LoadSynchronous();
 		NewWeaponMesh->PlayAnimation(WeaponEquipAnim.Get(), false);
+		
 		FPEquipWeaponMontage = AnimData.FPWeaponAnimData.InitialEquipWeaponMontage;
 	}
 	else
@@ -656,11 +704,13 @@ void UWeaponLogicComponent::ToggleFireMode()
 	}
 }
 
+#pragma region WeaponScope
+
 void UWeaponLogicComponent::ToggleScope()
 {
 	if (!Loadout.WeaponSystem.isAiming) { return; }
 	const FWeaponAttachmentData& WeaponAttachmentData = *UBS2FunctionLibrary::GetDataSubsystem(this)->GetWeaponAttachmentDataRow(GetCurrentAttachmentInSlot(EAttachmentSlot::Scope).BaseAttachmentState.AttachmentID);
-	int32& CurrentOpticIndex = Loadout.WeaponSystem.InfantryWeaponSystem.WeaponState_FP[GetCWI()].CurrentOpticIndex;
+	int32& CurrentOpticIndex = Loadout.WeaponSystem.InfantryWeaponSystem.WeaponState_FP[GetCII()].CurrentOpticIndex;
 	if (WeaponAttachmentData.WeaponSightData.OpticIDs.Num() > 1)
 	{
 		int32 TotalOpticLevels = WeaponAttachmentData.WeaponSightData.OpticIDs.Num();
@@ -692,6 +742,10 @@ void UWeaponLogicComponent::UpdateScope(int32 NewOpticIndex)
 
 	UBS2FunctionLibrary::HandleUpdateOptic(DefaultFOV, OpticData.ZoomMagnification, Loadout.WeaponSystem.ScopeCamera->FOVAngle, OpticData.OpticPPSettings, Loadout.WeaponSystem.ScopeCamera->PostProcessSettings, Loadout.WeaponSystem.ScopeCamera->PostProcessBlendWeight);
 }
+
+#pragma endregion
+
+#pragma region WeaponAttachments
 
 void UWeaponLogicComponent::UpdateCurrentWeaponStats(int32 WeaponIndex)
 {
@@ -816,9 +870,23 @@ float UWeaponLogicComponent::CalculateFinalStatValue(float BaseValue, TArray<FSt
 	return CurrentValue;
 }
 
+#pragma endregion 
+
 void UWeaponLogicComponent::UnequipGadget(TSoftObjectPtr<UAnimMontage> FPUnequipItemMontage)
 {
 	FPUnequipItemMontage.LoadSynchronous();
+}
+
+void UWeaponLogicComponent::EquipGadget(int32 GadgetIndex)
+{
+	TWeakObjectPtr<ACharacter_Base> Character = Cast<ACharacter_Base>(GetOwner());
+	TWeakObjectPtr<UAnimInstance> FPArmsAnimInstance = Character->FPArms->GetAnimInstance();
+	const FGadgetData& GadgetData = *StaticGadgetDataCache[GadgetIndex];
+	const FGadgetAnimData& AnimData = GadgetData.GadgetAnimData;
+	TObjectPtr<UStaticMeshComponent> NewGadgetMesh = Loadout.Gadgets[GadgetIndex].HeldMesh_FP.Get();
+	
+	AnimData.EquipGadget.LoadSynchronous();
+	FPArmsAnimInstance->Montage_Play(AnimData.EquipGadget.Get(), 1.0f);
 }
 
 #pragma region Getters
@@ -833,7 +901,7 @@ ECharacterItemType UWeaponLogicComponent::GetCategoryForSlot(ELoadoutSlot Loadou
 		case ELoadoutSlot::Gadget1:
 		case ELoadoutSlot::Gadget2:
 		case ELoadoutSlot::Gadget3:
-			return ECharacterItemType::Gadget;
+			return ECharacterItemType::Gadget;		//this is for inventory purposes, so even if gadget is "actually" a weapon this should still return gadget
 		case ELoadoutSlot::Grenade:
 			return ECharacterItemType::Grenade;
 		case ELoadoutSlot::Melee:
@@ -852,6 +920,39 @@ int32 UWeaponLogicComponent::GetArrayIndex(ELoadoutSlot LoadoutSlot)
 		case ELoadoutSlot::Gadget2:         return 1;
 		case ELoadoutSlot::Gadget3:         return 2;
 		default:                            return 0; // Grenade, Melee — single-item categories
+	}
+}
+
+int32 UWeaponLogicComponent::GetWeaponIndexForSlot(ELoadoutSlot LoadoutSlot)
+{
+	//GETS THE WEAPON INDEX FOR GADGETS THAT ARE ACTUALLY WEAPONS (gadget weapons)
+	switch (LoadoutSlot)
+	{
+		case ELoadoutSlot::PrimaryWeapon:   return 0;
+		case ELoadoutSlot::SecondaryWeapon: return 1;
+		case ELoadoutSlot::Gadget1:         
+		case ELoadoutSlot::Gadget2:
+		case ELoadoutSlot::Gadget3:
+		{
+			int32 TargetGadgetIndex = GetArrayIndex(LoadoutSlot);
+			if (GetActualGadgetItemType(TargetGadgetIndex) != ECharacterItemType::Weapon)
+			{
+				return INDEX_NONE; 
+			}
+			// Start at 2 (Primary=0, Secondary=1)
+			int32 CalculatedWeaponIndex = 2;
+			// Count how many weapon-gadgets exist in gadget slots BEFORE this one
+			for (int32 i = 0; i < TargetGadgetIndex; i++)
+			{
+				if (GetActualGadgetItemType(i) == ECharacterItemType::Weapon)
+				{
+					CalculatedWeaponIndex++;
+				}
+			}
+			return CalculatedWeaponIndex;
+		}
+		
+		default: return INDEX_NONE;
 	}
 }
 
@@ -900,8 +1001,8 @@ FName UWeaponLogicComponent::GetSocketNameForSlot(EAttachmentSlot Slot)
 
 FTransform UWeaponLogicComponent::GetSightTransform()
 {
-	FTransform SightTransform = Loadout.WeaponSystem.InfantryWeaponSystem.WeaponState_FP[GetCWI()].WeaponMesh->GetSocketTransform(FName("Aimpoint"), ERelativeTransformSpace::RTS_Component);
-	FInfantryWeaponState& InfantryWeaponState = Loadout.WeaponSystem.InfantryWeaponSystem.WeaponState_FP[GetCWI()];
+	FTransform SightTransform = Loadout.WeaponSystem.InfantryWeaponSystem.WeaponState_FP[GetCII()].WeaponMesh->GetSocketTransform(FName("Aimpoint"), ERelativeTransformSpace::RTS_Component);
+	FInfantryWeaponState& InfantryWeaponState = Loadout.WeaponSystem.InfantryWeaponSystem.WeaponState_FP[GetCII()];
 	float VerticalAimpointOffset = 0.0f;
 	FName AttachmentID = NAME_None;
 	if (FWeaponAttachmentState* OpticState = InfantryWeaponState.WeaponAttachmentStates.Find(EAttachmentSlot::Scope))
@@ -924,9 +1025,9 @@ FTransform UWeaponLogicComponent::GetSightTransform()
 
 float UWeaponLogicComponent::GetSightDistance()
 {
-	FName& WeaponID = Loadout.WeaponSystem.BaseWeaponSystem.Weapons[GetCWI()].WeaponID;
+	FName& WeaponID = Loadout.WeaponSystem.BaseWeaponSystem.Weapons[GetCII()].WeaponID;
 	const float& DefaultSightDistance = UBS2FunctionLibrary::GetDataSubsystem(this)->GetInfantryWeaponDataRow(WeaponID)->InfantryWeaponAimData.DefaultSightDistance;
-	FInfantryWeaponState& InfantryWeaponState = Loadout.WeaponSystem.InfantryWeaponSystem.WeaponState_FP[GetCWI()];
+	FInfantryWeaponState& InfantryWeaponState = Loadout.WeaponSystem.InfantryWeaponSystem.WeaponState_FP[GetCII()];
 	FName AttachmentID = NAME_None;
 	if (FWeaponAttachmentState* OpticState = InfantryWeaponState.WeaponAttachmentStates.Find(EAttachmentSlot::Scope))
 	{
@@ -947,10 +1048,10 @@ float UWeaponLogicComponent::GetSightDistance()
 
 void UWeaponLogicComponent::GetAimSpeeds(float& AimInSpeed, float& AimOutSpeed)
 {
-	FName& WeaponID = Loadout.WeaponSystem.BaseWeaponSystem.Weapons[GetCWI()].WeaponID;
+	FName& WeaponID = Loadout.WeaponSystem.BaseWeaponSystem.Weapons[GetCII()].WeaponID;
 	const float& DefaultAimInSpeed = UBS2FunctionLibrary::GetDataSubsystem(this)->GetInfantryWeaponDataRow(WeaponID)->InfantryWeaponAimData.DefaultAimInSpeed;
 	const float& DefaultAimOutSpeed = UBS2FunctionLibrary::GetDataSubsystem(this)->GetInfantryWeaponDataRow(WeaponID)->InfantryWeaponAimData.DefaultAimOutSpeed;
-	TMap<EAttachmentSlot, FWeaponAttachmentState>& WeaponAttachmentStates = Loadout.WeaponSystem.InfantryWeaponSystem.WeaponState_FP[GetCWI()].WeaponAttachmentStates;
+	TMap<EAttachmentSlot, FWeaponAttachmentState>& WeaponAttachmentStates = Loadout.WeaponSystem.InfantryWeaponSystem.WeaponState_FP[GetCII()].WeaponAttachmentStates;
 	TArray<FStatModifierData> ADSModifiers;
 	GetAllAttachmentModifierDataOfTypeForWeapon(WeaponAttachmentStates, EWeaponStat::ADSInSpeed, ADSModifiers);
 	float CurrentAimInSpeed = CalculateFinalStatValue(DefaultAimInSpeed, ADSModifiers);
@@ -976,9 +1077,9 @@ void UWeaponLogicComponent::GetAllAttachmentModifierDataOfTypeForWeapon(TMap<EAt
 
 FWeaponAttachmentState& UWeaponLogicComponent::GetCurrentAttachmentInSlot(EAttachmentSlot Slot)
 {
-	if (Loadout.WeaponSystem.InfantryWeaponSystem.WeaponState_FP[GetCWI()].WeaponAttachmentStates.Contains(Slot))
+	if (Loadout.WeaponSystem.InfantryWeaponSystem.WeaponState_FP[GetCII()].WeaponAttachmentStates.Contains(Slot))
 	{
-		return Loadout.WeaponSystem.InfantryWeaponSystem.WeaponState_FP[GetCWI()].WeaponAttachmentStates[Slot];
+		return Loadout.WeaponSystem.InfantryWeaponSystem.WeaponState_FP[GetCII()].WeaponAttachmentStates[Slot];
 	}
 	else
 	{
@@ -994,7 +1095,7 @@ FWeapon_Runtime& UWeaponLogicComponent::GetBaseWeaponState(int32 WeaponIndex)
 
 FInfantryWeaponState& UWeaponLogicComponent::GetCurrentInfantryWeaponState_FP()
 {
-	return Loadout.WeaponSystem.InfantryWeaponSystem.WeaponState_FP[GetCWI()];
+	return Loadout.WeaponSystem.InfantryWeaponSystem.WeaponState_FP[GetCII()];
 }
 
 FVector UWeaponLogicComponent::GetAttachmentDefaultOffset(FName WeaponID, EAttachmentSlot Slot, FName AttachmentID)
@@ -1002,17 +1103,16 @@ FVector UWeaponLogicComponent::GetAttachmentDefaultOffset(FName WeaponID, EAttac
 	return UBS2FunctionLibrary::GetDataSubsystem(this)->GetInfantryWeaponDataRow(WeaponID)->GunAttachmentData.AvailableAttachmentSlots.Find(Slot)->Attachments.Find(AttachmentID)->LocationOffset;
 }
 
-
 FWeapon_Runtime* UWeaponLogicComponent::GetCurrentWeaponRuntime()
 {
-	FWeapon_Runtime* CurrentWeapon = &Loadout.WeaponSystem.BaseWeaponSystem.Weapons[GetCWI()];
+	FWeapon_Runtime* CurrentWeapon = &Loadout.WeaponSystem.BaseWeaponSystem.Weapons[GetCII()];
 	return CurrentWeapon;
 }
 
 const FInfantryWeaponData* UWeaponLogicComponent::GetCurrentWeaponStaticData() 
 {
 	//assumes currentitemindex is correct and that current slot is weapon
-	const int32 WeaponIndex = GetCWI();
+	const int32 WeaponIndex = GetCII();
 	const FInfantryWeaponData* StaticWeaponData = StaticWeaponDataCache[WeaponIndex];
 	return StaticWeaponData;
 }
@@ -1025,10 +1125,10 @@ FInfantryWeaponData UWeaponLogicComponent::GetCurrentWeaponStaticData_BP()
 
 FWeaponStats_Runtime& UWeaponLogicComponent::GetCurrentWeaponStats()
 {
-	return Loadout.WeaponSystem.InfantryWeaponSystem.CurrentWeaponStats[GetCWI()];
+	return Loadout.WeaponSystem.InfantryWeaponSystem.CurrentWeaponStats[GetCII()];
 }
 
-int32 UWeaponLogicComponent::GetCWI()
+int32 UWeaponLogicComponent::GetCII()
 {
 	return GetArrayIndex(Loadout.CurrentSlot);
 }

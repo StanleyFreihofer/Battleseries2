@@ -140,6 +140,8 @@ class BATTLESERIES2_API UWeaponLogicComponent : public UActorComponent
 		void ApplyAttachments(const FPlayerLoadoutConfig_Weapon& AttachmentsToApply, int32 WeaponIndex);
 		UFUNCTION()
 		void UpdateWeaponMesh(FName WeaponID, TWeakObjectPtr<USkeletalMeshComponent>& WeaponMeshComp);
+		UFUNCTION()
+		void UpdateGadgetMesh(FName GadgetID, TWeakObjectPtr<UStaticMeshComponent>& GadgetMeshComp);
 		UFUNCTION(BlueprintCallable)
 		void UpdateWeaponData(int32 WeaponIndex, FName WeaponID, FInfantryWeaponState WeaponState);
 		UFUNCTION(BlueprintCallable)
@@ -175,7 +177,9 @@ class BATTLESERIES2_API UWeaponLogicComponent : public UActorComponent
 		UFUNCTION(BlueprintCallable)
 		void HandleSwitchItem(ELoadoutSlot NewLoadoutSlot);
 		UFUNCTION(BlueprintCallable)
-		void TransitionWeapon(int32 PreviousWeaponIndex);
+		void TransitionFromWeapon(int32 PreviousWeaponIndex);
+		UFUNCTION(BlueprintCallable)
+		void TransitionToItem();
 		UFUNCTION(BlueprintCallable)
 		void UnequipWeapon(int32 PreviousWeaponIndex);
 		UFUNCTION(BlueprintCallable)
@@ -195,12 +199,16 @@ class BATTLESERIES2_API UWeaponLogicComponent : public UActorComponent
 	
 		UFUNCTION(BlueprintCallable)
 		void UnequipGadget(TSoftObjectPtr<UAnimMontage> FPUnequipItemMontage);
+		UFUNCTION(BlueprintCallable)	
+		void EquipGadget(int32 GadgetIndex);
 
 	
 		UFUNCTION(BlueprintCallable, BlueprintPure)
 		ECharacterItemType GetCategoryForSlot(ELoadoutSlot LoadoutSlot);
 		UFUNCTION(BlueprintCallable, BlueprintPure)
 		int32 GetArrayIndex(ELoadoutSlot LoadoutSlot);
+		UFUNCTION(BlueprintCallable, BlueprintPure)
+		int32 GetWeaponIndexForSlot(ELoadoutSlot LoadoutSlot);
 		UFUNCTION(BlueprintCallable, BlueprintPure)
 		ECharacterItemType GetActualGadgetItemType(int32 GadgetIndex);
 		UFUNCTION(BlueprintCallable, BlueprintPure)
@@ -226,7 +234,7 @@ class BATTLESERIES2_API UWeaponLogicComponent : public UActorComponent
 		UFUNCTION(BlueprintCallable, BlueprintPure)
 		FWeaponStats_Runtime& GetCurrentWeaponStats();
 		UFUNCTION(BlueprintCallable, BlueprintPure)
-		int32 GetCWI();
+		int32 GetCII();
 
 	protected:
 		TArray<const FInfantryWeaponData*> StaticWeaponDataCache;				//includes THE WEAPON DATA of gadgets that are weapons
@@ -244,3 +252,5 @@ class BATTLESERIES2_API UWeaponLogicComponent : public UActorComponent
 		FOnMontageEnded ReloadEndedDelegate;
 		FOnMontageBlendingOutStarted UnequipBlendOutDelegate;
 };
+
+

@@ -17,7 +17,7 @@ struct FGadgetAnimData
 	GENERATED_BODY()
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	TSoftObjectPtr<UAnimSequence> EquipGadget = nullptr;
+	TSoftObjectPtr<UAnimMontage> EquipGadget = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	TSoftObjectPtr<UAnimMontage> UnequipGadget = nullptr;
