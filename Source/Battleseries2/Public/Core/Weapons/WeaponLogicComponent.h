@@ -143,6 +143,8 @@ class BATTLESERIES2_API UWeaponLogicComponent : public UActorComponent
 		UFUNCTION()
 		void UpdateGadgetMesh(FName GadgetID, TWeakObjectPtr<UStaticMeshComponent>& GadgetMeshComp);
 		UFUNCTION(BlueprintCallable)
+		void UpdateGadgetVisibility(int32 GadgetIndex, bool Hide);
+		UFUNCTION(BlueprintCallable)
 		void UpdateWeaponData(int32 WeaponIndex, FName WeaponID, FInfantryWeaponState WeaponState);
 		UFUNCTION(BlueprintCallable)
 		void UpdateScopeCamera();

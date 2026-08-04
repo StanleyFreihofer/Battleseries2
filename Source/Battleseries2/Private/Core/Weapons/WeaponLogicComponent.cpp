@@ -157,6 +157,8 @@ void UWeaponLogicComponent::Init_Gadget(FName GadgetID, int32 GadgetIndex)
 	
 	GadgetState.GadgetID = GadgetID;
 	GadgetState.CurrentInventory = StaticGadgetDataCache[GadgetIndex]->DefaultInventoryCount;
+	
+	UpdateGadgetVisibility(GadgetIndex, true);
 }
 
 void UWeaponLogicComponent::Init_GadgetMesh(TWeakObjectPtr<UStaticMeshComponent>& HeldGadgetMesh)
@@ -202,6 +204,11 @@ void UWeaponLogicComponent::UpdateGadgetMesh(FName GadgetID, TWeakObjectPtr<USta
 	const FGadgetData& GadgetData = *UBS2FunctionLibrary::GetDataSubsystem(this)->GetGadgetDataRow(GadgetID);
 	TWeakObjectPtr<UStaticMesh> GadgetMesh = GadgetData.GadgetMesh.LoadSynchronous();
 	GadgetMeshComp->SetStaticMesh(GadgetMesh.Get());
+}
+
+void UWeaponLogicComponent::UpdateGadgetVisibility(int32 GadgetIndex, bool Hide)
+{
+	Loadout.Gadgets[GadgetIndex].HeldMesh_FP->SetHiddenInGame(Hide);
 }
 
 void UWeaponLogicComponent::UpdateWeaponData(int32 WeaponIndex, FName WeaponID, FInfantryWeaponState WeaponState)
@@ -514,8 +521,6 @@ void UWeaponLogicComponent::HandleSwitchItem(ELoadoutSlot NewLoadoutSlot)
 	}
 	
 	Loadout.CurrentSlot = NewLoadoutSlot;
-	
-	TSoftObjectPtr<UAnimMontage> FPUnequipItemMontage;
 	
 	switch (OldItemType)
 	{
@@ -884,6 +889,7 @@ void UWeaponLogicComponent::EquipGadget(int32 GadgetIndex)
 	const FGadgetData& GadgetData = *StaticGadgetDataCache[GadgetIndex];
 	const FGadgetAnimData& AnimData = GadgetData.GadgetAnimData;
 	TObjectPtr<UStaticMeshComponent> NewGadgetMesh = Loadout.Gadgets[GadgetIndex].HeldMesh_FP.Get();
+	UpdateGadgetVisibility(GadgetIndex, false);
 	
 	AnimData.EquipGadget.LoadSynchronous();
 	FPArmsAnimInstance->Montage_Play(AnimData.EquipGadget.Get(), 1.0f);
