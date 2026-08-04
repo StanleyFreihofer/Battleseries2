@@ -2,6 +2,7 @@
 #include "Core/Weapons/WeaponLogicComponent.h"
 #include "Core/Weapons/WeaponFunctions.h"
 #include "Character_Base.h"
+#include "Vehicle_Base.h"
 #include "Engine/TextureRenderTarget2D.h"
 #include "Kismet/KismetRenderingLibrary.h"
 #include "Materials/MaterialInstanceDynamic.h"
@@ -639,13 +640,13 @@ void UWeaponLogicComponent::OnUnequipWeapon_BlendOutToGadget(UAnimMontage* Monta
 	//old slot was weapon , new slot is gadget
 	TWeakObjectPtr<ACharacter_Base> Character = Cast<ACharacter_Base>(GetOwner());
 	TWeakObjectPtr<UAnimInstance> FPArmsAnimInstance = Character->FPArms->GetAnimInstance();
-	TSoftObjectPtr<UAnimMontage> FPUnequipGadgetMontage = StaticGadgetDataCache[Loadout.PreviousItemIndex]->GadgetAnimData.UnequipGadget;
-	if (!FPUnequipGadgetMontage.Get())
+	TSoftObjectPtr<UAnimMontage> FPUnequipWeaponMontage = StaticWeaponDataCache[Loadout.PreviousItemIndex]->InfantryWeaponAnimData.FPWeaponAnimData.UnequipWeaponMontage;
+	if (!FPUnequipWeaponMontage.Get())
 	{
 		EquipGadget(GetArrayIndex(Loadout.CurrentSlot));	
 		return;
 	}
-	FPArmsAnimInstance->Montage_Play(FPUnequipGadgetMontage.Get(), 0.0f, EMontagePlayReturnType::MontageLength, FPUnequipGadgetMontage->GetPlayLength());
+	FPArmsAnimInstance->Montage_Play(FPUnequipWeaponMontage.Get(), 0.0f, EMontagePlayReturnType::MontageLength, FPUnequipWeaponMontage->GetPlayLength());
 	TransitionFromItem(Loadout.PreviousItemIndex, ECharacterItemType::Weapon);
 }
 
@@ -932,7 +933,67 @@ void UWeaponLogicComponent::StartDeployGadget()
 	const FGadgetData& GadgetData = *StaticGadgetDataCache[GadgetIndex];
 	const FGadgetAnimData& AnimData = GadgetData.GadgetAnimData;
 	AnimData.DeployGadget.LoadSynchronous();
+	UnequipBlendOutDelegate.BindUObject(this, &UWeaponLogicComponent::OnStartDeployGadget_BlendOut);
 	FPArmsAnimInstance->Montage_Play(AnimData.DeployGadget.Get(), 1.0f);
+	FPArmsAnimInstance->Montage_SetBlendingOutDelegate(UnequipBlendOutDelegate, AnimData.DeployGadget.Get());
+}
+
+void UWeaponLogicComponent::OnStartDeployGadget_BlendOut(UAnimMontage* Montage, bool bInterrupted)
+{
+	DeployGadget();
+}
+
+void UWeaponLogicComponent::DeployGadget()
+{
+	//this gadget is NOT a weapon 
+	//this is to place/deploy instances of the gadget (place c4, throw down crate, etc)
+	int32 GadgetIndex = GetArrayIndex(Loadout.CurrentSlot);
+	FGadgetState& GadgetState = Loadout.Gadgets[GadgetIndex];
+	const FGadgetData& GadgetData = *StaticGadgetDataCache[GadgetIndex];
+	
+	TObjectPtr<APawn> NewGadget = nullptr;
+	FActorSpawnParameters GadgetSpawnParams;
+	GadgetSpawnParams.Owner = GetOwner();
+	GadgetSpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+	switch (GadgetData.GadgetType)
+	{
+		case EGadgetType::Gadget:
+			break;
+		case EGadgetType::Vehicle:
+			TObjectPtr<AVehicle_Base> VehicleGadget = GetWorld()->SpawnActorDeferred<AVehicle_Base>(AVehicle_Base::StaticClass(), GetOwner()->GetActorTransform(), GetOwner(), GetOwnerCharacter(), ESpawnActorCollisionHandlingMethod::AlwaysSpawn);
+			VehicleGadget->VehicleStartingData.VehicleID = GadgetData.ItemID;
+			VehicleGadget->FinishSpawning(GetOwner()->GetActorTransform());
+			check(VehicleGadget);
+			//might need new delegate on vehicle that shows its setup and ready to go
+			NewGadget = VehicleGadget;
+			break;
+	}
+	GadgetState.ActivePlacedInstances.Add(NewGadget);
+	GadgetState.CurrentInventory--;
+	
+	if (GadgetData.AutoUse)
+	{
+		UseGadget();
+	}
+}
+
+void UWeaponLogicComponent::UseGadget()
+{
+	//gadget is NOT a weapon
+	//calls whatever event on every active placed instance (detonate c4 for example)
+	int32 GadgetIndex = GetArrayIndex(Loadout.CurrentSlot);
+	FGadgetState& GadgetState = Loadout.Gadgets[GadgetIndex];
+	const FGadgetData& GadgetData = *StaticGadgetDataCache[GadgetIndex];
+	
+	switch (GadgetData.GadgetType)
+	{
+		case EGadgetType::Gadget:
+			break;
+		case EGadgetType::Vehicle:
+			Cast<AVehicle_Base>(GadgetState.ActivePlacedInstances[0])->AttemptEnterVehicle(GetOwnerCharacter());
+			break;
+	}
+	
 }
 
 #pragma region Getters
@@ -1177,6 +1238,11 @@ FWeaponStats_Runtime& UWeaponLogicComponent::GetCurrentWeaponStats()
 int32 UWeaponLogicComponent::GetCII()
 {
 	return GetArrayIndex(Loadout.CurrentSlot);
+}
+
+ACharacter_Base* UWeaponLogicComponent::GetOwnerCharacter()
+{
+	return Cast<ACharacter_Base>(GetOwner());
 }
 
 #pragma endregion

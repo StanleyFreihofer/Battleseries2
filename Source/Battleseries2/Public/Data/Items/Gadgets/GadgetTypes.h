@@ -14,8 +14,8 @@ struct FGadgetState
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta = (ToolTip = "current number of this gadget at runtime"))
 	int32 CurrentInventory = 0;
 	
-	UPROPERTY(VisibleAnywhere)
-	TArray<TWeakObjectPtr<AActor>> ActivePlacedInstances;
+	UPROPERTY(VisibleAnywhere, meta = (ToolTip = "any non-weapon gadget including vehicles like drones and eod bot's should be cached here"))
+	TArray<TWeakObjectPtr<APawn>> ActivePlacedInstances;
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	TWeakObjectPtr<UStaticMeshComponent> HeldMesh_FP = nullptr;

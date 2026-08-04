@@ -55,6 +55,9 @@ struct FGadgetData : public FTableRowBase
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ToolTip = "if true, this gadget is able to be picked back when placed"))
 	bool AbleToPickup = false;
 	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ToolTip = "if true, this gadget will automatically be 'used' (if c4, auto detonate, if rc vehicle, auto start controlling)"))
+	bool AutoUse = false;
+	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ToolTip = "the gadget class/object that will be placed in the world"))
 	TSoftClassPtr<AActor> PlacedActorClass = nullptr;
 	

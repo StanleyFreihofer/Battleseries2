@@ -205,7 +205,10 @@ class BATTLESERIES2_API UWeaponLogicComponent : public UActorComponent
 		void EquipGadget(int32 GadgetIndex);
 		UFUNCTION(BlueprintCallable)
 		void StartDeployGadget();
-
+		UFUNCTION(BlueprintCallable)
+		void DeployGadget();
+		UFUNCTION(BlueprintCallable)
+		void UseGadget();
 	
 		UFUNCTION(BlueprintCallable, BlueprintPure)
 		ECharacterItemType GetCategoryForSlot(ELoadoutSlot LoadoutSlot);
@@ -239,6 +242,8 @@ class BATTLESERIES2_API UWeaponLogicComponent : public UActorComponent
 		FWeaponStats_Runtime& GetCurrentWeaponStats();
 		UFUNCTION(BlueprintCallable, BlueprintPure)
 		int32 GetCII();
+		UFUNCTION(BlueprintCallable)
+		ACharacter_Base* GetOwnerCharacter();
 
 	protected:
 		TArray<const FInfantryWeaponData*> StaticWeaponDataCache;				//includes THE WEAPON DATA of gadgets that are weapons
@@ -253,8 +258,10 @@ class BATTLESERIES2_API UWeaponLogicComponent : public UActorComponent
 		void OnReloadFinished(UAnimMontage* Montage, bool bInterrupted);
 		void OnUnequipWeapon_BlendOutToWeapon(UAnimMontage* Montage, bool bInterrupted);
 		void OnUnequipWeapon_BlendOutToGadget(UAnimMontage* Montage, bool bInterrupted);
+		void OnStartDeployGadget_BlendOut(UAnimMontage* Montage, bool bInterrupted);
 		FOnMontageEnded ReloadEndedDelegate;
 		FOnMontageBlendingOutStarted UnequipBlendOutDelegate;
+		FOnMontageBlendingOutStarted DeployGadgetBlendOutDelegate;
 };
 
 
