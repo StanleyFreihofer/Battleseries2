@@ -201,6 +201,8 @@ class BATTLESERIES2_API UWeaponLogicComponent : public UActorComponent
 		void UnequipGadget(TSoftObjectPtr<UAnimMontage> FPUnequipItemMontage);
 		UFUNCTION(BlueprintCallable)	
 		void EquipGadget(int32 GadgetIndex);
+		UFUNCTION(BlueprintCallable)
+		void StartDeployGadget();
 
 	
 		UFUNCTION(BlueprintCallable, BlueprintPure)

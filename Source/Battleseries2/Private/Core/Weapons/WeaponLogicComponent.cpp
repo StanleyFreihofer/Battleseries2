@@ -889,6 +889,20 @@ void UWeaponLogicComponent::EquipGadget(int32 GadgetIndex)
 	FPArmsAnimInstance->Montage_Play(AnimData.EquipGadget.Get(), 1.0f);
 }
 
+void UWeaponLogicComponent::StartDeployGadget()
+{
+	if (GetCategoryForSlot(Loadout.CurrentSlot) != ECharacterItemType::Gadget)	{ return;}
+	int32 GadgetIndex = GetArrayIndex(Loadout.CurrentSlot);
+	if (GetActualGadgetItemType(GadgetIndex) == ECharacterItemType::Weapon)	{  return; }
+	
+	TWeakObjectPtr<ACharacter_Base> Character = Cast<ACharacter_Base>(GetOwner());
+	TWeakObjectPtr<UAnimInstance> FPArmsAnimInstance = Character->FPArms->GetAnimInstance();
+	const FGadgetData& GadgetData = *StaticGadgetDataCache[GadgetIndex];
+	const FGadgetAnimData& AnimData = GadgetData.GadgetAnimData;
+	AnimData.DeployGadget.LoadSynchronous();
+	FPArmsAnimInstance->Montage_Play(AnimData.DeployGadget.Get(), 1.0f);
+}
+
 #pragma region Getters
 
 ECharacterItemType UWeaponLogicComponent::GetCategoryForSlot(ELoadoutSlot LoadoutSlot)
