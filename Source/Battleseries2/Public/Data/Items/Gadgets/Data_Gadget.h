@@ -9,6 +9,7 @@
 /** 
  * data FOR CLASSIC GADGETS AND VEHICLE GADGETS ONLY
  * gadgets that are weapons should be listed in their respective data
+ * WEAPON GADGETS SHOULD NOT BE LISTED HERE
 **/
 
 USTRUCT(BlueprintType)

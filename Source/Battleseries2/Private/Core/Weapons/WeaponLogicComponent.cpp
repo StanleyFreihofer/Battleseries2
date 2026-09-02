@@ -40,22 +40,37 @@ void UWeaponLogicComponent::TickComponent(float DeltaTime, ELevelTick TickType, 
 void UWeaponLogicComponent::Init_Loadout(TArray<FName> Weapons, TArray<FPlayerLoadoutConfig_Weapon> WeaponLoadouts, TArray<FName> Gadgets)
 {
 	TArray<FName> WeaponIDs = Weapons;
+	TArray<FPlayerLoadoutConfig_Weapon> FinalWeaponLoadouts = WeaponLoadouts;
+	TArray<FName> GadgetIDs;
+	Loadout.ResolvedGadgetSlots.SetNum(Gadgets.Num());
 	
+	//INIT_ResolveWeaponGadgets
 	//add any gadgets that are weapons to the weaponID list for weapon initialization
 	for (int32 i = 0; i < Gadgets.Num(); i++)
 	{
 		const FGadgetData* NewGadgetData = UBS2FunctionLibrary::GetDataSubsystem(this)->GetGadgetDataRow(Gadgets[i]);
-		check (NewGadgetData);
-		switch (NewGadgetData->GadgetType)
+		if (NewGadgetData)
 		{
-			case EGadgetType::Weapon:
-				FName WeaponGadgetID = NewGadgetData->ItemID;
-				WeaponIDs.Add(WeaponGadgetID);					//gadget gets added to the end of weapons list (after actual guns/primary, secondary weapons)
-				break;
+			Loadout.ResolvedGadgetSlots[i].ActualType = ECharacterItemType::Gadget;
+			Loadout.ResolvedGadgetSlots[i].ResolvedArrayIndex = GadgetIDs.Num();
+			GadgetIDs.Add(Gadgets[i]);
+			continue;
+		}
+		
+		//if a data row isn't found given the id, it might actually be a weapon
+		//if the gadgetid is in fact a valid infantry weapon data row, remove the id from the gadget list, add it to the weapon list.
+		const FInfantryWeaponData* InfantryWeaponData = UBS2FunctionLibrary::GetDataSubsystem(this)->GetInfantryWeaponDataRow(Gadgets[i]);
+		if (InfantryWeaponData)
+		{
+			Loadout.ResolvedGadgetSlots[i].ActualType = ECharacterItemType::Weapon;
+			Loadout.ResolvedGadgetSlots[i].ResolvedArrayIndex = WeaponIDs.Num();
+			WeaponIDs.Add(Gadgets[i]);
+			FinalWeaponLoadouts.Add(FPlayerLoadoutConfig_Weapon()); 
 		}
 	}
-	Init_WeaponLoadout(WeaponIDs, WeaponLoadouts);
-	Init_GadgetLoadout(Gadgets);
+	
+	Init_WeaponLoadout(WeaponIDs, FinalWeaponLoadouts);
+	Init_GadgetLoadout(GadgetIDs);
 }
 
 void UWeaponLogicComponent::Init_WeaponLoadout(TArray<FName> Weapons, TArray<FPlayerLoadoutConfig_Weapon> WeaponLoadouts)
@@ -78,8 +93,7 @@ void UWeaponLogicComponent::Init_GadgetLoadout(TArray<FName> Gadgets)
 {
 	Loadout.Gadgets.SetNum(Gadgets.Num());
 	StaticGadgetDataCache.SetNum(Gadgets.Num());
-
-	//remove gadgets that are weapons?
+	
 	for (int32 i = 0; i < Gadgets.Num(); i++)
 	{
 		Init_Gadget(Gadgets[i], i);
@@ -507,19 +521,22 @@ void UWeaponLogicComponent::HandleSwitchItem(ELoadoutSlot NewLoadoutSlot)
 	if (NewLoadoutSlot == Loadout.CurrentSlot)		{ return;	}
 	ELoadoutSlot OldLoadoutSlot = Loadout.CurrentSlot;
 
-	Loadout.PreviousItemIndex = GetArrayIndex(OldLoadoutSlot);
+	int32 OldRawPosition = GetArrayIndex(OldLoadoutSlot);
 	int32 NewItemIndex = GetArrayIndex(NewLoadoutSlot);
 	ECharacterItemType OldItemType = GetCategoryForSlot(OldLoadoutSlot);
 	ECharacterItemType NewItemType = GetCategoryForSlot(NewLoadoutSlot);
 	
 	if (OldItemType == ECharacterItemType::Gadget)
 	{
-		OldItemType = GetActualGadgetItemType(Loadout.PreviousItemIndex);
+		OldItemType = GetActualGadgetItemType(OldRawPosition);
 	}
 	if (NewItemType == ECharacterItemType::Gadget)
 	{
 		NewItemType = GetActualGadgetItemType(NewItemIndex);
 	}
+	
+	// NOW that OldItemType is resolved, get the TRUE resolved index 
+	Loadout.PreviousItemIndex = (OldItemType == ECharacterItemType::Weapon) ? GetWeaponIndexForSlot(OldLoadoutSlot) : GetGadgetIndexForSlot(OldLoadoutSlot);
 	
 	Loadout.CurrentSlot = NewLoadoutSlot;
 	
@@ -592,7 +609,8 @@ void UWeaponLogicComponent::TransitionToItem()
 			if (ItemIndex == INDEX_NONE)
 			{
 				//equip gadget
-				EquipGadget(GetArrayIndex(Loadout.CurrentSlot));
+				ItemIndex = GetGadgetIndexForSlot(Loadout.CurrentSlot);
+				EquipGadget(ItemIndex);
 			}
 			else
 			{
@@ -627,7 +645,7 @@ void UWeaponLogicComponent::OnUnequipWeapon_BlendOutToWeapon(UAnimMontage* Monta
 	TSoftObjectPtr<UAnimMontage> FPUnequipWeaponMontage = StaticWeaponDataCache[Loadout.PreviousItemIndex]->InfantryWeaponAnimData.FPWeaponAnimData.UnequipWeaponMontage;
 	if (!FPUnequipWeaponMontage.Get())
 	{
-		EquipWeapon(GetArrayIndex(Loadout.CurrentSlot), false);
+		EquipWeapon(GetWeaponIndexForSlot(Loadout.CurrentSlot), false);
 		return;
 	}
 	FPArmsAnimInstance->Montage_Play(FPUnequipWeaponMontage.Get(), 0.0f, EMontagePlayReturnType::MontageLength, FPUnequipWeaponMontage->GetPlayLength());
@@ -637,13 +655,13 @@ void UWeaponLogicComponent::OnUnequipWeapon_BlendOutToWeapon(UAnimMontage* Monta
 
 void UWeaponLogicComponent::OnUnequipWeapon_BlendOutToGadget(UAnimMontage* Montage, bool bInterrupted)
 {
-	//old slot was weapon , new slot is gadget
+	//old slot was weapon, new slot is gadget
 	TWeakObjectPtr<ACharacter_Base> Character = Cast<ACharacter_Base>(GetOwner());
 	TWeakObjectPtr<UAnimInstance> FPArmsAnimInstance = Character->FPArms->GetAnimInstance();
 	TSoftObjectPtr<UAnimMontage> FPUnequipWeaponMontage = StaticWeaponDataCache[Loadout.PreviousItemIndex]->InfantryWeaponAnimData.FPWeaponAnimData.UnequipWeaponMontage;
 	if (!FPUnequipWeaponMontage.Get())
 	{
-		EquipGadget(GetArrayIndex(Loadout.CurrentSlot));	
+		EquipGadget(GetGadgetIndexForSlot(Loadout.CurrentSlot));	
 		return;
 	}
 	FPArmsAnimInstance->Montage_Play(FPUnequipWeaponMontage.Get(), 0.0f, EMontagePlayReturnType::MontageLength, FPUnequipWeaponMontage->GetPlayLength());
@@ -711,6 +729,7 @@ void UWeaponLogicComponent::ToggleFireMode()
 			{
 				CurrentFireMode = EFireMode::Auto;
 			}
+			break;
 		case EFireMode::Auto:
 			if (CurrentFireModeData.canBurstFire)
 			{
@@ -926,7 +945,7 @@ void UWeaponLogicComponent::EquipGadget(int32 GadgetIndex)
 
 void UWeaponLogicComponent::HandleDeployGadgetInput()
 {
-	int32 GadgetIndex = GetArrayIndex(Loadout.CurrentSlot);
+	int32 GadgetIndex = GetCII();
 	FGadgetState& GadgetState = Loadout.Gadgets[GadgetIndex];
 	const FGadgetData& GadgetData = *StaticGadgetDataCache[GadgetIndex];
 	
@@ -951,7 +970,7 @@ void UWeaponLogicComponent::HandleDeployGadgetInput()
 
 void UWeaponLogicComponent::OnEquipGadget_BlendOut(UAnimMontage* Montage, bool bInterrupted)
 {
-	int32 GadgetIndex = GetArrayIndex(Loadout.CurrentSlot);
+	int32 GadgetIndex = GetCII();
 	const FGadgetData& GadgetData = *StaticGadgetDataCache[GadgetIndex];
 	FGadgetState& GadgetState = Loadout.Gadgets[GadgetIndex];
 	
@@ -972,7 +991,7 @@ void UWeaponLogicComponent::OnEquipGadget_BlendOut(UAnimMontage* Montage, bool b
 void UWeaponLogicComponent::StartDeployGadget()
 {
 	if (GetCategoryForSlot(Loadout.CurrentSlot) != ECharacterItemType::Gadget)	{ return;}
-	int32 GadgetIndex = GetArrayIndex(Loadout.CurrentSlot);
+	int32 GadgetIndex = GetCII();
 	if (GetActualGadgetItemType(GadgetIndex) == ECharacterItemType::Weapon)	{  return; }
 	FGadgetState& GadgetState = Loadout.Gadgets[GadgetIndex];
 	const FGadgetData& GadgetData = *StaticGadgetDataCache[GadgetIndex];
@@ -997,7 +1016,7 @@ void UWeaponLogicComponent::DeployGadget()
 {
 	//this gadget is NOT a weapon 
 	//this is to place/deploy instances of the gadget (place c4, throw down crate, etc)
-	int32 GadgetIndex = GetArrayIndex(Loadout.CurrentSlot);
+	int32 GadgetIndex = GetCII();
 	FGadgetState& GadgetState = Loadout.Gadgets[GadgetIndex];
 	const FGadgetData& GadgetData = *StaticGadgetDataCache[GadgetIndex];
 	
@@ -1032,7 +1051,7 @@ void UWeaponLogicComponent::UseGadget()
 {
 	//gadget is NOT a weapon
 	//calls whatever event on every active placed instance (detonate c4 or control drone for example)
-	int32 GadgetIndex = GetArrayIndex(Loadout.CurrentSlot);
+	int32 GadgetIndex = GetCII();
 	FGadgetState& GadgetState = Loadout.Gadgets[GadgetIndex];
 	const FGadgetData& GadgetData = *StaticGadgetDataCache[GadgetIndex];
 	if (GadgetState.ActivePlacedInstances.IsEmpty())	{ return; }
@@ -1058,7 +1077,7 @@ void UWeaponLogicComponent::UseGadget()
 
 void UWeaponLogicComponent::OnDeployedVehicleGadgetReady()
 {
-	int32 GadgetIndex = GetArrayIndex(Loadout.CurrentSlot);
+	int32 GadgetIndex = GetCII();
 	FGadgetState& GadgetState = Loadout.Gadgets[GadgetIndex];
 	TObjectPtr<AVehicle_Base> VehicleGadget = Cast<AVehicle_Base>(GadgetState.ActivePlacedInstances[0]);
 	check (VehicleGadget);
@@ -1089,6 +1108,7 @@ ECharacterItemType UWeaponLogicComponent::GetCategoryForSlot(ELoadoutSlot Loadou
 
 int32 UWeaponLogicComponent::GetArrayIndex(ELoadoutSlot LoadoutSlot)
 {
+	//raw slot position
 	switch (LoadoutSlot)
 	{
 		case ELoadoutSlot::PrimaryWeapon:   return 0;
@@ -1111,37 +1131,25 @@ int32 UWeaponLogicComponent::GetWeaponIndexForSlot(ELoadoutSlot LoadoutSlot)
 		case ELoadoutSlot::Gadget2:
 		case ELoadoutSlot::Gadget3:
 		{
-			int32 TargetGadgetIndex = GetArrayIndex(LoadoutSlot);
-			if (GetActualGadgetItemType(TargetGadgetIndex) != ECharacterItemType::Weapon)
-			{
-				return INDEX_NONE; 
-			}
-			// Start at 2 (Primary=0, Secondary=1)
-			int32 CalculatedWeaponIndex = 2;
-			// Count how many weapon-gadgets exist in gadget slots BEFORE this one
-			for (int32 i = 0; i < TargetGadgetIndex; i++)
-			{
-				if (GetActualGadgetItemType(i) == ECharacterItemType::Weapon)
-				{
-					CalculatedWeaponIndex++;
-				}
-			}
-			return CalculatedWeaponIndex;
+			int32 RawSlotPosition = GetArrayIndex(LoadoutSlot);
+			const FResolvedGadgetSlot& ResolvedGadgetSlot = Loadout.ResolvedGadgetSlots[RawSlotPosition];
+			return (ResolvedGadgetSlot.ActualType == ECharacterItemType::Weapon) ? ResolvedGadgetSlot.ResolvedArrayIndex : INDEX_NONE;
 		}
 		
 		default: return INDEX_NONE;
 	}
 }
 
-ECharacterItemType UWeaponLogicComponent::GetActualGadgetItemType(int32 GadgetIndex)
+int32 UWeaponLogicComponent::GetGadgetIndexForSlot(ELoadoutSlot LoadoutSlot)
 {
-	FName& OldGadgetID = Loadout.Gadgets[GadgetIndex].GadgetID;
-	EGadgetType OldGadgetType = UBS2FunctionLibrary::GetDataSubsystem(this)->GetGadgetDataRow(OldGadgetID)->GadgetType;
-	if (OldGadgetType == EGadgetType::Weapon)
-	{
-		return ECharacterItemType::Weapon;
-	}
-	return ECharacterItemType::Gadget;
+	int32 SlotPosition = GetArrayIndex(LoadoutSlot);
+	const FResolvedGadgetSlot& ResolvedGadgetSlot = Loadout.ResolvedGadgetSlots[SlotPosition];
+	return (ResolvedGadgetSlot.ActualType == ECharacterItemType::Gadget) ? ResolvedGadgetSlot.ResolvedArrayIndex : INDEX_NONE;
+}
+
+ECharacterItemType UWeaponLogicComponent::GetActualGadgetItemType(int32 RawGadgetSlotIndex)
+{
+	return Loadout.ResolvedGadgetSlots.IsValidIndex(RawGadgetSlotIndex) ? Loadout.ResolvedGadgetSlots[RawGadgetSlotIndex].ActualType : ECharacterItemType::Gadget;
 }
 
 FName UWeaponLogicComponent::GetSocketNameForSlot(EAttachmentSlot Slot)
@@ -1307,7 +1315,27 @@ FWeaponStats_Runtime& UWeaponLogicComponent::GetCurrentWeaponStats()
 
 int32 UWeaponLogicComponent::GetCII()
 {
-	return GetArrayIndex(Loadout.CurrentSlot);
+	int32 ItemIndex = INDEX_NONE;
+	ECharacterItemType CurrentItemType = GetCategoryForSlot(Loadout.CurrentSlot);
+	if (CurrentItemType == ECharacterItemType::Gadget)
+	{
+		CurrentItemType = GetActualGadgetItemType(GetArrayIndex(Loadout.CurrentSlot));
+	}
+	
+	switch (CurrentItemType)
+	{
+		case ECharacterItemType::Weapon:
+			ItemIndex = GetWeaponIndexForSlot(Loadout.CurrentSlot);
+			break;
+		case ECharacterItemType::Gadget:
+			ItemIndex = GetGadgetIndexForSlot(Loadout.CurrentSlot);
+			break;
+		default:
+			ItemIndex = INDEX_NONE;
+			break;
+	}
+	
+	return ItemIndex;
 }
 
 ACharacter_Base* UWeaponLogicComponent::GetOwnerCharacter()

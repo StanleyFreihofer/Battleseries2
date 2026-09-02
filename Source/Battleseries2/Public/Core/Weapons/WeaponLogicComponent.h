@@ -81,6 +81,18 @@ struct FOnFootWeaponSystem_Runtime
 	bool isAiming = false;
 };
 
+USTRUCT(BlueprintType)
+struct FResolvedGadgetSlot
+{
+	GENERATED_BODY()
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta = (ToolTip = "weapon or gadget - which list"))
+	ECharacterItemType ActualType = ECharacterItemType::Gadget; 
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta = (ToolTip = "the index in that list"))
+	int32 ResolvedArrayIndex = 0;								//the index in that list
+};
+
 USTRUCT(BlueprintType) 
 struct FLoadoutItemState 
 { 
@@ -94,6 +106,9 @@ struct FLoadoutItemState
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite) 
 	TArray<FGadgetState> Gadgets; 
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	TArray<FResolvedGadgetSlot> ResolvedGadgetSlots;
 	
 	//grenade
 	//melee
@@ -221,7 +236,9 @@ class BATTLESERIES2_API UWeaponLogicComponent : public UActorComponent
 		UFUNCTION(BlueprintCallable, BlueprintPure)
 		int32 GetWeaponIndexForSlot(ELoadoutSlot LoadoutSlot);
 		UFUNCTION(BlueprintCallable, BlueprintPure)
-		ECharacterItemType GetActualGadgetItemType(int32 GadgetIndex);
+		int32 GetGadgetIndexForSlot(ELoadoutSlot LoadoutSlot);
+		UFUNCTION(BlueprintCallable, BlueprintPure)
+		ECharacterItemType GetActualGadgetItemType(int32 RawGadgetSlotIndex);
 		UFUNCTION(BlueprintCallable, BlueprintPure)
 		FName GetSocketNameForSlot(EAttachmentSlot Slot);
 		UFUNCTION(BlueprintCallable, BlueprintPure)
