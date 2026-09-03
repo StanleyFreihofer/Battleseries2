@@ -65,7 +65,12 @@ void UWeaponLogicComponent::Init_Loadout(TArray<FName> Weapons, TArray<FPlayerLo
 			Loadout.ResolvedGadgetSlots[i].ActualType = ECharacterItemType::Weapon;
 			Loadout.ResolvedGadgetSlots[i].ResolvedArrayIndex = WeaponIDs.Num();
 			WeaponIDs.Add(Gadgets[i]);
-			FinalWeaponLoadouts.Add(FPlayerLoadoutConfig_Weapon()); 
+			
+			//??? meant to apply weapon attachments in weaponloadout list to weapon gadgets, possible bugs
+			if (!FinalWeaponLoadouts.IsValidIndex(i))
+			{
+				FinalWeaponLoadouts.Add(FPlayerLoadoutConfig_Weapon()); 
+			}
 		}
 	}
 	
