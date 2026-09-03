@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "Engine/DataTable.h"
+#include "Data/Items/ItemStructs.h"
 #include "Data/Items/Weapons/WeaponEnums.h"
 #include "Data/Items/ItemEnums.h"
 #include "Data/Items/Weapons/Data_Weapon.h"
@@ -81,7 +82,7 @@ struct FInfantryWeaponAimData
 };
 
 USTRUCT(BlueprintType)
-struct FInfantryWeaponAnimData_FP
+struct FInfantryWeaponAnimData_FP : public FHeldItemAnimData_Base
 {
 	GENERATED_BODY()
 
@@ -93,15 +94,6 @@ struct FInfantryWeaponAnimData_FP
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Actions | Montages")
 	TSoftObjectPtr<UAnimMontage> ReloadEmptyWeaponMontage = nullptr;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Actions | Montages")
-	TSoftObjectPtr<UAnimMontage> UnequipWeaponMontage = nullptr;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Actions | Montages")
-	TSoftObjectPtr<UAnimMontage> EquipWeaponMontage = nullptr;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Actions | Montages")
-	TSoftObjectPtr<UAnimMontage> InitialEquipWeaponMontage = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Actions | Montages")
 	TSoftObjectPtr<UAnimMontage> FireWeaponMontage = nullptr;
@@ -118,51 +110,6 @@ struct FInfantryWeaponAnimData_FP
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Transitions | Montages")
 	TSoftObjectPtr<UAnimMontage> LoopReloadMontage = nullptr;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Transitions | Sequences")
-	TSoftObjectPtr<UAnimSequence> TacSprintExit = nullptr;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Transitions | Sequences")
-	TSoftObjectPtr<UAnimSequence> TacSprintEnter = nullptr;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Transitions | Sequences")
-	TSoftObjectPtr<UAnimSequence> SprintEnter = nullptr;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Transitions | Sequences")
-	TSoftObjectPtr<UAnimSequence> SprintExit = nullptr;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Transitions | Sequences")
-	TSoftObjectPtr<UAnimSequence> TacSprintLoopAdditive = nullptr;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Transitions | Sequences")
-	TSoftObjectPtr<UAnimSequence> SlideEnterAdditive = nullptr;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Transitions | Sequences")
-	TSoftObjectPtr<UAnimSequence> JumpEnterAdditive = nullptr;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Transitions | Sequences")
-	TSoftObjectPtr<UAnimSequence> JumpExitAdditive = nullptr;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Transitions | Sequences")
-	TSoftObjectPtr<UAnimSequence> TacSprintExitIdleAdditive = nullptr;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Transitions | Sequences")
-	TSoftObjectPtr<UAnimSequence> ProneEnterAdditive = nullptr;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Transitions | Sequences")
-	TSoftObjectPtr<UAnimSequence> ProneExitAdditive = nullptr;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Transitions | Sequences")
-	TSoftObjectPtr<UAnimSequence> SlidingExit = nullptr;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Transitions | Sequences")
-	TSoftObjectPtr<UAnimSequence> TacSprintEnterIdle = nullptr;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Transitions | Sequences")
-	TSoftObjectPtr<UAnimSequence> CrouchEnter = nullptr;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Transitions | Sequences")
-	TSoftObjectPtr<UAnimSequence> CrouchExit = nullptr;
-
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Regrip | Montages")
 	TSoftObjectPtr<UAnimMontage> ShoulderRegrip = nullptr;
 
@@ -177,27 +124,6 @@ struct FInfantryWeaponAnimData_FP
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Regrip | Sequences")
 	TSoftObjectPtr<UAnimSequence> ReshoulderAdditive = nullptr;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Movement | Blendspaces")
-	TSoftObjectPtr<UBlendSpace> MovementBlendspace = nullptr;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Movement | Blendspaces")
-	TSoftObjectPtr<UBlendSpace> ProneBlendspace = nullptr;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Movement")
-	TSoftObjectPtr<UAnimSequence> FallingLoop = nullptr;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Movement")
-	TSoftObjectPtr<UAnimSequence> Idle = nullptr;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Movement")
-	TSoftObjectPtr<UAnimSequence> JumpLoop = nullptr;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Movement")
-	TSoftObjectPtr<UAnimSequence> SprintLoop = nullptr;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Movement")
-	TSoftObjectPtr<UAnimSequence> SlideLoop = nullptr;
 };
 
 USTRUCT(BlueprintType)

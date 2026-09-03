@@ -3,9 +3,8 @@
 #include "CoreMinimal.h"
 #include "UObject/Interface.h"
 #include "Data/Items/Weapons/Data_InfantryWeapon.h"
+#include "Data/Items/Gadgets/Data_Gadget.h"
 #include "I_Anims.generated.h"
-
-struct FInfantryWeaponAnimData_FP;
 
 UINTERFACE(MinimalAPI)
 class UAnims : public UInterface
@@ -30,7 +29,10 @@ public:
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Anim Interface | Character")
 	void OnUpdateHeadRotation(FRotator NewRotation);
 
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Anim INterface | Character")
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Anim Interface | Character")
 	void OnEquipWeapon_FP(FInfantryWeaponAnimData_FP InfantryWeaponAnimData_FP);
+	
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Anim Interface | Character")
+	void OnEquipGadget(FGadgetAnimData GadgetAnimData);
 
 };

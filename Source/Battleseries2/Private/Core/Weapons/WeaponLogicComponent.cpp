@@ -628,7 +628,7 @@ void UWeaponLogicComponent::TransitionToItem()
 
 void UWeaponLogicComponent::UnequipWeapon(int32 PreviousWeaponIndex)
 {
-	TSoftObjectPtr<UAnimMontage> FPUnequipItemMontage = StaticWeaponDataCache[PreviousWeaponIndex]->InfantryWeaponAnimData.FPWeaponAnimData.UnequipWeaponMontage;
+	TSoftObjectPtr<UAnimMontage> FPUnequipItemMontage = StaticWeaponDataCache[PreviousWeaponIndex]->InfantryWeaponAnimData.FPWeaponAnimData.UnequipMontage;
 	FPUnequipItemMontage.LoadSynchronous();
 	ECharacterItemType CurrentItemType = GetCategoryForSlot(Loadout.CurrentSlot);
 	if (!FPUnequipItemMontage.Get())
@@ -647,7 +647,7 @@ void UWeaponLogicComponent::OnUnequipWeapon_BlendOutToWeapon(UAnimMontage* Monta
 	//old slot was weapon, new slot is weapon
 	TWeakObjectPtr<ACharacter_Base> Character = Cast<ACharacter_Base>(GetOwner());
 	TWeakObjectPtr<UAnimInstance> FPArmsAnimInstance = Character->FPArms->GetAnimInstance();
-	TSoftObjectPtr<UAnimMontage> FPUnequipWeaponMontage = StaticWeaponDataCache[Loadout.PreviousItemIndex]->InfantryWeaponAnimData.FPWeaponAnimData.UnequipWeaponMontage;
+	TSoftObjectPtr<UAnimMontage> FPUnequipWeaponMontage = StaticWeaponDataCache[Loadout.PreviousItemIndex]->InfantryWeaponAnimData.FPWeaponAnimData.UnequipMontage;
 	if (!FPUnequipWeaponMontage.Get())
 	{
 		EquipWeapon(GetWeaponIndexForSlot(Loadout.CurrentSlot), false);
@@ -663,7 +663,7 @@ void UWeaponLogicComponent::OnUnequipWeapon_BlendOutToGadget(UAnimMontage* Monta
 	//old slot was weapon, new slot is gadget
 	TWeakObjectPtr<ACharacter_Base> Character = Cast<ACharacter_Base>(GetOwner());
 	TWeakObjectPtr<UAnimInstance> FPArmsAnimInstance = Character->FPArms->GetAnimInstance();
-	TSoftObjectPtr<UAnimMontage> FPUnequipWeaponMontage = StaticWeaponDataCache[Loadout.PreviousItemIndex]->InfantryWeaponAnimData.FPWeaponAnimData.UnequipWeaponMontage;
+	TSoftObjectPtr<UAnimMontage> FPUnequipWeaponMontage = StaticWeaponDataCache[Loadout.PreviousItemIndex]->InfantryWeaponAnimData.FPWeaponAnimData.UnequipMontage;
 	if (!FPUnequipWeaponMontage.Get())
 	{
 		EquipGadget(GetGadgetIndexForSlot(Loadout.CurrentSlot));	
@@ -689,11 +689,11 @@ void UWeaponLogicComponent::EquipWeapon(int32 WeaponIndex, bool InitialEquip)
 		WeaponEquipAnim.LoadSynchronous();
 		NewWeaponMesh->PlayAnimation(WeaponEquipAnim.Get(), false);
 		
-		FPEquipWeaponMontage = AnimData.FPWeaponAnimData.InitialEquipWeaponMontage;
+		FPEquipWeaponMontage = AnimData.FPWeaponAnimData.InitialEquipMontage;
 	}
 	else
 	{
-		FPEquipWeaponMontage = AnimData.FPWeaponAnimData.EquipWeaponMontage;
+		FPEquipWeaponMontage = AnimData.FPWeaponAnimData.InitialEquipMontage;
 	}
 
 	FPEquipWeaponMontage.LoadSynchronous();
@@ -918,7 +918,7 @@ float UWeaponLogicComponent::CalculateFinalStatValue(float BaseValue, TArray<FSt
 
 void UWeaponLogicComponent::UnequipGadget(int32 PreviousGadgetIndex)
 {
-	TSoftObjectPtr<UAnimMontage> FPUnequipItemMontage = StaticGadgetDataCache[PreviousGadgetIndex]->GadgetAnimData.UnequipGadget;
+	TSoftObjectPtr<UAnimMontage> FPUnequipItemMontage = StaticGadgetDataCache[PreviousGadgetIndex]->GadgetAnimData.UnequipMontage;
 	FPUnequipItemMontage.LoadSynchronous();
 	ECharacterItemType CurrentItemType = GetCategoryForSlot(Loadout.CurrentSlot);
 	if (!FPUnequipItemMontage.Get())
@@ -942,13 +942,13 @@ void UWeaponLogicComponent::EquipGadget(int32 GadgetIndex)
 	TObjectPtr<UStaticMeshComponent> NewGadgetMesh = Loadout.Gadgets[GadgetIndex].HeldMesh_FP.Get();
 	UpdateGadgetVisibility(GadgetIndex, false);
 	
-	AnimData.EquipGadget.LoadSynchronous();
+	AnimData.EquipMontage.LoadSynchronous();
 	EquipGadgetBlendOutDelegate.BindUObject(this, &UWeaponLogicComponent::OnEquipGadget_BlendOut);
-	FPArmsAnimInstance->Montage_Play(AnimData.EquipGadget.Get(), 1.0f);
+	FPArmsAnimInstance->Montage_Play(AnimData.EquipMontage.Get(), 1.0f);
 	
-	//	IAnims::Execute_OnEquipWeapon_FP(FPArmsAnimInstance.Get(), AnimData.FPWeaponAnimData);
+	IAnims::Execute_OnEquipGadget(FPArmsAnimInstance.Get(), AnimData);
 	
-	FPArmsAnimInstance->Montage_SetBlendingOutDelegate(EquipGadgetBlendOutDelegate, AnimData.EquipGadget.Get());
+	FPArmsAnimInstance->Montage_SetBlendingOutDelegate(EquipGadgetBlendOutDelegate, AnimData.EquipMontage.Get());
 }
 
 void UWeaponLogicComponent::HandleDeployGadgetInput()

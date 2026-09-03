@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "Engine/DataTable.h"
+#include "Data/Items/ItemStructs.h"
 #include "Data/Items/Gadgets/GadgetEnums.h"
 #include "Data_Gadget.generated.h"
 
@@ -13,15 +14,15 @@
 **/
 
 USTRUCT(BlueprintType)
-struct FGadgetAnimData
+struct FGadgetAnimData : public FHeldItemAnimData_Base
 {
 	GENERATED_BODY()
 	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	TSoftObjectPtr<UAnimMontage> EquipGadget = nullptr;
+	//UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	//TSoftObjectPtr<UAnimMontage> EquipGadget = nullptr;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	TSoftObjectPtr<UAnimMontage> UnequipGadget = nullptr;
+	//UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	//TSoftObjectPtr<UAnimMontage> UnequipGadget = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	TSoftObjectPtr<UAnimMontage> DeployGadget = nullptr;
