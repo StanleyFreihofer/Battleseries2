@@ -14,7 +14,7 @@
 **/
 
 USTRUCT(BlueprintType)
-struct FGadgetAnimData : public FHeldItemAnimData_Base
+struct FGadgetAnimData 
 {
 	GENERATED_BODY()
 	
@@ -23,6 +23,9 @@ struct FGadgetAnimData : public FHeldItemAnimData_Base
 
 	//UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	//TSoftObjectPtr<UAnimMontage> UnequipGadget = nullptr;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	FHeldItemAnimData_Base BaseItemAnimData = FHeldItemAnimData_Base();
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	TSoftObjectPtr<UAnimMontage> DeployGadget = nullptr;

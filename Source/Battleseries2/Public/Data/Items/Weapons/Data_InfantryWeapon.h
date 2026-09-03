@@ -82,9 +82,12 @@ struct FInfantryWeaponAimData
 };
 
 USTRUCT(BlueprintType)
-struct FInfantryWeaponAnimData_FP : public FHeldItemAnimData_Base
+struct FInfantryWeaponAnimData_FP
 {
 	GENERATED_BODY()
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	FHeldItemAnimData_Base BaseItemAnimData = FHeldItemAnimData_Base();
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Actions | Montages")
 	TSoftObjectPtr<UAnimMontage> InspectMontage = nullptr;

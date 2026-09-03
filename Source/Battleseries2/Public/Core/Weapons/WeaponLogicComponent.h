@@ -240,6 +240,8 @@ class BATTLESERIES2_API UWeaponLogicComponent : public UActorComponent
 		UFUNCTION(BlueprintCallable, BlueprintPure)
 		ECharacterItemType GetActualGadgetItemType(int32 RawGadgetSlotIndex);
 		UFUNCTION(BlueprintCallable, BlueprintPure)
+		bool GetIsCurrentSlotActuallyWeapon();
+		UFUNCTION(BlueprintCallable, BlueprintPure)
 		FName GetSocketNameForSlot(EAttachmentSlot Slot);
 		UFUNCTION(BlueprintCallable, BlueprintPure)
 		FTransform GetSightTransform();
