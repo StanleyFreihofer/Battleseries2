@@ -945,6 +945,9 @@ void UWeaponLogicComponent::EquipGadget(int32 GadgetIndex)
 	AnimData.EquipGadget.LoadSynchronous();
 	EquipGadgetBlendOutDelegate.BindUObject(this, &UWeaponLogicComponent::OnEquipGadget_BlendOut);
 	FPArmsAnimInstance->Montage_Play(AnimData.EquipGadget.Get(), 1.0f);
+	
+	//	IAnims::Execute_OnEquipWeapon_FP(FPArmsAnimInstance.Get(), AnimData.FPWeaponAnimData);
+	
 	FPArmsAnimInstance->Montage_SetBlendingOutDelegate(EquipGadgetBlendOutDelegate, AnimData.EquipGadget.Get());
 }
 
