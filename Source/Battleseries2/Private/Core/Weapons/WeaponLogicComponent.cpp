@@ -37,12 +37,17 @@ void UWeaponLogicComponent::TickComponent(float DeltaTime, ELevelTick TickType, 
 
 #pragma region Initialization/Factory
 
-void UWeaponLogicComponent::Init_Loadout(TArray<FName> Weapons, TArray<FPlayerLoadoutConfig_Weapon> WeaponLoadouts, TArray<FName> Gadgets)
+void UWeaponLogicComponent::Init_Loadout(TArray<FName> Weapons, TArray<FPlayerLoadoutConfig_Weapon> WeaponLoadouts, TArray<FName> Gadgets, TArray<FPlayerLoadoutConfig_Weapon> GadgetWeaponLoadouts)
 {
 	TArray<FName> WeaponIDs = Weapons;
 	TArray<FPlayerLoadoutConfig_Weapon> FinalWeaponLoadouts = WeaponLoadouts;
 	TArray<FName> GadgetIDs;
 	Loadout.ResolvedGadgetSlots.SetNum(Gadgets.Num());
+	
+	while (FinalWeaponLoadouts.Num() < WeaponIDs.Num())
+	{
+		FinalWeaponLoadouts.Add(FPlayerLoadoutConfig_Weapon());
+	}
 	
 	//INIT_ResolveWeaponGadgets
 	//add any gadgets that are weapons to the weaponID list for weapon initialization
@@ -66,11 +71,13 @@ void UWeaponLogicComponent::Init_Loadout(TArray<FName> Weapons, TArray<FPlayerLo
 			Loadout.ResolvedGadgetSlots[i].ResolvedArrayIndex = WeaponIDs.Num();
 			WeaponIDs.Add(Gadgets[i]);
 			
+			FPlayerLoadoutConfig_Weapon GadgetWeaponConfig = GadgetWeaponLoadouts.IsValidIndex(i)? GadgetWeaponLoadouts[i] : FPlayerLoadoutConfig_Weapon();
+			
 			//??? meant to apply weapon attachments in weaponloadout list to weapon gadgets, possible bugs
-			if (!FinalWeaponLoadouts.IsValidIndex(i))
-			{
-				FinalWeaponLoadouts.Add(FPlayerLoadoutConfig_Weapon()); 
-			}
+			//if (!FinalWeaponLoadouts.IsValidIndex(i))
+			//{
+			FinalWeaponLoadouts.Add(GadgetWeaponConfig); 
+			//}
 		}
 	}
 	
@@ -88,7 +95,8 @@ void UWeaponLogicComponent::Init_WeaponLoadout(TArray<FName> Weapons, TArray<FPl
 
 	for (int32 i = 0; i < Weapons.Num(); i++)
 	{
-		Init_Weapon(Weapons[i], i, WeaponLoadouts[i]);
+		FPlayerLoadoutConfig_Weapon LoadoutConfig = WeaponLoadouts.IsValidIndex(i)? WeaponLoadouts[i] : FPlayerLoadoutConfig_Weapon();
+		Init_Weapon(Weapons[i], i, LoadoutConfig);
 	}
 	Init_ScopeCamera();
 	EquipWeapon(0, true);
@@ -132,6 +140,7 @@ void UWeaponLogicComponent::Init_Weapon(FName WeaponID, int32 WeaponIndex, FPlay
 	Loadout.WeaponSystem.InfantryWeaponSystem.WeaponState_FP[WeaponIndex].WeaponMesh->AttachToComponent(Cast<ACharacter_Base>(GetOwner())->FPArms, FAttachmentTransformRules(EAttachmentRule::SnapToTarget, EAttachmentRule::SnapToTarget, EAttachmentRule::SnapToTarget, true), AttachSocketName);
 	
 	Loadout.WeaponSystem.BaseWeaponSystem.Weapons[WeaponIndex].WeaponID = WeaponID;
+	check (UBS2FunctionLibrary::GetDataSubsystem(this)->GetInfantryWeaponDataRow(WeaponID));
 	StaticWeaponDataCache[WeaponIndex] = UBS2FunctionLibrary::GetDataSubsystem(this)->GetInfantryWeaponDataRow(WeaponID);
 	
 	SetupCustomWeapon(WeaponIndex, WeaponLoadout);
@@ -1308,6 +1317,7 @@ FInfantryWeaponState& UWeaponLogicComponent::GetCurrentInfantryWeaponState_FP()
 
 FVector UWeaponLogicComponent::GetAttachmentDefaultOffset(FName WeaponID, EAttachmentSlot Slot, FName AttachmentID)
 {
+	UE_LOG(LogTemp, Warning, TEXT("[WeaponLogicComponent::GetAttachmentDefaultOffset] WeaponID %s, AttachmentID %s"), *WeaponID.ToString(), *AttachmentID.ToString());
 	return UBS2FunctionLibrary::GetDataSubsystem(this)->GetInfantryWeaponDataRow(WeaponID)->GunAttachmentData.AvailableAttachmentSlots.Find(Slot)->Attachments.Find(AttachmentID)->LocationOffset;
 }
 
