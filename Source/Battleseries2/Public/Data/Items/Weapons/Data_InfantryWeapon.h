@@ -40,6 +40,85 @@ struct FInfantryWeaponFunctionalityData
 	//canholdbreath
 };
 
+#pragma region Recoil
+
+USTRUCT(BlueprintType)
+struct FControllerRecoilData
+{
+	GENERATED_BODY();
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	FFloatCurve PitchControllerRecoil = FFloatCurve();
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	FFloatCurve YawControllerRecoil = FFloatCurve();
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	float HipfireControllerRecoilMultiplier = 0.0f;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	float ThirdPersonControllerRecoilMultiplier = 0.0f;
+};
+
+USTRUCT(BlueprintType)
+struct FIKProceduralRecoilData
+{
+	GENERATED_BODY()
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	FVector MinLocation = FVector();
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	FVector MaxLocation = FVector();
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	FVector MinRotation = FVector();
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	FVector MaxRotation = FVector();
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	float RecoilRecoverSpeed = 0.0f;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	float HipfireLocationMultiplier = 0.0f;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	float HipfireRotationMultiplier = 0.0f;
+};
+
+USTRUCT(BlueprintType)
+struct FCrosshairRecoilData
+{
+	GENERATED_BODY()
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	float CrosshairMovementSpeed = 0.0f;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	float CrosshairFiringSpread = 0.0f;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	float CrosshairAimingSpreadReducer = 0.0f;
+};
+
+USTRUCT(BlueprintType)
+struct FInfantryWeaponRecoilData
+{
+	GENERATED_BODY()
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	FControllerRecoilData ControllerRecoilData = FControllerRecoilData();
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	FIKProceduralRecoilData IKProceduralRecoilData = FIKProceduralRecoilData();
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	FCrosshairRecoilData CrosshairRecoilData = FCrosshairRecoilData();
+};
+
+#pragma endregion
+
 USTRUCT(BlueprintType)
 struct FInfantryWeaponAmmoData
 {
@@ -217,6 +296,9 @@ struct FInfantryWeaponData : public FTableRowBase
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	FWeaponFirePerformanceData WeaponFirePerformanceData = FWeaponFirePerformanceData();
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	FInfantryWeaponRecoilData WeaponRecoilData = FInfantryWeaponRecoilData();
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	FInfantryWeaponAimData InfantryWeaponAimData = FInfantryWeaponAimData();
