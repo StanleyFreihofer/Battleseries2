@@ -94,15 +94,9 @@ void UVehicleWeaponLogicComponent::Init_HUDReticleQuad(int32 SeatIndex)
 
 void UVehicleWeaponLogicComponent::Init_WAC(int32 SeatIndex)
 {
-	//Initialize Weapon Audio Component
 	FVehicleWeaponSystem_Runtime NewSystem;
-	TWeakObjectPtr<UAudioComponent> NewAudioComp = NewObject<UAudioComponent>(GetOwner());
-	NewAudioComp->SetupAttachment(OwnerDataAccessor->GetMesh());
-	NewAudioComp->RegisterComponent();
-	TSoftObjectPtr<UDA_WeaponDefaults> WeaponDefaults = UBS2FunctionLibrary::GetDataSubsystem(this)->WeaponDefaultsDAAsset;
-	NewAudioComp->SetSound(WeaponDefaults->WeaponDefaults.DefaultWeaponMetaSound.LoadSynchronous());
+	TWeakObjectPtr<UAudioComponent> NewAudioComp = UBS2FunctionLibrary::CreateWAC(this, GetOwner(), OwnerDataAccessor->GetMesh());
 	NewSystem.VehicleWeaponSystemState.WeaponAudioComponent = NewAudioComp;
-	NewSystem.VehicleWeaponSystemState.WeaponAudioComponent->bAutoActivate = false;		//important so that we dont get the nasty concurrent audio bug (if not firing/in use this doesnt need to be on)
 	VehicleWeaponSystem.Add(SeatIndex, NewSystem);
 }
 
@@ -636,10 +630,12 @@ void UVehicleWeaponLogicComponent::HandleSeatRangefinders()
 	for (auto& SeatWeaponSystem : VehicleWeaponSystem)	//for each weapon system in the vehicle
 	{
 		int32& SeatIndex = SeatWeaponSystem.Key;
+		
+		//HandleUpdateSeatRangefinder
 		const FSeatState& CurrentSeatState = OwnerDataAccessor->GetVehicleState().SeatStates[SeatIndex];
 		if (!CurrentSeatState.isOccupied)
 		{
-			continue;
+			//continue;
 		}
 
 		int32& WeaponIndex = SeatWeaponSystem.Value.VehicleWeaponSystemState.EquippedWeaponState.CurrentWeaponIndex;

@@ -652,7 +652,8 @@ void AVehicle_Base::HandleViewMethod(ACharacter_Base* Character, const FSeatData
 				case EVehicleWeaponCamMountMethod::WeaponMesh:
 				case EVehicleWeaponCamMountMethod::MountedProjectile:
 					ViewTarget = VehicleWeaponLogicComponent->GetCurrentViewTargetAtSeatIndex(Character->GetCSI());
-					Character->UpdateViewTarget(ViewTarget, Cam);
+					UE_LOG(LogTemp, Warning, TEXT("[Vehicle_Base::HandleViewMethod] ViewTarget: %s"), *ViewTarget->GetName());
+					Character->UpdateViewTarget(this, Cam);
 					break;
 			}
 		}

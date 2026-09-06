@@ -38,6 +38,10 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Battleseries | Subsystems")
     static UProjectilePoolSubsystem* GetProjectileSystem(const UObject* WorldContextObject);
     static IVehicleDataAccessor* GetVehicleAccessor(AActor* TargetActor);
+	
+	
+	UFUNCTION(BlueprintCallable, Category = "Battleseries | Weapon Functions")
+	static UAudioComponent* CreateWAC(const UObject* WorldContextObject, AActor* Owner, USceneComponent* AttachTarget);
 
     UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Battleseries | Weapon Functions")
     static float GetFireRate(float RateOfFire);

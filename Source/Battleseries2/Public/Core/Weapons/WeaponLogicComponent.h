@@ -73,7 +73,10 @@ struct FOnFootWeaponSystem_Runtime
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FInfantryWeaponSystem InfantryWeaponSystem = FInfantryWeaponSystem();
-
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	TWeakObjectPtr<UAudioComponent> WeaponAudioComponent = nullptr; 
+	
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	TObjectPtr<USceneCaptureComponent2D> ScopeCamera = nullptr;
 
@@ -144,6 +147,10 @@ class BATTLESERIES2_API UWeaponLogicComponent : public UActorComponent
 		UFUNCTION()
 		void Init_WeaponMesh(TWeakObjectPtr<USkeletalMeshComponent>& WeaponMesh);
 		UFUNCTION(BlueprintCallable)
+		void Init_WeaponState(int32 WeaponIndex);
+		UFUNCTION(BlueprintCallable)
+		void Init_WAC();
+		UFUNCTION(BlueprintCallable)
 		void Init_Attachment(FWeaponAttachmentState& RuntimeSlotState, FInfantryWeaponState& WeaponToApplyTo, EAttachmentSlot AttachmentSlot);
 		UFUNCTION(BlueprintCallable)
 		void Init_Gadget(FName GadgetID, int32 GadgetIndex);
@@ -159,6 +166,8 @@ class BATTLESERIES2_API UWeaponLogicComponent : public UActorComponent
 		void UpdateGadgetMesh(FName GadgetID, TWeakObjectPtr<UStaticMeshComponent>& GadgetMeshComp);
 		UFUNCTION(BlueprintCallable)
 		void UpdateGadgetVisibility(int32 GadgetIndex, bool Hide);
+		UFUNCTION(BlueprintCallable)
+		void UpdateGadgetCollision(ECollisionChannel CollisionChannel, ECollisionResponse CollisionResponse, int32 GadgetIndex);
 		UFUNCTION(BlueprintCallable)
 		void UpdateWeaponData(int32 WeaponIndex, FName WeaponID, FInfantryWeaponState WeaponState);
 		UFUNCTION(BlueprintCallable)
@@ -179,6 +188,10 @@ class BATTLESERIES2_API UWeaponLogicComponent : public UActorComponent
 		void HandleStartFire();
 		UFUNCTION(BlueprintCallable)
 		void StartFire();
+		UFUNCTION(BlueprintCallable)
+		void StartAutoFire();
+		UFUNCTION(BlueprintCallable)
+		void ShootSimProjectile();
 		UFUNCTION(BlueprintCallable)
 		void HandleShootProjectileActor();
 		UFUNCTION(BlueprintCallable)

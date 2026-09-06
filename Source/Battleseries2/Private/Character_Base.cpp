@@ -69,6 +69,28 @@ void ACharacter_Base::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 	InteractTrace();
+	
+	if (CharacterState.CharacterVehicleState.inVehicle)
+	{
+		if (AVehicle_Base* Vehicle = GetCurrentVehicle())
+		{
+			if (Vehicle->VehicleCurrentState.SeatStates.IsValidIndex(GetCSI()))
+			{
+				if (UCameraComponent* ActiveCam = Vehicle->VehicleCurrentState.SeatStates[GetCSI()].ActiveCamera)
+				{
+					if (APlayerController* PC = Cast<APlayerController>(GetController()))
+					{
+						FVector CamLoc = ActiveCam->GetComponentLocation();
+						FRotator CamRot = ActiveCam->GetComponentRotation();
+						FVector PCCamLoc = PC->PlayerCameraManager->GetCameraLocation();
+						FRotator PCCamRot = PC->PlayerCameraManager->GetCameraRotation();
+						UE_LOG(LogTemp, Warning, TEXT("ActiveCam: %s | %s   ||   PlayerCam: %s | %s"),
+							*CamLoc.ToString(), *CamRot.ToString(), *PCCamLoc.ToString(), *PCCamRot.ToString());
+					}
+				}
+			}
+		}
+	}
 }
 
 // Called to bind functionality to input
@@ -534,6 +556,10 @@ void ACharacter_Base::CharacterEnterVehicle()
 		for (int32 i = 0; i < WeaponManager->Loadout.WeaponSystem.BaseWeaponSystem.Weapons.Num(); i++)
 		{
 			WeaponManager->UpdateWeaponCollision(ECC_Vehicle, ECR_Ignore, i);
+		}
+		for (int32 G = 0; G < WeaponManager->Loadout.Gadgets.Num(); G++)
+		{
+			WeaponManager->UpdateGadgetCollision(ECC_Vehicle, ECR_Ignore, G);
 		}
 		GetCharacterMovement()->SetMovementMode(MOVE_None);
 		AttachToActor(GetCurrentVehicle(), FAttachmentTransformRules::KeepRelativeTransform);

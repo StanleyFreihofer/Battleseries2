@@ -48,10 +48,10 @@ struct FControllerRecoilData
 	GENERATED_BODY();
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	FFloatCurve PitchControllerRecoil = FFloatCurve();
+	UCurveFloat* PitchControllerRecoil = nullptr;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	FFloatCurve YawControllerRecoil = FFloatCurve();
+	UCurveFloat* YawControllerRecoil = nullptr;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	float HipfireControllerRecoilMultiplier = 0.0f;

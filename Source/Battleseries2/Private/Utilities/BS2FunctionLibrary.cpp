@@ -3,6 +3,7 @@
 #include "Engine/GameInstance.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "DrawDebugHelpers.h"
+#include "Data/Items/Weapons/WeaponDefaults.h"
 #include "Data/Items/Weapons/WeaponTypes.h"
 #include "Data/Items/Weapons/ProjectileTypes.h"
 #include "Utilities/BS2FunctionLibrary.h"
@@ -11,6 +12,7 @@
 #include "Utilities/HUDSubsystem.h"
 #include "Save/SaveSubsystem.h"
 #include "Utilities/I_VehicleDataAccessor.h"
+#include "Components/AudioComponent.h"
 
 bool UBS2FunctionLibrary::PerformSphereTraceMulti(const UObject* WorldContextObject, const FTransform StartTransform, TArray<FHitResult>& OutHits, TArray<AActor*> ActorsToIgnore, float Radius, float Distance, bool Debug)
 {
@@ -99,6 +101,17 @@ IVehicleDataAccessor* UBS2FunctionLibrary::GetVehicleAccessor(AActor* TargetActo
 	return Cast<IVehicleDataAccessor>(TargetActor);
 }
 
+UAudioComponent* UBS2FunctionLibrary::CreateWAC(const UObject* WorldContextObject, AActor* Owner, USceneComponent* AttachTarget)
+{
+	UAudioComponent* NewAudioComp = NewObject<UAudioComponent>(Owner);
+	NewAudioComp->SetupAttachment(AttachTarget);
+	NewAudioComp->RegisterComponent();
+	TSoftObjectPtr<UDA_WeaponDefaults> WeaponDefaults = GetDataSubsystem(WorldContextObject)->WeaponDefaultsDAAsset;
+	NewAudioComp->SetSound(WeaponDefaults->WeaponDefaults.DefaultWeaponMetaSound.LoadSynchronous());
+	NewAudioComp->bAutoActivate = false;
+	return NewAudioComp;
+}
+
 float UBS2FunctionLibrary::GetFireRate(float RateOfFire)
 {
 	RateOfFire = 60 / RateOfFire;
@@ -118,7 +131,7 @@ bool UBS2FunctionLibrary::PerformWeaponLineTrace(const UObject* WorldContextObje
 	bool bDidHit = World->LineTraceSingleByChannel(OutHit, Startpoint, Endpoint, ECC_Visibility, Params);
 	if (Debug)
 	{
-		DrawDebugLine(World, Startpoint, Endpoint, bDidHit ? FColor::Green : FColor::Red, false, 1.f, 0, 1.f);
+		DrawDebugLine(World, Startpoint, Endpoint, bDidHit ? FColor::Green : FColor::Red, false, 0.1f, 0, 0.02f);
 	}
 
 	return bDidHit;
