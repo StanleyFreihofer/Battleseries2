@@ -50,7 +50,7 @@ struct FVehicleWeaponState
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	USpringArmComponent* WeaponTurretSpringArm = nullptr;
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
-	TObjectPtr<ACameraActor> WeaponTurretCamera = nullptr;
+	TObjectPtr<UCameraComponent> WeaponTurretCamera = nullptr;
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
 	TArray<FDecorative_Runtime> VehicleWeaponDecoratives;

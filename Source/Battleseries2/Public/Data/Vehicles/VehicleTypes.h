@@ -43,12 +43,6 @@ struct FSeatState
 	USpringArmComponent* DefaultSpringArm = nullptr;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
 	UCameraComponent* DefaultCamera = nullptr;		//the safety, the camera that should be there no matter what weapon or whatever is equipped
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
-	USpringArmComponent* ActiveSpringArm = nullptr;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
-	UCameraComponent* ActiveCamera = nullptr;
-
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FOpticState OpticState = FOpticState();
 

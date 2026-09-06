@@ -196,6 +196,9 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void UpdateVehicleHUD(TSubclassOf<UUserWidget> HUDClass);
+	
+	UFUNCTION(BlueprintImplementableEvent)
+	void UpdateViewTarget_BP(AActor* ViewTarget, UCameraComponent* Cam);
 
 
 	UFUNCTION(BlueprintCallable, BlueprintPure)

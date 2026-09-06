@@ -232,7 +232,7 @@ void AVehicle_Base::Init_DefaultSeatRemoteCamera(int32 SeatIndex)
 	switch (ViewMethod)
 	{
 		case E_ViewMethod::Remote:
-			NewCamera = SpawnAndAttachCamera(CameraSocketName, VehicleMeshComponent);
+			NewCamera = UBS2FunctionLibrary::CreateAndAttachCamera(this, VehicleMeshComponent, CameraSocketName);
 			VehicleCurrentState.SeatStates[SeatIndex].DefaultCamera = NewCamera;
 			UpdateSeatActiveCamera(SeatIndex, NewCamera);
 
@@ -606,14 +606,6 @@ void AVehicle_Base::ClearEntireLoadoutFromVehicle()
 
 #pragma endregion
 
-UCameraComponent* AVehicle_Base::SpawnAndAttachCamera(FName SocketToAttach, USkeletalMeshComponent* MeshToAttachTo)
-{
-	UCameraComponent* Cam = NewObject<UCameraComponent>(this);
-	Cam->SetupAttachment(MeshToAttachTo, SocketToAttach);
-	Cam->RegisterComponent();
-	return Cam;
-}
-
 #pragma region SeatManagement
 
 bool AVehicle_Base::CycleThroughSeats(ACharacter_Base* Character)
@@ -637,35 +629,25 @@ bool AVehicle_Base::CycleThroughSeats(ACharacter_Base* Character)
 
 void AVehicle_Base::HandleViewMethod(ACharacter_Base* Character, const FSeatData& SeatData)
 {
-	//move this to character?
-	if (SeatData.SeatRole == E_SeatRole::DriverGunner || SeatData.SeatRole == E_SeatRole::Gunner)
-	{
-		const FVehicleWeaponSystem_Runtime& VWS = *VehicleWeaponLogicComponent->VehicleWeaponSystem.Find(Character->GetCSI());
-		const FVehicleWeapon_Runtime& EquippedWeapon = VWS.Weapons[VWS.VehicleWeaponSystemState.EquippedWeaponState.CurrentWeaponIndex];
-		if (EquippedWeapon.VehicleWeaponInstanceData.bHasSpecialCam)
-		{
-			TWeakObjectPtr<AActor> ViewTarget = nullptr;
-			TWeakObjectPtr<UCameraComponent> Cam = VehicleCurrentState.SeatStates[Character->GetCSI()].ActiveCamera;
-			switch (EquippedWeapon.VehicleWeaponInstanceData.WeaponCamBehavior.MountMethod)
-			{
-				case EVehicleWeaponCamMountMethod::VehicleMesh:
-				case EVehicleWeaponCamMountMethod::WeaponMesh:
-				case EVehicleWeaponCamMountMethod::MountedProjectile:
-					ViewTarget = VehicleWeaponLogicComponent->GetCurrentViewTargetAtSeatIndex(Character->GetCSI());
-					UE_LOG(LogTemp, Warning, TEXT("[Vehicle_Base::HandleViewMethod] ViewTarget: %s"), *ViewTarget->GetName());
-					Character->UpdateViewTarget(this, Cam);
-					break;
-			}
-		}
-		else
-		{
-			HandleViewMethod_Default(Character, SeatData);
-		}
-	}
-	else
+	//move to character?
+	if (SeatData.SeatRole != E_SeatRole::DriverGunner && SeatData.SeatRole != E_SeatRole::Gunner)
 	{
 		HandleViewMethod_Default(Character, SeatData);
+		return;
 	}
+
+	int32 SeatIndex = Character->GetCSI();
+	SyncActiveCameraForSeat(SeatIndex);
+
+	UCameraComponent* WeaponCam = GetSeatWeaponCam(SeatIndex);
+	if (!WeaponCam)
+	{
+		HandleViewMethod_Default(Character, SeatData);
+		return;
+	}
+	
+	TWeakObjectPtr<AActor> ViewTarget = VehicleWeaponLogicComponent->GetCurrentViewTargetAtSeatIndex(SeatIndex);
+	Character->UpdateViewTarget(ViewTarget, WeaponCam);
 }
 
 void AVehicle_Base::HandleViewMethod_Default(ACharacter_Base* Character, const FSeatData& SeatData)
@@ -677,16 +659,12 @@ void AVehicle_Base::HandleViewMethod_Default(ACharacter_Base* Character, const F
 			Character->UpdateViewTarget(Character, Character->FPCamera);
 			break;
 		case E_ViewMethod::Remote:
-			if (VehicleCurrentState.SeatStates[Character->GetCSI()].ActiveCamera)
-			{
-
-				Character->UpdateViewTarget(this, VehicleCurrentState.SeatStates[Character->GetCSI()].ActiveCamera);
-			}
-			else
-			{
-				Character->UpdateViewTarget(this, VehicleCurrentState.SeatStates[Character->GetCSI()].DefaultCamera);
-			}
+		{
+			int32 SeatIndex = Character->GetCSI();
+			SyncActiveCameraForSeat(SeatIndex);
+			Character->UpdateViewTarget(this, VehicleCurrentState.SeatStates[SeatIndex].DefaultCamera);
 			break;
+		}
 	}
 }
 
@@ -717,10 +695,7 @@ void AVehicle_Base::DropSeat(ACharacter_Base* Character, int32& SeatIndex)
 	}
 	HandleSeatOccupationStatus(false, SeatIndex);
 
-	if (SeatData.ViewMethod == E_ViewMethod::Remote && VehicleCurrentState.SeatStates[SeatIndex].ActiveCamera)
-	{
-		VehicleCurrentState.SeatStates[SeatIndex].ActiveCamera->SetActive(false);
-	}
+	DeactiveSeatCameras(SeatIndex);
 
 	switch (SeatData.SeatRole)
 	{
@@ -866,12 +841,44 @@ void AVehicle_Base::ChangeSeat(ACharacter_Base* Character)
 	}
 }
 
-#pragma endregion
+void AVehicle_Base::SyncActiveCameraForSeat(int32 SeatIndex)
+{
+	UCameraComponent* WeaponCam = GetSeatWeaponCam(SeatIndex);
+	UpdateSeatActiveCamera(SeatIndex, WeaponCam ? WeaponCam : VehicleCurrentState.SeatStates[SeatIndex].DefaultCamera);
+}
+
+#pragma 
+
+#pragma region SeatCameraManagement
 
 void AVehicle_Base::UpdateSeatActiveCamera(int32 SeatIndex, UCameraComponent* NewActiveCamera)
 {
-	VehicleCurrentState.SeatStates[SeatIndex].ActiveCamera = NewActiveCamera;
+	FSeatState& SeatState = VehicleCurrentState.SeatStates[SeatIndex];
+	if (SeatState.DefaultCamera && SeatState.DefaultCamera != NewActiveCamera)
+	{
+		SeatState.DefaultCamera->SetActive(false);
+	}
+	if (UCameraComponent* WeaponCam = GetSeatWeaponCam(SeatIndex); WeaponCam && WeaponCam != NewActiveCamera)
+	{
+		WeaponCam->SetActive(false);
+	}
+	NewActiveCamera->SetActive(true);
 }
+
+void AVehicle_Base::DeactiveSeatCameras(int32 SeatIndex)
+{
+	FSeatState& SeatState = VehicleCurrentState.SeatStates[SeatIndex];
+	if (SeatState.DefaultCamera)
+	{
+		SeatState.DefaultCamera->SetActive(false);
+	}
+	if (UCameraComponent* WeaponCam = GetSeatWeaponCam(SeatIndex))
+	{
+		WeaponCam->SetActive(false);
+	}
+}
+
+#pragma endregion
 
 void AVehicle_Base::UpdateEngineAudio()
 {
@@ -1022,9 +1029,9 @@ void AVehicle_Base::Input_UpdateSteering_GV(float SteeringValue, int32 SeatIndex
 	{
 		ChaosVehicleMovement->SetSteeringInput(SteeringValue);
 	}
-	if (VehicleCurrentState.SeatStates[SeatIndex].ActiveCamera)
+	if (UCameraComponent* ActiveCam = GetRemoteActiveCam(SeatIndex))
 	{
-		UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateCompassHUD_Vehicle(VehicleCurrentState.SeatStates[SeatIndex].ActiveCamera->GetComponentRotation().Yaw);
+		UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateCompassHUD_Vehicle(ActiveCam->GetComponentRotation().Yaw);
 	}
 }
 
@@ -1524,9 +1531,34 @@ int32 AVehicle_Base::GetControlledTurret(int32 SeatIndex)
 	return VehicleData->Seats[SeatIndex].AvailableItems.ControlledTurretIndexes[0];
 }
 
+UCameraComponent* AVehicle_Base::GetSeatWeaponCam(int32 SeatIndex)
+{
+	const FSeatData& SeatData = VehicleData->Seats[SeatIndex];
+	if (SeatData.SeatRole != E_SeatRole::Gunner && SeatData.SeatRole != E_SeatRole::DriverGunner)
+	{
+		return nullptr;
+	}
+	FVehicleWeaponSystem_Runtime* WeaponSystem = VehicleWeaponLogicComponent->VehicleWeaponSystem.Find(SeatIndex);
+	if (!WeaponSystem)
+	{
+		return nullptr;   // weapon system for this seat hasn't been set up yet
+	}
+
+	int32 CWI = VehicleWeaponLogicComponent->GetCWIForSeat(SeatIndex);
+	if (!WeaponSystem->Weapons.IsValidIndex(CWI))
+	{
+		return nullptr;
+	}
+
+	FVehicleWeapon_Runtime& CurrentWeapon = VehicleWeaponLogicComponent->VehicleWeaponSystem.Find(SeatIndex)->Weapons[CWI];
+	const FVehicleWeaponInstanceData& VWID = VehicleWeaponLogicComponent->GetVWID(SeatIndex, CWI, CurrentWeapon.VehicleWeaponState.BaseWeaponRuntimeData.WeaponID);
+	return VWID.bHasSpecialCam ? CurrentWeapon.VehicleWeaponState.WeaponTurretCamera : nullptr;
+}
+
 UCameraComponent* AVehicle_Base::GetRemoteActiveCam(int32 SeatIndex)
 {
-	return VehicleCurrentState.SeatStates[SeatIndex].ActiveCamera;
+	UCameraComponent* WeaponCam = GetSeatWeaponCam(SeatIndex);
+	return WeaponCam ? WeaponCam : VehicleCurrentState.SeatStates[SeatIndex].DefaultCamera;
 }
 
 float AVehicle_Base::GetCurrentSpeed_Chaos()

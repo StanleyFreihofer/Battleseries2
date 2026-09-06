@@ -350,11 +350,6 @@ void UVehicleWeaponLogicComponent::ConfigureWeaponCam(int32 SeatIndex, int32 Wea
 	FString WCNameString = FString::Printf(TEXT("WC_%02d_%02d"), SeatIndex, WeaponIndex);		//WC_SeatIndex_WeaponIndex	[WC_00_00]
 	FName WCSocketName = FName(*WCNameString);
 	TWeakObjectPtr<USceneComponent> TargetParent = nullptr;
-	//UCameraComponent* WeaponCam = NewObject<UCameraComponent>(OwningActor, WCSocketName);
-	//create cam comp doesnt work
-	FActorSpawnParameters SpawnParams;
-	SpawnParams.Owner = GetOwner();
-	TObjectPtr<ACameraActor> WeaponCameraActor = GetWorld()->SpawnActor<ACameraActor>(ACameraActor::StaticClass(), FVector::ZeroVector, FRotator::ZeroRotator, SpawnParams);
 
 	switch (WeaponSystem.Weapons[WeaponIndex].VehicleWeaponInstanceData.WeaponCamBehavior.MountMethod)
 	{
@@ -370,20 +365,18 @@ void UVehicleWeaponLogicComponent::ConfigureWeaponCam(int32 SeatIndex, int32 Wea
 			TargetParent = WeaponSystem.Weapons[WeaponIndex].VehicleWeaponState.CurrentMountedProjectiles[0]->ProjectileMeshComponent;
 			break;
 	}
-
-	WeaponCameraActor->AttachToComponent(TargetParent.Get(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, WCSocketName);
-	WeaponSystem.Weapons[WeaponIndex].VehicleWeaponState.WeaponTurretCamera = WeaponCameraActor;
-	WeaponCameraActor->GetCameraComponent()->SetActive(false);
-	WeaponCameraActor->GetCameraComponent()->SetHiddenInGame(false);
+	
+	UCameraComponent* WeaponCamComp = UBS2FunctionLibrary::CreateAndAttachCamera(GetOwner(), TargetParent.Get(), WCSocketName);
+	WeaponSystem.Weapons[WeaponIndex].VehicleWeaponState.WeaponTurretCamera = WeaponCamComp;
 
 	AVehicle_Base& Vehicle = OwnerDataAccessor->GetVehicle();
 	if (WeaponIndex == GetCWIForSeat(SeatIndex))		
 	{
 		//NOT THE DEFAULT CAM, NO SPECIAL WEAPON CAM SHOULD BE THE DEFAULT CAM
 		//if weapon index = currentweaponindex, we make this the active cam
-		Vehicle.UpdateSeatActiveCamera(SeatIndex, WeaponCameraActor->GetCameraComponent());		
+		Vehicle.UpdateSeatActiveCamera(SeatIndex, WeaponCamComp);		
 
-		Vehicle.UpdateRemoteActiveCamPP(SeatIndex, UBS2FunctionLibrary::GetDataSubsystem(this)->GetOpticDataRow(OwnerDataAccessor->GetVehicleState().SeatStates[SeatIndex].OpticState.CurrentAvailableOptics[OwnerDataAccessor->GetVehicleState().SeatStates[SeatIndex].OpticState.CurrentOpticIndex])->OpticPPSettings, 1.0f, WeaponCameraActor->GetCameraComponent());
+		Vehicle.UpdateRemoteActiveCamPP(SeatIndex, UBS2FunctionLibrary::GetDataSubsystem(this)->GetOpticDataRow(OwnerDataAccessor->GetVehicleState().SeatStates[SeatIndex].OpticState.CurrentAvailableOptics[OwnerDataAccessor->GetVehicleState().SeatStates[SeatIndex].OpticState.CurrentOpticIndex])->OpticPPSettings, 1.0f, WeaponCamComp);
 	}
 }
 
@@ -426,7 +419,7 @@ void UVehicleWeaponLogicComponent::ClearWeaponSlotFromSeat(int32 SeatIndex, int3
 	//do the same things as ApplyWeaponInstanceDataAtIndexToSeat... but opposite and in reverse
 	if (WeaponSlotToClear.VehicleWeaponState.WeaponTurretCamera)
 	{
-		WeaponSlotToClear.VehicleWeaponState.WeaponTurretCamera->Destroy();
+		WeaponSlotToClear.VehicleWeaponState.WeaponTurretCamera->DestroyComponent();
 		WeaponSlotToClear.VehicleWeaponState.WeaponTurretCamera = nullptr;
 	}
 
@@ -579,9 +572,9 @@ void UVehicleWeaponLogicComponent::ControlTurret(FVector2D InputValue, int32 Sea
 	//Update UI
 	if (PreviousTurretRotation != NewTurretRotation && OwnerDataAccessor->GetVehicleState().SeatStates[SeatIndex].UpdateHUD)
 	{
-		if (OwnerDataAccessor->GetVehicleState().SeatStates[SeatIndex].ActiveCamera)
+		if (UCameraComponent* ActiveCam = OwnerDataAccessor->GetVehicle().GetRemoteActiveCam(SeatIndex))
 		{
-			UBS2FunctionLibrary::GetHUDSubsystem(this)->HandleTurretRotationUpdate(OwnerDataAccessor->GetVehicleState().SeatStates[SeatIndex].ActiveCamera->GetComponentRotation().Yaw);
+			UBS2FunctionLibrary::GetHUDSubsystem(this)->HandleTurretRotationUpdate(ActiveCam->GetComponentRotation().Yaw);
 		}
 	}
 	if (PreviousTurretPitch != NewTurretPitch && OwnerDataAccessor->GetVehicleState().SeatStates[SeatIndex].UpdateHUD)
@@ -635,7 +628,7 @@ void UVehicleWeaponLogicComponent::HandleSeatRangefinders()
 		const FSeatState& CurrentSeatState = OwnerDataAccessor->GetVehicleState().SeatStates[SeatIndex];
 		if (!CurrentSeatState.isOccupied)
 		{
-			//continue;
+			continue;
 		}
 
 		int32& WeaponIndex = SeatWeaponSystem.Value.VehicleWeaponSystemState.EquippedWeaponState.CurrentWeaponIndex;
@@ -644,7 +637,7 @@ void UVehicleWeaponLogicComponent::HandleSeatRangefinders()
 		const FSeatData& SeatData = VehicleData.Seats[SeatIndex];
 		if (SeatData.ViewMethod == E_ViewMethod::Remote || SeatWeaponSystem.Value.Weapons[WeaponIndex].VehicleWeaponInstanceData.bHasSpecialCam)		//if remote or specialweapon cam, do rangefinder
 		{
-			FTransform CamTransform = CurrentSeatState.ActiveCamera->GetComponentTransform();
+			FTransform CamTransform = OwnerDataAccessor->GetVehicle().GetRemoteActiveCam(SeatIndex)->GetComponentTransform();
 			UpdateSeatRangefinder(SeatIndex, CamTransform, {});
 		}
 		else
@@ -1506,7 +1499,7 @@ void UVehicleWeaponLogicComponent::EquipWeapon(int32 SeatIndex, int32 WeaponInde
 	FWeapon_Runtime& NewWeapon = SWS.Weapons[WeaponIndex].VehicleWeaponState.BaseWeaponRuntimeData;
 	if (GetVWID(SeatIndex, WeaponIndex, NewWeapon.WeaponID).bHasSpecialCam)
 	{
-		OwnerDataAccessor->GetVehicle().UpdateSeatActiveCamera(SeatIndex, SWS.Weapons[WeaponIndex].VehicleWeaponState.WeaponTurretCamera->GetCameraComponent());
+		OwnerDataAccessor->GetVehicle().UpdateSeatActiveCamera(SeatIndex, SWS.Weapons[WeaponIndex].VehicleWeaponState.WeaponTurretCamera);
 	}
 
 	int32 MuzzleCount = SeatWeaponSystem.Weapons[WeaponIndex].VehicleWeaponState.MuzzleSockets.Num();
@@ -1607,7 +1600,7 @@ TWeakObjectPtr<AActor> UVehicleWeaponLogicComponent::GetCurrentViewTargetAtSeatI
 		{
 			case EVehicleWeaponCamMountMethod::VehicleMesh:
 			case EVehicleWeaponCamMountMethod::WeaponMesh:
-				NewViewTarget = Weapon.VehicleWeaponState.WeaponTurretCamera;
+				NewViewTarget = &OwnerDataAccessor->GetVehicle();
 				break;
 			case EVehicleWeaponCamMountMethod::MountedProjectile:
 				NewViewTarget = Weapon.VehicleWeaponState.CurrentMountedProjectiles[0];

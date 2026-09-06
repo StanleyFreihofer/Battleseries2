@@ -13,6 +13,7 @@
 #include "Save/SaveSubsystem.h"
 #include "Utilities/I_VehicleDataAccessor.h"
 #include "Components/AudioComponent.h"
+#include "Camera/CameraComponent.h"
 
 bool UBS2FunctionLibrary::PerformSphereTraceMulti(const UObject* WorldContextObject, const FTransform StartTransform, TArray<FHitResult>& OutHits, TArray<AActor*> ActorsToIgnore, float Radius, float Distance, bool Debug)
 {
@@ -99,6 +100,16 @@ UProjectilePoolSubsystem* UBS2FunctionLibrary::GetProjectileSystem(const UObject
 IVehicleDataAccessor* UBS2FunctionLibrary::GetVehicleAccessor(AActor* TargetActor)
 {
 	return Cast<IVehicleDataAccessor>(TargetActor);
+}
+
+UCameraComponent* UBS2FunctionLibrary::CreateAndAttachCamera(UObject* Owner, USceneComponent* AttachTarget, FName SocketName)
+{
+	UCameraComponent* Cam = NewObject<UCameraComponent>(Owner);
+	Cam->SetupAttachment(AttachTarget, SocketName);
+	Cam->SetAutoActivate(false);
+	Cam->SetActive(false);
+	Cam->RegisterComponent();
+	return Cam;
 }
 
 UAudioComponent* UBS2FunctionLibrary::CreateWAC(const UObject* WorldContextObject, AActor* Owner, USceneComponent* AttachTarget)

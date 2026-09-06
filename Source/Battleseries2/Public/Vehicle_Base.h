@@ -221,7 +221,11 @@ public:
 	void ChangeSeat(ACharacter_Base* Character);
 
 	UFUNCTION(BlueprintCallable)
+	void SyncActiveCameraForSeat(int32 SeatIndex);
+	UFUNCTION(BlueprintCallable)
 	void UpdateSeatActiveCamera(int32 SeatIndex, UCameraComponent* NewActiveCamera);
+	UFUNCTION(BlueprintCallable)
+	void DeactiveSeatCameras(int32 SeatIndex);
 	UFUNCTION(BlueprintCallable)
 	void UpdateRemoteActiveCamPP(int32 SeatIndex, FPostProcessSettings PPSettings, float BlendWeight, UCameraComponent* Cam);
 	UFUNCTION(BlueprintCallable)
@@ -304,8 +308,6 @@ public:
 	void ToggleMagnificationOptic(int32 SeatIndex, float ZoomMagnification);
 
 	//Applying
-	UFUNCTION(BlueprintCallable)
-	UCameraComponent* SpawnAndAttachCamera(FName SocketToAttach, USkeletalMeshComponent* MeshToAttachTo);
 
 	UFUNCTION(BlueprintCallable)
 	void SetVehicleAndInit(FVehicleStartingData InputVehicleStartingData);		//used to hook in during runtime i guess? (also calls init/kicks off vehicle setup)
@@ -321,6 +323,8 @@ public:
 
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	int32 GetControlledTurret(int32 SeatIndex);
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	UCameraComponent* GetSeatWeaponCam(int32 SeatIndex);
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	UCameraComponent* GetRemoteActiveCam(int32 SeatIndex);
 	UFUNCTION(BlueprintCallable, BlueprintPure)

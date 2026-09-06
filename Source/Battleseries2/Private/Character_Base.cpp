@@ -69,28 +69,6 @@ void ACharacter_Base::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 	InteractTrace();
-	
-	if (CharacterState.CharacterVehicleState.inVehicle)
-	{
-		if (AVehicle_Base* Vehicle = GetCurrentVehicle())
-		{
-			if (Vehicle->VehicleCurrentState.SeatStates.IsValidIndex(GetCSI()))
-			{
-				if (UCameraComponent* ActiveCam = Vehicle->VehicleCurrentState.SeatStates[GetCSI()].ActiveCamera)
-				{
-					if (APlayerController* PC = Cast<APlayerController>(GetController()))
-					{
-						FVector CamLoc = ActiveCam->GetComponentLocation();
-						FRotator CamRot = ActiveCam->GetComponentRotation();
-						FVector PCCamLoc = PC->PlayerCameraManager->GetCameraLocation();
-						FRotator PCCamRot = PC->PlayerCameraManager->GetCameraRotation();
-						UE_LOG(LogTemp, Warning, TEXT("ActiveCam: %s | %s   ||   PlayerCam: %s | %s"),
-							*CamLoc.ToString(), *CamRot.ToString(), *PCCamLoc.ToString(), *PCCamRot.ToString());
-					}
-				}
-			}
-		}
-	}
 }
 
 // Called to bind functionality to input
@@ -730,10 +708,10 @@ void ACharacter_Base::UpdateUI_EnterSeat()
 			UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateSpeedHUD_Vehicle(GetCurrentVehicle()->GetVelocity().Size());
 
 			//turrets/heading
-			if (GetCurrentVehicle()->VehicleCurrentState.SeatStates[GetCSI()].ActiveCamera)
+			if (UCameraComponent* ActiveCam = GetCurrentVehicle()->GetRemoteActiveCam(GetCSI()))
 			{
-				UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateCompassHUD_Vehicle(GetCurrentVehicle()->VehicleCurrentState.SeatStates[GetCSI()].ActiveCamera->GetComponentRotation().Yaw);
-				UBS2FunctionLibrary::GetHUDSubsystem(this)->HandleTurretRotationUpdate(GetCurrentVehicle()->VehicleCurrentState.SeatStates[GetCSI()].ActiveCamera->GetComponentRotation().Yaw);
+				UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateCompassHUD_Vehicle(ActiveCam->GetComponentRotation().Yaw);
+				UBS2FunctionLibrary::GetHUDSubsystem(this)->HandleTurretRotationUpdate(ActiveCam->GetComponentRotation().Yaw);
 			}
 			if (GetCurrentVehicle()->VehicleData->Seats[GetCSI()].AvailableItems.ControlledTurretIndexes.Num())
 			{
@@ -746,7 +724,6 @@ void ACharacter_Base::UpdateUI_EnterSeat()
 					GetCurrentVehicle()->VehicleWeaponLogicComponent->TurretStates[CTI].CurrentTurretPitch
 				);
 			}
-
 			break;
 	}
 }
@@ -757,8 +734,9 @@ void ACharacter_Base::UpdateViewTarget(TWeakObjectPtr<AActor> NewViewTarget, TWe
 {
 	if (APlayerController* PC = Cast<APlayerController>(GetController()))
 	{
+		CameraComponent.Get()->SetActive(true);
 		PC->SetViewTarget(NewViewTarget.Get());
-		CameraComponent->SetActive(true);
+		//UpdateViewTarget_BP(NewViewTarget.Get(), CameraComponent.Get());
 	}
 }
 
