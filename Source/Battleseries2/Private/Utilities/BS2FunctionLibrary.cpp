@@ -105,9 +105,10 @@ IVehicleDataAccessor* UBS2FunctionLibrary::GetVehicleAccessor(AActor* TargetActo
 UCameraComponent* UBS2FunctionLibrary::CreateAndAttachCamera(UObject* Owner, USceneComponent* AttachTarget, FName SocketName)
 {
 	UCameraComponent* Cam = NewObject<UCameraComponent>(Owner);
-	Cam->SetupAttachment(AttachTarget, SocketName);
 	Cam->SetAutoActivate(false);
 	Cam->SetActive(false);
+	Cam->bCameraMeshHiddenInGame = false;
+	Cam->SetupAttachment(AttachTarget, SocketName);
 	Cam->RegisterComponent();
 	return Cam;
 }

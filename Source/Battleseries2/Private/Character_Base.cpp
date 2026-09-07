@@ -736,6 +736,7 @@ void ACharacter_Base::UpdateViewTarget(TWeakObjectPtr<AActor> NewViewTarget, TWe
 	{
 		CameraComponent.Get()->SetActive(true);
 		PC->SetViewTarget(NewViewTarget.Get());
+		UE_LOG(LogTemp, Warning, TEXT("[UpdateViewTarget] Target=%s Cam=%s CurrentPCViewTarget=%s"), *NewViewTarget->GetName(), *CameraComponent->GetName(), PC->GetViewTarget() ? *PC->GetViewTarget()->GetName() : TEXT("NULL"));
 		//UpdateViewTarget_BP(NewViewTarget.Get(), CameraComponent.Get());
 	}
 }

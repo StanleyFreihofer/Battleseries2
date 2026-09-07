@@ -369,15 +369,17 @@ void UVehicleWeaponLogicComponent::ConfigureWeaponCam(int32 SeatIndex, int32 Wea
 	UCameraComponent* WeaponCamComp = UBS2FunctionLibrary::CreateAndAttachCamera(GetOwner(), TargetParent.Get(), WCSocketName);
 	WeaponSystem.Weapons[WeaponIndex].VehicleWeaponState.WeaponTurretCamera = WeaponCamComp;
 
+	/**
 	AVehicle_Base& Vehicle = OwnerDataAccessor->GetVehicle();
 	if (WeaponIndex == GetCWIForSeat(SeatIndex))		
 	{
 		//NOT THE DEFAULT CAM, NO SPECIAL WEAPON CAM SHOULD BE THE DEFAULT CAM
 		//if weapon index = currentweaponindex, we make this the active cam
-		Vehicle.UpdateSeatActiveCamera(SeatIndex, WeaponCamComp);		
+		//Vehicle.UpdateSeatActiveCamera(SeatIndex, WeaponCamComp);		
 
-		Vehicle.UpdateRemoteActiveCamPP(SeatIndex, UBS2FunctionLibrary::GetDataSubsystem(this)->GetOpticDataRow(OwnerDataAccessor->GetVehicleState().SeatStates[SeatIndex].OpticState.CurrentAvailableOptics[OwnerDataAccessor->GetVehicleState().SeatStates[SeatIndex].OpticState.CurrentOpticIndex])->OpticPPSettings, 1.0f, WeaponCamComp);
+		//Vehicle.UpdateRemoteActiveCamPP(SeatIndex, UBS2FunctionLibrary::GetDataSubsystem(this)->GetOpticDataRow(OwnerDataAccessor->GetVehicleState().SeatStates[SeatIndex].OpticState.CurrentAvailableOptics[OwnerDataAccessor->GetVehicleState().SeatStates[SeatIndex].OpticState.CurrentOpticIndex])->OpticPPSettings, 1.0f, WeaponCamComp);
 	}
+	**/
 }
 
 #pragma endregion

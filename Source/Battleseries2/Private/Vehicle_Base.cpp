@@ -234,7 +234,7 @@ void AVehicle_Base::Init_DefaultSeatRemoteCamera(int32 SeatIndex)
 		case E_ViewMethod::Remote:
 			NewCamera = UBS2FunctionLibrary::CreateAndAttachCamera(this, VehicleMeshComponent, CameraSocketName);
 			VehicleCurrentState.SeatStates[SeatIndex].DefaultCamera = NewCamera;
-			UpdateSeatActiveCamera(SeatIndex, NewCamera);
+			//UpdateSeatActiveCamera(SeatIndex, NewCamera);
 
 			UpdateRemoteActiveCamPP(SeatIndex, UBS2FunctionLibrary::GetDataSubsystem(this)->GetOpticDataRow(VehicleCurrentState.SeatStates[SeatIndex].OpticState.CurrentAvailableOptics[VehicleCurrentState.SeatStates[SeatIndex].OpticState.CurrentOpticIndex])->OpticPPSettings, 1.0f, GetRemoteActiveCam(SeatIndex));
 			break;
@@ -695,7 +695,7 @@ void AVehicle_Base::DropSeat(ACharacter_Base* Character, int32& SeatIndex)
 		VehicleCurrentState.SeatStates[Character->GetCSI()].UpdateHUD = false;
 	}
 	HandleSeatOccupationStatus(false, SeatIndex);
-
+	
 	DeactiveSeatCameras(SeatIndex);
 
 	switch (SeatData.SeatRole)
