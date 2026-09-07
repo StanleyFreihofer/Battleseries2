@@ -162,10 +162,10 @@ void UWeaponLogicComponent::Init_WeaponState(int32 WeaponIndex)
 {
 	//if using current weapon stats to initialize, the stats need to be valid/setup beforehand
 	FWeaponStats_Runtime& CurrentWeaponStats = Loadout.WeaponSystem.InfantryWeaponSystem.CurrentWeaponStats[WeaponIndex];
-	FWeapon_Runtime& BaseWeaponState = GetBaseWeaponState(WeaponIndex);
-	BaseWeaponState.WeaponState.CurrentAmmoinMag = CurrentWeaponStats.MagSize;
-	BaseWeaponState.WeaponState.CurrentReserveAmmo = CurrentWeaponStats.MaxReserveAmmo;
-	BaseWeaponState.WeaponState.CurrentFireMode = CurrentWeaponStats.FireModeData.DefaultFireMode;
+	FWeaponState& BaseWeaponState = GetBaseWeaponState(WeaponIndex);
+	BaseWeaponState.CurrentAmmoinMag = CurrentWeaponStats.MagSize;
+	BaseWeaponState.CurrentReserveAmmo = CurrentWeaponStats.MaxReserveAmmo;
+	BaseWeaponState.CurrentFireMode = CurrentWeaponStats.FireModeData.DefaultFireMode;
 }
 
 void UWeaponLogicComponent::Init_WAC()
@@ -369,21 +369,21 @@ void UWeaponLogicComponent::Rangefinder()
 
 void UWeaponLogicComponent::HandleStartFire()
 {
-	FWeapon_Runtime& CurrentWeapon = *GetCurrentWeaponRuntime();
+	FWeaponState& CurrentWeapon = *GetCurrentWeaponRuntime();
 
-	if (!CurrentWeapon.WeaponState.canFire)
+	if (!CurrentWeapon.canFire)
 	{
-		if (CurrentWeapon.WeaponState.CurrentAmmoinMag <= 0)
+		if (CurrentWeapon.CurrentAmmoinMag <= 0)
 		{
 			DryFire();
 		}
 		return;
 	}
 
-  	switch (CurrentWeapon.WeaponState.CurrentFireMode)
+  	switch (CurrentWeapon.CurrentFireMode)
 	{
 		case EFireMode::Single:
-			if (!CurrentWeapon.WeaponState.isFiring)
+			if (!CurrentWeapon.isFiring)
 			{
 				StartFire();
 			}
@@ -391,7 +391,7 @@ void UWeaponLogicComponent::HandleStartFire()
 		case EFireMode::Burst:
 			break;
 		case EFireMode::Auto:
-  			if (!GetWorld()->GetTimerManager().IsTimerActive(CurrentWeapon.WeaponState.TimerHandle_AutoFire))
+  			if (!GetWorld()->GetTimerManager().IsTimerActive(CurrentWeapon.TimerHandle_AutoFire))
   			{
   				StartFire();
 				StartAutoFire();
@@ -408,15 +408,15 @@ void UWeaponLogicComponent::StartFire()
 	
 	//startweaponfireaudio
 	
-	GetCurrentWeaponRuntime()->WeaponState.isFiring = true;
+	GetCurrentWeaponRuntime()->isFiring = true;
 	FireWeapon();
 }
 
 void UWeaponLogicComponent::StartAutoFire()
 {
-	FWeapon_Runtime& CurrentWeapon = *GetCurrentWeaponRuntime();
+	FWeaponState& CurrentWeapon = *GetCurrentWeaponRuntime();
 
-	if (CurrentWeapon.WeaponState.canFire)	//if here so if the first fire changed this state
+	if (CurrentWeapon.canFire)	//if here so if the first fire changed this state
 	{
 		float FireRate = UBS2FunctionLibrary::GetFireRate(GetCurrentWeaponStaticData()->WeaponFirePerformanceData.RateOfFire);
 
@@ -428,7 +428,7 @@ void UWeaponLogicComponent::StartAutoFire()
 			this->FireWeapon();
 		});
 
-		GetWorld()->GetTimerManager().SetTimer(CurrentWeapon.WeaponState.TimerHandle_AutoFire, FireDelegate, FireRate, true);
+		GetWorld()->GetTimerManager().SetTimer(CurrentWeapon.TimerHandle_AutoFire, FireDelegate, FireRate, true);
 	}
 }
 
@@ -437,7 +437,7 @@ void UWeaponLogicComponent::ShootSimProjectile()
 	FVector MuzzleLocation = UBS2FunctionLibrary::GetMuzzleTransform(FName("Muzzle"), GetCurrentInfantryWeaponState_FP().WeaponMesh).GetLocation();
 	
 	const FInfantryWeaponData& StaticWeaponData = *GetCurrentWeaponStaticData();
-	FWeapon_Runtime& WeaponState = *GetCurrentWeaponRuntime();
+	FWeaponState& WeaponState = *GetCurrentWeaponRuntime();
 	FEquippedWeaponState& EWS = Loadout.WeaponSystem.BaseWeaponSystem.EquippedWeaponState;
 	UBS2FunctionLibrary::CreateSimProjectile
 	(
@@ -474,14 +474,14 @@ void UWeaponLogicComponent::HandleShootProjectileActor()
 
 void UWeaponLogicComponent::CeaseFire()
 {
-	FWeapon_Runtime& CurrentWeapon = *GetCurrentWeaponRuntime();
+	FWeaponState& CurrentWeapon = *GetCurrentWeaponRuntime();
 	
-	if (GetWorld()->GetTimerManager().IsTimerActive(CurrentWeapon.WeaponState.TimerHandle_AutoFire))
+	if (GetWorld()->GetTimerManager().IsTimerActive(CurrentWeapon.TimerHandle_AutoFire))
 	{
-		GetWorld()->GetTimerManager().ClearTimer(CurrentWeapon.WeaponState.TimerHandle_AutoFire);
+		GetWorld()->GetTimerManager().ClearTimer(CurrentWeapon.TimerHandle_AutoFire);
 	}
 
-	CurrentWeapon.WeaponState.isFiring = false;
+	CurrentWeapon.isFiring = false;
 }
 
 void UWeaponLogicComponent::DryFire()
@@ -492,7 +492,7 @@ void UWeaponLogicComponent::DryFire()
 void UWeaponLogicComponent::FireWeapon()
 {
 	const FInfantryWeaponData* StaticWeaponData = GetCurrentWeaponStaticData();
-	FWeapon_Runtime& CurrentWeapon = *GetCurrentWeaponRuntime();	
+	FWeaponState& CurrentWeapon = *GetCurrentWeaponRuntime();	
 
 	switch(StaticWeaponData->WeaponFirePerformanceData.WeaponFireType)
 	{
@@ -515,15 +515,15 @@ void UWeaponLogicComponent::FireWeapon()
 
 void UWeaponLogicComponent::ReloadWeapon()
 {
-	FWeapon_Runtime& CurrentWeapon = *GetCurrentWeaponRuntime();
+	FWeaponState& CurrentWeapon = *GetCurrentWeaponRuntime();
 	const FInfantryWeaponData* StaticWeaponData = GetCurrentWeaponStaticData();
 	FInfantryWeaponState& InfantryWeaponState_FP = Loadout.WeaponSystem.InfantryWeaponSystem.WeaponState_FP[GetCII()];
 	ReloadEndedDelegate.BindUObject(this, &UWeaponLogicComponent::OnReloadFinished);
 
-	if (CurrentWeapon.WeaponState.CurrentReserveAmmo > 0)
+	if (CurrentWeapon.CurrentReserveAmmo > 0)
 	{ 
-		CurrentWeapon.WeaponState.isReloading = true;
-		bool bEmptyMag = CurrentWeapon.WeaponState.CurrentAmmoinMag <= 0;
+		CurrentWeapon.isReloading = true;
+		bool bEmptyMag = CurrentWeapon.CurrentAmmoinMag <= 0;
 
 		if (!StaticWeaponData->InfantryWeaponAmmoData.ProjectileBoneToHide.IsNone())
 		{
@@ -559,7 +559,7 @@ void UWeaponLogicComponent::OnReloadFinished(UAnimMontage* Montage, bool bInterr
 {
 	UE_LOG(LogTemp, Warning, TEXT("[WLC::OnReloadFinished"));
 	FWeaponStats_Runtime& CurrentWeaponStats = GetCurrentWeaponStats();
-	FWeapon_Runtime& CurrentWeapon = *GetCurrentWeaponRuntime();
+	FWeaponState& CurrentWeapon = *GetCurrentWeaponRuntime();
 	const FInfantryWeaponData* StaticWeaponData = GetCurrentWeaponStaticData();
 	FInfantryWeaponState& InfantryWeaponState_FP = Loadout.WeaponSystem.InfantryWeaponSystem.WeaponState_FP[GetCII()];
 
@@ -582,10 +582,10 @@ void UWeaponLogicComponent::OnReloadFinished(UAnimMontage* Montage, bool bInterr
 	**/
 
 	int32 NewCAM, NewCRA;
-	UBS2FunctionLibrary::CalculateReload(CurrentWeaponStats.MagSize, CurrentWeapon.WeaponState.CurrentAmmoinMag, CurrentWeapon.WeaponState.CurrentReserveAmmo, NewCAM, NewCRA);
-	CurrentWeapon.WeaponState.CurrentAmmoinMag = NewCAM;
-	CurrentWeapon.WeaponState.CurrentReserveAmmo = NewCRA;
-	CurrentWeapon.WeaponState.isReloading = false;
+	UBS2FunctionLibrary::CalculateReload(CurrentWeaponStats.MagSize, CurrentWeapon.CurrentAmmoinMag, CurrentWeapon.CurrentReserveAmmo, NewCAM, NewCRA);
+	CurrentWeapon.CurrentAmmoinMag = NewCAM;
+	CurrentWeapon.CurrentReserveAmmo = NewCRA;
+	CurrentWeapon.isReloading = false;
 }
 
 #pragma endregion
@@ -801,8 +801,8 @@ void UWeaponLogicComponent::ToggleFireMode()
 {
 	FWeaponStats_Runtime& CurrentWeaponStats = GetCurrentWeaponStats();
 	FWeaponFireModeData& CurrentFireModeData = CurrentWeaponStats.FireModeData;
-	FWeapon_Runtime& CurrentWeapon = *GetCurrentWeaponRuntime();
-	EFireMode& CurrentFireMode = CurrentWeapon.WeaponState.CurrentFireMode;
+	FWeaponState& CurrentWeapon = *GetCurrentWeaponRuntime();
+	EFireMode& CurrentFireMode = CurrentWeapon.CurrentFireMode;
 
 	switch (CurrentFireMode)
 	{
@@ -1392,7 +1392,7 @@ FWeaponAttachmentState& UWeaponLogicComponent::GetCurrentAttachmentInSlot(EAttac
 	}
 }
 
-FWeapon_Runtime& UWeaponLogicComponent::GetBaseWeaponState(int32 WeaponIndex)
+FWeaponState& UWeaponLogicComponent::GetBaseWeaponState(int32 WeaponIndex)
 {
 	return Loadout.WeaponSystem.BaseWeaponSystem.Weapons[WeaponIndex];
 }
@@ -1408,9 +1408,9 @@ FVector UWeaponLogicComponent::GetAttachmentDefaultOffset(FName WeaponID, EAttac
 	return UBS2FunctionLibrary::GetDataSubsystem(this)->GetInfantryWeaponDataRow(WeaponID)->GunAttachmentData.AvailableAttachmentSlots.Find(Slot)->Attachments.Find(AttachmentID)->LocationOffset;
 }
 
-FWeapon_Runtime* UWeaponLogicComponent::GetCurrentWeaponRuntime()
+FWeaponState* UWeaponLogicComponent::GetCurrentWeaponRuntime()
 {
-	FWeapon_Runtime* CurrentWeapon = &Loadout.WeaponSystem.BaseWeaponSystem.Weapons[GetCII()];
+	FWeaponState* CurrentWeapon = &Loadout.WeaponSystem.BaseWeaponSystem.Weapons[GetCII()];
 	return CurrentWeapon;
 }
 

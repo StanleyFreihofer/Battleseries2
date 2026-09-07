@@ -31,6 +31,9 @@ USTRUCT(BlueprintType)
 struct FWeaponState
 {
 	GENERATED_BODY()
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	FName WeaponID = NAME_None;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	bool canFire = true;
@@ -57,19 +60,6 @@ struct FWeaponState
 	TArray<TWeakObjectPtr<AProjectile_Base>> InFlightProjectiles;
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
 	FLockOnState LockOnState = FLockOnState();
-};
-
-USTRUCT(BlueprintType)
-struct FWeapon_Runtime
-{
-	//DEPRECIATE/MOVE WEAPONID INTO FWEAPONSTATE
-	GENERATED_BODY()
-
-	UPROPERTY(BlueprintReadWrite, EditAnywhere)
-	FName WeaponID = NAME_None;
-
-	UPROPERTY(BlueprintReadWrite, EditAnywhere)
-	FWeaponState WeaponState = FWeaponState();
 };
 
 USTRUCT(BlueprintType)
@@ -108,7 +98,7 @@ struct FBaseWeaponSystem_Runtime
 	GENERATED_BODY()
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
-	TArray <FWeapon_Runtime> Weapons;
+	TArray <FWeaponState> Weapons;
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
 	FEquippedWeaponState EquippedWeaponState = FEquippedWeaponState();

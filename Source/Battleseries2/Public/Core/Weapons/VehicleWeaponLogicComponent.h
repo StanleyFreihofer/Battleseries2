@@ -38,7 +38,7 @@ struct FVehicleWeaponState
 	GENERATED_BODY()
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)			//cached for quick access, contains ID, base State
-	FWeapon_Runtime BaseWeaponRuntimeData = FWeapon_Runtime();
+	FWeaponState BaseWeaponRuntimeData = FWeaponState();
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)			//more than 1 muzzle (think of M142, any multi-barrel weapon)
 	TArray<int32> CurrentMuzzleIndexes;
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)

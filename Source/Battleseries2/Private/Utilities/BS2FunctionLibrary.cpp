@@ -230,21 +230,21 @@ void UBS2FunctionLibrary::CalculateReload(int32 MagSize, int32 CAM, int32 CRA, i
 	OutCAM = CAM + BulletsToLoad;
 }
 
-int32 UBS2FunctionLibrary::UpdateCurrentAmmoInMag(FWeapon_Runtime& CurrentWeapon, int32 AmmoDelta, int32 MagSize)
+int32 UBS2FunctionLibrary::UpdateCurrentAmmoInMag(FWeaponState& CurrentWeapon, int32 AmmoDelta, int32 MagSize)
 {
 	//can be used for firing or resupplying logic
-	CurrentWeapon.WeaponState.CurrentAmmoinMag = FMath::Clamp(CurrentWeapon.WeaponState.CurrentAmmoinMag + AmmoDelta, 0, MagSize);
-	if (CurrentWeapon.WeaponState.CurrentAmmoinMag == 0)
+	CurrentWeapon.CurrentAmmoinMag = FMath::Clamp(CurrentWeapon.CurrentAmmoinMag + AmmoDelta, 0, MagSize);
+	if (CurrentWeapon.CurrentAmmoinMag == 0)
 	{
-		CurrentWeapon.WeaponState.canFire = false;
+		CurrentWeapon.canFire = false;
 		//CeaseFire();
 		//DryFire();
 	}
-	UE_LOG(LogTemp, Warning, TEXT("WeaponFunction::UpdateCurrentAmmoInMag] CAM = %d"), CurrentWeapon.WeaponState.CurrentAmmoinMag);
-	return CurrentWeapon.WeaponState.CurrentAmmoinMag;
+	UE_LOG(LogTemp, Warning, TEXT("WeaponFunction::UpdateCurrentAmmoInMag] CAM = %d"), CurrentWeapon.CurrentAmmoinMag);
+	return CurrentWeapon.CurrentAmmoinMag;
 }
 
-void UBS2FunctionLibrary::UpdateWeaponIndex(TArray<FWeapon_Runtime> Weapons, int32 InCurrentWeaponIndex, int32& OutNewWeaponIndex)
+void UBS2FunctionLibrary::UpdateWeaponIndex(TArray<FWeaponState> Weapons, int32 InCurrentWeaponIndex, int32& OutNewWeaponIndex)
 {
 	OutNewWeaponIndex = (InCurrentWeaponIndex + 1) % Weapons.Num();
 }

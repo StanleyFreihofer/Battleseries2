@@ -267,7 +267,7 @@ class BATTLESERIES2_API UWeaponLogicComponent : public UActorComponent
 		UFUNCTION(BlueprintCallable, BlueprintPure)
 		FWeaponAttachmentState& GetCurrentAttachmentInSlot(EAttachmentSlot Slot);
 		UFUNCTION(BlueprintCallable, BlueprintPure)
-		FWeapon_Runtime& GetBaseWeaponState(int32 WeaponIndex);
+		FWeaponState& GetBaseWeaponState(int32 WeaponIndex);
 		UFUNCTION(BlueprintCallable, BlueprintPure)
 		FInfantryWeaponState& GetCurrentInfantryWeaponState_FP();
 		UFUNCTION(BlueprintCallable, BlueprintPure)
@@ -285,7 +285,7 @@ class BATTLESERIES2_API UWeaponLogicComponent : public UActorComponent
 		TArray<const FInfantryWeaponData*> StaticWeaponDataCache;				//includes THE WEAPON DATA of gadgets that are weapons
 		TArray<const FGadgetData*> StaticGadgetDataCache;
 
-		FWeapon_Runtime* GetCurrentWeaponRuntime();
+		FWeaponState* GetCurrentWeaponRuntime();
 		const FInfantryWeaponData* GetCurrentWeaponStaticData();
 
 		FTimerHandle SwitchWeaponTimer;
