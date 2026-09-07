@@ -637,8 +637,9 @@ void AVehicle_Base::HandleViewMethod(ACharacter_Base* Character, const FSeatData
 	}
 
 	int32 SeatIndex = Character->GetCSI();
-	SyncActiveCameraForSeat(SeatIndex);
 
+	SyncActiveCameraForSeat(SeatIndex);
+	
 	UCameraComponent* WeaponCam = GetSeatWeaponCam(SeatIndex);
 	if (!WeaponCam)
 	{
@@ -843,8 +844,20 @@ void AVehicle_Base::ChangeSeat(ACharacter_Base* Character)
 
 void AVehicle_Base::SyncActiveCameraForSeat(int32 SeatIndex)
 {
-	UCameraComponent* WeaponCam = GetSeatWeaponCam(SeatIndex);
-	UpdateSeatActiveCamera(SeatIndex, WeaponCam ? WeaponCam : VehicleCurrentState.SeatStates[SeatIndex].DefaultCamera);
+	const FSeatData& SeatData = VehicleData->Seats[SeatIndex];
+	if (SeatData.SeatRole == E_SeatRole::Gunner || SeatData.SeatRole == E_SeatRole::DriverGunner)
+	{
+		if (UCameraComponent* WeaponCam = GetSeatWeaponCam(SeatIndex))
+		{
+			UpdateSeatActiveCamera(SeatIndex, WeaponCam);
+			return;
+		}
+	}
+	if (SeatData.ViewMethod == E_ViewMethod::Remote)
+	{
+		UpdateSeatActiveCamera(SeatIndex, VehicleCurrentState.SeatStates[SeatIndex].DefaultCamera);
+	}
+	// Windowed with no special cam: nothing to activate — FPCamera already handles it, and there's no vehicle-side default to fall back to.
 }
 
 #pragma 
