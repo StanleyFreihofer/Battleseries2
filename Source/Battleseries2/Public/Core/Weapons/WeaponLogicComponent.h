@@ -50,6 +50,7 @@ struct FInfantryWeaponState
 USTRUCT(BlueprintType)
 struct FInfantryWeaponSystem
 {
+	//consider merging this entiere struct onfootweaponsystem!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	//each array item corresponds to weapon index
 	GENERATED_BODY()
 
@@ -61,6 +62,8 @@ struct FInfantryWeaponSystem
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	TArray<FWeaponStats_Runtime> CurrentWeaponStats;
+	
+
 };
 
 USTRUCT(BlueprintType)
@@ -69,19 +72,16 @@ struct FOnFootWeaponSystem_Runtime
 	GENERATED_BODY()
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	FBaseWeaponSystem_Runtime BaseWeaponSystem = FBaseWeaponSystem_Runtime();			//contains WeaponID, Equipped WeaponState (CWI) and other basic runtime data for both weapons
+	FBaseWeaponSystem_Runtime BaseWeaponState = FBaseWeaponSystem_Runtime();			//contains WeaponID, Equipped WeaponState (CWI) and other basic runtime data for both weapons
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	FInfantryWeaponSystem InfantryWeaponSystem = FInfantryWeaponSystem();
+	FInfantryWeaponSystem InfantryWeaponState = FInfantryWeaponSystem();
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	TWeakObjectPtr<UAudioComponent> WeaponAudioComponent = nullptr; 
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	TObjectPtr<USceneCaptureComponent2D> ScopeCamera = nullptr;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
-	bool isAiming = false;
 };
 
 USTRUCT(BlueprintType)
@@ -99,6 +99,7 @@ struct FResolvedGadgetSlot
 USTRUCT(BlueprintType) 
 struct FLoadoutItemState 
 { 
+	//maybe a separate "combat state" struct????????????????????????????????????????????
 	GENERATED_BODY() 
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)				//this 1 enum tells what category and slot/index 
@@ -120,7 +121,22 @@ struct FLoadoutItemState
 	int32 PreviousItemIndex = 0;
 };
 
-//RENAME TO LOADOUTMANAGER!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+USTRUCT(BlueprintType)
+struct FCombatState
+{
+	GENERATED_BODY()
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	bool isAiming = false;
+	
+	//recoil
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	FTimerHandle TimerHandle_Recoil = FTimerHandle();
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	float RecoilElapsedTime = 0.0f;
+};
+
+//RENAME TO LOADOUTMANAGER OR COMBATMANAGER!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 UCLASS(Blueprintable, BlueprintType)
 class BATTLESERIES2_API UWeaponLogicComponent : public UActorComponent
 {
@@ -133,6 +149,8 @@ class BATTLESERIES2_API UWeaponLogicComponent : public UActorComponent
 
 		UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Runtime")
 		FLoadoutItemState Loadout = FLoadoutItemState();
+		UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Runtime")
+		FCombatState CombatState = FCombatState();
 
 		UFUNCTION(BlueprintCallable)
 		void Init_Loadout(TArray<FName> Weapons, TArray<FPlayerLoadoutConfig_Weapon> WeaponLoadouts, TArray<FName> Gadgets, TArray<FPlayerLoadoutConfig_Weapon> GadgetWeaponLoadouts);
@@ -194,6 +212,10 @@ class BATTLESERIES2_API UWeaponLogicComponent : public UActorComponent
 		void ShootSimProjectile();
 		UFUNCTION(BlueprintCallable)
 		void HandleShootProjectileActor();
+		UFUNCTION(BlueprintCallable)
+		void TriggerControllerRecoil();
+		UFUNCTION(BlueprintCallable)
+		void UpdateControllerRecoil();
 		UFUNCTION(BlueprintCallable)
 		void CeaseFire();
 		UFUNCTION(BlueprintCallable)

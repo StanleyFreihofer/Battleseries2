@@ -55,9 +55,6 @@ struct FControllerRecoilData
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	float HipfireControllerRecoilMultiplier = 0.0f;
-	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	float ThirdPersonControllerRecoilMultiplier = 0.0f;
 };
 
 USTRUCT(BlueprintType)
