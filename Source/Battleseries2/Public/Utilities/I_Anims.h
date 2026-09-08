@@ -34,5 +34,11 @@ public:
 	
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Anim Interface | Character")
 	void OnEquipGadget(FGadgetAnimData GadgetAnimData);
+	
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Anim Interface | Character")
+	void IKRecoil(FIKProceduralRecoilData IKRecoilData);
+	
+	//UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Anim Interface | Character")
+	//void SetRecoilInterps(float RecoverSpeed, float LocationMultiplier, float RotationMultiplier);
 
 };

@@ -18,6 +18,7 @@
 #include "Data/Items/Gadgets/Data_Gadget.h"
 #include "Save/SaveSubsystem.h"
 #include "Utilities/BS2FunctionLibrary.h"
+#include "Utilities/I_Anims.h"
 #include "Components/AudioComponent.h"
 
 UWeaponLogicComponent::UWeaponLogicComponent()
@@ -547,7 +548,9 @@ void UWeaponLogicComponent::FireWeapon()
 			break;
 	}
 	
+	//TRIGGER EFFECTS/
 	TriggerControllerRecoil();
+	IAnims::Execute_IKRecoil(GetOwnerCharacter()->FPArms->GetAnimInstance(), StaticWeaponData->WeaponRecoilData.IKProceduralRecoilData);
 	//trigger effects
 	//muzzle flash
 	//muzzle smoke
