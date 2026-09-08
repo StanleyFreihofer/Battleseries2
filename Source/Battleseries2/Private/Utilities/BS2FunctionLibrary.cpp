@@ -249,6 +249,20 @@ void UBS2FunctionLibrary::UpdateWeaponIndex(TArray<FWeaponState> Weapons, int32 
 	OutNewWeaponIndex = (InCurrentWeaponIndex + 1) % Weapons.Num();
 }
 
+void UBS2FunctionLibrary::UpdateWACData(TWeakObjectPtr<UAudioComponent>& WAC, float RPM, FWeaponAudioData WeaponAudioData)
+{
+	WAC->SetFloatParameter(FName("Data_RPM"), RPM);
+	WAC->SetObjectParameter(FName("Data_StopFireAudio"), WeaponAudioData.FireStop.LoadSynchronous());
+	
+	TArray<UObject*> LoadedWaves;
+	for (const TSoftObjectPtr<USoundWave>& SoftWave : WeaponAudioData.FireLoop)
+	{
+		TObjectPtr<USoundWave> Wave = SoftWave.LoadSynchronous();
+		LoadedWaves.Add(Wave);
+	}
+	WAC->SetObjectArrayParameter(FName("Data_FireLoopAudio"), LoadedWaves);
+}
+
 void UBS2FunctionLibrary::HandleUpdateOptic(float inDefaultFOV, float inOpticMagnfication, float& OutOpticFOV, FPostProcessSettings inPostProcessData, FPostProcessSettings& OutPostProcessSettings, float& OutPostProcessWeight)
 {
 	//Handles both Post Process (thermal, night vision, etc.) and FOV changes for optics

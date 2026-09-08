@@ -101,6 +101,7 @@ void UWeaponLogicComponent::Init_WeaponLoadout(TArray<FName> Weapons, TArray<FPl
 		FPlayerLoadoutConfig_Weapon LoadoutConfig = WeaponLoadouts.IsValidIndex(i)? WeaponLoadouts[i] : FPlayerLoadoutConfig_Weapon();
 		Init_Weapon(Weapons[i], i, LoadoutConfig);
 	}
+	Init_WAC();
 	Init_ScopeCamera();
 	EquipWeapon(0, true);
 }
@@ -407,7 +408,7 @@ void UWeaponLogicComponent::StartFire()
 	//fires exactly once
 	//assumes canfire is true
 	
-	//startweaponfireaudio
+	Loadout.WeaponSystem.WeaponAudioComponent->SetTriggerParameter(FName("Event_StartFire"));
 	
 	GetCurrentWeaponRuntime()->isFiring = true;
 	FireWeapon();

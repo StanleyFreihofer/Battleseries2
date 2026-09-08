@@ -1073,10 +1073,11 @@ TWeakObjectPtr<AProjectile_Base> UVehicleWeaponLogicComponent::StartFire(int32 S
 
 void UVehicleWeaponLogicComponent::StartWeaponFireAudio(int32 SeatIndex)
 {
-	FVehicleWeaponSystem_Runtime& SeatWeaponSystem = *VehicleWeaponSystem.Find(SeatIndex);
+	//FVehicleWeaponSystem_Runtime& SeatWeaponSystem = *VehicleWeaponSystem.Find(SeatIndex);
 	UE_LOG(LogTemp, Warning, TEXT("[VWLC::StartFire] Start audio"));
-	TWeakObjectPtr<UAudioComponent> WAC = SeatWeaponSystem.VehicleWeaponSystemState.WeaponAudioComponent;
-	WAC->SetTriggerParameter(FName("Event_StartFire"));
+	//TWeakObjectPtr<UAudioComponent> WAC = SeatWeaponSystem.VehicleWeaponSystemState.WeaponAudioComponent;
+	GetWAC(SeatIndex)->Activate();
+	GetWAC(SeatIndex)->SetTriggerParameter(FName("Event_StartFire"));
 }
 
 #pragma endregion
@@ -1388,6 +1389,11 @@ void UVehicleWeaponLogicComponent::StopWeaponSlotFire(int32 SeatIndex, int32 Wea
 	FWeaponState& CurrentWeapon = VehicleWeaponState.BaseWeaponRuntimeData;
 	UE_LOG(LogTemp, Warning, TEXT("[VWLC::StopWeaponSlotFire] WeaponIndex = %d"), WeaponIndex);
 	SeatWeaponSystem.VehicleWeaponSystemState.WeaponAudioComponent->SetTriggerParameter(FName("Event_StopFire"));
+	
+	GetWAC(SeatIndex)->OnAudioFinishedNative.AddWeakLambda(this, [this, SeatIndex](UAudioComponent* FinishedComponent)
+	{
+		FinishedComponent->Deactivate();
+	});
 
 	GetWorld()->GetTimerManager().SetTimerForNextTick([this, &VehicleWeaponState]()
 	{
@@ -1438,7 +1444,7 @@ void UVehicleWeaponLogicComponent::EquipWeapon(int32 SeatIndex, int32 WeaponInde
 	FWeaponState& CurrentWeapon = CurrentVehicleWeapon.VehicleWeaponState.BaseWeaponRuntimeData;
 	const FVehicleWeaponInstanceData& VWID = GetVWID(SeatIndex, WeaponIndex, CurrentWeapon.WeaponID);
 
-	UpdateWeaponAudioCompData(SeatIndex, WeaponIndex);
+	UpdateSeatWACData(SeatIndex, WeaponIndex);
 
 	GetWorld()->GetTimerManager().SetTimerForNextTick([this, SeatIndex, WeaponIndex]()
 	{
@@ -1524,12 +1530,15 @@ void UVehicleWeaponLogicComponent::UnequipWeapon(int32& SeatIndex, int32& Weapon
 	}
 }
 
-void UVehicleWeaponLogicComponent::UpdateWeaponAudioCompData(int32 SeatIndex, int32 WeaponIndex)
+void UVehicleWeaponLogicComponent::UpdateSeatWACData(int32 SeatIndex, int32 WeaponIndex)
 {
 	FVehicleWeaponSystem_Runtime& SeatWeaponSystem = *VehicleWeaponSystem.Find(SeatIndex);
 	const FBaseWeaponData& StaticData = GetBaseWeaponDataInSlot(SeatIndex, WeaponIndex);
 	TWeakObjectPtr<UAudioComponent> WAC = SeatWeaponSystem.VehicleWeaponSystemState.WeaponAudioComponent;
+	
+	UBS2FunctionLibrary::UpdateWACData(WAC, StaticData.WeaponFirePerformance.RateOfFire, StaticData.WeaponAudio);
 
+	/**
 	WAC->SetFloatParameter(FName("Data_RPM"), StaticData.WeaponFirePerformance.RateOfFire);
 	WAC->SetObjectParameter(FName("Data_StopFireAudio"), StaticData.WeaponAudio.FireStop.LoadSynchronous());
 
@@ -1540,6 +1549,7 @@ void UVehicleWeaponLogicComponent::UpdateWeaponAudioCompData(int32 SeatIndex, in
 		LoadedWaves.Add(Wave);
 	}
 	WAC->SetObjectArrayParameter(FName("Data_FireLoopAudio"), LoadedWaves);
+	**/
 }
 
 void UVehicleWeaponLogicComponent::UpdateWeaponStatusUI(int32& SeatIndex, bool& canFire)

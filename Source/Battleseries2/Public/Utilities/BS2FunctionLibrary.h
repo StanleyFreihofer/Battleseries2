@@ -69,6 +69,8 @@ public:
     static int32 UpdateCurrentAmmoInMag(FWeaponState& CurrentWeapon, int32 AmmoDelta, int32 MagSize);
     UFUNCTION(BlueprintCallable, Category = "Battleseries | Weapon Functions")
     static void UpdateWeaponIndex(TArray<FWeaponState> Weapons, int32 InCurrentWeaponIndex, int32& OutNewWeaponIndex);
+	UFUNCTION(Category = "Battleseries | Weapon Functions")
+	static void UpdateWACData(TWeakObjectPtr<UAudioComponent>& WAC, float RPM, FWeaponAudioData WeaponAudioData);
 
 	UFUNCTION(BlueprintCallable, Category = "Battleseries | Optic Functions")
     static void HandleUpdateOptic(float inDefaultFOV, float inOpticMagnfication, float& OutOpticFOV, FPostProcessSettings inPostProcessData, FPostProcessSettings& OutPostProcessSettings, float& OutPostProcessWeight);
