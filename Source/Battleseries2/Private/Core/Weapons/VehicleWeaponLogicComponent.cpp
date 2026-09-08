@@ -1062,8 +1062,8 @@ TWeakObjectPtr<AProjectile_Base> UVehicleWeaponLogicComponent::StartFire(int32 S
 	FWeaponState& CurrentWeapon = SeatWeaponSystem.Weapons[GetCWIForSeat(SeatIndex)].VehicleWeaponState.BaseWeaponRuntimeData;
 	const FBaseWeaponData StaticWeaponData = GetBaseWeaponDataInSlot(SeatIndex, GetCWIForSeat(SeatIndex));
 	TWeakObjectPtr<AProjectile_Base> FiredProjectile = nullptr;
-
-	StartWeaponFireAudio(SeatIndex);
+	
+	UBS2FunctionLibrary::StartWAC(GetWAC(SeatIndex));
 		
 	CurrentWeapon.isFiring = true;
 	FiredProjectile = FireVehicleWeapon(SeatIndex);	//fire weapon immediately AND THEN (if auto/burst) fire rate every shot after
@@ -1073,9 +1073,8 @@ TWeakObjectPtr<AProjectile_Base> UVehicleWeaponLogicComponent::StartFire(int32 S
 
 void UVehicleWeaponLogicComponent::StartWeaponFireAudio(int32 SeatIndex)
 {
-	//FVehicleWeaponSystem_Runtime& SeatWeaponSystem = *VehicleWeaponSystem.Find(SeatIndex);
+	//DEPRECIATE THIS FUNCTION
 	UE_LOG(LogTemp, Warning, TEXT("[VWLC::StartFire] Start audio"));
-	//TWeakObjectPtr<UAudioComponent> WAC = SeatWeaponSystem.VehicleWeaponSystemState.WeaponAudioComponent;
 	GetWAC(SeatIndex)->Activate();
 	GetWAC(SeatIndex)->SetTriggerParameter(FName("Event_StartFire"));
 }
@@ -1388,8 +1387,8 @@ void UVehicleWeaponLogicComponent::StopWeaponSlotFire(int32 SeatIndex, int32 Wea
 	FVehicleWeaponState& VehicleWeaponState = SeatWeaponSystem.Weapons[WeaponIndex].VehicleWeaponState;
 	FWeaponState& CurrentWeapon = VehicleWeaponState.BaseWeaponRuntimeData;
 	UE_LOG(LogTemp, Warning, TEXT("[VWLC::StopWeaponSlotFire] WeaponIndex = %d"), WeaponIndex);
-	SeatWeaponSystem.VehicleWeaponSystemState.WeaponAudioComponent->SetTriggerParameter(FName("Event_StopFire"));
 	
+	SeatWeaponSystem.VehicleWeaponSystemState.WeaponAudioComponent->SetTriggerParameter(FName("Event_StopFire"));
 	GetWAC(SeatIndex)->OnAudioFinishedNative.AddWeakLambda(this, [this, SeatIndex](UAudioComponent* FinishedComponent)
 	{
 		FinishedComponent->Deactivate();

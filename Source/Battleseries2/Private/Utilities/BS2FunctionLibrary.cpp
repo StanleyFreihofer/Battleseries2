@@ -249,10 +249,10 @@ void UBS2FunctionLibrary::UpdateWeaponIndex(TArray<FWeaponState> Weapons, int32 
 	OutNewWeaponIndex = (InCurrentWeaponIndex + 1) % Weapons.Num();
 }
 
-void UBS2FunctionLibrary::UpdateWACData(TWeakObjectPtr<UAudioComponent>& WAC, float RPM, FWeaponAudioData WeaponAudioData)
+void UBS2FunctionLibrary::UpdateWACData(TWeakObjectPtr<UAudioComponent> WAC, float RPM, FWeaponAudioData WeaponAudioData)
 {
-	WAC->SetFloatParameter(FName("Data_RPM"), RPM);
-	WAC->SetObjectParameter(FName("Data_StopFireAudio"), WeaponAudioData.FireStop.LoadSynchronous());
+	WAC.Get()->SetFloatParameter(FName("Data_RPM"), RPM);
+	WAC.Get()->SetObjectParameter(FName("Data_StopFireAudio"), WeaponAudioData.FireStop.LoadSynchronous());
 	
 	TArray<UObject*> LoadedWaves;
 	for (const TSoftObjectPtr<USoundWave>& SoftWave : WeaponAudioData.FireLoop)
@@ -260,7 +260,13 @@ void UBS2FunctionLibrary::UpdateWACData(TWeakObjectPtr<UAudioComponent>& WAC, fl
 		TObjectPtr<USoundWave> Wave = SoftWave.LoadSynchronous();
 		LoadedWaves.Add(Wave);
 	}
-	WAC->SetObjectArrayParameter(FName("Data_FireLoopAudio"), LoadedWaves);
+	WAC.Get()->SetObjectArrayParameter(FName("Data_FireLoopAudio"), LoadedWaves);
+}
+
+void UBS2FunctionLibrary::StartWAC(TWeakObjectPtr<UAudioComponent> WAC)
+{
+	WAC.Get()->Activate();
+	WAC.Get()->SetTriggerParameter(FName("Event_StartFire"));
 }
 
 void UBS2FunctionLibrary::HandleUpdateOptic(float inDefaultFOV, float inOpticMagnfication, float& OutOpticFOV, FPostProcessSettings inPostProcessData, FPostProcessSettings& OutPostProcessSettings, float& OutPostProcessWeight)

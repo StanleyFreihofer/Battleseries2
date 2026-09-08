@@ -407,8 +407,7 @@ void UWeaponLogicComponent::StartFire()
 {
 	//fires exactly once
 	//assumes canfire is true
-	
-	Loadout.WeaponSystem.WeaponAudioComponent->SetTriggerParameter(FName("Event_StartFire"));
+	UBS2FunctionLibrary::StartWAC(Loadout.WeaponSystem.WeaponAudioComponent);
 	
 	GetCurrentWeaponRuntime()->isFiring = true;
 	FireWeapon();
@@ -516,6 +515,12 @@ void UWeaponLogicComponent::UpdateControllerRecoil()
 void UWeaponLogicComponent::CeaseFire()
 {
 	FWeaponState& CurrentWeapon = *GetCurrentWeaponRuntime();
+	
+	Loadout.WeaponSystem.WeaponAudioComponent->SetTriggerParameter(FName("Event_StopFire"));
+	Loadout.WeaponSystem.WeaponAudioComponent->OnAudioFinishedNative.AddWeakLambda(this, [this](UAudioComponent* FinishedComponent)
+	{
+		FinishedComponent->Deactivate();
+	});
 	
 	if (GetWorld()->GetTimerManager().IsTimerActive(CurrentWeapon.TimerHandle_AutoFire))
 	{
