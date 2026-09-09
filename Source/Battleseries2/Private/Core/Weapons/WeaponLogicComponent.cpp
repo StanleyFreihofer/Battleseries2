@@ -246,6 +246,7 @@ void UWeaponLogicComponent::UpdateWeaponMesh(FName WeaponID, TWeakObjectPtr<USke
 	WeaponMeshComp->SetSkeletalMesh(WeaponMesh.Get());
 }
 
+
 void UWeaponLogicComponent::UpdateGadgetMesh(FName GadgetID, TWeakObjectPtr<UStaticMeshComponent>& GadgetMeshComp)
 {
 	const FGadgetData& GadgetData = *UBS2FunctionLibrary::GetDataSubsystem(this)->GetGadgetDataRow(GadgetID);
@@ -901,7 +902,7 @@ void UWeaponLogicComponent::EquipWeapon(int32 WeaponIndex, bool InitialEquip)
 	}
 	else
 	{
-		FPEquipWeaponMontage = AnimData.FPWeaponAnimData.BaseItemAnimData.InitialEquipMontage;
+		FPEquipWeaponMontage = AnimData.FPWeaponAnimData.BaseItemAnimData.EquipMontage;
 	}
 
 	FPEquipWeaponMontage.LoadSynchronous();

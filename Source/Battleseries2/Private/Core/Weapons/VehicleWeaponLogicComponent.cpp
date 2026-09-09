@@ -1071,14 +1071,6 @@ TWeakObjectPtr<AProjectile_Base> UVehicleWeaponLogicComponent::StartFire(int32 S
 	return FiredProjectile;
 }
 
-void UVehicleWeaponLogicComponent::StartWeaponFireAudio(int32 SeatIndex)
-{
-	//DEPRECIATE THIS FUNCTION
-	UE_LOG(LogTemp, Warning, TEXT("[VWLC::StartFire] Start audio"));
-	GetWAC(SeatIndex)->Activate();
-	GetWAC(SeatIndex)->SetTriggerParameter(FName("Event_StartFire"));
-}
-
 #pragma endregion
 
 TWeakObjectPtr<AProjectile_Base> UVehicleWeaponLogicComponent::FireVehicleWeapon(int32 SeatIndex)

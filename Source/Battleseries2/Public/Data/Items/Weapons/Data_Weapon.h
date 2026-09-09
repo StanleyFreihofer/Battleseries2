@@ -6,7 +6,7 @@
 #include "Data/Items/Weapons/WeaponEnums.h"
 #include "Data_Weapon.generated.h"
 
-//generic weapon data (to be expanded upon by vehicle and on-foot weaponry data)
+//generic static weapon data (to be expanded upon by vehicle and on-foot weaponry data)
 
 
 USTRUCT(BlueprintType)
