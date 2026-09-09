@@ -559,6 +559,8 @@ void UWeaponLogicComponent::FireWeapon()
 	TriggerControllerRecoil();
 	IAnims::Execute_IKRecoil(GetOwnerCharacter()->FPArms->GetAnimInstance(), StaticWeaponData->WeaponRecoilData.IKProceduralRecoilData);
 	UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetOwner(), StaticWeaponData->WeaponVFXData.MuzzleSmokeParticle.LoadSynchronous(), IWS_FP.WeaponMesh->GetSocketLocation(FName("Muzzle")), IWS_FP.WeaponMesh->GetSocketRotation(FName("Muzzle")), FVector::ZeroVector, true, true, ENCPoolMethod::None, true);
+	UNiagaraComponent* MuzzleFlash = UNiagaraFunctionLibrary::SpawnSystemAttached(StaticWeaponData->WeaponVFXData.MuzzleFlashFX.LoadSynchronous(), IWS_FP.WeaponMesh.Get(), FName("Muzzle"), FVector::ZeroVector, IWS_FP.WeaponMesh->GetSocketRotation(FName("Muzzle")), EAttachLocation::KeepRelativeOffset, false, true, ENCPoolMethod::None, true);
+	MuzzleFlash->SetNiagaraVariableBool("User.Trigger", true);
 	//trigger effects
 	//muzzle flash
 	//muzzle smoke
