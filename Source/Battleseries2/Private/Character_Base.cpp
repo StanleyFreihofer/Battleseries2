@@ -585,9 +585,9 @@ void ACharacter_Base::CharacterExitVehicle()
 
 		ManageIMC(nullptr, UBS2FunctionLibrary::GetDataSubsystem(this)->GetCharacterDefaults()->DefaultGameplayIMC.Get(), 1);
 	
-		if (WeaponManager->GetIsCurrentSlotActuallyWeapon())
+		if (WeaponManager->GetIsCurrentSlotActuallyWeapon() && IsLocallyControlled())
 		{
-			FWeaponState& CurrentWeapon = *WeaponManager->GetCurrentWeaponRuntime();
+			FWeaponState& CurrentWeapon = *WeaponManager->GetCurrentWeaponBaseState();
 			UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateStatusHUD_CAMCount(CurrentWeapon.CurrentAmmoinMag);
 			UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateStatusHUD_CRACount(CurrentWeapon.CurrentReserveAmmo);
 		}

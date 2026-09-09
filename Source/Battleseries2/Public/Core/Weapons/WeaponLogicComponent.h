@@ -62,8 +62,6 @@ struct FInfantryWeaponSystem
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	TArray<FWeaponStats_Runtime> CurrentWeaponStats;
-	
-
 };
 
 USTRUCT(BlueprintType)
@@ -93,13 +91,12 @@ struct FResolvedGadgetSlot
 	ECharacterItemType ActualType = ECharacterItemType::Gadget; 
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta = (ToolTip = "the index in that list"))
-	int32 ResolvedArrayIndex = 0;								//the index in that list
+	int32 ResolvedArrayIndex = 0;							
 };
 
 USTRUCT(BlueprintType) 
 struct FLoadoutItemState 
 { 
-	//maybe a separate "combat state" struct????????????????????????????????????????????
 	GENERATED_BODY() 
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)				//this 1 enum tells what category and slot/index 
@@ -125,6 +122,9 @@ USTRUCT(BlueprintType)
 struct FCombatState
 {
 	GENERATED_BODY()
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	bool isAttemptingToFire = false;
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	bool isAiming = false;
@@ -305,7 +305,7 @@ class BATTLESERIES2_API UWeaponLogicComponent : public UActorComponent
 		UFUNCTION(BlueprintCallable)
 		ACharacter_Base* GetOwnerCharacter();
 	
-		FWeaponState* GetCurrentWeaponRuntime();
+		FWeaponState* GetCurrentWeaponBaseState();
 
 	protected:
 		TArray<const FInfantryWeaponData*> StaticWeaponDataCache;				//includes THE WEAPON DATA of gadgets that are weapons

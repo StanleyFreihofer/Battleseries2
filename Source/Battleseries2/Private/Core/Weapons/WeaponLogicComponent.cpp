@@ -333,7 +333,7 @@ void UWeaponLogicComponent::StartAim()
 		TWeakObjectPtr<ACharacter_Base> Character = Cast<ACharacter_Base>(GetOwner());
 		USkeletalMeshComponent* FPArms = Character->FPArms;
 		FPArms->SetVisibility(false);
-		FString SocketString = FString::Printf(TEXT("Socket_%s_1"), *GetCurrentWeaponRuntime()->WeaponID.ToString());
+		FString SocketString = FString::Printf(TEXT("Socket_%s_1"), *GetCurrentWeaponBaseState()->WeaponID.ToString());
 		FName AttachSocketName = FName(*SocketString);
 		if (FPArms->DoesSocketExist(AttachSocketName))
 		{
@@ -353,7 +353,7 @@ void UWeaponLogicComponent::StopAim()
 		TWeakObjectPtr<ACharacter_Base> Character = Cast<ACharacter_Base>(GetOwner());
 		USkeletalMeshComponent* FPArms = Character->FPArms;
 		FPArms->SetVisibility(true);
-		FString SocketString = FString::Printf(TEXT("Socket_%s"), *GetCurrentWeaponRuntime()->WeaponID.ToString());
+		FString SocketString = FString::Printf(TEXT("Socket_%s"), *GetCurrentWeaponBaseState()->WeaponID.ToString());
 		FName AttachSocketName = FName(*SocketString);
 		GetCurrentInfantryWeaponState_FP().WeaponMesh->AttachToComponent(Character->FPArms, FAttachmentTransformRules(EAttachmentRule::SnapToTarget, EAttachmentRule::SnapToTarget, EAttachmentRule::SnapToTarget, true), AttachSocketName);
 	}
@@ -378,22 +378,24 @@ void UWeaponLogicComponent::Rangefinder()
 
 void UWeaponLogicComponent::HandleStartFire()
 {
-	FWeaponState& CurrentWeapon = *GetCurrentWeaponRuntime();
+	FWeaponState& CurrentWeapon = *GetCurrentWeaponBaseState();
 
 	if (!CurrentWeapon.canFire)
 	{
-		if (CurrentWeapon.CurrentAmmoinMag <= 0)
+		if (CurrentWeapon.CurrentAmmoinMag <= 0 && !CombatState.isAttemptingToFire)
 		{
+			CombatState.isAttemptingToFire = true;
 			DryFire();
 		}
 		return;
 	}
-
+	
   	switch (CurrentWeapon.CurrentFireMode)
 	{
 		case EFireMode::Single:
-			if (!CurrentWeapon.isFiring)
+			if (!CombatState.isAttemptingToFire)
 			{
+				CombatState.isAttemptingToFire = true;
 				StartFire();
 			}
 			break;
@@ -402,12 +404,12 @@ void UWeaponLogicComponent::HandleStartFire()
 		case EFireMode::Auto:
   			if (!GetWorld()->GetTimerManager().IsTimerActive(CurrentWeapon.TimerHandle_AutoFire))
   			{
+  				CombatState.isAttemptingToFire = true;
   				StartFire();
 				StartAutoFire();
   			}
 			break;
 	}
-
 }
 
 void UWeaponLogicComponent::StartFire()
@@ -416,13 +418,13 @@ void UWeaponLogicComponent::StartFire()
 	//assumes canfire is true
 	UBS2FunctionLibrary::StartWAC(Loadout.WeaponSystem.WeaponAudioComponent);
 	
-	GetCurrentWeaponRuntime()->isFiring = true;
+	GetCurrentWeaponBaseState()->isFiring = true;
 	FireWeapon();
 }
 
 void UWeaponLogicComponent::StartAutoFire()
 {
-	FWeaponState& CurrentWeapon = *GetCurrentWeaponRuntime();
+	FWeaponState& CurrentWeapon = *GetCurrentWeaponBaseState();
 
 	if (CurrentWeapon.canFire)	//if here so if the first fire changed this state
 	{
@@ -445,7 +447,7 @@ void UWeaponLogicComponent::ShootSimProjectile()
 	FVector MuzzleLocation = UBS2FunctionLibrary::GetMuzzleTransform(FName("Muzzle"), GetCurrentInfantryWeaponState_FP().WeaponMesh).GetLocation();
 	
 	const FInfantryWeaponData& StaticWeaponData = *GetCurrentWeaponStaticData();
-	FWeaponState& WeaponState = *GetCurrentWeaponRuntime();
+	FWeaponState& WeaponState = *GetCurrentWeaponBaseState();
 	FEquippedWeaponState& EWS = Loadout.WeaponSystem.BaseWeaponState.EquippedWeaponState;
 	UBS2FunctionLibrary::CreateSimProjectile
 	(
@@ -479,6 +481,8 @@ void UWeaponLogicComponent::HandleShootProjectileActor()
 		FiredProjectile->FireProjectile(AimDirection);
 	}
 }
+
+#pragma region WeaponRecoil
 
 void UWeaponLogicComponent::TriggerControllerRecoil()
 {
@@ -519,10 +523,13 @@ void UWeaponLogicComponent::UpdateControllerRecoil()
 	}
 }
 
+#pragma endregion
+
 void UWeaponLogicComponent::CeaseFire()
 {
 	//just because fire is ceased, it SHOULD NOT be assumed that weapon cannot fire
-	FWeaponState& CurrentWeapon = *GetCurrentWeaponRuntime();
+	CombatState.isAttemptingToFire = false;
+	FWeaponState& CurrentWeapon = *GetCurrentWeaponBaseState();
 	
 	Loadout.WeaponSystem.WeaponAudioComponent->SetTriggerParameter(FName("Event_StopFire"));
 	Loadout.WeaponSystem.WeaponAudioComponent->OnAudioFinishedNative.AddWeakLambda(this, [this](UAudioComponent* FinishedComponent)
@@ -541,7 +548,7 @@ void UWeaponLogicComponent::CeaseFire()
 void UWeaponLogicComponent::DryFire()
 {
 	//play whatever dryfire sound and animation
-	FWeaponState& CurrentWeapon = *GetCurrentWeaponRuntime();
+	FWeaponState& CurrentWeapon = *GetCurrentWeaponBaseState();
 
 	if (CurrentWeapon.canFire)
 	{
@@ -555,7 +562,7 @@ void UWeaponLogicComponent::FireWeapon()
 {
 	const FInfantryWeaponData* StaticWeaponData = GetCurrentWeaponStaticData();
 	
-	FWeaponState& CurrentWeapon = *GetCurrentWeaponRuntime();	
+	FWeaponState& CurrentWeapon = *GetCurrentWeaponBaseState();	
 	FInfantryWeaponState& IWS_FP = GetCurrentInfantryWeaponState_FP();
 
 	switch(StaticWeaponData->WeaponFirePerformanceData.WeaponFireType)
@@ -572,13 +579,14 @@ void UWeaponLogicComponent::FireWeapon()
 			break;
 	}
 	
-	//TRIGGER EFFECTS/
+	//RECOIL
 	TriggerControllerRecoil();
 	IAnims::Execute_IKRecoil(GetOwnerCharacter()->FPArms->GetAnimInstance(), StaticWeaponData->WeaponRecoilData.IKProceduralRecoilData);
+	
+	//TRIGGER EFFECTS
 	UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetOwner(), StaticWeaponData->WeaponVFXData.MuzzleSmokeParticle.LoadSynchronous(), IWS_FP.WeaponMesh->GetSocketLocation(FName("Muzzle")), IWS_FP.WeaponMesh->GetSocketRotation(FName("Muzzle")), FVector::ZeroVector, true, true, ENCPoolMethod::None, true);
 	UNiagaraComponent* MuzzleFlash = UNiagaraFunctionLibrary::SpawnSystemAttached(StaticWeaponData->WeaponVFXData.MuzzleFlashFX.LoadSynchronous(), IWS_FP.WeaponMesh.Get(), FName("Muzzle"), FVector::ZeroVector, IWS_FP.WeaponMesh->GetSocketRotation(FName("Muzzle")), EAttachLocation::KeepRelativeOffset, false, true, ENCPoolMethod::None, true);
 	MuzzleFlash->SetNiagaraVariableBool("User.Trigger", true);
-	//trigger effects
 	//muzzle flash
 	//muzzle smoke
 	//weapon fire anim
@@ -611,7 +619,7 @@ void UWeaponLogicComponent::FireWeapon()
 
 void UWeaponLogicComponent::ReloadWeapon()
 {
-	FWeaponState& CurrentWeapon = *GetCurrentWeaponRuntime();
+	FWeaponState& CurrentWeapon = *GetCurrentWeaponBaseState();
 	const FInfantryWeaponData* StaticWeaponData = GetCurrentWeaponStaticData();
 	FInfantryWeaponState& InfantryWeaponState_FP = Loadout.WeaponSystem.InfantryWeaponState.WeaponState_FP[GetCII()];
 	ReloadEndedDelegate.BindUObject(this, &UWeaponLogicComponent::OnReloadFinished);
@@ -655,7 +663,7 @@ void UWeaponLogicComponent::OnReloadFinished(UAnimMontage* Montage, bool bInterr
 {
 	UE_LOG(LogTemp, Warning, TEXT("[WLC::OnReloadFinished"));
 	FWeaponStats_Runtime& CurrentWeaponStats = GetCurrentWeaponStats();
-	FWeaponState& CurrentWeapon = *GetCurrentWeaponRuntime();
+	FWeaponState& CurrentWeapon = *GetCurrentWeaponBaseState();
 	const FInfantryWeaponData* StaticWeaponData = GetCurrentWeaponStaticData();
 	FInfantryWeaponState& InfantryWeaponState_FP = Loadout.WeaponSystem.InfantryWeaponState.WeaponState_FP[GetCII()];
 
@@ -917,7 +925,7 @@ void UWeaponLogicComponent::ToggleFireMode()
 {
 	FWeaponStats_Runtime& CurrentWeaponStats = GetCurrentWeaponStats();
 	FWeaponFireModeData& CurrentFireModeData = CurrentWeaponStats.FireModeData;
-	FWeaponState& CurrentWeapon = *GetCurrentWeaponRuntime();
+	FWeaponState& CurrentWeapon = *GetCurrentWeaponBaseState();
 	EFireMode& CurrentFireMode = CurrentWeapon.CurrentFireMode;
 
 	switch (CurrentFireMode)
@@ -1535,7 +1543,7 @@ FVector UWeaponLogicComponent::GetAttachmentDefaultOffset(FName WeaponID, EAttac
 	return UBS2FunctionLibrary::GetDataSubsystem(this)->GetInfantryWeaponDataRow(WeaponID)->GunAttachmentData.AvailableAttachmentSlots.Find(Slot)->Attachments.Find(AttachmentID)->LocationOffset;
 }
 
-FWeaponState* UWeaponLogicComponent::GetCurrentWeaponRuntime()
+FWeaponState* UWeaponLogicComponent::GetCurrentWeaponBaseState()
 {
 	//ASSUMES CURRENT SLOT IS WEAPON
 	FWeaponState* CurrentWeapon = &Loadout.WeaponSystem.BaseWeaponState.Weapons[GetCII()];
