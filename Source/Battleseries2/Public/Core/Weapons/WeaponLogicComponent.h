@@ -277,7 +277,7 @@ class BATTLESERIES2_API UWeaponLogicComponent : public UActorComponent
 		UFUNCTION(BlueprintCallable, BlueprintPure)
 		bool GetIsCurrentSlotActuallyWeapon();
 		UFUNCTION(BlueprintCallable, BlueprintPure)
-		int32 GetMaxMagSize();
+		int32 GetMaxMagSize(int32 WeaponIndex);
 		UFUNCTION(BlueprintCallable, BlueprintPure)
 		FName GetSocketNameForSlot(EAttachmentSlot Slot);
 		UFUNCTION(BlueprintCallable, BlueprintPure)

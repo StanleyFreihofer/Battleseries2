@@ -20,6 +20,7 @@
 #include "Utilities/BS2FunctionLibrary.h"
 #include "Utilities/I_Anims.h"
 #include "Components/AudioComponent.h"
+#include "Kismet/GameplayStatics.h"
 #include "Utilities/HUDSubsystem.h"
 
 UWeaponLogicComponent::UWeaponLogicComponent()
@@ -37,7 +38,6 @@ void UWeaponLogicComponent::BeginPlay()
 void UWeaponLogicComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-	UE_LOG(LogTemp, Warning, TEXT("[WLC::TickComponent]"));
 	Rangefinder();
 }
 
@@ -170,7 +170,7 @@ void UWeaponLogicComponent::Init_WeaponState(int32 WeaponIndex)
 	//if using current weapon stats to initialize, the stats need to be valid/setup beforehand
 	FWeaponStats_Runtime& CurrentWeaponStats = Loadout.WeaponSystem.InfantryWeaponState.CurrentWeaponStats[WeaponIndex];
 	FWeaponState& BaseWeaponState = GetBaseWeaponState(WeaponIndex);
-	BaseWeaponState.CurrentAmmoinMag = CurrentWeaponStats.MagSize;
+	BaseWeaponState.CurrentAmmoinMag = GetMaxMagSize(WeaponIndex);
 	BaseWeaponState.CurrentReserveAmmo = CurrentWeaponStats.MaxReserveAmmo;
 	BaseWeaponState.CurrentFireMode = CurrentWeaponStats.FireModeData.DefaultFireMode;
 }
@@ -370,11 +370,7 @@ void UWeaponLogicComponent::Rangefinder()
 	TWeakObjectPtr<USkeletalMeshComponent>& WeaponMesh = Loadout.WeaponSystem.InfantryWeaponState.WeaponState_FP[GetCII()].WeaponMesh;
 
 	Loadout.WeaponSystem.BaseWeaponState.EquippedWeaponState.RaycastData.RangefinderData = OutHit;
-	auto& AimDirections = Loadout.WeaponSystem.BaseWeaponState.EquippedWeaponState.RaycastData.MuzzleAimDirections;
-	if (AimDirections.Num() < 1)
-	{
-		AimDirections.SetNum(1);
-	}
+
 	Loadout.WeaponSystem.BaseWeaponState.EquippedWeaponState.RaycastData.MuzzleAimDirections[0] = UBS2FunctionLibrary::GetAimDirectionFromMuzzle(OutHit, FName("Muzzle"), WeaponMesh);
 }
 
@@ -546,16 +542,19 @@ void UWeaponLogicComponent::DryFire()
 {
 	//play whatever dryfire sound and animation
 	FWeaponState& CurrentWeapon = *GetCurrentWeaponRuntime();
+
 	if (CurrentWeapon.canFire)
 	{
 		CurrentWeapon.canFire = false;
 	}
 
+	UGameplayStatics::PlaySound2D(this,GetCurrentWeaponStaticData()->InfantryWeaponAudioData.DryFireSFX.LoadSynchronous());
 }
 
 void UWeaponLogicComponent::FireWeapon()
 {
 	const FInfantryWeaponData* StaticWeaponData = GetCurrentWeaponStaticData();
+	
 	FWeaponState& CurrentWeapon = *GetCurrentWeaponRuntime();	
 	FInfantryWeaponState& IWS_FP = GetCurrentInfantryWeaponState_FP();
 
@@ -617,7 +616,7 @@ void UWeaponLogicComponent::ReloadWeapon()
 	FInfantryWeaponState& InfantryWeaponState_FP = Loadout.WeaponSystem.InfantryWeaponState.WeaponState_FP[GetCII()];
 	ReloadEndedDelegate.BindUObject(this, &UWeaponLogicComponent::OnReloadFinished);
 
-	if (CurrentWeapon.CurrentReserveAmmo > 0 && CurrentWeapon.CurrentAmmoinMag < GetMaxMagSize())
+	if (CurrentWeapon.CurrentReserveAmmo > 0 && CurrentWeapon.CurrentAmmoinMag < GetMaxMagSize(GetCII()) && !CurrentWeapon.isReloading)
 	{ 
 		CurrentWeapon.isReloading = true;
 		bool bEmptyMag = CurrentWeapon.CurrentAmmoinMag <= 0;
@@ -693,7 +692,7 @@ void UWeaponLogicComponent::OnReloadFinished(UAnimMontage* Montage, bool bInterr
 	CurrentWeapon.CurrentReserveAmmo = NewCRA;
 	UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateStatusHUD_CAMCount(CurrentWeapon.CurrentAmmoinMag);
 	UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateStatusHUD_CRACount(CurrentWeapon.CurrentReserveAmmo);
-	UBS2FunctionLibrary::HandleWeaponCanFire(CurrentWeapon);
+	UBS2FunctionLibrary::HandleIfWeaponCanFire(CurrentWeapon);
 }
 
 #pragma endregion
@@ -881,7 +880,7 @@ void UWeaponLogicComponent::EquipWeapon(int32 WeaponIndex, bool InitialEquip)
 	FInfantryWeaponState& InfantryWeaponState_FP = Loadout.WeaponSystem.InfantryWeaponState.WeaponState_FP[WeaponIndex];
 	TObjectPtr<USkeletalMeshComponent> NewWeaponMesh = Loadout.WeaponSystem.InfantryWeaponState.WeaponState_FP[WeaponIndex].WeaponMesh.Get();
 	UpdateWeaponVisibility(WeaponIndex, false);
-	UBS2FunctionLibrary::UpdateWACData(Loadout.WeaponSystem.WeaponAudioComponent, StaticWeaponData.WeaponFirePerformanceData.RateOfFire, StaticWeaponData.WeaponAudioData);
+	UBS2FunctionLibrary::UpdateWACData(Loadout.WeaponSystem.WeaponAudioComponent, StaticWeaponData.WeaponFirePerformanceData.RateOfFire, StaticWeaponData.InfantryWeaponAudioData.BaseWeaponAudioData);
 	TSoftObjectPtr<UAnimMontage> FPEquipWeaponMontage;
 	if (InitialEquip)
 	{
@@ -1392,10 +1391,10 @@ bool UWeaponLogicComponent::GetIsCurrentSlotActuallyWeapon()
 	return ActualType == ECharacterItemType::Weapon;
 }
 
-int32 UWeaponLogicComponent::GetMaxMagSize()
+int32 UWeaponLogicComponent::GetMaxMagSize(int32 WeaponIndex)
 {
-	const bool& bCanBeChambered = GetCurrentWeaponStaticData()->InfantryWeaponAmmoData.bCanRoundBeChambered;
-	const int32 MagSize = GetCurrentWeaponStats().MagSize;
+	const bool& bCanBeChambered = StaticWeaponDataCache[WeaponIndex]->InfantryWeaponAmmoData.bCanRoundBeChambered;
+	const int32 MagSize = Loadout.WeaponSystem.InfantryWeaponState.CurrentWeaponStats[WeaponIndex].MagSize;
 	return bCanBeChambered ? MagSize + 1 : MagSize;
 }
 

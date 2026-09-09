@@ -237,14 +237,12 @@ int32 UBS2FunctionLibrary::UpdateCurrentAmmoInMag(FWeaponState& CurrentWeapon, i
 	if (CurrentWeapon.CurrentAmmoinMag == 0)
 	{
 		CurrentWeapon.canFire = false;
-		//CeaseFire();
-		//DryFire();
 	}
-	UE_LOG(LogTemp, Warning, TEXT("WeaponFunction::UpdateCurrentAmmoInMag] CAM = %d"), CurrentWeapon.CurrentAmmoinMag);
+	UE_LOG(LogTemp, Warning, TEXT("BS2FunctionLibrary::UpdateCurrentAmmoInMag] CAM = %d"), CurrentWeapon.CurrentAmmoinMag);
 	return CurrentWeapon.CurrentAmmoinMag;
 }
 
-void UBS2FunctionLibrary::HandleWeaponCanFire(FWeaponState& CurrentWeapon)
+void UBS2FunctionLibrary::HandleIfWeaponCanFire(FWeaponState& CurrentWeapon)
 {
 	if (CurrentWeapon.CurrentAmmoinMag <= 0 || !CurrentWeapon.isEquipped || CurrentWeapon.isReloading)
 	{

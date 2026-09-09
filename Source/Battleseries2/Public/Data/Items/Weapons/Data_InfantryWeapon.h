@@ -126,12 +126,12 @@ struct FInfantryWeaponAmmoData
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	FAmmoData BaseAmmoData = FAmmoData();
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	bool bCanRoundBeChambered = true;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (tooltip = "if the weapon mesh has a projectile/munition as part of it, this will hide unless reloading"))
 	FName ProjectileBoneToHide = NAME_None;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	bool bCanRoundBeChambered = true;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (tooltip = "is projectile mounted/loaded in gun (will show the actual projectile fired)"))
 	bool isProjectileMounted = false;
@@ -252,6 +252,24 @@ struct FInfantryWeaponAnimData
 };
 
 USTRUCT(BlueprintType)
+struct FInfantryWeaponAudioData
+{
+	GENERATED_BODY()
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	FWeaponAudioData BaseWeaponAudioData = FWeaponAudioData();
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	TSoftObjectPtr<USoundWave> SuppressedFireSFX = nullptr;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	TSoftObjectPtr<USoundWave> SelectFireModeSFX = nullptr;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	TSoftObjectPtr<USoundWave> DryFireSFX = nullptr;
+};
+
+USTRUCT(BlueprintType)
 struct FAttachmentOffset
 {
 	GENERATED_BODY()
@@ -310,7 +328,7 @@ struct FInfantryWeaponData : public FTableRowBase
 	FInfantryWeaponAnimData InfantryWeaponAnimData = FInfantryWeaponAnimData();
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	FWeaponAudioData WeaponAudioData = FWeaponAudioData();
+	FInfantryWeaponAudioData InfantryWeaponAudioData = FInfantryWeaponAudioData();
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	FWeaponVFXData WeaponVFXData = FWeaponVFXData();
