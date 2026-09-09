@@ -277,6 +277,8 @@ class BATTLESERIES2_API UWeaponLogicComponent : public UActorComponent
 		UFUNCTION(BlueprintCallable, BlueprintPure)
 		bool GetIsCurrentSlotActuallyWeapon();
 		UFUNCTION(BlueprintCallable, BlueprintPure)
+		int32 GetMaxMagSize();
+		UFUNCTION(BlueprintCallable, BlueprintPure)
 		FName GetSocketNameForSlot(EAttachmentSlot Slot);
 		UFUNCTION(BlueprintCallable, BlueprintPure)
 		FTransform GetSightTransform();
@@ -302,12 +304,14 @@ class BATTLESERIES2_API UWeaponLogicComponent : public UActorComponent
 		int32 GetCII();
 		UFUNCTION(BlueprintCallable)
 		ACharacter_Base* GetOwnerCharacter();
+	
+		FWeaponState* GetCurrentWeaponRuntime();
 
 	protected:
 		TArray<const FInfantryWeaponData*> StaticWeaponDataCache;				//includes THE WEAPON DATA of gadgets that are weapons
 		TArray<const FGadgetData*> StaticGadgetDataCache;
 
-		FWeaponState* GetCurrentWeaponRuntime();
+
 		const FInfantryWeaponData* GetCurrentWeaponStaticData();
 
 		FTimerHandle SwitchWeaponTimer;
@@ -322,6 +326,8 @@ class BATTLESERIES2_API UWeaponLogicComponent : public UActorComponent
 		FOnMontageBlendingOutStarted UnequipBlendOutDelegate;
 		FOnMontageBlendingOutStarted EquipGadgetBlendOutDelegate;
 		FOnMontageBlendingOutStarted DeployGadgetBlendOutDelegate;
+	
+		bool isInitialized = false;  //DELETE/REDO THIS
 };
 
 

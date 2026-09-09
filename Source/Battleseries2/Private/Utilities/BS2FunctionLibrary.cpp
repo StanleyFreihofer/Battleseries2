@@ -244,6 +244,16 @@ int32 UBS2FunctionLibrary::UpdateCurrentAmmoInMag(FWeaponState& CurrentWeapon, i
 	return CurrentWeapon.CurrentAmmoinMag;
 }
 
+void UBS2FunctionLibrary::HandleWeaponCanFire(FWeaponState& CurrentWeapon)
+{
+	if (CurrentWeapon.CurrentAmmoinMag <= 0 || !CurrentWeapon.isEquipped || CurrentWeapon.isReloading)
+	{
+		CurrentWeapon.canFire = false;
+		return;
+	}
+	CurrentWeapon.canFire = true;
+}
+
 void UBS2FunctionLibrary::UpdateWeaponIndex(TArray<FWeaponState> Weapons, int32 InCurrentWeaponIndex, int32& OutNewWeaponIndex)
 {
 	OutNewWeaponIndex = (InCurrentWeaponIndex + 1) % Weapons.Num();
@@ -252,10 +262,22 @@ void UBS2FunctionLibrary::UpdateWeaponIndex(TArray<FWeaponState> Weapons, int32 
 void UBS2FunctionLibrary::UpdateWACData(TWeakObjectPtr<UAudioComponent> WAC, float RPM, FWeaponAudioData WeaponAudioData)
 {
 	WAC.Get()->SetFloatParameter(FName("Data_RPM"), RPM);
-	UpdateAudioCompArrayParameter(WAC, WeaponAudioData.GunshotLoop, FName("Data_FireLoopAudio"));
-	UpdateAudioCompArrayParameter(WAC, WeaponAudioData.MechanicalPunch, FName("Data_Punch"));
-	UpdateAudioCompArrayParameter(WAC, WeaponAudioData.MetalCycle, FName("Data_Metal"));
-	UpdateAudioCompArrayParameter(WAC, WeaponAudioData.InteriorTail, FName("Data_Tail"));
+	if (!WeaponAudioData.GunshotLoop.IsEmpty())
+	{
+		UpdateAudioCompArrayParameter(WAC, WeaponAudioData.GunshotLoop, FName("Data_FireLoopAudio"));
+	}
+	if (!WeaponAudioData.MechanicalPunch.IsEmpty())
+	{
+		UpdateAudioCompArrayParameter(WAC, WeaponAudioData.MechanicalPunch, FName("Data_Punch"));
+	}
+	if (!WeaponAudioData.MetalCycle.IsEmpty())
+	{
+		UpdateAudioCompArrayParameter(WAC, WeaponAudioData.MetalCycle, FName("Data_Metal"));
+	}
+	if (!WeaponAudioData.InteriorTail.IsEmpty())
+	{
+		UpdateAudioCompArrayParameter(WAC, WeaponAudioData.InteriorTail, FName("Data_Tail"));
+	}
 }
 
 void UBS2FunctionLibrary::StartWAC(TWeakObjectPtr<UAudioComponent> WAC)

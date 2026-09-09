@@ -11,6 +11,7 @@
 #include "EnhancedPlayerInput.h"
 #include "Data/Characters/CharacterDefaults.h"
 #include "Data/Items/Weapons/Data_Weapon.h"
+#include "Data/Items/Weapons/WeaponTypes.h"
 #include "Core/Weapons/VehicleWeaponLogicComponent.h"
 #include "Core/Weapons/WeaponLogicComponent.h"
 #include "Core/UI/VehicleHUDs/UW_HUD_Vehicle_Base.h"
@@ -583,6 +584,13 @@ void ACharacter_Base::CharacterExitVehicle()
 		CharacterState.CharacterVehicleState = FCharacterVehicleState();
 
 		ManageIMC(nullptr, UBS2FunctionLibrary::GetDataSubsystem(this)->GetCharacterDefaults()->DefaultGameplayIMC.Get(), 1);
+	
+		if (WeaponManager->GetIsCurrentSlotActuallyWeapon())
+		{
+			FWeaponState& CurrentWeapon = *WeaponManager->GetCurrentWeaponRuntime();
+			UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateStatusHUD_CAMCount(CurrentWeapon.CurrentAmmoinMag);
+			UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateStatusHUD_CRACount(CurrentWeapon.CurrentReserveAmmo);
+		}
 	}
 }
 

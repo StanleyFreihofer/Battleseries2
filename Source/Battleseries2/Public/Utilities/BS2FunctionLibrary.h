@@ -67,6 +67,8 @@ public:
     static void CalculateReload(int32 MagSize, int32 CAM, int32 CRA, int32& OutCAM, int32& OutCRA);
     UFUNCTION(BlueprintCallable, Category = "Battleseries | Weapon Functions")
     static int32 UpdateCurrentAmmoInMag(FWeaponState& CurrentWeapon, int32 AmmoDelta, int32 MagSize);
+	UFUNCTION(BlueprintCallable, Category = "Battleseries | Weapon Functions")
+	static void HandleWeaponCanFire(FWeaponState& CurrentWeapon);
     UFUNCTION(BlueprintCallable, Category = "Battleseries | Weapon Functions")
     static void UpdateWeaponIndex(TArray<FWeaponState> Weapons, int32 InCurrentWeaponIndex, int32& OutNewWeaponIndex);
 	UFUNCTION(Category = "Battleseries | Weapon Functions")

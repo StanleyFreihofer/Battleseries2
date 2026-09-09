@@ -20,10 +20,12 @@
 #include "Utilities/BS2FunctionLibrary.h"
 #include "Utilities/I_Anims.h"
 #include "Components/AudioComponent.h"
+#include "Utilities/HUDSubsystem.h"
 
 UWeaponLogicComponent::UWeaponLogicComponent()
 {
-
+	PrimaryComponentTick.bCanEverTick = true;
+	PrimaryComponentTick.bStartWithTickEnabled = true;
 }
 
 void UWeaponLogicComponent::BeginPlay()
@@ -35,6 +37,7 @@ void UWeaponLogicComponent::BeginPlay()
 void UWeaponLogicComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
+	UE_LOG(LogTemp, Warning, TEXT("[WLC::TickComponent]"));
 	Rangefinder();
 }
 
@@ -86,6 +89,8 @@ void UWeaponLogicComponent::Init_Loadout(TArray<FName> Weapons, TArray<FPlayerLo
 	
 	Init_WeaponLoadout(WeaponIDs, FinalWeaponLoadouts);
 	Init_GadgetLoadout(GadgetIDs);
+	
+	isInitialized = true;
 }
 
 void UWeaponLogicComponent::Init_WeaponLoadout(TArray<FName> Weapons, TArray<FPlayerLoadoutConfig_Weapon> WeaponLoadouts)
@@ -361,9 +366,15 @@ void UWeaponLogicComponent::Rangefinder()
 {
 	FHitResult OutHit;
 	UBS2FunctionLibrary::PerformWeaponLineTrace(this, GetOwnerCharacter()->FPCamera->GetComponentTransform(), OutHit, { GetOwner() }, false);
+	if (Loadout.WeaponSystem.InfantryWeaponState.WeaponState_FP.IsEmpty())	{ return;}
 	TWeakObjectPtr<USkeletalMeshComponent>& WeaponMesh = Loadout.WeaponSystem.InfantryWeaponState.WeaponState_FP[GetCII()].WeaponMesh;
 
 	Loadout.WeaponSystem.BaseWeaponState.EquippedWeaponState.RaycastData.RangefinderData = OutHit;
+	auto& AimDirections = Loadout.WeaponSystem.BaseWeaponState.EquippedWeaponState.RaycastData.MuzzleAimDirections;
+	if (AimDirections.Num() < 1)
+	{
+		AimDirections.SetNum(1);
+	}
 	Loadout.WeaponSystem.BaseWeaponState.EquippedWeaponState.RaycastData.MuzzleAimDirections[0] = UBS2FunctionLibrary::GetAimDirectionFromMuzzle(OutHit, FName("Muzzle"), WeaponMesh);
 }
 
@@ -514,6 +525,7 @@ void UWeaponLogicComponent::UpdateControllerRecoil()
 
 void UWeaponLogicComponent::CeaseFire()
 {
+	//just because fire is ceased, it SHOULD NOT be assumed that weapon cannot fire
 	FWeaponState& CurrentWeapon = *GetCurrentWeaponRuntime();
 	
 	Loadout.WeaponSystem.WeaponAudioComponent->SetTriggerParameter(FName("Event_StopFire"));
@@ -533,6 +545,12 @@ void UWeaponLogicComponent::CeaseFire()
 void UWeaponLogicComponent::DryFire()
 {
 	//play whatever dryfire sound and animation
+	FWeaponState& CurrentWeapon = *GetCurrentWeaponRuntime();
+	if (CurrentWeapon.canFire)
+	{
+		CurrentWeapon.canFire = false;
+	}
+
 }
 
 void UWeaponLogicComponent::FireWeapon()
@@ -573,6 +591,12 @@ void UWeaponLogicComponent::FireWeapon()
 	{
 		case EAmmoDepletionMethod::Default:
 			UBS2FunctionLibrary::UpdateCurrentAmmoInMag(CurrentWeapon, -1, CurrentWeapon.CurrentAmmoinMag);
+			UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateStatusHUD_CAMCount(CurrentWeapon.CurrentAmmoinMag);
+			if (CurrentWeapon.CurrentAmmoinMag <= 0)
+			{
+				CeaseFire();
+				DryFire();
+			}
 			break;
 		case EAmmoDepletionMethod::Heat:
 			break;
@@ -593,7 +617,7 @@ void UWeaponLogicComponent::ReloadWeapon()
 	FInfantryWeaponState& InfantryWeaponState_FP = Loadout.WeaponSystem.InfantryWeaponState.WeaponState_FP[GetCII()];
 	ReloadEndedDelegate.BindUObject(this, &UWeaponLogicComponent::OnReloadFinished);
 
-	if (CurrentWeapon.CurrentReserveAmmo > 0)
+	if (CurrentWeapon.CurrentReserveAmmo > 0 && CurrentWeapon.CurrentAmmoinMag < GetMaxMagSize())
 	{ 
 		CurrentWeapon.isReloading = true;
 		bool bEmptyMag = CurrentWeapon.CurrentAmmoinMag <= 0;
@@ -653,12 +677,23 @@ void UWeaponLogicComponent::OnReloadFinished(UAnimMontage* Montage, bool bInterr
 		InfantryWeaponState_FP.WeaponMesh->HideBoneByName(StaticWeaponData->InfantryWeaponAmmoData.ProjectileBoneToHide, EPhysBodyOp::PBO_None);
 	}
 	**/
-
-	int32 NewCAM, NewCRA;
-	UBS2FunctionLibrary::CalculateReload(CurrentWeaponStats.MagSize, CurrentWeapon.CurrentAmmoinMag, CurrentWeapon.CurrentReserveAmmo, NewCAM, NewCRA);
+	
+	CurrentWeapon.isReloading = false;
+	int32 NewCAM, NewCRA, MagSize;
+	if (GetCurrentWeaponStaticData()->InfantryWeaponAmmoData.bCanRoundBeChambered && FMath::IsWithinInclusive(CurrentWeapon.CurrentAmmoinMag, 1, CurrentWeaponStats.MagSize))
+	{
+		MagSize = CurrentWeaponStats.MagSize + 1;
+	}
+	else
+	{
+		MagSize = CurrentWeaponStats.MagSize;
+	}
+	UBS2FunctionLibrary::CalculateReload(MagSize, CurrentWeapon.CurrentAmmoinMag, CurrentWeapon.CurrentReserveAmmo, NewCAM, NewCRA);
 	CurrentWeapon.CurrentAmmoinMag = NewCAM;
 	CurrentWeapon.CurrentReserveAmmo = NewCRA;
-	CurrentWeapon.isReloading = false;
+	UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateStatusHUD_CAMCount(CurrentWeapon.CurrentAmmoinMag);
+	UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateStatusHUD_CRACount(CurrentWeapon.CurrentReserveAmmo);
+	UBS2FunctionLibrary::HandleWeaponCanFire(CurrentWeapon);
 }
 
 #pragma endregion
@@ -667,6 +702,7 @@ void UWeaponLogicComponent::OnReloadFinished(UAnimMontage* Montage, bool bInterr
 
 void UWeaponLogicComponent::AutoSwitchItem()
 {
+	//smart switch item instead?
 	//use to auto switch/revolve/rotate between items in a list
 	switch (Loadout.CurrentSlot)
 	{
@@ -744,6 +780,7 @@ void UWeaponLogicComponent::TransitionFromItem(int32 PreviousItemIndex, ECharact
 	switch (LoadoutCategory)
 	{
 		case ECharacterItemType::Weapon:
+			Loadout.WeaponSystem.BaseWeaponState.Weapons[PreviousItemIndex].isEquipped = false;
 			UpdateWeaponVisibility(PreviousItemIndex, true);
 			break;
 		case ECharacterItemType::Gadget:
@@ -868,6 +905,11 @@ void UWeaponLogicComponent::EquipWeapon(int32 WeaponIndex, bool InitialEquip)
 		InfantryWeaponState_FP.WeaponMesh->HideBoneByName(StaticWeaponDataCache[WeaponIndex]->InfantryWeaponAmmoData.ProjectileBoneToHide, EPhysBodyOp::PBO_None);
 	}
 	UpdateScopeCamera();
+	
+	FWeaponState& CurrentWeapon = GetBaseWeaponState(GetCII());
+	CurrentWeapon.isEquipped = true;
+	UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateStatusHUD_CAMCount(CurrentWeapon.CurrentAmmoinMag);
+	UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateStatusHUD_CRACount(CurrentWeapon.CurrentReserveAmmo);
 }
 
 #pragma endregion
@@ -1350,6 +1392,13 @@ bool UWeaponLogicComponent::GetIsCurrentSlotActuallyWeapon()
 	return ActualType == ECharacterItemType::Weapon;
 }
 
+int32 UWeaponLogicComponent::GetMaxMagSize()
+{
+	const bool& bCanBeChambered = GetCurrentWeaponStaticData()->InfantryWeaponAmmoData.bCanRoundBeChambered;
+	const int32 MagSize = GetCurrentWeaponStats().MagSize;
+	return bCanBeChambered ? MagSize + 1 : MagSize;
+}
+
 FName UWeaponLogicComponent::GetSocketNameForSlot(EAttachmentSlot Slot)
 {
 	switch (Slot)
@@ -1489,6 +1538,7 @@ FVector UWeaponLogicComponent::GetAttachmentDefaultOffset(FName WeaponID, EAttac
 
 FWeaponState* UWeaponLogicComponent::GetCurrentWeaponRuntime()
 {
+	//ASSUMES CURRENT SLOT IS WEAPON
 	FWeaponState* CurrentWeapon = &Loadout.WeaponSystem.BaseWeaponState.Weapons[GetCII()];
 	return CurrentWeapon;
 }
