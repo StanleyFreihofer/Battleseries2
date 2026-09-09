@@ -539,6 +539,7 @@ void UWeaponLogicComponent::FireWeapon()
 {
 	const FInfantryWeaponData* StaticWeaponData = GetCurrentWeaponStaticData();
 	FWeaponState& CurrentWeapon = *GetCurrentWeaponRuntime();	
+	FInfantryWeaponState& IWS_FP = GetCurrentInfantryWeaponState_FP();
 
 	switch(StaticWeaponData->WeaponFirePerformanceData.WeaponFireType)
 	{
@@ -557,6 +558,7 @@ void UWeaponLogicComponent::FireWeapon()
 	//TRIGGER EFFECTS/
 	TriggerControllerRecoil();
 	IAnims::Execute_IKRecoil(GetOwnerCharacter()->FPArms->GetAnimInstance(), StaticWeaponData->WeaponRecoilData.IKProceduralRecoilData);
+	UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetOwner(), StaticWeaponData->WeaponVFXData.MuzzleSmokeParticle.LoadSynchronous(), IWS_FP.WeaponMesh->GetSocketLocation(FName("Muzzle")), IWS_FP.WeaponMesh->GetSocketRotation(FName("Muzzle")), FVector::ZeroVector, true, true, ENCPoolMethod::None, true);
 	//trigger effects
 	//muzzle flash
 	//muzzle smoke
@@ -835,10 +837,12 @@ void UWeaponLogicComponent::EquipWeapon(int32 WeaponIndex, bool InitialEquip)
 {
 	TWeakObjectPtr<ACharacter_Base> Character = GetOwnerCharacter();
 	TWeakObjectPtr<UAnimInstance> FPArmsAnimInstance = Character->FPArms->GetAnimInstance();
+	const FInfantryWeaponData& StaticWeaponData = *StaticWeaponDataCache[WeaponIndex];
 	const FInfantryWeaponAnimData& AnimData = StaticWeaponDataCache[WeaponIndex]->InfantryWeaponAnimData;
 	FInfantryWeaponState& InfantryWeaponState_FP = Loadout.WeaponSystem.InfantryWeaponState.WeaponState_FP[WeaponIndex];
 	TObjectPtr<USkeletalMeshComponent> NewWeaponMesh = Loadout.WeaponSystem.InfantryWeaponState.WeaponState_FP[WeaponIndex].WeaponMesh.Get();
 	UpdateWeaponVisibility(WeaponIndex, false);
+	UBS2FunctionLibrary::UpdateWACData(Loadout.WeaponSystem.WeaponAudioComponent, StaticWeaponData.WeaponFirePerformanceData.RateOfFire, StaticWeaponData.WeaponAudioData);
 	TSoftObjectPtr<UAnimMontage> FPEquipWeaponMontage;
 	if (InitialEquip)
 	{

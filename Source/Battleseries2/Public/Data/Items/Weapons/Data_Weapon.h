@@ -137,27 +137,26 @@ struct FWeaponAudioData
 	GENERATED_BODY()
 
 	// --- EXTERNAL / MUZZLE ---
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Exterior")
-	TArray<TSoftObjectPtr<USoundWave>> FireLoop; // The "Bangs" (Array for variance)
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Exterior")
-	TSoftObjectPtr<USoundWave> FireStop; // Exterior echo/tail
-
 	//what should be vehicle instance data?
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Exterior")
+	TArray<TSoftObjectPtr<USoundWave>> GunshotLoop; // The "Bangs" (Array for variance)
 
-	// --- INTERNAL / MECHANICAL (The "Hammer" & "Slide") ---
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Exterior")
+	TSoftObjectPtr<USoundWave> FireStop = nullptr; 
+	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Interior")
-	TArray<TSoftObjectPtr<USoundWave>> MechanicalImpacts; // The "Hammer" hitting the anvil
+	TArray<TSoftObjectPtr<USoundWave>> MechanicalPunch; 
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Interior")
-	TSoftObjectPtr<USoundWave> MechanicalCycle; // The "Slide" of the breech block
+	TArray<TSoftObjectPtr<USoundWave>> MetalCycle; 
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Interior")
-	TSoftObjectPtr<USoundWave> InteriorTail; // The "Ring" inside the metal cabin
+	TArray<TSoftObjectPtr<USoundWave>> InteriorTail; 
 };
 
 USTRUCT(BlueprintType)
-struct FWeaponVisualData
+struct FWeaponVFXData
 {
 	GENERATED_BODY()
 
@@ -166,6 +165,12 @@ struct FWeaponVisualData
 
 	UPROPERTY(EditAnywhere, Category = "VFX")
 	TSoftObjectPtr<UNiagaraSystem> TracerFX = nullptr;
+	
+	UPROPERTY(EditAnywhere, Category = "VFX")
+	TSoftObjectPtr<UNiagaraSystem> MuzzleSmokeParticle = nullptr;
+	
+	UPROPERTY(EditAnywhere, Category = "VFX")
+	TSoftObjectPtr<UNiagaraSystem> DefaultImpactParticle = nullptr;
 };
 
 USTRUCT(BlueprintType)
@@ -229,7 +234,7 @@ struct FBaseWeaponData
 	FWeaponAudioData WeaponAudio = FWeaponAudioData();
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	FWeaponVisualData WeaponFX = FWeaponVisualData();
+	FWeaponVFXData WeaponFX = FWeaponVFXData();
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FAmmoData AmmoData = FAmmoData();

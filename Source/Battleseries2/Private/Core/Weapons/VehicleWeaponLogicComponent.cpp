@@ -1113,6 +1113,15 @@ TWeakObjectPtr<AProjectile_Base> UVehicleWeaponLogicComponent::FireVehicleWeapon
 		const int32& TotalMuzzles = VehicleWeaponState.MuzzleSockets.Num();
 		ActiveIndex = (ActiveIndex + 1) % TotalMuzzles;
 	}
+	
+	for (int32& MuzzleIndex : VehicleWeaponState.CurrentMuzzleIndexes)
+	{
+		TWeakObjectPtr<UNiagaraComponent> VFXComp = VehicleWeaponState.MuzzleVFXPool[MuzzleIndex];
+		if (UNiagaraComponent* VFX = VehicleWeaponState.MuzzleVFXPool[MuzzleIndex].Get())
+		{
+			VFX->Activate(true);
+		}
+	}
 
 	HandleAmmoDepletion(SeatIndex, CWI);
 
@@ -1141,11 +1150,7 @@ void UVehicleWeaponLogicComponent::HandleShootSimProjectile(FVehicleWeaponState&
 			UBS2FunctionLibrary::GetProjectileSystem(this)
 		);
 
-		TWeakObjectPtr<UNiagaraComponent> VFXComp = VehicleWeaponState.MuzzleVFXPool[MuzzleIndex];
-		if (UNiagaraComponent* VFX = VehicleWeaponState.MuzzleVFXPool[MuzzleIndex].Get())
-		{
-			VFX->Activate(true);
-		}
+
 	}
 }
 

@@ -308,6 +308,12 @@ struct FInfantryWeaponData : public FTableRowBase
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	FInfantryWeaponAnimData InfantryWeaponAnimData = FInfantryWeaponAnimData();
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	FWeaponAudioData WeaponAudioData = FWeaponAudioData();
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	FWeaponVFXData WeaponVFXData = FWeaponVFXData();
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	FGunAttachmentData GunAttachmentData = FGunAttachmentData();

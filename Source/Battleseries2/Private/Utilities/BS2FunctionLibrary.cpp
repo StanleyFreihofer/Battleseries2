@@ -252,15 +252,10 @@ void UBS2FunctionLibrary::UpdateWeaponIndex(TArray<FWeaponState> Weapons, int32 
 void UBS2FunctionLibrary::UpdateWACData(TWeakObjectPtr<UAudioComponent> WAC, float RPM, FWeaponAudioData WeaponAudioData)
 {
 	WAC.Get()->SetFloatParameter(FName("Data_RPM"), RPM);
-	WAC.Get()->SetObjectParameter(FName("Data_StopFireAudio"), WeaponAudioData.FireStop.LoadSynchronous());
-	
-	TArray<UObject*> LoadedWaves;
-	for (const TSoftObjectPtr<USoundWave>& SoftWave : WeaponAudioData.FireLoop)
-	{
-		TObjectPtr<USoundWave> Wave = SoftWave.LoadSynchronous();
-		LoadedWaves.Add(Wave);
-	}
-	WAC.Get()->SetObjectArrayParameter(FName("Data_FireLoopAudio"), LoadedWaves);
+	UpdateAudioCompArrayParameter(WAC, WeaponAudioData.GunshotLoop, FName("Data_FireLoopAudio"));
+	UpdateAudioCompArrayParameter(WAC, WeaponAudioData.MechanicalPunch, FName("Data_Punch"));
+	UpdateAudioCompArrayParameter(WAC, WeaponAudioData.MetalCycle, FName("Data_Metal"));
+	UpdateAudioCompArrayParameter(WAC, WeaponAudioData.InteriorTail, FName("Data_Tail"));
 }
 
 void UBS2FunctionLibrary::StartWAC(TWeakObjectPtr<UAudioComponent> WAC)
@@ -289,6 +284,17 @@ void UBS2FunctionLibrary::UpdateOpticIndex(int32 TotalOptics, int32& CurrentOpti
 {
 	int32 NewOpticIndex = (CurrentOpticIndex + 1) % TotalOptics;
 	CurrentOpticIndex = NewOpticIndex;
+}
+
+void UBS2FunctionLibrary::UpdateAudioCompArrayParameter(TWeakObjectPtr<UAudioComponent> AC, TArray<TSoftObjectPtr<USoundWave>> AudioList, FName ParameterName)
+{
+	TArray<UObject*> LoadedWaves;
+	for (const TSoftObjectPtr<USoundWave>& SoftWave : AudioList)
+	{
+		TObjectPtr<USoundWave> Wave = SoftWave.LoadSynchronous();
+		LoadedWaves.Add(Wave);
+	}
+	AC.Get()->SetObjectArrayParameter(ParameterName, LoadedWaves);
 }
 
 

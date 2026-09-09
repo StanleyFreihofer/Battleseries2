@@ -71,6 +71,7 @@ public:
     static void UpdateWeaponIndex(TArray<FWeaponState> Weapons, int32 InCurrentWeaponIndex, int32& OutNewWeaponIndex);
 	UFUNCTION(Category = "Battleseries | Weapon Functions")
 	static void UpdateWACData(TWeakObjectPtr<UAudioComponent> WAC, float RPM, FWeaponAudioData WeaponAudioData);
+
 	UFUNCTION(Category = "Battleseries | Weapon Functions")
 	static void StartWAC(TWeakObjectPtr<UAudioComponent> WAC);
 
@@ -78,4 +79,7 @@ public:
     static void HandleUpdateOptic(float inDefaultFOV, float inOpticMagnfication, float& OutOpticFOV, FPostProcessSettings inPostProcessData, FPostProcessSettings& OutPostProcessSettings, float& OutPostProcessWeight);
     UFUNCTION(BlueprintCallable, Category = "Battleseries | Optic Functions")
     static void UpdateOpticIndex(int32 TotalOptics, int32& CurrentOpticIndex);
+	
+	UFUNCTION(Category = "Battleseries")
+	static void UpdateAudioCompArrayParameter(TWeakObjectPtr<UAudioComponent> AC, TArray<TSoftObjectPtr<USoundWave>> AudioList, FName ParameterName);
 };
