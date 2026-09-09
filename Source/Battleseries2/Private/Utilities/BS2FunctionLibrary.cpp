@@ -284,6 +284,20 @@ void UBS2FunctionLibrary::StartWAC(TWeakObjectPtr<UAudioComponent> WAC)
 	WAC.Get()->SetTriggerParameter(FName("Event_StartFire"));
 }
 
+int32 UBS2FunctionLibrary::GetMaxMagSize(bool canRoundbeChambered, int32 BaseMagSize)
+{
+	return canRoundbeChambered ? BaseMagSize + 1 : BaseMagSize;
+}
+
+bool UBS2FunctionLibrary::GetIfWeaponCanReload(FWeaponState Weapon, bool canRoundbeChambered, int32 BaseMagSize)
+{
+	if (Weapon.CurrentReserveAmmo > 0 && Weapon.CurrentAmmoinMag < GetMaxMagSize(canRoundbeChambered, BaseMagSize) && !Weapon.isReloading)
+	{
+		return true;
+	}
+	return false;
+}
+
 void UBS2FunctionLibrary::HandleUpdateOptic(float inDefaultFOV, float inOpticMagnfication, float& OutOpticFOV, FPostProcessSettings inPostProcessData, FPostProcessSettings& OutPostProcessSettings, float& OutPostProcessWeight)
 {
 	//Handles both Post Process (thermal, night vision, etc.) and FOV changes for optics

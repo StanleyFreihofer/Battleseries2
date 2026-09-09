@@ -620,55 +620,58 @@ void UWeaponLogicComponent::FireWeapon()
 
 void UWeaponLogicComponent::ReloadWeapon()
 {
+	int32 WeaponIndex = GetCII();
 	FWeaponState& CurrentWeapon = *GetCurrentWeaponBaseState();
 	const FInfantryWeaponData* StaticWeaponData = GetCurrentWeaponStaticData();
-	FInfantryWeaponState& InfantryWeaponState_FP = Loadout.WeaponSystem.InfantryWeaponState.WeaponState_FP[GetCII()];
-	ReloadEndedDelegate.BindUObject(this, &UWeaponLogicComponent::OnReloadFinished);
+	FInfantryWeaponState& InfantryWeaponState_FP = Loadout.WeaponSystem.InfantryWeaponState.WeaponState_FP[WeaponIndex];
+	ReloadEndedDelegate.BindWeakLambda(this, [this, WeaponIndex](UAnimMontage* Montage, bool bInterrupted)
+	{
+		OnReloadFinished(Montage, bInterrupted, WeaponIndex);
+	});
+	
+	if (!UBS2FunctionLibrary::GetIfWeaponCanReload(CurrentWeapon, StaticWeaponData->InfantryWeaponAmmoData.bCanRoundBeChambered, StaticWeaponData->InfantryWeaponAmmoData.BaseAmmoData.MagSize))		{ return; }
 
-	if (CurrentWeapon.CurrentReserveAmmo > 0 && CurrentWeapon.CurrentAmmoinMag < GetMaxMagSize(GetCII()) && !CurrentWeapon.isReloading)
-	{ 
-		CurrentWeapon.isReloading = true;
-		bool bEmptyMag = CurrentWeapon.CurrentAmmoinMag <= 0;
+	CurrentWeapon.isReloading = true;
+	bool bEmptyMag = CurrentWeapon.CurrentAmmoinMag <= 0;
 
-		if (!StaticWeaponData->InfantryWeaponAmmoData.ProjectileBoneToHide.IsNone())
-		{
-			InfantryWeaponState_FP.WeaponMesh->UnHideBoneByName(StaticWeaponData->InfantryWeaponAmmoData.ProjectileBoneToHide);
-		}
-
-		TWeakObjectPtr<ACharacter_Base> Character = Cast<ACharacter_Base>(GetOwner());
-		USkeletalMeshComponent* FPArms = Character->FPArms;
-		
-		/**
-		FString SocketString = FString::Printf(TEXT("Socket_%s_R"), *GetCurrentWeaponRuntime()->WeaponID.ToString());
-		FName AttachSocketName = FName(*SocketString);
-		if (FPArms->DoesSocketExist(AttachSocketName))
-		{
-			InfantryWeaponState_FP.WeaponMesh->AttachToComponent(Character->FPArms, FAttachmentTransformRules(EAttachmentRule::SnapToTarget, EAttachmentRule::SnapToTarget, EAttachmentRule::SnapToTarget, true), AttachSocketName);
-		}
-		**/
-
-		TSoftObjectPtr<UAnimMontage> FPReloadMontage = bEmptyMag ? StaticWeaponData->InfantryWeaponAnimData.FPWeaponAnimData.ReloadEmptyWeaponMontage : StaticWeaponData->InfantryWeaponAnimData.FPWeaponAnimData.ReloadWeaponMontage;
-		TSoftObjectPtr<UAnimSequence> WeaponReloadAnim = bEmptyMag ? StaticWeaponData->InfantryWeaponAnimData.WeaponAnimData.WeaponReloadEmpty : StaticWeaponData->InfantryWeaponAnimData.WeaponAnimData.WeaponReload;
-		FPReloadMontage.LoadSynchronous();
-		WeaponReloadAnim.LoadSynchronous();
-
-		InfantryWeaponState_FP.WeaponMesh->PlayAnimation(WeaponReloadAnim.Get(), false);
-
-		TWeakObjectPtr<UAnimInstance> FPArmsAnimInstance = Cast<ACharacter_Base>(GetOwner())->FPArms->GetAnimInstance();
-		FPArmsAnimInstance->Montage_Play(FPReloadMontage.Get(), 1.0f);
-		FPArmsAnimInstance->Montage_SetEndDelegate(ReloadEndedDelegate, FPReloadMontage.Get());
+	if (!StaticWeaponData->InfantryWeaponAmmoData.ProjectileBoneToHide.IsNone())
+	{
+		InfantryWeaponState_FP.WeaponMesh->UnHideBoneByName(StaticWeaponData->InfantryWeaponAmmoData.ProjectileBoneToHide);
 	}
+
+	TWeakObjectPtr<ACharacter_Base> Character = GetOwnerCharacter();
+	USkeletalMeshComponent* FPArms = Character->FPArms;
+	TWeakObjectPtr<UAnimInstance> FPArmsAnimInstance = FPArms->GetAnimInstance();
+	
+	/**
+	FString SocketString = FString::Printf(TEXT("Socket_%s_R"), *GetCurrentWeaponRuntime()->WeaponID.ToString());
+	FName AttachSocketName = FName(*SocketString);
+	if (FPArms->DoesSocketExist(AttachSocketName))
+	{
+		InfantryWeaponState_FP.WeaponMesh->AttachToComponent(Character->FPArms, FAttachmentTransformRules(EAttachmentRule::SnapToTarget, EAttachmentRule::SnapToTarget, EAttachmentRule::SnapToTarget, true), AttachSocketName);
+	}
+	**/
+
+	TSoftObjectPtr<UAnimMontage> FPReloadMontage = bEmptyMag ? StaticWeaponData->InfantryWeaponAnimData.FPWeaponAnimData.ReloadEmptyWeaponMontage : StaticWeaponData->InfantryWeaponAnimData.FPWeaponAnimData.ReloadWeaponMontage;
+	TSoftObjectPtr<UAnimSequence> WeaponReloadAnim = bEmptyMag ? StaticWeaponData->InfantryWeaponAnimData.WeaponAnimData.WeaponReloadEmpty : StaticWeaponData->InfantryWeaponAnimData.WeaponAnimData.WeaponReload;
+	FPReloadMontage.LoadSynchronous();
+	WeaponReloadAnim.LoadSynchronous();
+
+	InfantryWeaponState_FP.WeaponMesh->PlayAnimation(WeaponReloadAnim.Get(), false);
+	
+	FPArmsAnimInstance->Montage_Play(FPReloadMontage.Get(), 1.0f);
+	FPArmsAnimInstance->Montage_SetEndDelegate(ReloadEndedDelegate, FPReloadMontage.Get());
 }
 
-void UWeaponLogicComponent::OnReloadFinished(UAnimMontage* Montage, bool bInterrupted)
+void UWeaponLogicComponent::OnReloadFinished(UAnimMontage* Montage, bool bInterrupted, int32 WeaponIndex)
 {
 	UE_LOG(LogTemp, Warning, TEXT("[WLC::OnReloadFinished"));
-	FWeaponStats_Runtime& CurrentWeaponStats = GetCurrentWeaponStats();
-	FWeaponState& CurrentWeapon = *GetCurrentWeaponBaseState();
-	const FInfantryWeaponData* StaticWeaponData = GetCurrentWeaponStaticData();
-	FInfantryWeaponState& InfantryWeaponState_FP = Loadout.WeaponSystem.InfantryWeaponState.WeaponState_FP[GetCII()];
+	FWeaponStats_Runtime& CurrentWeaponStats = Loadout.WeaponSystem.InfantryWeaponState.CurrentWeaponStats[WeaponIndex];
+	FWeaponState& CurrentWeapon = Loadout.WeaponSystem.BaseWeaponState.Weapons[WeaponIndex];
+	const FInfantryWeaponData* StaticWeaponData = StaticWeaponDataCache[WeaponIndex];
+	FInfantryWeaponState& InfantryWeaponState_FP = Loadout.WeaponSystem.InfantryWeaponState.WeaponState_FP[WeaponIndex];
 
-	TWeakObjectPtr<ACharacter_Base> Character = Cast<ACharacter_Base>(GetOwner());
+	TWeakObjectPtr<ACharacter_Base> Character = GetOwnerCharacter();
 	USkeletalMeshComponent* FPArms = Character->FPArms;
 	
 	/**
@@ -687,6 +690,12 @@ void UWeaponLogicComponent::OnReloadFinished(UAnimMontage* Montage, bool bInterr
 	**/
 	
 	CurrentWeapon.isReloading = false;
+	if (bInterrupted)
+	{
+		return;		//reload canceled, don't grant ammo for a reload that never finished
+	}
+	
+	
 	int32 NewCAM, NewCRA, MagSize;
 	if (GetCurrentWeaponStaticData()->InfantryWeaponAmmoData.bCanRoundBeChambered && FMath::IsWithinInclusive(CurrentWeapon.CurrentAmmoinMag, 1, CurrentWeaponStats.MagSize))
 	{
@@ -838,12 +847,20 @@ void UWeaponLogicComponent::UnequipWeapon(int32 PreviousWeaponIndex)
 	TSoftObjectPtr<UAnimMontage> FPUnequipItemMontage = StaticWeaponDataCache[PreviousWeaponIndex]->InfantryWeaponAnimData.FPWeaponAnimData.BaseItemAnimData.UnequipMontage;
 	FPUnequipItemMontage.LoadSynchronous();
 	ECharacterItemType CurrentItemType = GetCategoryForSlot(Loadout.CurrentSlot);
+	TWeakObjectPtr<UAnimInstance> FPArmsAnimInstance = GetOwnerCharacter()->FPArms->GetAnimInstance();
+	
+	if (Loadout.WeaponSystem.BaseWeaponState.Weapons[PreviousWeaponIndex].isReloading)
+	{
+		TSoftObjectPtr<UAnimMontage> FPReloadMontage = StaticWeaponDataCache[PreviousWeaponIndex]->InfantryWeaponAnimData.FPWeaponAnimData.ReloadWeaponMontage;
+		FPArmsAnimInstance->Montage_Stop(0.1f, FPReloadMontage.Get());
+	}
+	
 	if (!FPUnequipItemMontage.Get())
 	{
 		TransitionFromItem(PreviousWeaponIndex, ECharacterItemType::Weapon);
 		return;
 	}
-	TWeakObjectPtr<UAnimInstance> FPArmsAnimInstance = GetOwnerCharacter()->FPArms->GetAnimInstance();
+
 	
 	FPArmsAnimInstance->Montage_Play(FPUnequipItemMontage.Get(), 1.0f, EMontagePlayReturnType::MontageLength, 0.0f);
 	FPArmsAnimInstance->Montage_SetBlendingOutDelegate(UnequipBlendOutDelegate, FPUnequipItemMontage.Get());		//BINDING SHOULDVE HAPPENED BEFORE THIS FUNCTION IS CALLED

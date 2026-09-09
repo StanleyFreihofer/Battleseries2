@@ -76,6 +76,10 @@ public:
 
 	UFUNCTION(Category = "Battleseries | Weapon Functions")
 	static void StartWAC(TWeakObjectPtr<UAudioComponent> WAC);
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Battleseries | Weapon Functions")
+	static int32 GetMaxMagSize(bool canRoundbeChambered, int32 BaseMagSize);
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Battleseries | Weapon Functions")
+	static bool GetIfWeaponCanReload(FWeaponState Weapon, bool canRoundbeChambered, int32 BaseMagSize);
 
 	UFUNCTION(BlueprintCallable, Category = "Battleseries | Optic Functions")
     static void HandleUpdateOptic(float inDefaultFOV, float inOpticMagnfication, float& OutOpticFOV, FPostProcessSettings inPostProcessData, FPostProcessSettings& OutPostProcessSettings, float& OutPostProcessWeight);

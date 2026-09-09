@@ -231,7 +231,7 @@ public:
 	UFUNCTION()
 	TWeakObjectPtr<AProjectile_Base> HandleStartFire(int32 SeatIndex);
 	UFUNCTION()
-	TWeakObjectPtr<AProjectile_Base> StartFire(int32 SeatIndex);;
+	TWeakObjectPtr<AProjectile_Base> StartFire(int32 SeatIndex);
 	UFUNCTION()
 	TWeakObjectPtr<AProjectile_Base> FireVehicleWeapon(int32 SeatIndex);
 	UFUNCTION(BlueprintCallable)

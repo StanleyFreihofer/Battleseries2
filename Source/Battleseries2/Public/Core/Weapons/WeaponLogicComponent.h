@@ -317,7 +317,7 @@ class BATTLESERIES2_API UWeaponLogicComponent : public UActorComponent
 		FTimerHandle SwitchWeaponTimer;
 
 	private:
-		void OnReloadFinished(UAnimMontage* Montage, bool bInterrupted);
+		void OnReloadFinished(UAnimMontage* Montage, bool bInterrupted, int32 WeaponIndex);
 		void OnUnequipWeapon_BlendOutToWeapon(UAnimMontage* Montage, bool bInterrupted);
 		void OnUnequipWeapon_BlendOutToGadget(UAnimMontage* Montage, bool bInterrupted);
 		void OnEquipGadget_BlendOut(UAnimMontage* Montage, bool bInterrupted);
