@@ -381,7 +381,7 @@ void UWeaponLogicComponent::HandleStartFire()
 {
 	FWeaponState& CurrentWeapon = *GetCurrentWeaponBaseState();
 
-	if (!CurrentWeapon.canFire)
+ 	if (!CurrentWeapon.canFire)
 	{
 		if (CurrentWeapon.CurrentAmmoinMag <= 0 && !CombatState.isAttemptingToFire)
 		{
@@ -585,9 +585,15 @@ void UWeaponLogicComponent::FireWeapon()
 	IAnims::Execute_IKRecoil(GetOwnerCharacter()->FPArms->GetAnimInstance(), StaticWeaponData->WeaponRecoilData.IKProceduralRecoilData);
 	
 	//TRIGGER EFFECTS
-	UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetOwner(), StaticWeaponData->WeaponVFXData.MuzzleSmokeParticle.LoadSynchronous(), IWS_FP.WeaponMesh->GetSocketLocation(FName("Muzzle")), IWS_FP.WeaponMesh->GetSocketRotation(FName("Muzzle")), FVector::ZeroVector, true, true, ENCPoolMethod::None, true);
-	UNiagaraComponent* MuzzleFlash = UNiagaraFunctionLibrary::SpawnSystemAttached(StaticWeaponData->WeaponVFXData.MuzzleFlashFX.LoadSynchronous(), IWS_FP.WeaponMesh.Get(), FName("Muzzle"), FVector::ZeroVector, IWS_FP.WeaponMesh->GetSocketRotation(FName("Muzzle")), EAttachLocation::KeepRelativeOffset, false, true, ENCPoolMethod::None, true);
-	MuzzleFlash->SetNiagaraVariableBool("User.Trigger", true);
+	if (StaticWeaponData->WeaponVFXData.MuzzleSmokeParticle)
+	{
+		UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetOwner(), StaticWeaponData->WeaponVFXData.MuzzleSmokeParticle.LoadSynchronous(), IWS_FP.WeaponMesh->GetSocketLocation(FName("Muzzle")), IWS_FP.WeaponMesh->GetSocketRotation(FName("Muzzle")), FVector::ZeroVector, true, true, ENCPoolMethod::None, true);
+	}
+	if (StaticWeaponData->WeaponVFXData.MuzzleFlashFX)
+	{
+		UNiagaraComponent* MuzzleFlash = UNiagaraFunctionLibrary::SpawnSystemAttached(StaticWeaponData->WeaponVFXData.MuzzleFlashFX.LoadSynchronous(), IWS_FP.WeaponMesh.Get(), FName("Muzzle"), FVector::ZeroVector, IWS_FP.WeaponMesh->GetSocketRotation(FName("Muzzle")), EAttachLocation::KeepRelativeOffset, false, true, ENCPoolMethod::None, true);
+		MuzzleFlash->SetNiagaraVariableBool("User.Trigger", true);
+	}
 	//muzzle flash
 	//muzzle smoke
 	//weapon fire anim
