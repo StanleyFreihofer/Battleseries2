@@ -592,6 +592,7 @@ void UWeaponLogicComponent::FireWeapon()
 	//RECOIL
 	TriggerControllerRecoil();
 	IAnims::Execute_IKRecoil(GetOwnerCharacter()->FPArms->GetAnimInstance(), StaticWeaponData->WeaponRecoilData.IKProceduralRecoilData);
+	IWS_FP.WeaponMesh->PlayAnimation(StaticWeaponData->InfantryWeaponAnimData.WeaponAnimData.WeaponFire.LoadSynchronous(), false);
 	
 	//TRIGGER EFFECTS
 	if (StaticWeaponData->WeaponVFXData.MuzzleSmokeParticle)
