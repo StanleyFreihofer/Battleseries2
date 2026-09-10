@@ -326,9 +326,18 @@ void UWeaponLogicComponent::UpdateWeaponVisibility(int32 WeaponIndex, bool Hide)
 void UWeaponLogicComponent::StartAim()
 {
 	if (!GetIsCurrentSlotActuallyWeapon())	{ return; }
-	
+	if (!CombatState.canAim)
+	{
+		if (CombatState.isAiming)
+		{
+			StopAim();
+		}
+		return;
+	}
 	const FInfantryWeaponAimData& AimData = GetCurrentWeaponStaticData()->InfantryWeaponAimData;
-	if (!AimData.canAim) { return; }
+	CombatState.canAim = AimData.canAim;
+
+	
 	if (AimData.HideArms)
 	{
 		TWeakObjectPtr<ACharacter_Base> Character = Cast<ACharacter_Base>(GetOwner());
@@ -636,6 +645,14 @@ void UWeaponLogicComponent::ReloadWeapon()
 	});
 	
 	if (!UBS2FunctionLibrary::GetIfWeaponCanReload(CurrentWeapon, StaticWeaponData->InfantryWeaponAmmoData.bCanRoundBeChambered, StaticWeaponData->InfantryWeaponAmmoData.BaseAmmoData.MagSize))		{ return; }
+	if (!StaticWeaponData->WeaponFunctionalityData.canADSReload)
+	{
+		CombatState.canAim = false;
+		if (CombatState.isAiming)
+		{
+			StopAim();		
+		}
+	}
 
 	CurrentWeapon.isReloading = true;
 	bool bEmptyMag = CurrentWeapon.CurrentAmmoinMag <= 0;
@@ -696,6 +713,10 @@ void UWeaponLogicComponent::OnReloadFinished(UAnimMontage* Montage, bool bInterr
 	**/
 	
 	CurrentWeapon.isReloading = false;
+	if (!StaticWeaponData->WeaponFunctionalityData.canADSReload)
+	{
+		CombatState.canAim = true;
+	}
 	if (bInterrupted)
 	{
 		return;		//reload canceled, don't grant ammo for a reload that never finished

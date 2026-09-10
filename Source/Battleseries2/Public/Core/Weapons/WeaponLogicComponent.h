@@ -127,6 +127,8 @@ struct FCombatState
 	bool isAttemptingToFire = false;
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	bool canAim = true;
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	bool isAiming = false;
 	
 	//recoil
