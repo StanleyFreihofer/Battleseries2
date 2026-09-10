@@ -68,15 +68,18 @@ USTRUCT(BlueprintType)
 struct FPlayerLoadoutConfig_Class
 {
 	GENERATED_BODY()
-
+	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TArray<FName> Weapons;
-
+	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	FName Gadget1 = NAME_None;
-
+	TArray<FPlayerLoadoutConfig_Weapon> WeaponLoadouts;
+	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	FName Gadget2 = NAME_None;
+	TArray<FName> Gadgets;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TArray<FPlayerLoadoutConfig_Weapon> GadgetWeaponLoadouts;
 };
 
 USTRUCT(BlueprintType)

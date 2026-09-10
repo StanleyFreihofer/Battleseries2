@@ -89,6 +89,7 @@ void ACharacter_Base::Init_Character()
 		Init_PlayerCharacter();
 	}
 
+	WeaponManager->Init_Loadout(CharacterStartingData.StartingLoadout);
 }
 
 void ACharacter_Base::Init_PlayerCharacter()

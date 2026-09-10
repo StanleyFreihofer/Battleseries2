@@ -155,7 +155,7 @@ class BATTLESERIES2_API UWeaponLogicComponent : public UActorComponent
 		FCombatState CombatState = FCombatState();
 
 		UFUNCTION(BlueprintCallable)
-		void Init_Loadout(TArray<FName> Weapons, TArray<FPlayerLoadoutConfig_Weapon> WeaponLoadouts, TArray<FName> Gadgets, TArray<FPlayerLoadoutConfig_Weapon> GadgetWeaponLoadouts);
+		void Init_Loadout(FPlayerLoadoutConfig_Class ClassLoadout);
 		UFUNCTION(BlueprintCallable)
 		void Init_WeaponLoadout(TArray<FName> Weapons, TArray<FPlayerLoadoutConfig_Weapon> WeaponLoadouts);
 		UFUNCTION(BlueprintCallable)

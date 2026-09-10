@@ -43,12 +43,12 @@ void UWeaponLogicComponent::TickComponent(float DeltaTime, ELevelTick TickType, 
 
 #pragma region Initialization/Factory
 
-void UWeaponLogicComponent::Init_Loadout(TArray<FName> Weapons, TArray<FPlayerLoadoutConfig_Weapon> WeaponLoadouts, TArray<FName> Gadgets, TArray<FPlayerLoadoutConfig_Weapon> GadgetWeaponLoadouts)
+void UWeaponLogicComponent::Init_Loadout(FPlayerLoadoutConfig_Class ClassLoadout)
 {
-	TArray<FName> WeaponIDs = Weapons;
-	TArray<FPlayerLoadoutConfig_Weapon> FinalWeaponLoadouts = WeaponLoadouts;
+	TArray<FName> WeaponIDs = ClassLoadout.Weapons;
+	TArray<FPlayerLoadoutConfig_Weapon> FinalWeaponLoadouts = ClassLoadout.WeaponLoadouts;
 	TArray<FName> GadgetIDs;
-	Loadout.ResolvedGadgetSlots.SetNum(Gadgets.Num());
+	Loadout.ResolvedGadgetSlots.SetNum(ClassLoadout.Gadgets.Num());
 	
 	while (FinalWeaponLoadouts.Num() < WeaponIDs.Num())
 	{
@@ -57,27 +57,27 @@ void UWeaponLogicComponent::Init_Loadout(TArray<FName> Weapons, TArray<FPlayerLo
 	
 	//INIT_ResolveWeaponGadgets
 	//add any gadgets that are weapons to the weaponID list for weapon initialization
-	for (int32 i = 0; i < Gadgets.Num(); i++)
+	for (int32 i = 0; i < ClassLoadout.Gadgets.Num(); i++)
 	{
-		const FGadgetData* NewGadgetData = UBS2FunctionLibrary::GetDataSubsystem(this)->GetGadgetDataRow(Gadgets[i]);
+		const FGadgetData* NewGadgetData = UBS2FunctionLibrary::GetDataSubsystem(this)->GetGadgetDataRow(ClassLoadout.Gadgets[i]);
 		if (NewGadgetData)
 		{
 			Loadout.ResolvedGadgetSlots[i].ActualType = ECharacterItemType::Gadget;
 			Loadout.ResolvedGadgetSlots[i].ResolvedArrayIndex = GadgetIDs.Num();
-			GadgetIDs.Add(Gadgets[i]);
+			GadgetIDs.Add(ClassLoadout.Gadgets[i]);
 			continue;
 		}
 		
 		//if a data row isn't found given the id, it might actually be a weapon
 		//if the gadgetid is in fact a valid infantry weapon data row, remove the id from the gadget list, add it to the weapon list.
-		const FInfantryWeaponData* InfantryWeaponData = UBS2FunctionLibrary::GetDataSubsystem(this)->GetInfantryWeaponDataRow(Gadgets[i]);
+		const FInfantryWeaponData* InfantryWeaponData = UBS2FunctionLibrary::GetDataSubsystem(this)->GetInfantryWeaponDataRow(ClassLoadout.Gadgets[i]);
 		if (InfantryWeaponData)
 		{
 			Loadout.ResolvedGadgetSlots[i].ActualType = ECharacterItemType::Weapon;
 			Loadout.ResolvedGadgetSlots[i].ResolvedArrayIndex = WeaponIDs.Num();
-			WeaponIDs.Add(Gadgets[i]);
+			WeaponIDs.Add(ClassLoadout.Gadgets[i]);
 			
-			FPlayerLoadoutConfig_Weapon GadgetWeaponConfig = GadgetWeaponLoadouts.IsValidIndex(i)? GadgetWeaponLoadouts[i] : FPlayerLoadoutConfig_Weapon();
+			FPlayerLoadoutConfig_Weapon GadgetWeaponConfig = ClassLoadout.GadgetWeaponLoadouts.IsValidIndex(i)? ClassLoadout.GadgetWeaponLoadouts[i] : FPlayerLoadoutConfig_Weapon();
 			
 			//??? meant to apply weapon attachments in weaponloadout list to weapon gadgets, possible bugs
 			//if (!FinalWeaponLoadouts.IsValidIndex(i))

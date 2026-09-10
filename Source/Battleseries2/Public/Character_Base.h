@@ -65,6 +65,8 @@ public:
 	FOnWeaponInputReleased_Vehicle OnFireReleased_Vehicle;
 
 	//VARIABLES
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (ExposeOnSpawn = "true"), Category = "__Instance")
+	FCharacterStartingData CharacterStartingData = FCharacterStartingData();
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Runtime")
 	FCharacterState CharacterState = FCharacterState();
 
