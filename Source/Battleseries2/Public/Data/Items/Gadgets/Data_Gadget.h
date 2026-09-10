@@ -2,6 +2,8 @@
 
 #include "CoreMinimal.h"
 #include "Engine/DataTable.h"
+#include "CollisionShape.h"
+#include "Data/Core/CoreEnums.h"
 #include "Data/Items/ItemStructs.h"
 #include "Data/Items/Gadgets/GadgetEnums.h"
 #include "Data_Gadget.generated.h"
@@ -18,17 +20,65 @@ struct FGadgetAnimData
 {
 	GENERATED_BODY()
 	
-	//UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	//TSoftObjectPtr<UAnimMontage> EquipGadget = nullptr;
-
-	//UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	//TSoftObjectPtr<UAnimMontage> UnequipGadget = nullptr;
-	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	FHeldItemAnimData_Base BaseItemAnimData = FHeldItemAnimData_Base();
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	TSoftObjectPtr<UAnimMontage> DeployGadget = nullptr;
+};
+
+USTRUCT(BlueprintType)
+struct FGadgetTriggerData
+{
+	GENERATED_BODY()
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	ECustomCollisionShapeType ShapeType = ECustomCollisionShapeType::Sphere;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (EditCondition = "ShapeType == ECustomCollisionShapeType::Sphere"))
+	float SphereRadius = 200.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (EditCondition = "ShapeType == ECustomCollisionShapeType::Box"))
+	FVector BoxExtent = FVector(100.f);
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	EGadgetTriggerEffect EffectType = EGadgetTriggerEffect::Damage;
+	
+	//what type of thing does it effect?
+	//what type of thing is it triggered by?
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	float EffectValue = 25.f;              // damage / heal / ammo amount
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	float TickInterval = 0.f;              // 0 = one-shot (claymore, mines); >0 = repeating (crates)
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	bool bDestroyOnTrigger = true;          // claymore: true; crate: false
+};
+
+USTRUCT(BlueprintType)
+struct FGadgetInstanceData
+{
+	//Data that defines each instance of this gadget's function and behavior
+	GENERATED_BODY()
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	bool bHasTriggerVolume = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (EditCondition = "bHasTriggerVolume", EditConditionHides))
+	FGadgetTriggerData TriggerData = FGadgetTriggerData();
+	
+	//health/can be destroyed?
+	//can be triggered via being shot or something?
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ToolTip = "time before gadget self-destructs, anything > 0 is considered an active value"))
+	float TimeLimit = 0.f;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ToolTip = "max amount of usages before gadget self-destructs, 0 is considered unlimited usages"))
+	int32 MaxUsages = 0.f;
+
+	//any other limits
 };
 
 USTRUCT(BlueprintType)
@@ -54,15 +104,19 @@ struct FGadgetData : public FTableRowBase
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	FGadgetAnimData GadgetAnimData = FGadgetAnimData();
 	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ToolTip = "Data that defines each instance of this gadget's function and behavior"))
+	FGadgetInstanceData GadgetInstanceData = FGadgetInstanceData();
+	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ToolTip = "if true, will automatically drop gadget on equip"))
 	bool AutoDrop = false;
 	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ToolTip = "if true, this gadget is able to be picked back when placed"))
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ToolTip = "if true, this gadget is able to be picked back up when placed"))
 	bool AbleToPickup = false;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ToolTip = "if true, this gadget will automatically be 'used' (if c4, auto detonate, if rc vehicle, auto start controlling)"))
 	bool AutoUse = false;
 	
+	//depreciate?
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ToolTip = "the gadget class/object that will be placed in the world"))
 	TSoftClassPtr<AActor> PlacedActorClass = nullptr;
 	

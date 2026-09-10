@@ -79,3 +79,12 @@ enum class EModifierOp : uint8
 	Set				UMETA(DisplayName = "Set/Override")
 	//inverse (if bool is on, turn off for example)?
 };
+
+UENUM(BlueprintType)
+enum class ECustomCollisionShapeType : uint8
+{
+	Box       UMETA(DisplayName = "Box"),
+	Sphere    UMETA(DisplayName = "Sphere"),
+	Capsule   UMETA(DisplayName = "Capsule"),
+	Line      UMETA(DisplayName = "Line/Ray")
+};

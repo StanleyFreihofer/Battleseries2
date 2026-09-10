@@ -10,3 +10,12 @@ enum class EGadgetType : uint8
 	Vehicle		UMETA(DisplayName = "Vehicle", ToolTip = "Gadget that is a vehicle (EOD Bot, Drone, etc)"),
 	Gadget		UMETA(DisplayName = "Gadget", ToolTip = "Every other type of gadget")
 };
+
+UENUM(BlueprintType)
+enum class EGadgetTriggerEffect : uint8
+{
+	Damage		UMETA(DisplayName = "Damage"),		//damage/destroy grenades and other munitions/projectiles?
+	Health		UMETA(DisplayName = "Health"),
+	Resupply	UMETA(DisplayName = "Resupply"),
+	Alert		UMETA(DisplayName = "Alert"),
+};

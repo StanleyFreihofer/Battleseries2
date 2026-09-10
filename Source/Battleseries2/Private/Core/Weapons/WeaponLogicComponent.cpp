@@ -592,7 +592,6 @@ void UWeaponLogicComponent::FireWeapon()
 	//RECOIL
 	TriggerControllerRecoil();
 	IAnims::Execute_IKRecoil(GetOwnerCharacter()->FPArms->GetAnimInstance(), StaticWeaponData->WeaponRecoilData.IKProceduralRecoilData);
-	IWS_FP.WeaponMesh->PlayAnimation(StaticWeaponData->InfantryWeaponAnimData.WeaponAnimData.WeaponFire.LoadSynchronous(), false);
 	
 	//TRIGGER EFFECTS
 	if (StaticWeaponData->WeaponVFXData.MuzzleSmokeParticle)
@@ -604,6 +603,7 @@ void UWeaponLogicComponent::FireWeapon()
 		UNiagaraComponent* MuzzleFlash = UNiagaraFunctionLibrary::SpawnSystemAttached(StaticWeaponData->WeaponVFXData.MuzzleFlashFX.LoadSynchronous(), IWS_FP.WeaponMesh.Get(), FName("Muzzle"), FVector::ZeroVector, IWS_FP.WeaponMesh->GetSocketRotation(FName("Muzzle")), EAttachLocation::KeepRelativeOffset, false, true, ENCPoolMethod::None, true);
 		MuzzleFlash->SetNiagaraVariableBool("User.Trigger", true);
 	}
+	IWS_FP.WeaponMesh->PlayAnimation(StaticWeaponData->InfantryWeaponAnimData.WeaponAnimData.WeaponFire.LoadSynchronous(), false);
 	//muzzle flash
 	//muzzle smoke
 	//weapon fire anim
@@ -615,7 +615,10 @@ void UWeaponLogicComponent::FireWeapon()
 	{
 		case EAmmoDepletionMethod::Default:
 			UBS2FunctionLibrary::UpdateCurrentAmmoInMag(CurrentWeapon, -1, CurrentWeapon.CurrentAmmoinMag);
-			UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateStatusHUD_CAMCount(CurrentWeapon.CurrentAmmoinMag);
+			if (GetOwnerCharacter()->IsLocallyControlled())
+			{
+				UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateStatusHUD_CAMCount(CurrentWeapon.CurrentAmmoinMag);
+			}
 			if (CurrentWeapon.CurrentAmmoinMag <= 0)
 			{
 				CeaseFire();
@@ -656,6 +659,11 @@ void UWeaponLogicComponent::ReloadWeapon()
 	}
 
 	CurrentWeapon.isReloading = true;
+	if (CurrentWeapon.isFiring)
+	{
+		CeaseFire();
+		CurrentWeapon.canFire = false;
+	}
 	bool bEmptyMag = CurrentWeapon.CurrentAmmoinMag <= 0;
 
 	if (!StaticWeaponData->InfantryWeaponAmmoData.ProjectileBoneToHide.IsNone())
@@ -682,6 +690,14 @@ void UWeaponLogicComponent::ReloadWeapon()
 	WeaponReloadAnim.LoadSynchronous();
 
 	InfantryWeaponState_FP.WeaponMesh->PlayAnimation(WeaponReloadAnim.Get(), false);
+	
+	/**
+	if (StaticWeaponData->WeaponFunctionalityData.canADSReload && CombatState.isAiming)
+	{
+		OnReloadFinished(nullptr, false, WeaponIndex);
+		return;
+	}
+	**/
 	
 	FPArmsAnimInstance->Montage_Play(FPReloadMontage.Get(), 1.0f);
 	FPArmsAnimInstance->Montage_SetEndDelegate(ReloadEndedDelegate, FPReloadMontage.Get());
@@ -714,6 +730,7 @@ void UWeaponLogicComponent::OnReloadFinished(UAnimMontage* Montage, bool bInterr
 	**/
 	
 	CurrentWeapon.isReloading = false;
+	CurrentWeapon.canFire = true;
 	if (!StaticWeaponData->WeaponFunctionalityData.canADSReload)
 	{
 		CombatState.canAim = true;
@@ -722,7 +739,6 @@ void UWeaponLogicComponent::OnReloadFinished(UAnimMontage* Montage, bool bInterr
 	{
 		return;		//reload canceled, don't grant ammo for a reload that never finished
 	}
-	
 	
 	int32 NewCAM, NewCRA, MagSize;
 	if (GetCurrentWeaponStaticData()->InfantryWeaponAmmoData.bCanRoundBeChambered && FMath::IsWithinInclusive(CurrentWeapon.CurrentAmmoinMag, 1, CurrentWeaponStats.MagSize))
@@ -832,7 +848,7 @@ void UWeaponLogicComponent::TransitionFromItem(int32 PreviousItemIndex, ECharact
 			UpdateGadgetVisibility(PreviousItemIndex, true);
 			break;
 	}
-	GetWorld()->GetTimerManager().SetTimer(SwitchWeaponTimer, [this, Character]()
+	GetWorld()->GetTimerManager().SetTimer(SwitchItemTimer, [this, Character]()
 	{
 		Character->FPArms->SetVisibility(true);
 	}, 0.05f, false);
@@ -1206,6 +1222,7 @@ void UWeaponLogicComponent::EquipGadget(int32 GadgetIndex)
 	const FGadgetAnimData& AnimData = GadgetData.GadgetAnimData;
 	TObjectPtr<UStaticMeshComponent> NewGadgetMesh = Loadout.Gadgets[GadgetIndex].HeldMesh_FP.Get();
 	UpdateGadgetVisibility(GadgetIndex, false);
+	NewGadgetMesh->SetRelativeLocation(FVector::ZeroVector);
 	
 	AnimData.BaseItemAnimData.EquipMontage.LoadSynchronous();
 	EquipGadgetBlendOutDelegate.BindUObject(this, &UWeaponLogicComponent::OnEquipGadget_BlendOut);

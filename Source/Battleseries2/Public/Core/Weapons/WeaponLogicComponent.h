@@ -316,7 +316,7 @@ class BATTLESERIES2_API UWeaponLogicComponent : public UActorComponent
 
 		const FInfantryWeaponData* GetCurrentWeaponStaticData();
 
-		FTimerHandle SwitchWeaponTimer;
+		FTimerHandle SwitchItemTimer;
 
 	private:
 		void OnReloadFinished(UAnimMontage* Montage, bool bInterrupted, int32 WeaponIndex);
