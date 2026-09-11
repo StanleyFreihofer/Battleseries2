@@ -84,7 +84,7 @@ struct FAttachmentTuningData
 
 	//what stat does it influence (negatively) (e.g., +15% time)
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Tuning Impact", meta = (EditCondition = "TuningCapability != ETuningCapability::NoTuning", EditConditionHides))
-	TMap<EStatToAffect, FStatModifierData> TuningPenalty;
+	TMap<EWeaponStat, FStatModifierData> TuningPenalty;
 };
 
 USTRUCT(BlueprintType)

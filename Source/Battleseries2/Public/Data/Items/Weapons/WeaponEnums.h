@@ -136,6 +136,7 @@ enum class EMuzzleType : uint8						//defines muzzle socket to use (should be us
 UENUM(BlueprintType)
 enum class EWeaponStat : uint8
 {
+	//static data categories for weapons essentially
 	BaseDamage,
 	RateOfFire,
 	Recoil,

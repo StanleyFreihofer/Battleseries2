@@ -13,7 +13,7 @@
 #include "Data/Items/Weapons/Data_Weapon.h"
 #include "Data/Items/Weapons/WeaponTypes.h"
 #include "Core/Weapons/VehicleWeaponLogicComponent.h"
-#include "Core/Weapons/WeaponLogicComponent.h"
+#include "Core/Weapons/LoadoutManager.h"
 #include "Core/UI/VehicleHUDs/UW_HUD_Vehicle_Base.h"
 #include "Core/UI/GameplayHUDs/UW_HUD_Status_Base.h"
 #include "Core/PlayerController_Base.h"
@@ -34,7 +34,7 @@ ACharacter_Base::ACharacter_Base(const FObjectInitializer& ObjectInitializer) : 
 	FPLegsSpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("LegsSpringArm"));
 	FPArms = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("FPArms"));
 	FPLegs = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("FPLegs"));
-	WeaponManager = CreateDefaultSubobject<UWeaponLogicComponent>(TEXT("WeaponManager"));
+	WeaponManager = CreateDefaultSubobject<ULoadoutManager>(TEXT("WeaponManager"));
 	FPArmsSpringArm->SetupAttachment(GetCapsuleComponent());
 	FPLegsSpringArm->SetupAttachment(GetCapsuleComponent());
 	FPArms->SetupAttachment(FPArmsSpringArm);
@@ -61,6 +61,7 @@ void ACharacter_Base::PossessedBy(AController* NewController)
 		GetWorld()->GetTimerManager().SetTimerForNextTick([this]()
 		{
 			Init_PlayerCharacter();
+			WeaponManager->Init_Loadout(CharacterStartingData.StartingLoadout);
 		});
 	}
 }
@@ -86,10 +87,10 @@ void ACharacter_Base::Init_Character()
 	Init_CharacterMovement();
 	if (IsLocallyControlled())
 	{
-		Init_PlayerCharacter();
+		//Init_PlayerCharacter();
 	}
 
-	WeaponManager->Init_Loadout(CharacterStartingData.StartingLoadout);
+
 }
 
 void ACharacter_Base::Init_PlayerCharacter()

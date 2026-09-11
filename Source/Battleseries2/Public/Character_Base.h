@@ -16,7 +16,7 @@
 class USaveSubsystem;
 class AVehicle_Base;
 class UDataManagerSubsystem;
-class UWeaponLogicComponent;
+class ULoadoutManager;
 struct FCharacterSeatContext;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnWeaponInputReleased_Vehicle, int32, SeatIndex);
@@ -57,7 +57,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
 	USkeletalMeshComponent* FPLegs = nullptr;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
-	UWeaponLogicComponent* WeaponManager;
+	ULoadoutManager* WeaponManager;
 
 #pragma endregion
 

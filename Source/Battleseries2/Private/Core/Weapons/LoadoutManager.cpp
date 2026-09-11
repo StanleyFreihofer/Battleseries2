@@ -1,5 +1,5 @@
 
-#include "Core/Weapons/WeaponLogicComponent.h"
+#include "Core/Weapons/LoadoutManager.h"
 #include "Core/Weapons/WeaponFunctions.h"
 #include "Character_Base.h"
 #include "Vehicle_Base.h"
@@ -23,19 +23,19 @@
 #include "Kismet/GameplayStatics.h"
 #include "Utilities/HUDSubsystem.h"
 
-UWeaponLogicComponent::UWeaponLogicComponent()
+ULoadoutManager::ULoadoutManager()
 {
 	PrimaryComponentTick.bCanEverTick = true;
 	PrimaryComponentTick.bStartWithTickEnabled = true;
 }
 
-void UWeaponLogicComponent::BeginPlay()
+void ULoadoutManager::BeginPlay()
 {
 	Super::BeginPlay();
 
 }
 
-void UWeaponLogicComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
+void ULoadoutManager::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 	Rangefinder();
@@ -43,7 +43,7 @@ void UWeaponLogicComponent::TickComponent(float DeltaTime, ELevelTick TickType, 
 
 #pragma region Initialization/Factory
 
-void UWeaponLogicComponent::Init_Loadout(FPlayerLoadoutConfig_Class ClassLoadout)
+void ULoadoutManager::Init_Loadout(FPlayerLoadoutConfig_Class ClassLoadout)
 {
 	TArray<FName> WeaponIDs = ClassLoadout.Weapons;
 	TArray<FPlayerLoadoutConfig_Weapon> FinalWeaponLoadouts = ClassLoadout.WeaponLoadouts;
@@ -93,7 +93,7 @@ void UWeaponLogicComponent::Init_Loadout(FPlayerLoadoutConfig_Class ClassLoadout
 	isInitialized = true;
 }
 
-void UWeaponLogicComponent::Init_WeaponLoadout(TArray<FName> Weapons, TArray<FPlayerLoadoutConfig_Weapon> WeaponLoadouts)
+void ULoadoutManager::Init_WeaponLoadout(TArray<FName> Weapons, TArray<FPlayerLoadoutConfig_Weapon> WeaponLoadouts)
 {
 	Loadout.WeaponSystem.BaseWeaponState.Weapons.SetNum(Weapons.Num());
 	StaticWeaponDataCache.SetNum(Weapons.Num());
@@ -111,7 +111,7 @@ void UWeaponLogicComponent::Init_WeaponLoadout(TArray<FName> Weapons, TArray<FPl
 	EquipWeapon(0, true);
 }
 
-void UWeaponLogicComponent::Init_GadgetLoadout(TArray<FName> Gadgets)
+void ULoadoutManager::Init_GadgetLoadout(TArray<FName> Gadgets)
 {
 	Loadout.Gadgets.SetNum(Gadgets.Num());
 	StaticGadgetDataCache.SetNum(Gadgets.Num());
@@ -122,7 +122,7 @@ void UWeaponLogicComponent::Init_GadgetLoadout(TArray<FName> Gadgets)
 	}
 }
 
-void UWeaponLogicComponent::Init_ScopeCamera()
+void ULoadoutManager::Init_ScopeCamera()
 {
 	Loadout.WeaponSystem.ScopeCamera = NewObject<USceneCaptureComponent2D>(GetOwner());
 	TObjectPtr<USceneCaptureComponent2D>& ScopeCamera = Loadout.WeaponSystem.ScopeCamera;
@@ -134,7 +134,7 @@ void UWeaponLogicComponent::Init_ScopeCamera()
 	UpdateScope(0);
 }
 
-void UWeaponLogicComponent::Init_Weapon(FName WeaponID, int32 WeaponIndex, FPlayerLoadoutConfig_Weapon WeaponLoadout)
+void ULoadoutManager::Init_Weapon(FName WeaponID, int32 WeaponIndex, FPlayerLoadoutConfig_Weapon WeaponLoadout)
 {
 	//Init WeaponSlot		Init Weapon
 	FInfantryWeaponState NewFPState;
@@ -158,14 +158,14 @@ void UWeaponLogicComponent::Init_Weapon(FName WeaponID, int32 WeaponIndex, FPlay
 	UpdateWeaponVisibility(WeaponIndex, true);
 }
 
-void UWeaponLogicComponent::Init_WeaponMesh(TWeakObjectPtr<USkeletalMeshComponent>& WeaponMesh)
+void ULoadoutManager::Init_WeaponMesh(TWeakObjectPtr<USkeletalMeshComponent>& WeaponMesh)
 {
 	TWeakObjectPtr<USkeletalMeshComponent> NewWeapon = NewObject<USkeletalMeshComponent>(GetOwner());
 	NewWeapon->RegisterComponent();
 	WeaponMesh = NewWeapon;			//cache
 }
 
-void UWeaponLogicComponent::Init_WeaponState(int32 WeaponIndex)
+void ULoadoutManager::Init_WeaponState(int32 WeaponIndex)
 {
 	//if using current weapon stats to initialize, the stats need to be valid/setup beforehand
 	FWeaponStats_Runtime& CurrentWeaponStats = Loadout.WeaponSystem.InfantryWeaponState.CurrentWeaponStats[WeaponIndex];
@@ -175,12 +175,12 @@ void UWeaponLogicComponent::Init_WeaponState(int32 WeaponIndex)
 	BaseWeaponState.CurrentFireMode = CurrentWeaponStats.FireModeData.DefaultFireMode;
 }
 
-void UWeaponLogicComponent::Init_WAC()
+void ULoadoutManager::Init_WAC()
 {
 	Loadout.WeaponSystem.WeaponAudioComponent = UBS2FunctionLibrary::CreateWAC(this, GetOwner(), GetOwner()->GetRootComponent());
 }
 
-void UWeaponLogicComponent::Init_Attachment(FWeaponAttachmentState& RuntimeSlotState, FInfantryWeaponState& WeaponToApplyTo, EAttachmentSlot AttachmentSlot)
+void ULoadoutManager::Init_Attachment(FWeaponAttachmentState& RuntimeSlotState, FInfantryWeaponState& WeaponToApplyTo, EAttachmentSlot AttachmentSlot)
 {
 	//Initialize/Create Attachment, attach to gun, cache
 	TWeakObjectPtr<UStaticMeshComponent> NewAttachment = NewObject<UStaticMeshComponent>(GetOwner());
@@ -189,7 +189,7 @@ void UWeaponLogicComponent::Init_Attachment(FWeaponAttachmentState& RuntimeSlotS
 	RuntimeSlotState.SpawnedAttachment = NewAttachment;
 }
 
-void UWeaponLogicComponent::Init_Gadget(FName GadgetID, int32 GadgetIndex)
+void ULoadoutManager::Init_Gadget(FName GadgetID, int32 GadgetIndex)
 {
 	FGadgetState& GadgetState = Loadout.Gadgets[GadgetIndex];
 	StaticGadgetDataCache[GadgetIndex] = UBS2FunctionLibrary::GetDataSubsystem(this)->GetGadgetDataRow(GadgetID);
@@ -208,7 +208,7 @@ void UWeaponLogicComponent::Init_Gadget(FName GadgetID, int32 GadgetIndex)
 	UpdateGadgetVisibility(GadgetIndex, true);
 }
 
-void UWeaponLogicComponent::Init_GadgetMesh(TWeakObjectPtr<UStaticMeshComponent>& HeldGadgetMesh)
+void ULoadoutManager::Init_GadgetMesh(TWeakObjectPtr<UStaticMeshComponent>& HeldGadgetMesh)
 {
 	TWeakObjectPtr<UStaticMeshComponent> NewGadgetMesh = NewObject<UStaticMeshComponent>(GetOwner());
 	NewGadgetMesh->RegisterComponent();
@@ -217,7 +217,7 @@ void UWeaponLogicComponent::Init_GadgetMesh(TWeakObjectPtr<UStaticMeshComponent>
 
 #pragma endregion
 
-void UWeaponLogicComponent::SetupCustomWeapon(int32 WeaponIndex, FPlayerLoadoutConfig_Weapon WeaponLoadout)
+void ULoadoutManager::SetupCustomWeapon(int32 WeaponIndex, FPlayerLoadoutConfig_Weapon WeaponLoadout)
 {
 	//setup custom weapon (attachments, stats, etc)
 	const FPlayerLoadoutConfig_Weapon& CustomWeapon = WeaponLoadout;
@@ -225,7 +225,7 @@ void UWeaponLogicComponent::SetupCustomWeapon(int32 WeaponIndex, FPlayerLoadoutC
 	UpdateCurrentWeaponStats(WeaponIndex);
 }
 
-void UWeaponLogicComponent::ApplyAttachments(const FPlayerLoadoutConfig_Weapon& AttachmentsToApply, int32 WeaponIndex)
+void ULoadoutManager::ApplyAttachments(const FPlayerLoadoutConfig_Weapon& AttachmentsToApply, int32 WeaponIndex)
 {
 	FInfantryWeaponState& WeaponToApplyTo = Loadout.WeaponSystem.InfantryWeaponState.WeaponState_FP[WeaponIndex];
 	for (auto& Slot : AttachmentsToApply.WeaponAttachments)
@@ -239,7 +239,7 @@ void UWeaponLogicComponent::ApplyAttachments(const FPlayerLoadoutConfig_Weapon& 
 	}
 }
 
-void UWeaponLogicComponent::UpdateWeaponMesh(FName WeaponID, TWeakObjectPtr<USkeletalMeshComponent>& WeaponMeshComp)
+void ULoadoutManager::UpdateWeaponMesh(FName WeaponID, TWeakObjectPtr<USkeletalMeshComponent>& WeaponMeshComp)
 {
 	const FInfantryWeaponData& WeaponData = *UBS2FunctionLibrary::GetDataSubsystem(this)->GetInfantryWeaponDataRow(WeaponID);
 	TWeakObjectPtr<USkeletalMesh> WeaponMesh = WeaponData.WeaponClassificationData.WeaponMesh.LoadSynchronous();
@@ -247,24 +247,24 @@ void UWeaponLogicComponent::UpdateWeaponMesh(FName WeaponID, TWeakObjectPtr<USke
 }
 
 
-void UWeaponLogicComponent::UpdateGadgetMesh(FName GadgetID, TWeakObjectPtr<UStaticMeshComponent>& GadgetMeshComp)
+void ULoadoutManager::UpdateGadgetMesh(FName GadgetID, TWeakObjectPtr<UStaticMeshComponent>& GadgetMeshComp)
 {
 	const FGadgetData& GadgetData = *UBS2FunctionLibrary::GetDataSubsystem(this)->GetGadgetDataRow(GadgetID);
 	TWeakObjectPtr<UStaticMesh> GadgetMesh = GadgetData.GadgetMesh.LoadSynchronous();
 	GadgetMeshComp->SetStaticMesh(GadgetMesh.Get());
 }
 
-void UWeaponLogicComponent::UpdateGadgetVisibility(int32 GadgetIndex, bool Hide)
+void ULoadoutManager::UpdateGadgetVisibility(int32 GadgetIndex, bool Hide)
 {
 	Loadout.Gadgets[GadgetIndex].HeldMesh_FP->SetHiddenInGame(Hide);
 }
 
-void UWeaponLogicComponent::UpdateGadgetCollision(ECollisionChannel CollisionChannel, ECollisionResponse CollisionResponse, int32 GadgetIndex)
+void ULoadoutManager::UpdateGadgetCollision(ECollisionChannel CollisionChannel, ECollisionResponse CollisionResponse, int32 GadgetIndex)
 {
 	Loadout.Gadgets[GadgetIndex].HeldMesh_FP.Get()->SetCollisionResponseToChannel(CollisionChannel, CollisionResponse);
 }
 
-void UWeaponLogicComponent::UpdateWeaponData(int32 WeaponIndex, FName WeaponID, FInfantryWeaponState WeaponState)
+void ULoadoutManager::UpdateWeaponData(int32 WeaponIndex, FName WeaponID, FInfantryWeaponState WeaponState)
 {
 	Loadout.WeaponSystem.BaseWeaponState.Weapons[WeaponIndex].WeaponID = WeaponID;
 	StaticWeaponDataCache[WeaponIndex] = UBS2FunctionLibrary::GetDataSubsystem(this)->GetInfantryWeaponDataRow(WeaponID);
@@ -273,7 +273,7 @@ void UWeaponLogicComponent::UpdateWeaponData(int32 WeaponIndex, FName WeaponID, 
 	Loadout.WeaponSystem.InfantryWeaponState.WeaponState_FP[WeaponIndex] = WeaponState;
 }
 
-void UWeaponLogicComponent::UpdateScopeCamera()
+void ULoadoutManager::UpdateScopeCamera()
 {
 	//called on equip weapon
 	Loadout.WeaponSystem.ScopeCamera->AttachToComponent(Loadout.WeaponSystem.InfantryWeaponState.WeaponState_FP[GetCII()].WeaponMesh.Get(), FAttachmentTransformRules(EAttachmentRule::SnapToTarget, EAttachmentRule::SnapToTarget, EAttachmentRule::SnapToTarget, true), FName("PIP"));
@@ -289,7 +289,7 @@ void UWeaponLogicComponent::UpdateScopeCamera()
 	}
 }
 
-void UWeaponLogicComponent::UpdateAttachment(FWeaponAttachmentState& RuntimeSlotState, FName AttachmentID, FName WeaponID, EAttachmentSlot AttachmentSlot)
+void ULoadoutManager::UpdateAttachment(FWeaponAttachmentState& RuntimeSlotState, FName AttachmentID, FName WeaponID, EAttachmentSlot AttachmentSlot)
 {
 	//update attachment mesh
 	const FWeaponAttachmentData& AttachmentData = *UBS2FunctionLibrary::GetDataSubsystem(this)->GetWeaponAttachmentDataRow(AttachmentID);
@@ -301,7 +301,7 @@ void UWeaponLogicComponent::UpdateAttachment(FWeaponAttachmentState& RuntimeSlot
 	RuntimeSlotState.BaseAttachmentState.AttachmentID = AttachmentID;
 }
 
-void UWeaponLogicComponent::UpdateWeaponCollision(ECollisionChannel CollisionChannel, ECollisionResponse CollisionResponse, int32 WeaponIndex)
+void ULoadoutManager::UpdateWeaponCollision(ECollisionChannel CollisionChannel, ECollisionResponse CollisionResponse, int32 WeaponIndex)
 {
 	Loadout.WeaponSystem.InfantryWeaponState.WeaponState_FP[WeaponIndex].WeaponMesh->SetCollisionResponseToChannel(CollisionChannel, CollisionResponse);
 	for (auto& Attachment : Loadout.WeaponSystem.InfantryWeaponState.WeaponState_FP[WeaponIndex].WeaponAttachmentStates)
@@ -311,7 +311,7 @@ void UWeaponLogicComponent::UpdateWeaponCollision(ECollisionChannel CollisionCha
 	//WeaponSystem.InfantryWeaponSystem.WeaponState_TP[WeaponSystem.BaseWeaponSystem.EquippedWeaponState.CurrentWeaponIndex].WeaponMesh->SetCollisionResponseToChannel(CollisionChannel, CollisionResponse);
 }
 
-void UWeaponLogicComponent::UpdateWeaponVisibility(int32 WeaponIndex, bool Hide)
+void ULoadoutManager::UpdateWeaponVisibility(int32 WeaponIndex, bool Hide)
 {
 	FInfantryWeaponState& Weapon = Loadout.WeaponSystem.InfantryWeaponState.WeaponState_FP[WeaponIndex];
 	Weapon.WeaponMesh->SetHiddenInGame(Hide);
@@ -323,7 +323,7 @@ void UWeaponLogicComponent::UpdateWeaponVisibility(int32 WeaponIndex, bool Hide)
 
 #pragma region Aiming
 
-void UWeaponLogicComponent::StartAim()
+void ULoadoutManager::StartAim()
 {
 	if (!GetIsCurrentSlotActuallyWeapon())	{ return; }
 	if (!CombatState.canAim)
@@ -353,7 +353,7 @@ void UWeaponLogicComponent::StartAim()
 	CombatState.isAiming = true;
 }
 
-void UWeaponLogicComponent::StopAim()
+void ULoadoutManager::StopAim()
 {
 	const FInfantryWeaponAimData& AimData = GetCurrentWeaponStaticData()->InfantryWeaponAimData;
 	if (!AimData.canAim) { return; }
@@ -372,7 +372,7 @@ void UWeaponLogicComponent::StopAim()
 
 # pragma endregion 
 
-void UWeaponLogicComponent::Rangefinder()
+void ULoadoutManager::Rangefinder()
 {
 	FHitResult OutHit;
 	UBS2FunctionLibrary::PerformWeaponLineTrace(this, GetOwnerCharacter()->FPCamera->GetComponentTransform(), OutHit, { GetOwner() }, false);
@@ -386,7 +386,7 @@ void UWeaponLogicComponent::Rangefinder()
 
 #pragma region WeaponFire
 
-void UWeaponLogicComponent::HandleStartFire()
+void ULoadoutManager::HandleStartFire()
 {
 	FWeaponState& CurrentWeapon = *GetCurrentWeaponBaseState();
 
@@ -422,7 +422,7 @@ void UWeaponLogicComponent::HandleStartFire()
 	}
 }
 
-void UWeaponLogicComponent::StartFire()
+void ULoadoutManager::StartFire()
 {
 	//fires exactly once
 	//assumes canfire is true
@@ -432,7 +432,7 @@ void UWeaponLogicComponent::StartFire()
 	FireWeapon();
 }
 
-void UWeaponLogicComponent::StartAutoFire()
+void ULoadoutManager::StartAutoFire()
 {
 	FWeaponState& CurrentWeapon = *GetCurrentWeaponBaseState();
 
@@ -452,7 +452,7 @@ void UWeaponLogicComponent::StartAutoFire()
 	}
 }
 
-void UWeaponLogicComponent::ShootSimProjectile()
+void ULoadoutManager::ShootSimProjectile()
 {
 	FVector MuzzleLocation = UBS2FunctionLibrary::GetMuzzleTransform(FName("Muzzle"), GetCurrentInfantryWeaponState_FP().WeaponMesh).GetLocation();
 	
@@ -473,7 +473,7 @@ void UWeaponLogicComponent::ShootSimProjectile()
 	);
 }
 
-void UWeaponLogicComponent::HandleShootProjectileActor()
+void ULoadoutManager::HandleShootProjectileActor()
 {
 	const FInfantryWeaponData& StaticWeaponData = *GetCurrentWeaponStaticData();
 	TWeakObjectPtr<AProjectile_Base> FiredProjectile = nullptr;
@@ -494,7 +494,7 @@ void UWeaponLogicComponent::HandleShootProjectileActor()
 
 #pragma region WeaponRecoil
 
-void UWeaponLogicComponent::TriggerControllerRecoil()
+void ULoadoutManager::TriggerControllerRecoil()
 {
 	CombatState.RecoilElapsedTime = 0.0f;
 	
@@ -507,7 +507,7 @@ void UWeaponLogicComponent::TriggerControllerRecoil()
 	GetWorld()->GetTimerManager().SetTimer(CombatState.TimerHandle_Recoil, RecoilDelgate, 1.0f/60.0f, true);
 }
 
-void UWeaponLogicComponent::UpdateControllerRecoil()
+void ULoadoutManager::UpdateControllerRecoil()
 {
 	const FInfantryWeaponData& StaticWeaponData = *GetCurrentWeaponStaticData();
 	const FControllerRecoilData& RecoilData = StaticWeaponData.WeaponRecoilData.ControllerRecoilData;
@@ -535,7 +535,7 @@ void UWeaponLogicComponent::UpdateControllerRecoil()
 
 #pragma endregion
 
-void UWeaponLogicComponent::CeaseFire()
+void ULoadoutManager::CeaseFire()
 {
 	//just because fire is ceased, it SHOULD NOT be assumed that weapon cannot fire
 	CombatState.isAttemptingToFire = false;
@@ -555,7 +555,7 @@ void UWeaponLogicComponent::CeaseFire()
 	CurrentWeapon.isFiring = false;
 }
 
-void UWeaponLogicComponent::DryFire()
+void ULoadoutManager::DryFire()
 {
 	//play whatever dryfire sound and animation
 	FWeaponState& CurrentWeapon = *GetCurrentWeaponBaseState();
@@ -568,7 +568,7 @@ void UWeaponLogicComponent::DryFire()
 	UGameplayStatics::PlaySound2D(this,GetCurrentWeaponStaticData()->InfantryWeaponAudioData.DryFireSFX.LoadSynchronous());
 }
 
-void UWeaponLogicComponent::FireWeapon()
+void ULoadoutManager::FireWeapon()
 {
 	const FInfantryWeaponData* StaticWeaponData = GetCurrentWeaponStaticData();
 	
@@ -637,7 +637,7 @@ void UWeaponLogicComponent::FireWeapon()
 
 #pragma region WeaponReload
 
-void UWeaponLogicComponent::ReloadWeapon()
+void ULoadoutManager::ReloadWeapon()
 {
 	int32 WeaponIndex = GetCII();
 	FWeaponState& CurrentWeapon = *GetCurrentWeaponBaseState();
@@ -703,7 +703,7 @@ void UWeaponLogicComponent::ReloadWeapon()
 	FPArmsAnimInstance->Montage_SetEndDelegate(ReloadEndedDelegate, FPReloadMontage.Get());
 }
 
-void UWeaponLogicComponent::OnReloadFinished(UAnimMontage* Montage, bool bInterrupted, int32 WeaponIndex)
+void ULoadoutManager::OnReloadFinished(UAnimMontage* Montage, bool bInterrupted, int32 WeaponIndex)
 {
 	UE_LOG(LogTemp, Warning, TEXT("[WLC::OnReloadFinished"));
 	FWeaponStats_Runtime& CurrentWeaponStats = Loadout.WeaponSystem.InfantryWeaponState.CurrentWeaponStats[WeaponIndex];
@@ -761,7 +761,7 @@ void UWeaponLogicComponent::OnReloadFinished(UAnimMontage* Montage, bool bInterr
 
 #pragma region ItemSwitching
 
-void UWeaponLogicComponent::AutoSwitchItem()
+void ULoadoutManager::AutoSwitchItem()
 {
 	//smart switch item instead?
 	//use to auto switch/revolve/rotate between items in a list
@@ -779,7 +779,7 @@ void UWeaponLogicComponent::AutoSwitchItem()
 	}
 }
 
-void UWeaponLogicComponent::HandleSwitchItem(ELoadoutSlot NewLoadoutSlot)
+void ULoadoutManager::HandleSwitchItem(ELoadoutSlot NewLoadoutSlot)
 {
 	//main switch weapon function, can be used to directly equip a given index (manual) or auto increment (via SwitchWeapon_AutoIncrement)
 	if (NewLoadoutSlot == Loadout.CurrentSlot)		{ return;	}
@@ -810,11 +810,11 @@ void UWeaponLogicComponent::HandleSwitchItem(ELoadoutSlot NewLoadoutSlot)
 			switch (NewItemType)
 			{
 				case ECharacterItemType::Weapon:
-					UnequipBlendOutDelegate.BindUObject(this, &UWeaponLogicComponent::OnUnequipWeapon_BlendOutToWeapon);
+					UnequipBlendOutDelegate.BindUObject(this, &ULoadoutManager::OnUnequipWeapon_BlendOutToWeapon);
 					UnequipWeapon(Loadout.PreviousItemIndex);
 					break;
 				case ECharacterItemType::Gadget:
-					UnequipBlendOutDelegate.BindUObject(this, &UWeaponLogicComponent::OnUnequipWeapon_BlendOutToGadget);
+					UnequipBlendOutDelegate.BindUObject(this, &ULoadoutManager::OnUnequipWeapon_BlendOutToGadget);
 					UnequipWeapon(Loadout.PreviousItemIndex);
 					break;
 			}
@@ -833,7 +833,7 @@ void UWeaponLogicComponent::HandleSwitchItem(ELoadoutSlot NewLoadoutSlot)
 	}
 }
 
-void UWeaponLogicComponent::TransitionFromItem(int32 PreviousItemIndex, ECharacterItemType LoadoutCategory)
+void ULoadoutManager::TransitionFromItem(int32 PreviousItemIndex, ECharacterItemType LoadoutCategory)
 {
 	//basically unequip for everything non-anim related
 	TWeakObjectPtr<ACharacter_Base> Character = Cast<ACharacter_Base>(GetOwner());
@@ -856,7 +856,7 @@ void UWeaponLogicComponent::TransitionFromItem(int32 PreviousItemIndex, ECharact
 	TransitionToItem();
 }
 
-void UWeaponLogicComponent::TransitionToItem()
+void ULoadoutManager::TransitionToItem()
 {
 	//basically equip for everything non-anim related
 	int32 ItemIndex;
@@ -886,7 +886,7 @@ void UWeaponLogicComponent::TransitionToItem()
 	}
 }
 
-void UWeaponLogicComponent::UnequipWeapon(int32 PreviousWeaponIndex)
+void ULoadoutManager::UnequipWeapon(int32 PreviousWeaponIndex)
 {
 	TSoftObjectPtr<UAnimMontage> FPUnequipItemMontage = StaticWeaponDataCache[PreviousWeaponIndex]->InfantryWeaponAnimData.FPWeaponAnimData.BaseItemAnimData.UnequipMontage;
 	FPUnequipItemMontage.LoadSynchronous();
@@ -910,7 +910,7 @@ void UWeaponLogicComponent::UnequipWeapon(int32 PreviousWeaponIndex)
 	FPArmsAnimInstance->Montage_SetBlendingOutDelegate(UnequipBlendOutDelegate, FPUnequipItemMontage.Get());		//BINDING SHOULDVE HAPPENED BEFORE THIS FUNCTION IS CALLED
 }
 
-void UWeaponLogicComponent::OnUnequipWeapon_BlendOutToWeapon(UAnimMontage* Montage, bool bInterrupted)
+void ULoadoutManager::OnUnequipWeapon_BlendOutToWeapon(UAnimMontage* Montage, bool bInterrupted)
 {
 	//old slot was weapon, new slot is weapon
 	TWeakObjectPtr<ACharacter_Base> Character = GetOwnerCharacter();
@@ -926,7 +926,7 @@ void UWeaponLogicComponent::OnUnequipWeapon_BlendOutToWeapon(UAnimMontage* Monta
 	TransitionFromItem(Loadout.PreviousItemIndex, ECharacterItemType::Weapon);	//remember, this function calls equip weapon in it
 }
 
-void UWeaponLogicComponent::OnUnequipWeapon_BlendOutToGadget(UAnimMontage* Montage, bool bInterrupted)
+void ULoadoutManager::OnUnequipWeapon_BlendOutToGadget(UAnimMontage* Montage, bool bInterrupted)
 {
 	//old slot was weapon, new slot is gadget
 	TWeakObjectPtr<ACharacter_Base> Character = GetOwnerCharacter();
@@ -941,7 +941,7 @@ void UWeaponLogicComponent::OnUnequipWeapon_BlendOutToGadget(UAnimMontage* Monta
 	TransitionFromItem(Loadout.PreviousItemIndex, ECharacterItemType::Weapon);
 }
 
-void UWeaponLogicComponent::EquipWeapon(int32 WeaponIndex, bool InitialEquip)
+void ULoadoutManager::EquipWeapon(int32 WeaponIndex, bool InitialEquip)
 {
 	TWeakObjectPtr<ACharacter_Base> Character = GetOwnerCharacter();
 	TWeakObjectPtr<UAnimInstance> FPArmsAnimInstance = Character->FPArms->GetAnimInstance();
@@ -983,7 +983,7 @@ void UWeaponLogicComponent::EquipWeapon(int32 WeaponIndex, bool InitialEquip)
 
 #pragma endregion
 
-void UWeaponLogicComponent::ToggleFireMode()
+void ULoadoutManager::ToggleFireMode()
 {
 	FWeaponStats_Runtime& CurrentWeaponStats = GetCurrentWeaponStats();
 	FWeaponFireModeData& CurrentFireModeData = CurrentWeaponStats.FireModeData;
@@ -1027,7 +1027,7 @@ void UWeaponLogicComponent::ToggleFireMode()
 
 #pragma region WeaponScope
 
-void UWeaponLogicComponent::ToggleScope()
+void ULoadoutManager::ToggleScope()
 {
 	if (!CombatState.isAiming) { return; }
 	const FWeaponAttachmentData& WeaponAttachmentData = *UBS2FunctionLibrary::GetDataSubsystem(this)->GetWeaponAttachmentDataRow(GetCurrentAttachmentInSlot(EAttachmentSlot::Scope).BaseAttachmentState.AttachmentID);
@@ -1040,7 +1040,7 @@ void UWeaponLogicComponent::ToggleScope()
 	}
 }
 
-void UWeaponLogicComponent::UpdateScope(int32 NewOpticIndex)
+void ULoadoutManager::UpdateScope(int32 NewOpticIndex)
 {
 	float& DefaultFOV = UBS2FunctionLibrary::GetDataSubsystem(this)->GetWeaponDefaults()->WeaponDefaults.ScopeCameraFOV;
 	FName& ScopeID = GetCurrentAttachmentInSlot(EAttachmentSlot::Scope).BaseAttachmentState.AttachmentID;
@@ -1068,7 +1068,7 @@ void UWeaponLogicComponent::UpdateScope(int32 NewOpticIndex)
 
 #pragma region WeaponAttachments
 
-void UWeaponLogicComponent::UpdateCurrentWeaponStats(int32 WeaponIndex)
+void ULoadoutManager::UpdateCurrentWeaponStats(int32 WeaponIndex)
 {
 	FWeaponStats_Runtime& RuntimeStats = Loadout.WeaponSystem.InfantryWeaponState.CurrentWeaponStats[WeaponIndex];
 	FName& WeaponID = Loadout.WeaponSystem.BaseWeaponState.Weapons[WeaponIndex].WeaponID;
@@ -1096,7 +1096,7 @@ void UWeaponLogicComponent::UpdateCurrentWeaponStats(int32 WeaponIndex)
 	}
 }
 
-void UWeaponLogicComponent::ApplyAttachmentModifier(FWeaponStats_Runtime& RuntimeStats, EWeaponStat WeaponStat, const FStatModifierData& Modifier)
+void ULoadoutManager::ApplyAttachmentModifier(FWeaponStats_Runtime& RuntimeStats, EWeaponStat WeaponStat, const FStatModifierData& Modifier)
 {
 	using FloatPtr = float FWeaponStats_Runtime::*;				//FloatPtr = float*
 	using IntPtr = int32 FWeaponStats_Runtime::*;				//IntPtr = int32*
@@ -1183,7 +1183,7 @@ void UWeaponLogicComponent::ApplyAttachmentModifier(FWeaponStats_Runtime& Runtim
 	}
 }
 
-float UWeaponLogicComponent::CalculateFinalStatValue(float BaseValue, TArray<FStatModifierData>& ModifierArray)
+float ULoadoutManager::CalculateFinalStatValue(float BaseValue, TArray<FStatModifierData>& ModifierArray)
 {
 	float CurrentValue = BaseValue;
 	for (FStatModifierData& Modifier : ModifierArray)
@@ -1197,7 +1197,7 @@ float UWeaponLogicComponent::CalculateFinalStatValue(float BaseValue, TArray<FSt
 
 #pragma region Gadgets
 
-void UWeaponLogicComponent::UnequipGadget(int32 PreviousGadgetIndex)
+void ULoadoutManager::UnequipGadget(int32 PreviousGadgetIndex)
 {
 	TSoftObjectPtr<UAnimMontage> FPUnequipItemMontage = StaticGadgetDataCache[PreviousGadgetIndex]->GadgetAnimData.BaseItemAnimData.UnequipMontage;
 	FPUnequipItemMontage.LoadSynchronous();
@@ -1208,13 +1208,13 @@ void UWeaponLogicComponent::UnequipGadget(int32 PreviousGadgetIndex)
 		return;
 	}
 	
-	TWeakObjectPtr<UAnimInstance> FPArmsAnimInstance = Cast<ACharacter_Base>(GetOwner())->FPArms->GetAnimInstance();
+	TWeakObjectPtr<UAnimInstance> FPArmsAnimInstance = GetOwnerCharacter()->FPArms->GetAnimInstance();
 	
 	FPArmsAnimInstance->Montage_Play(FPUnequipItemMontage.Get(), 1.0f, EMontagePlayReturnType::MontageLength, 0.0f);
 	FPArmsAnimInstance->Montage_SetBlendingOutDelegate(UnequipBlendOutDelegate, FPUnequipItemMontage.Get());		//BINDING SHOULDVE HAPPENED BEFORE THIS FUNCTION IS CALLED
 }
 
-void UWeaponLogicComponent::EquipGadget(int32 GadgetIndex)
+void ULoadoutManager::EquipGadget(int32 GadgetIndex)
 {
 	TWeakObjectPtr<ACharacter_Base> Character = Cast<ACharacter_Base>(GetOwner());
 	TWeakObjectPtr<UAnimInstance> FPArmsAnimInstance = Character->FPArms->GetAnimInstance();
@@ -1225,7 +1225,7 @@ void UWeaponLogicComponent::EquipGadget(int32 GadgetIndex)
 	NewGadgetMesh->SetRelativeLocation(FVector::ZeroVector);
 	
 	AnimData.BaseItemAnimData.EquipMontage.LoadSynchronous();
-	EquipGadgetBlendOutDelegate.BindUObject(this, &UWeaponLogicComponent::OnEquipGadget_BlendOut);
+	EquipGadgetBlendOutDelegate.BindUObject(this, &ULoadoutManager::OnEquipGadget_BlendOut);
 	FPArmsAnimInstance->Montage_Play(AnimData.BaseItemAnimData.EquipMontage.Get(), 1.0f);
 	
 	IAnims::Execute_OnEquipGadget(FPArmsAnimInstance.Get(), AnimData);
@@ -1233,7 +1233,7 @@ void UWeaponLogicComponent::EquipGadget(int32 GadgetIndex)
 	FPArmsAnimInstance->Montage_SetBlendingOutDelegate(EquipGadgetBlendOutDelegate, AnimData.BaseItemAnimData.EquipMontage.Get());
 }
 
-void UWeaponLogicComponent::HandleDeployGadgetInput()
+void ULoadoutManager::HandleDeployGadgetInput()
 {
 	//int32 GadgetIndex = GetCII();
 	int32 GadgetIndex = GetGadgetIndexForSlot(Loadout.CurrentSlot);
@@ -1263,7 +1263,7 @@ void UWeaponLogicComponent::HandleDeployGadgetInput()
 	}
 }
 
-void UWeaponLogicComponent::OnEquipGadget_BlendOut(UAnimMontage* Montage, bool bInterrupted)
+void ULoadoutManager::OnEquipGadget_BlendOut(UAnimMontage* Montage, bool bInterrupted)
 {
 	int32 GadgetIndex = GetCII();
 	const FGadgetData& GadgetData = *StaticGadgetDataCache[GadgetIndex];
@@ -1283,7 +1283,7 @@ void UWeaponLogicComponent::OnEquipGadget_BlendOut(UAnimMontage* Montage, bool b
 	}
 }
 
-void UWeaponLogicComponent::StartDeployGadget()
+void ULoadoutManager::StartDeployGadget()
 {
 	if (GetCategoryForSlot(Loadout.CurrentSlot) != ECharacterItemType::Gadget)	{ return;}
 	int32 GadgetIndex = GetCII();
@@ -1297,17 +1297,17 @@ void UWeaponLogicComponent::StartDeployGadget()
 
 	const FGadgetAnimData& AnimData = GadgetData.GadgetAnimData;
 	AnimData.DeployGadget.LoadSynchronous();
-	UnequipBlendOutDelegate.BindUObject(this, &UWeaponLogicComponent::OnStartDeployGadget_BlendOut);
+	UnequipBlendOutDelegate.BindUObject(this, &ULoadoutManager::OnStartDeployGadget_BlendOut);
 	FPArmsAnimInstance->Montage_Play(AnimData.DeployGadget.Get(), 1.0f);
 	FPArmsAnimInstance->Montage_SetBlendingOutDelegate(UnequipBlendOutDelegate, AnimData.DeployGadget.Get());
 }
 
-void UWeaponLogicComponent::OnStartDeployGadget_BlendOut(UAnimMontage* Montage, bool bInterrupted)
+void ULoadoutManager::OnStartDeployGadget_BlendOut(UAnimMontage* Montage, bool bInterrupted)
 {
 	DeployGadget();
 }
 
-void UWeaponLogicComponent::DeployGadget()
+void ULoadoutManager::DeployGadget()
 {
 	//this gadget is NOT a weapon 
 	//this is to place/deploy instances of the gadget (place c4, throw down crate, etc)
@@ -1342,7 +1342,7 @@ void UWeaponLogicComponent::DeployGadget()
 	}
 }
 
-void UWeaponLogicComponent::UseGadget()
+void ULoadoutManager::UseGadget()
 {
 	//gadget is NOT a weapon
 	//calls whatever event on every active placed instance (detonate c4 or control drone for example)
@@ -1363,20 +1363,20 @@ void UWeaponLogicComponent::UseGadget()
 			}
 			else
 			{
-				VehicleGadget->OnVehicleInitialized.AddDynamic(this, &UWeaponLogicComponent::OnDeployedVehicleGadgetReady);
+				VehicleGadget->OnVehicleInitialized.AddDynamic(this, &ULoadoutManager::OnDeployedVehicleGadgetReady);
 			}
 			break;
 	}
 	
 }
 
-void UWeaponLogicComponent::OnDeployedVehicleGadgetReady()
+void ULoadoutManager::OnDeployedVehicleGadgetReady()
 {
 	int32 GadgetIndex = GetCII();
 	FGadgetState& GadgetState = Loadout.Gadgets[GadgetIndex];
 	TObjectPtr<AVehicle_Base> VehicleGadget = Cast<AVehicle_Base>(GadgetState.ActivePlacedInstances[0]);
 	check (VehicleGadget);
-	VehicleGadget->OnVehicleInitialized.RemoveDynamic(this, &UWeaponLogicComponent::OnDeployedVehicleGadgetReady);
+	VehicleGadget->OnVehicleInitialized.RemoveDynamic(this, &ULoadoutManager::OnDeployedVehicleGadgetReady);
 	VehicleGadget->AttemptEnterVehicle(GetOwnerCharacter());
 }
 
@@ -1384,7 +1384,7 @@ void UWeaponLogicComponent::OnDeployedVehicleGadgetReady()
 
 #pragma region Getters
 
-ECharacterItemType UWeaponLogicComponent::GetCategoryForSlot(ELoadoutSlot LoadoutSlot)
+ECharacterItemType ULoadoutManager::GetCategoryForSlot(ELoadoutSlot LoadoutSlot)
 {
 	switch (LoadoutSlot)
 	{
@@ -1403,7 +1403,7 @@ ECharacterItemType UWeaponLogicComponent::GetCategoryForSlot(ELoadoutSlot Loadou
 	return ECharacterItemType::Weapon;
 }
 
-int32 UWeaponLogicComponent::GetArrayIndex(ELoadoutSlot LoadoutSlot)
+int32 ULoadoutManager::GetArrayIndex(ELoadoutSlot LoadoutSlot)
 {
 	//raw slot position
 	switch (LoadoutSlot)
@@ -1417,7 +1417,7 @@ int32 UWeaponLogicComponent::GetArrayIndex(ELoadoutSlot LoadoutSlot)
 	}
 }
 
-int32 UWeaponLogicComponent::GetWeaponIndexForSlot(ELoadoutSlot LoadoutSlot)
+int32 ULoadoutManager::GetWeaponIndexForSlot(ELoadoutSlot LoadoutSlot)
 {
 	//GETS THE WEAPON INDEX FOR GADGETS THAT ARE ACTUALLY WEAPONS (gadget weapons)
 	switch (LoadoutSlot)
@@ -1437,19 +1437,19 @@ int32 UWeaponLogicComponent::GetWeaponIndexForSlot(ELoadoutSlot LoadoutSlot)
 	}
 }
 
-int32 UWeaponLogicComponent::GetGadgetIndexForSlot(ELoadoutSlot LoadoutSlot)
+int32 ULoadoutManager::GetGadgetIndexForSlot(ELoadoutSlot LoadoutSlot)
 {
 	int32 SlotPosition = GetArrayIndex(LoadoutSlot);
 	const FResolvedGadgetSlot& ResolvedGadgetSlot = Loadout.ResolvedGadgetSlots[SlotPosition];
 	return (ResolvedGadgetSlot.ActualType == ECharacterItemType::Gadget) ? ResolvedGadgetSlot.ResolvedArrayIndex : INDEX_NONE;
 }
 
-ECharacterItemType UWeaponLogicComponent::GetActualGadgetItemType(int32 RawGadgetSlotIndex)
+ECharacterItemType ULoadoutManager::GetActualGadgetItemType(int32 RawGadgetSlotIndex)
 {
 	return Loadout.ResolvedGadgetSlots.IsValidIndex(RawGadgetSlotIndex) ? Loadout.ResolvedGadgetSlots[RawGadgetSlotIndex].ActualType : ECharacterItemType::Gadget;
 }
 
-bool UWeaponLogicComponent::GetIsCurrentSlotActuallyWeapon()
+bool ULoadoutManager::GetIsCurrentSlotActuallyWeapon()
 {
 	ECharacterItemType SlotCategory = GetCategoryForSlot(Loadout.CurrentSlot);
 	if (SlotCategory == ECharacterItemType::Weapon)
@@ -1462,14 +1462,14 @@ bool UWeaponLogicComponent::GetIsCurrentSlotActuallyWeapon()
 	return ActualType == ECharacterItemType::Weapon;
 }
 
-int32 UWeaponLogicComponent::GetMaxMagSize(int32 WeaponIndex)
+int32 ULoadoutManager::GetMaxMagSize(int32 WeaponIndex)
 {
 	const bool& bCanBeChambered = StaticWeaponDataCache[WeaponIndex]->InfantryWeaponAmmoData.bCanRoundBeChambered;
 	const int32 MagSize = Loadout.WeaponSystem.InfantryWeaponState.CurrentWeaponStats[WeaponIndex].MagSize;
 	return bCanBeChambered ? MagSize + 1 : MagSize;
 }
 
-FName UWeaponLogicComponent::GetSocketNameForSlot(EAttachmentSlot Slot)
+FName ULoadoutManager::GetSocketNameForSlot(EAttachmentSlot Slot)
 {
 	switch (Slot)
 	{
@@ -1501,7 +1501,7 @@ FName UWeaponLogicComponent::GetSocketNameForSlot(EAttachmentSlot Slot)
 	return NAME_None;
 }
 
-FTransform UWeaponLogicComponent::GetSightTransform()
+FTransform ULoadoutManager::GetSightTransform()
 {
 	FTransform SightTransform = Loadout.WeaponSystem.InfantryWeaponState.WeaponState_FP[GetCII()].WeaponMesh->GetSocketTransform(FName("Aimpoint"), ERelativeTransformSpace::RTS_Component);
 	FInfantryWeaponState& InfantryWeaponState = Loadout.WeaponSystem.InfantryWeaponState.WeaponState_FP[GetCII()];
@@ -1525,7 +1525,7 @@ FTransform UWeaponLogicComponent::GetSightTransform()
 	return SightTransform;
 }
 
-float UWeaponLogicComponent::GetSightDistance()
+float ULoadoutManager::GetSightDistance()
 {
 	FName& WeaponID = Loadout.WeaponSystem.BaseWeaponState.Weapons[GetCII()].WeaponID;
 	const float& DefaultSightDistance = UBS2FunctionLibrary::GetDataSubsystem(this)->GetInfantryWeaponDataRow(WeaponID)->InfantryWeaponAimData.DefaultSightDistance;
@@ -1548,7 +1548,7 @@ float UWeaponLogicComponent::GetSightDistance()
 	return FinalSightDistance;
 }
 
-void UWeaponLogicComponent::GetAimSpeeds(float& AimInSpeed, float& AimOutSpeed)
+void ULoadoutManager::GetAimSpeeds(float& AimInSpeed, float& AimOutSpeed)
 {
 	FName& WeaponID = Loadout.WeaponSystem.BaseWeaponState.Weapons[GetCII()].WeaponID;
 	const float& DefaultAimInSpeed = UBS2FunctionLibrary::GetDataSubsystem(this)->GetInfantryWeaponDataRow(WeaponID)->InfantryWeaponAimData.DefaultAimInSpeed;
@@ -1561,7 +1561,7 @@ void UWeaponLogicComponent::GetAimSpeeds(float& AimInSpeed, float& AimOutSpeed)
 	AimOutSpeed = DefaultAimOutSpeed;
 }
 
-void UWeaponLogicComponent::GetAllAttachmentModifierDataOfTypeForWeapon(TMap<EAttachmentSlot, FWeaponAttachmentState>& WeaponAttachmentStates, EWeaponStat WeaponStatType, TArray<FStatModifierData>& OutAttachmentModifierData)
+void ULoadoutManager::GetAllAttachmentModifierDataOfTypeForWeapon(TMap<EAttachmentSlot, FWeaponAttachmentState>& WeaponAttachmentStates, EWeaponStat WeaponStatType, TArray<FStatModifierData>& OutAttachmentModifierData)
 {
 	//consider doing this on start or pickup of a weapon and gather/cache a source of truth/data struct for THE CURRENT STATS of the weapon with all of its attachments
 	//that way we may not have to do expensive lookups
@@ -1577,7 +1577,7 @@ void UWeaponLogicComponent::GetAllAttachmentModifierDataOfTypeForWeapon(TMap<EAt
 	}
 }
 
-FWeaponAttachmentState& UWeaponLogicComponent::GetCurrentAttachmentInSlot(EAttachmentSlot Slot)
+FWeaponAttachmentState& ULoadoutManager::GetCurrentAttachmentInSlot(EAttachmentSlot Slot)
 {
 	if (Loadout.WeaponSystem.InfantryWeaponState.WeaponState_FP[GetCII()].WeaponAttachmentStates.Contains(Slot))
 	{
@@ -1590,30 +1590,30 @@ FWeaponAttachmentState& UWeaponLogicComponent::GetCurrentAttachmentInSlot(EAttac
 	}
 }
 
-FWeaponState& UWeaponLogicComponent::GetBaseWeaponState(int32 WeaponIndex)
+FWeaponState& ULoadoutManager::GetBaseWeaponState(int32 WeaponIndex)
 {
 	return Loadout.WeaponSystem.BaseWeaponState.Weapons[WeaponIndex];
 }
 
-FInfantryWeaponState& UWeaponLogicComponent::GetCurrentInfantryWeaponState_FP()
+FInfantryWeaponState& ULoadoutManager::GetCurrentInfantryWeaponState_FP()
 {
 	return Loadout.WeaponSystem.InfantryWeaponState.WeaponState_FP[GetCII()];
 }
 
-FVector UWeaponLogicComponent::GetAttachmentDefaultOffset(FName WeaponID, EAttachmentSlot Slot, FName AttachmentID)
+FVector ULoadoutManager::GetAttachmentDefaultOffset(FName WeaponID, EAttachmentSlot Slot, FName AttachmentID)
 {
 	UE_LOG(LogTemp, Warning, TEXT("[WeaponLogicComponent::GetAttachmentDefaultOffset] WeaponID %s, AttachmentID %s"), *WeaponID.ToString(), *AttachmentID.ToString());
 	return UBS2FunctionLibrary::GetDataSubsystem(this)->GetInfantryWeaponDataRow(WeaponID)->GunAttachmentData.AvailableAttachmentSlots.Find(Slot)->Attachments.Find(AttachmentID)->LocationOffset;
 }
 
-FWeaponState* UWeaponLogicComponent::GetCurrentWeaponBaseState()
+FWeaponState* ULoadoutManager::GetCurrentWeaponBaseState()
 {
 	//ASSUMES CURRENT SLOT IS WEAPON
 	FWeaponState* CurrentWeapon = &Loadout.WeaponSystem.BaseWeaponState.Weapons[GetCII()];
 	return CurrentWeapon;
 }
 
-const FInfantryWeaponData* UWeaponLogicComponent::GetCurrentWeaponStaticData() 
+const FInfantryWeaponData* ULoadoutManager::GetCurrentWeaponStaticData() 
 {
 	//assumes currentitemindex is correct and that current slot is weapon
 	const int32 WeaponIndex = GetCII();
@@ -1621,18 +1621,18 @@ const FInfantryWeaponData* UWeaponLogicComponent::GetCurrentWeaponStaticData()
 	return StaticWeaponData;
 }
 
-FInfantryWeaponData UWeaponLogicComponent::GetCurrentWeaponStaticData_BP()
+FInfantryWeaponData ULoadoutManager::GetCurrentWeaponStaticData_BP()
 {
 	const FInfantryWeaponData* StaticWeaponData = GetCurrentWeaponStaticData();
 	return *StaticWeaponData;
 }
 
-FWeaponStats_Runtime& UWeaponLogicComponent::GetCurrentWeaponStats()
+FWeaponStats_Runtime& ULoadoutManager::GetCurrentWeaponStats()
 {
 	return Loadout.WeaponSystem.InfantryWeaponState.CurrentWeaponStats[GetCII()];
 }
 
-int32 UWeaponLogicComponent::GetCII()
+int32 ULoadoutManager::GetCII()
 {
 	int32 ItemIndex = INDEX_NONE;
 	ECharacterItemType CurrentItemType = GetCategoryForSlot(Loadout.CurrentSlot);
@@ -1657,7 +1657,7 @@ int32 UWeaponLogicComponent::GetCII()
 	return ItemIndex;
 }
 
-ACharacter_Base* UWeaponLogicComponent::GetOwnerCharacter()
+ACharacter_Base* ULoadoutManager::GetOwnerCharacter()
 {
 	return Cast<ACharacter_Base>(GetOwner());
 }

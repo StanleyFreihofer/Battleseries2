@@ -68,6 +68,8 @@ struct FWeaponFireModeData
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (EditCondition = "canBurstFire", EditConditionHides = true, ToolTip = "the # of rounds in 1 burst"))
 	int32 BurstSize = 0;
+	
+	//trigger delay?
 };
 
 USTRUCT(BlueprintType)

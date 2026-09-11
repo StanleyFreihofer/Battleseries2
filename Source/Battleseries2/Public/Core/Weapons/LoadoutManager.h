@@ -9,7 +9,7 @@
 #include "Data/Items/Gadgets/GadgetTypes.h"
 #include "Data/Core/CoreTypes.h"
 #include "Data/Core/CoreEnums.h"
-#include "WeaponLogicComponent.generated.h"
+#include "LoadoutManager.generated.h"
 
 class USkeletalMeshComponent;
 class UStaticMeshComponent;
@@ -138,14 +138,13 @@ struct FCombatState
 	float RecoilElapsedTime = 0.0f;
 };
 
-//RENAME TO LOADOUTMANAGER OR COMBATMANAGER!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 UCLASS(Blueprintable, BlueprintType)
-class BATTLESERIES2_API UWeaponLogicComponent : public UActorComponent
+class BATTLESERIES2_API ULoadoutManager : public UActorComponent
 {
 	GENERATED_BODY()
 
 	public:
-		UWeaponLogicComponent();
+		ULoadoutManager();
 		virtual void BeginPlay() override;
 		virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 

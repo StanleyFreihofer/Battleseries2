@@ -107,7 +107,7 @@ UCameraComponent* UBS2FunctionLibrary::CreateAndAttachCamera(UObject* Owner, USc
 	UCameraComponent* Cam = NewObject<UCameraComponent>(Owner);
 	Cam->SetAutoActivate(false);
 	Cam->SetActive(false);
-	Cam->bCameraMeshHiddenInGame = false;
+	//Cam->bCameraMeshHiddenInGame = false;
 	Cam->SetupAttachment(AttachTarget, SocketName);
 	Cam->RegisterComponent();
 	return Cam;

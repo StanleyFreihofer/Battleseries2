@@ -4,6 +4,7 @@
 #include "Engine/DataTable.h"
 #include "CollisionShape.h"
 #include "Data/Core/CoreEnums.h"
+#include "Data/Core/CoreTypes.h"
 #include "Data/Items/ItemStructs.h"
 #include "Data/Items/Gadgets/GadgetEnums.h"
 #include "Data_Gadget.generated.h"
@@ -40,21 +41,41 @@ struct FGadgetTriggerData
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (EditCondition = "ShapeType == ECustomCollisionShapeType::Box"))
 	FVector BoxExtent = FVector(100.f);
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	EGadgetTriggerEffect EffectType = EGadgetTriggerEffect::Damage;
 	
-	//what type of thing does it effect?
-	//what type of thing is it triggered by?
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ToolTip = "what type of thing is it triggered by"))
+	TArray<ECoreObjectType> EligibleObjects;
+	
+	//offset (for claymores for example)
+};
 
+USTRUCT(BlueprintType)
+struct FGadgetEffectData
+{
+	GENERATED_BODY()
+	
+	
+	//1. ModifierOp (add, subtract, etc)
+	//2. EffectValue (how to do non-predefined values (whats the current magsize size for the gun for example?)) 
+	//3. thing to modify (would have to be state (maybe sometimes current stats)... health, armor, ammo, reload speed)
+	//4. TickInterval (eg. every x seconds)
+	//5. what things does it modify (characters, vehicle, projectile
+	
+	
+	//EXAMPLE
+	//ADD 30 AMMO 5 CHARACTER			(resupply 30 ammo to character every 5 seconds)
+	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	float EffectValue = 25.f;              // damage / heal / ammo amount
+	EEffectCategory EffectCategory = EEffectCategory::StatEffect;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (EditCondition = "EffectCategory == EEffectCategory::StatEffect", EditConditionHides, ToolTip = "each state this gadget affects, with its own operation/value/valuemode"))
+	TMap<EStateToAffect, FStatModifierData> StateModifiers;
+	
+	//STAT modifiers (1 for vehicle, character, weapon, etc)
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	float TickInterval = 0.f;              // 0 = one-shot (claymore, mines); >0 = repeating (crates)
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	bool bDestroyOnTrigger = true;          // claymore: true; crate: false
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ToolTip = "0 = one-shot (claymore, mines); >0 = repeating (crates)"))
+	float TickInterval = 0.f;		//initial vs. consecutive tick interval?
+	
+	//any further filters
 };
 
 USTRUCT(BlueprintType)
@@ -69,13 +90,16 @@ struct FGadgetInstanceData
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (EditCondition = "bHasTriggerVolume", EditConditionHides))
 	FGadgetTriggerData TriggerData = FGadgetTriggerData();
 	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	FGadgetEffectData EffectData = FGadgetEffectData();
+	
 	//health/can be destroyed?
 	//can be triggered via being shot or something?
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ToolTip = "time before gadget self-destructs, anything > 0 is considered an active value"))
 	float TimeLimit = 0.f;
 	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ToolTip = "max amount of usages before gadget self-destructs, 0 is considered unlimited usages"))
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ToolTip = "max amount of usages before gadget self-destructs, 0 is considered unlimited usages, 1 is essentially destroy on 1 use/trigger (eg. claymore)"))
 	int32 MaxUsages = 0.f;
 
 	//any other limits

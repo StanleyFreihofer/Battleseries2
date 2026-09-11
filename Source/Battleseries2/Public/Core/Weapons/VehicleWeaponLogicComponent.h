@@ -15,7 +15,7 @@ class UCameraComponent;
 class USkeletalMeshComponent;
 class ACharacter_Base;
 class AProjectile_Base;
-class UWeaponLogicComponent;
+class ULoadoutManager;
 class UDataManagerSubsystem;
 class UHUDSubsystem;
 struct FWeapon_Runtime;							//WeaponTypes.h

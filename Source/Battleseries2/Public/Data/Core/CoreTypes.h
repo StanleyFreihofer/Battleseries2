@@ -104,6 +104,9 @@ struct FStatModifierData
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	EModifierOp Operation = EModifierOp::Multiply;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	EEffectValueMode EffectValueMode = EEffectValueMode::FlatValue;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float ModifierValue = 1.0f;
