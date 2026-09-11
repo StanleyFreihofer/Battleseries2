@@ -22,7 +22,16 @@ public:
 
     UFUNCTION(BlueprintCallable, Category = "Battleseries | Tools")
     static bool PerformSphereTraceMulti(const UObject* WorldContextObject, const FTransform StartTransform, TArray<FHitResult>& OutHits, TArray<AActor*> ActorsToIgnore, float Radius, float Distance, bool Debug);
-    UFUNCTION(BlueprintCallable, Category = "Vehicle|HUD")
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Battleseries | Tools")
+	static float GetDesiredAnimMontagePlayRate(UAnimMontage* AnimMontage, float DesiredAnimDuration);
+	UFUNCTION(BlueprintCallable, Category = "Battleseries | Tools")
+	static void PlayAnimMontageAtDesiredDuration(UAnimInstance* AnimInstance, UAnimMontage* AnimMontage, float DesiredAnimDuration);
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Battleseries | Tools")
+	static float GetDesiredAnimSequencePlayRate(UAnimSequence* AnimSequence, float DesiredAnimDuration);
+	UFUNCTION(BlueprintCallable, Category = "Battleseries | Tools")
+	static void PlayAnimSequenceAtDesiredDuration(USkeletalMeshComponent* MeshComp, UAnimSequence* AnimSequence, float DesiredAnimDuration, bool bLooping);
+	
+	UFUNCTION(BlueprintCallable, Category = "Vehicle|HUD")
     static void ConvertNamesToVehicleTypes(const TArray<FName>& VehicleTypeNames, TArray<EVehicleType>& OutVehicleTypes);
 
     // Convert enum value to its literal string name (not DisplayName)

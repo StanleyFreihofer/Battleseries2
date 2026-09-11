@@ -666,8 +666,9 @@ void ULoadoutManager::ReloadWeapon()
 	if (CurrentWeapon.isFiring)
 	{
 		CeaseFire();
-		CurrentWeapon.canFire = false;
 	}
+	CurrentWeapon.canFire = false;
+	
 	bool bEmptyMag = CurrentWeapon.CurrentAmmoinMag <= 0;
 
 	if (!StaticWeaponData->InfantryWeaponAmmoData.ProjectileBoneToHide.IsNone())
@@ -678,22 +679,15 @@ void ULoadoutManager::ReloadWeapon()
 	TWeakObjectPtr<ACharacter_Base> Character = GetOwnerCharacter();
 	USkeletalMeshComponent* FPArms = Character->FPArms;
 	TWeakObjectPtr<UAnimInstance> FPArmsAnimInstance = FPArms->GetAnimInstance();
-	
-	/**
-	FString SocketString = FString::Printf(TEXT("Socket_%s_R"), *GetCurrentWeaponRuntime()->WeaponID.ToString());
-	FName AttachSocketName = FName(*SocketString);
-	if (FPArms->DoesSocketExist(AttachSocketName))
-	{
-		InfantryWeaponState_FP.WeaponMesh->AttachToComponent(Character->FPArms, FAttachmentTransformRules(EAttachmentRule::SnapToTarget, EAttachmentRule::SnapToTarget, EAttachmentRule::SnapToTarget, true), AttachSocketName);
-	}
-	**/
+	float& ReloadSpeed = GetCurrentWeaponStats().ReloadSpeed;
 
 	TSoftObjectPtr<UAnimMontage> FPReloadMontage = bEmptyMag ? StaticWeaponData->InfantryWeaponAnimData.FPWeaponAnimData.ReloadEmptyWeaponMontage : StaticWeaponData->InfantryWeaponAnimData.FPWeaponAnimData.ReloadWeaponMontage;
 	TSoftObjectPtr<UAnimSequence> WeaponReloadAnim = bEmptyMag ? StaticWeaponData->InfantryWeaponAnimData.WeaponAnimData.WeaponReloadEmpty : StaticWeaponData->InfantryWeaponAnimData.WeaponAnimData.WeaponReload;
 	FPReloadMontage.LoadSynchronous();
 	WeaponReloadAnim.LoadSynchronous();
 
-	InfantryWeaponState_FP.WeaponMesh->PlayAnimation(WeaponReloadAnim.Get(), false);
+	//InfantryWeaponState_FP.WeaponMesh->PlayAnimation(WeaponReloadAnim.Get(), false);
+	UBS2FunctionLibrary::PlayAnimSequenceAtDesiredDuration(InfantryWeaponState_FP.WeaponMesh.Get(), WeaponReloadAnim.Get(), ReloadSpeed, false);
 	
 	/**
 	if (StaticWeaponData->WeaponFunctionalityData.canADSReload && CombatState.isAiming)
@@ -703,7 +697,8 @@ void ULoadoutManager::ReloadWeapon()
 	}
 	**/
 	
-	FPArmsAnimInstance->Montage_Play(FPReloadMontage.Get(), 1.0f);
+	//FPArmsAnimInstance->Montage_Play(FPReloadMontage.Get(), 1.0f);
+	UBS2FunctionLibrary::PlayAnimMontageAtDesiredDuration(FPArmsAnimInstance.Get(), FPReloadMontage.Get(), ReloadSpeed);
 	FPArmsAnimInstance->Montage_SetEndDelegate(ReloadEndedDelegate, FPReloadMontage.Get());
 }
 
@@ -756,8 +751,11 @@ void ULoadoutManager::OnReloadFinished(UAnimMontage* Montage, bool bInterrupted,
 	UBS2FunctionLibrary::CalculateReload(MagSize, CurrentWeapon.CurrentAmmoinMag, CurrentWeapon.CurrentReserveAmmo, NewCAM, NewCRA);
 	CurrentWeapon.CurrentAmmoinMag = NewCAM;
 	CurrentWeapon.CurrentReserveAmmo = NewCRA;
-	UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateStatusHUD_CAMCount(CurrentWeapon.CurrentAmmoinMag);
-	UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateStatusHUD_CRACount(CurrentWeapon.CurrentReserveAmmo);
+	if (GetOwnerCharacter()->IsLocallyControlled())
+	{
+		UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateStatusHUD_CAMCount(CurrentWeapon.CurrentAmmoinMag);
+		UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateStatusHUD_CRACount(CurrentWeapon.CurrentReserveAmmo);
+	}
 	UBS2FunctionLibrary::HandleIfWeaponCanFire(CurrentWeapon);
 }
 
@@ -1005,8 +1003,11 @@ void ULoadoutManager::EquipWeapon(int32 WeaponIndex, bool InitialEquip)
 	
 	FWeaponState& CurrentWeapon = GetBaseWeaponState(GetCII());
 	CurrentWeapon.isEquipped = true;
-	UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateStatusHUD_CAMCount(CurrentWeapon.CurrentAmmoinMag);
-	UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateStatusHUD_CRACount(CurrentWeapon.CurrentReserveAmmo);
+	if (GetOwnerCharacter()->IsLocallyControlled())
+	{
+		UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateStatusHUD_CAMCount(CurrentWeapon.CurrentAmmoinMag);
+		UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateStatusHUD_CRACount(CurrentWeapon.CurrentReserveAmmo);
+	}
 }
 
 #pragma endregion
@@ -1109,6 +1110,7 @@ void ULoadoutManager::UpdateCurrentWeaponStats(int32 WeaponIndex)
 	RuntimeStats.MagSize = StaticWeaponData->InfantryWeaponAmmoData.BaseAmmoData.MagSize;
 	RuntimeStats.MaxReserveAmmo = StaticWeaponData->InfantryWeaponAmmoData.BaseAmmoData.MaxReserveAmmo;
 	RuntimeStats.FireModeData.DefaultFireMode = StaticWeaponData->WeaponFunctionalityData.BaseWeaponFunctionality.WeaponFireModeData.DefaultFireMode;
+	RuntimeStats.ReloadSpeed = StaticWeaponData->InfantryWeaponAmmoData.BaseAmmoData.ReloadSpeed;
 
 	TMap<EAttachmentSlot, FWeaponAttachmentState>& WeaponAttachmentStates = Loadout.WeaponSystem.InfantryWeaponState.WeaponState_FP[WeaponIndex].WeaponAttachmentStates;
 	for (auto& SlotPair : WeaponAttachmentStates)
@@ -1185,6 +1187,13 @@ void ULoadoutManager::ApplyAttachmentModifier(FWeaponStats_Runtime& RuntimeStats
 				nullptr, 
 				&FWeaponStats_Runtime::MaxReserveAmmo,
 				nullptr
+			}
+		},
+		{ EWeaponStat::ReloadSpeed, 
+			{ 
+			&FWeaponStats_Runtime::ReloadSpeed, 
+			nullptr,
+			nullptr
 			}
 		},
 	};

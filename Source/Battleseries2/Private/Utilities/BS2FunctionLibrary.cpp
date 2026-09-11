@@ -3,6 +3,7 @@
 #include "Engine/GameInstance.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "DrawDebugHelpers.h"
+#include "Animation/AnimSingleNodeInstance.h"
 #include "Data/Items/Weapons/WeaponDefaults.h"
 #include "Data/Items/Weapons/WeaponTypes.h"
 #include "Data/Items/Weapons/ProjectileTypes.h"
@@ -43,6 +44,32 @@ bool UBS2FunctionLibrary::PerformSphereTraceMulti(const UObject* WorldContextObj
 		0.0f                // Draw Time
 	);
 	return false;
+}
+
+float UBS2FunctionLibrary::GetDesiredAnimMontagePlayRate(UAnimMontage* AnimMontage, float DesiredAnimDuration)
+{
+	if (DesiredAnimDuration <= 0.f) { return 1.0f; }
+	float AnimPlayRate = AnimMontage->GetPlayLength() / DesiredAnimDuration;
+	return AnimPlayRate;
+}
+
+void UBS2FunctionLibrary::PlayAnimMontageAtDesiredDuration(UAnimInstance* AnimInstance, UAnimMontage* AnimMontage, float DesiredAnimDuration)
+{
+	float AnimPlayRate = GetDesiredAnimMontagePlayRate(AnimMontage, DesiredAnimDuration);
+	AnimInstance->Montage_Play(AnimMontage, AnimPlayRate);
+}
+
+float UBS2FunctionLibrary::GetDesiredAnimSequencePlayRate(UAnimSequence* AnimSequence, float DesiredAnimDuration)
+{
+	if (DesiredAnimDuration <= 0.f) { return 1.0f; }
+	return AnimSequence->GetPlayLength() / DesiredAnimDuration;
+}
+
+void UBS2FunctionLibrary::PlayAnimSequenceAtDesiredDuration(USkeletalMeshComponent* MeshComp, UAnimSequence* AnimSequence, float DesiredAnimDuration, bool bLooping)
+{
+	MeshComp->PlayAnimation(AnimSequence, bLooping);
+	UAnimSingleNodeInstance* SingleNode = MeshComp->GetSingleNodeInstance();
+	SingleNode->SetPlayRate(GetDesiredAnimSequencePlayRate(AnimSequence, DesiredAnimDuration));
 }
 
 void UBS2FunctionLibrary::ConvertNamesToVehicleTypes(const TArray<FName>& VehicleTypeNames, TArray<EVehicleType>& OutVehicleTypes)
