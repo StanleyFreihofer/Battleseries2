@@ -32,7 +32,6 @@ ULoadoutManager::ULoadoutManager()
 void ULoadoutManager::BeginPlay()
 {
 	Super::BeginPlay();
-
 }
 
 void ULoadoutManager::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
@@ -245,7 +244,6 @@ void ULoadoutManager::UpdateWeaponMesh(FName WeaponID, TWeakObjectPtr<USkeletalM
 	TWeakObjectPtr<USkeletalMesh> WeaponMesh = WeaponData.WeaponClassificationData.WeaponMesh.LoadSynchronous();
 	WeaponMeshComp->SetSkeletalMesh(WeaponMesh.Get());
 }
-
 
 void ULoadoutManager::UpdateGadgetMesh(FName GadgetID, TWeakObjectPtr<UStaticMeshComponent>& GadgetMeshComp)
 {
@@ -612,8 +610,6 @@ void ULoadoutManager::FireWeapon()
 		MuzzleFlash->SetNiagaraVariableBool("User.Trigger", true);
 	}
 	IWS_FP.WeaponMesh->PlayAnimation(StaticWeaponData->InfantryWeaponAnimData.WeaponAnimData.WeaponFire.LoadSynchronous(), false);
-	//muzzle flash
-	//muzzle smoke
 	//weapon fire anim
 	//weapon slide anim (third person)
 	//weapon fire audio
@@ -913,8 +909,6 @@ void ULoadoutManager::UnequipWeapon(int32 PreviousWeaponIndex)
 		TransitionFromItem(PreviousWeaponIndex, ECharacterItemType::Weapon);
 		return;
 	}
-
-	
 	FPArmsAnimInstance->Montage_Play(FPUnequipItemMontage.Get(), 1.0f, EMontagePlayReturnType::MontageLength, 0.0f);
 	FPArmsAnimInstance->Montage_SetBlendingOutDelegate(UnequipBlendOutDelegate, FPUnequipItemMontage.Get());		//BINDING SHOULDVE HAPPENED BEFORE THIS FUNCTION IS CALLED
 }
@@ -931,7 +925,6 @@ void ULoadoutManager::OnUnequipWeapon_BlendOutToWeapon(UAnimMontage* Montage, bo
 		return;
 	}
 	FPArmsAnimInstance->Montage_Play(FPUnequipWeaponMontage.Get(), 0.0f, EMontagePlayReturnType::MontageLength, FPUnequipWeaponMontage->GetPlayLength());
-
 	TransitionFromItem(Loadout.PreviousItemIndex, ECharacterItemType::Weapon);	//remember, this function calls equip weapon in it
 }
 
@@ -960,7 +953,19 @@ void ULoadoutManager::OnUnequipGadget_BlendOutToWeapon(UAnimMontage* Montage, bo
 		return;
 	}
 	FPArmsAnimInstance->Montage_Play(FPUnequipGadgetMontage.Get(), 0.0f, EMontagePlayReturnType::MontageLength, FPUnequipGadgetMontage->GetPlayLength());
-	
+	TransitionFromItem(Loadout.PreviousItemIndex, ECharacterItemType::Gadget);
+}
+
+void ULoadoutManager::OnUnequipGadget_BlendOutToGadget(UAnimMontage* Montage, bool bInterrupted)
+{
+	TWeakObjectPtr<UAnimInstance> FPArmsAnimInstance = GetOwnerCharacter()->FPArms->GetAnimInstance();
+	TSoftObjectPtr<UAnimMontage> FPUnequipGadgetMontage = StaticGadgetDataCache[Loadout.PreviousItemIndex]->GadgetAnimData.BaseItemAnimData.UnequipMontage;
+	if (!FPUnequipGadgetMontage.Get())
+	{
+		EquipGadget(GetGadgetIndexForSlot(Loadout.CurrentSlot));	
+		return;
+	}
+	FPArmsAnimInstance->Montage_Play(FPUnequipGadgetMontage.Get(), 0.0f, EMontagePlayReturnType::MontageLength, FPUnequipGadgetMontage->GetPlayLength());
 	TransitionFromItem(Loadout.PreviousItemIndex, ECharacterItemType::Gadget);
 }
 

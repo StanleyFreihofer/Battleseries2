@@ -322,6 +322,7 @@ class BATTLESERIES2_API ULoadoutManager : public UActorComponent
 		void OnUnequipWeapon_BlendOutToWeapon(UAnimMontage* Montage, bool bInterrupted);
 		void OnUnequipWeapon_BlendOutToGadget(UAnimMontage* Montage, bool bInterrupted);
 		void OnUnequipGadget_BlendOutToWeapon(UAnimMontage* Montage, bool bInterrupted);
+		void OnUnequipGadget_BlendOutToGadget(UAnimMontage* Montage, bool bInterrupted);
 		void OnEquipGadget_BlendOut(UAnimMontage* Montage, bool bInterrupted);
 		void OnStartDeployGadget_BlendOut(UAnimMontage* Montage, bool bInterrupted);
 		FOnMontageEnded ReloadEndedDelegate;
