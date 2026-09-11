@@ -429,6 +429,13 @@ void ULoadoutManager::StartFire()
 	UBS2FunctionLibrary::StartWAC(Loadout.WeaponSystem.WeaponAudioComponent);
 	
 	GetCurrentWeaponBaseState()->isFiring = true;
+	
+	if (GetOwnerCharacter()->CharacterState.CharacterMovementState.CurrentMovementMode == ECharacterMovementMode::Sprinting)
+	{
+		GetOwnerCharacter()->UpdateMovementMode(ECharacterMovementMode::Walking);
+	}
+	GetOwnerCharacter()->CharacterState.CharacterMovementState.canSprint = false;
+	
 	FireWeapon();
 }
 
@@ -553,6 +560,7 @@ void ULoadoutManager::CeaseFire()
 	}
 
 	CurrentWeapon.isFiring = false;
+	GetOwnerCharacter()->CharacterState.CharacterMovementState.canSprint = false;
 }
 
 void ULoadoutManager::DryFire()
@@ -826,6 +834,7 @@ void ULoadoutManager::HandleSwitchItem(ELoadoutSlot NewLoadoutSlot)
 					UnequipGadget(Loadout.PreviousItemIndex);
 					break;
 				case ECharacterItemType::Weapon:
+					UnequipBlendOutDelegate.BindUObject(this, &ULoadoutManager::OnUnequipGadget_BlendOutToWeapon);
 					UnequipGadget(Loadout.PreviousItemIndex);
 					break;
 			}
@@ -939,6 +948,20 @@ void ULoadoutManager::OnUnequipWeapon_BlendOutToGadget(UAnimMontage* Montage, bo
 	}
 	FPArmsAnimInstance->Montage_Play(FPUnequipWeaponMontage.Get(), 0.0f, EMontagePlayReturnType::MontageLength, FPUnequipWeaponMontage->GetPlayLength());
 	TransitionFromItem(Loadout.PreviousItemIndex, ECharacterItemType::Weapon);
+}
+
+void ULoadoutManager::OnUnequipGadget_BlendOutToWeapon(UAnimMontage* Montage, bool bInterrupted)
+{
+	TWeakObjectPtr<UAnimInstance> FPArmsAnimInstance = GetOwnerCharacter()->FPArms->GetAnimInstance();
+	TSoftObjectPtr<UAnimMontage> FPUnequipGadgetMontage = StaticGadgetDataCache[Loadout.PreviousItemIndex]->GadgetAnimData.BaseItemAnimData.UnequipMontage;
+	if (!FPUnequipGadgetMontage.Get())
+	{
+		EquipWeapon(GetWeaponIndexForSlot(Loadout.CurrentSlot), false);
+		return;
+	}
+	FPArmsAnimInstance->Montage_Play(FPUnequipGadgetMontage.Get(), 0.0f, EMontagePlayReturnType::MontageLength, FPUnequipGadgetMontage->GetPlayLength());
+	
+	TransitionFromItem(Loadout.PreviousItemIndex, ECharacterItemType::Gadget);
 }
 
 void ULoadoutManager::EquipWeapon(int32 WeaponIndex, bool InitialEquip)
