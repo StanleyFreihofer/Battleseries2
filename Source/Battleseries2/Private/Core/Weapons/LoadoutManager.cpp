@@ -786,6 +786,7 @@ void ULoadoutManager::HandleSwitchItem(ELoadoutSlot NewLoadoutSlot)
 	//main switch weapon function, can be used to directly equip a given index (manual) or auto increment (via SwitchWeapon_AutoIncrement)
 	if (NewLoadoutSlot == Loadout.CurrentSlot)		{ return;	}
 	if (CombatState.isSwitchingItems)	{ return; }
+	CombatState.isSwitchingItems = true;
 	ELoadoutSlot OldLoadoutSlot = Loadout.CurrentSlot;
 
 	int32 OldRawPosition = GetArrayIndex(OldLoadoutSlot);
@@ -826,6 +827,7 @@ void ULoadoutManager::HandleSwitchItem(ELoadoutSlot NewLoadoutSlot)
 			switch (NewItemType)
 			{
 				case ECharacterItemType::Gadget:
+					UnequipBlendOutDelegate.BindUObject(this, &ULoadoutManager::OnUnequipGadget_BlendOutToGadget);
 					UnequipGadget(Loadout.PreviousItemIndex);
 					break;
 				case ECharacterItemType::Weapon:

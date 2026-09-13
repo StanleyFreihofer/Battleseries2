@@ -88,6 +88,9 @@ struct FGadgetInstanceData
 	TSoftObjectPtr<UStaticMesh> GadgetMesh = nullptr;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	bool bRequiresPlacementPreview = false;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	bool bHasTriggerVolume = false;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (EditCondition = "bHasTriggerVolume", EditConditionHides))

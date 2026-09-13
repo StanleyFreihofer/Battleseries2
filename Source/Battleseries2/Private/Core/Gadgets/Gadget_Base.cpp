@@ -57,7 +57,7 @@ void AGadget_Base::Init_Gadget()
 		Init_TriggerVolume();
 	}
 	
-	if (GadgetData->GadgetInstanceData.TimeLimit)
+	if (GadgetData->GadgetInstanceData.TimeLimit > 0.f)
 	{
 		GetWorld()->GetTimerManager().SetTimer(GadgetState.GadgetTimeLimitTimer, this, &AGadget_Base::DestroyGadget, GadgetData->GadgetInstanceData.TimeLimit, false);
 	}
