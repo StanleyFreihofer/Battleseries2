@@ -7,7 +7,10 @@
 		{
 			"Name": "Battleseries2",
 			"Type": "Runtime",
-			"LoadingPhase": "Default"
+			"LoadingPhase": "Default",
+			"AdditionalDependencies": [
+				"Engine"
+			]
 		},
 		{
 			"Name": "Battleseries2Editor",

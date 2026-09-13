@@ -125,11 +125,13 @@ struct FCombatState
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	bool isAttemptingToFire = false;
-	
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	bool canAim = true;
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	bool isAiming = false;
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	bool isSwitchingItems = false;
 	
 	//recoil
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)

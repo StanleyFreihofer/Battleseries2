@@ -6,6 +6,7 @@
 USTRUCT(BlueprintType)
 struct FGadgetState
 {
+	//struct for the character
 	GENERATED_BODY()
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
@@ -15,7 +16,7 @@ struct FGadgetState
 	int32 CurrentInventory = 0;
 	
 	UPROPERTY(VisibleAnywhere, meta = (ToolTip = "any non-weapon gadget including vehicles like drones and eod bot's should be cached here"))
-	TArray<TWeakObjectPtr<APawn>> ActivePlacedInstances;
+	TArray<TWeakObjectPtr<AActor>> ActivePlacedInstances;
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	TWeakObjectPtr<UStaticMeshComponent> HeldMesh_FP = nullptr;

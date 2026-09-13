@@ -34,7 +34,7 @@ ACharacter_Base::ACharacter_Base(const FObjectInitializer& ObjectInitializer) : 
 	FPLegsSpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("LegsSpringArm"));
 	FPArms = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("FPArms"));
 	FPLegs = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("FPLegs"));
-	WeaponManager = CreateDefaultSubobject<ULoadoutManager>(TEXT("WeaponManager"));
+	LoadoutManager = CreateDefaultSubobject<ULoadoutManager>(TEXT("LoadoutManager"));
 	FPArmsSpringArm->SetupAttachment(GetCapsuleComponent());
 	FPLegsSpringArm->SetupAttachment(GetCapsuleComponent());
 	FPArms->SetupAttachment(FPArmsSpringArm);
@@ -61,7 +61,7 @@ void ACharacter_Base::PossessedBy(AController* NewController)
 		GetWorld()->GetTimerManager().SetTimerForNextTick([this]()
 		{
 			Init_PlayerCharacter();
-			WeaponManager->Init_Loadout(CharacterStartingData.StartingLoadout);
+			LoadoutManager->Init_Loadout(CharacterStartingData.StartingLoadout);
 		});
 	}
 }
@@ -371,7 +371,7 @@ void ACharacter_Base::UpdateMovementMode(ECharacterMovementMode NewMode)
 		}
 		case ECharacterMovementMode::Sprinting:
 		{
-			if (WeaponManager->CombatState.isAiming) { return; }
+			if (LoadoutManager->CombatState.isAiming) { return; }
 			else if (CurrentMovementMode == ECharacterMovementMode::Walking)
 			{
 				StartSprint();
@@ -534,13 +534,13 @@ void ACharacter_Base::CharacterEnterVehicle()
 		GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Vehicle, ECollisionResponse::ECR_Ignore);
 		FPArms->SetCollisionResponseToChannel(ECC_Vehicle, ECR_Ignore);
 		FPLegs->SetCollisionResponseToChannel(ECC_Vehicle, ECR_Ignore);
-		for (int32 i = 0; i < WeaponManager->Loadout.WeaponSystem.BaseWeaponState.Weapons.Num(); i++)
+		for (int32 i = 0; i < LoadoutManager->Loadout.WeaponSystem.BaseWeaponState.Weapons.Num(); i++)
 		{
-			WeaponManager->UpdateWeaponCollision(ECC_Vehicle, ECR_Ignore, i);
+			LoadoutManager->UpdateWeaponCollision(ECC_Vehicle, ECR_Ignore, i);
 		}
-		for (int32 G = 0; G < WeaponManager->Loadout.Gadgets.Num(); G++)
+		for (int32 G = 0; G < LoadoutManager->Loadout.Gadgets.Num(); G++)
 		{
-			WeaponManager->UpdateGadgetCollision(ECC_Vehicle, ECR_Ignore, G);
+			LoadoutManager->UpdateGadgetCollision(ECC_Vehicle, ECR_Ignore, G);
 		}
 		GetCharacterMovement()->SetMovementMode(MOVE_None);
 		AttachToActor(GetCurrentVehicle(), FAttachmentTransformRules::KeepRelativeTransform);
@@ -587,9 +587,9 @@ void ACharacter_Base::CharacterExitVehicle()
 
 		ManageIMC(nullptr, UBS2FunctionLibrary::GetDataSubsystem(this)->GetCharacterDefaults()->DefaultGameplayIMC.Get(), 1);
 	
-		if (WeaponManager->GetIsCurrentSlotActuallyWeapon() && IsLocallyControlled())
+		if (LoadoutManager->GetIsCurrentSlotActuallyWeapon() && IsLocallyControlled())
 		{
-			FWeaponState& CurrentWeapon = *WeaponManager->GetCurrentWeaponBaseState();
+			FWeaponState& CurrentWeapon = *LoadoutManager->GetCurrentWeaponBaseState();
 			UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateStatusHUD_CAMCount(CurrentWeapon.CurrentAmmoinMag);
 			UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateStatusHUD_CRACount(CurrentWeapon.CurrentReserveAmmo);
 		}

@@ -100,7 +100,7 @@ struct FGadgetInstanceData
 	float TimeLimit = 0.f;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ToolTip = "max amount of usages before gadget self-destructs, 0 is considered unlimited usages, 1 is essentially destroy on 1 use/trigger (eg. claymore)"))
-	int32 MaxUsages = 0.f;
+	int32 MaxUsages = 0;
 
 	//any other limits
 };
@@ -119,7 +119,7 @@ struct FGadgetData : public FTableRowBase
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	EGadgetType GadgetType = EGadgetType::Gadget;
 	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ToolTip = "if the gadget is a vehicle or weapon, this is the ID for their respective DT", EditCondition = "GadgetType == EGadgetType::Vehicle || GadgetType == EGadgetType::Weapon", EditConditionHides))
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ToolTip = "if the gadget is a vehicle", EditCondition = "GadgetType == EGadgetType::Vehicle || GadgetType == EGadgetType::Weapon", EditConditionHides))
 	FName ItemID = NAME_None;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ToolTip = "mesh that you hold"))
@@ -139,10 +139,6 @@ struct FGadgetData : public FTableRowBase
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ToolTip = "if true, this gadget will automatically be 'used' (if c4, auto detonate, if rc vehicle, auto start controlling)"))
 	bool AutoUse = false;
-	
-	//depreciate?
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ToolTip = "the gadget class/object that will be placed in the world"))
-	TSoftClassPtr<AActor> PlacedActorClass = nullptr;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ToolTip = "the default amount of the gadget a person gets"))					//same as max active instances?		//max inventory count?
 	int32 DefaultInventoryCount = 1;

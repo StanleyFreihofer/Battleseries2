@@ -192,7 +192,7 @@ struct FAmmoData
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ToolTip = "If bullet fed, loads 1 round at a time, if not (magazine fed/standard reload) reloads entire magazine at once"))
 	bool isBulletFed = false;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ToolTip = "Time it takes to reload"))
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ToolTip = "Time it takes to reload (for infantry weapons determines animation play rate)"))
 	float ReloadSpeed = 0.0f;		//is this gonna work with anim-based reloads?
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)

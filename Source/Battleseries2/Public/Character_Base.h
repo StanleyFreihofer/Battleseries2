@@ -57,7 +57,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
 	USkeletalMeshComponent* FPLegs = nullptr;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
-	ULoadoutManager* WeaponManager;
+	ULoadoutManager* LoadoutManager;
 
 #pragma endregion
 

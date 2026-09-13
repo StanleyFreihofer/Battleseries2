@@ -785,6 +785,7 @@ void ULoadoutManager::HandleSwitchItem(ELoadoutSlot NewLoadoutSlot)
 {
 	//main switch weapon function, can be used to directly equip a given index (manual) or auto increment (via SwitchWeapon_AutoIncrement)
 	if (NewLoadoutSlot == Loadout.CurrentSlot)		{ return;	}
+	if (CombatState.isSwitchingItems)	{ return; }
 	ELoadoutSlot OldLoadoutSlot = Loadout.CurrentSlot;
 
 	int32 OldRawPosition = GetArrayIndex(OldLoadoutSlot);
@@ -1003,6 +1004,7 @@ void ULoadoutManager::EquipWeapon(int32 WeaponIndex, bool InitialEquip)
 	
 	FWeaponState& CurrentWeapon = GetBaseWeaponState(GetCII());
 	CurrentWeapon.isEquipped = true;
+	CombatState.isSwitchingItems = false;
 	if (GetOwnerCharacter()->IsLocallyControlled())
 	{
 		UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateStatusHUD_CAMCount(CurrentWeapon.CurrentAmmoinMag);
@@ -1152,6 +1154,7 @@ void ULoadoutManager::ApplyAttachmentModifier(FWeaponStats_Runtime& RuntimeStats
 			{ 
 				&FWeaponStats_Runtime::AimInSpeed,     
 				nullptr,
+				nullptr
 			} 
 		},
 		{ EWeaponStat::ADSOutSpeed,
@@ -1305,6 +1308,7 @@ void ULoadoutManager::OnEquipGadget_BlendOut(UAnimMontage* Montage, bool bInterr
 	int32 GadgetIndex = GetCII();
 	const FGadgetData& GadgetData = *StaticGadgetDataCache[GadgetIndex];
 	FGadgetState& GadgetState = Loadout.Gadgets[GadgetIndex];
+	CombatState.isSwitchingItems = false;
 	
 	if (GadgetData.GadgetType == EGadgetType::Vehicle && GadgetState.ActivePlacedInstances.Num() > 0)
 	{
