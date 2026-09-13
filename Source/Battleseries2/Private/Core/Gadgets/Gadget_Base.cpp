@@ -56,11 +56,16 @@ void AGadget_Base::Init_Gadget()
 	{
 		Init_TriggerVolume();
 	}
+	
+	if (GadgetData->GadgetInstanceData.TimeLimit)
+	{
+		GetWorld()->GetTimerManager().SetTimer(GadgetState.GadgetTimeLimitTimer, this, &AGadget_Base::DestroyGadget, GadgetData->GadgetInstanceData.TimeLimit, false);
+	}
 }
 
 void AGadget_Base::Init_GadgetMesh()
 {
-	GadgetMeshComponent->SetStaticMesh(GadgetData->GadgetMesh.LoadSynchronous());
+	GadgetMeshComponent->SetStaticMesh(GadgetData->GadgetInstanceData.GadgetMesh.LoadSynchronous());
 }
 
 void AGadget_Base::Init_TriggerVolume()
@@ -89,12 +94,57 @@ void AGadget_Base::Init_TriggerVolume()
 	GadgetState.TriggerVolume->RegisterComponent();
 }
 
+void AGadget_Base::UseGadget()
+{
+	if (GadgetData->GadgetInstanceData.bHasTriggerVolume)
+	{
+		TArray<AActor*> OverlappingActors;
+		GadgetState.TriggerVolume->GetOverlappingActors(OverlappingActors);
+		for (AActor* Actor : OverlappingActors)
+		{
+			//is actor eligible target
+			// apply GadgetData's effect (StateModifiers/StatModifiers map) to Actor here
+		}
+	}
+	
+	GadgetState.CurrentNumOfUses++;
+	if (GadgetData->GadgetInstanceData.MaxUsages > 0 && GadgetState.CurrentNumOfUses >= GadgetData->GadgetInstanceData.MaxUsages)
+	{
+		//Destroy/Disable Gadget
+	}
+}
+
+void AGadget_Base::DestroyGadget()
+{
+	K2_DestroyActor();
+}
+
 void AGadget_Base::OnTriggerBeginOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
+	//if OtherActor not eligible target, return early
+	
+	if (GadgetData->GadgetInstanceData.EffectData.TickInterval <= 0.f)
+	{
+		//1 shot use (claymore/mine, etc), overlap itself is the trigger
+		UseGadget();
+		//destroy maybe?
+		return;
+	}
+	
+	if (!GetWorld()->GetTimerManager().IsTimerActive(GadgetState.GadgetTickTimer))
+	{
+		GetWorld()->GetTimerManager().SetTimer(GadgetState.GadgetTickTimer, this, &AGadget_Base::UseGadget, GadgetData->GadgetInstanceData.EffectData.TickInterval, true);
+	}
 }
 
 void AGadget_Base::OnTriggerEndOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
+	TArray<AActor*> StillOverlapping;
+	GadgetState.TriggerVolume->GetOverlappingActors(StillOverlapping);
+	if (StillOverlapping.IsEmpty())
+	{
+		GetWorld()->GetTimerManager().ClearTimer(GadgetState.GadgetTickTimer);
+	}
 }
 
 

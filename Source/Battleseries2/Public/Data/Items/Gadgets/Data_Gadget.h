@@ -84,6 +84,9 @@ struct FGadgetInstanceData
 	//Data that defines each instance of this gadget's function and behavior
 	GENERATED_BODY()
 	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ToolTip = "mesh placed"))
+	TSoftObjectPtr<UStaticMesh> GadgetMesh = nullptr;
+	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	bool bHasTriggerVolume = false;
 
@@ -123,7 +126,7 @@ struct FGadgetData : public FTableRowBase
 	FName ItemID = NAME_None;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ToolTip = "mesh that you hold"))
-	TSoftObjectPtr<UStaticMesh> GadgetMesh = nullptr;
+	TSoftObjectPtr<UStaticMesh> HeldGadgetMesh = nullptr;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	FGadgetAnimData GadgetAnimData = FGadgetAnimData();

@@ -53,6 +53,11 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void Init_TriggerVolume();
 	
+	UFUNCTION(BlueprintCallable)
+	void UseGadget();
+	UFUNCTION(BlueprintCallable)
+	void DestroyGadget();
+	
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;

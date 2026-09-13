@@ -248,7 +248,7 @@ void ULoadoutManager::UpdateWeaponMesh(FName WeaponID, TWeakObjectPtr<USkeletalM
 void ULoadoutManager::UpdateGadgetMesh(FName GadgetID, TWeakObjectPtr<UStaticMeshComponent>& GadgetMeshComp)
 {
 	const FGadgetData& GadgetData = *UBS2FunctionLibrary::GetDataSubsystem(this)->GetGadgetDataRow(GadgetID);
-	TWeakObjectPtr<UStaticMesh> GadgetMesh = GadgetData.GadgetMesh.LoadSynchronous();
+	TWeakObjectPtr<UStaticMesh> GadgetMesh = GadgetData.HeldGadgetMesh.LoadSynchronous();
 	GadgetMeshComp->SetStaticMesh(GadgetMesh.Get());
 }
 
@@ -558,7 +558,7 @@ void ULoadoutManager::CeaseFire()
 	}
 
 	CurrentWeapon.isFiring = false;
-	GetOwnerCharacter()->CharacterState.CharacterMovementState.canSprint = false;
+	GetOwnerCharacter()->CharacterState.CharacterMovementState.canSprint = true;
 }
 
 void ULoadoutManager::DryFire()
