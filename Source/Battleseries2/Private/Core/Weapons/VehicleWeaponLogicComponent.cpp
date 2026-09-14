@@ -680,7 +680,7 @@ void UVehicleWeaponLogicComponent::UpdateSeatRangefinder(int32 SeatIndex, FTrans
 	}
 	else
 	{
-		bool bHit = UBS2FunctionLibrary::PerformWeaponLineTrace(this, TraceTransform, HitResult, ActorsToIgnore, false);
+		bool bHit = UBS2FunctionLibrary::PerformLineTrace(this, TraceTransform, HitResult, ActorsToIgnore, false);
 	}
 
 	if (OwnerDataAccessor->GetVehicleState().SeatStates[SeatIndex].UpdateHUD)

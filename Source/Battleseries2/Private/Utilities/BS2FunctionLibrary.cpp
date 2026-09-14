@@ -46,6 +46,25 @@ bool UBS2FunctionLibrary::PerformSphereTraceMulti(const UObject* WorldContextObj
 	return false;
 }
 
+bool UBS2FunctionLibrary::PerformLineTrace(const UObject* WorldContextObject, const FTransform& StartTransform, FHitResult& OutHit, TArray<AActor*> ActorsToIgnore, bool Debug)
+{
+	//if calling from any actor, WorldContextObject = this/self
+	UWorld* World = GEngine->GetWorldFromContextObject(WorldContextObject, EGetWorldErrorMode::LogAndReturnNull);
+	FVector Startpoint = StartTransform.GetLocation();
+	FVector GetRotationXVector = StartTransform.GetRotation().Rotator().Vector();
+	FVector Endpoint = GetRotationXVector * 50000.0f + Startpoint;
+
+	FCollisionQueryParams Params;
+	Params.AddIgnoredActors(ActorsToIgnore);
+	bool bDidHit = World->LineTraceSingleByChannel(OutHit, Startpoint, Endpoint, ECC_Visibility, Params);
+	if (Debug)
+	{
+		DrawDebugLine(World, Startpoint, Endpoint, bDidHit ? FColor::Green : FColor::Red, false, 0.1f, 0, 0.02f);
+	}
+
+	return bDidHit;
+}
+
 float UBS2FunctionLibrary::GetDesiredAnimMontagePlayRate(UAnimMontage* AnimMontage, float DesiredAnimDuration)
 {
 	if (DesiredAnimDuration <= 0.f) { return 1.0f; }
@@ -157,24 +176,6 @@ float UBS2FunctionLibrary::GetFireRate(float RateOfFire)
 	return RateOfFire;
 }
 
-bool UBS2FunctionLibrary::PerformWeaponLineTrace(const UObject* WorldContextObject, const FTransform& StartTransform, FHitResult& OutHit, TArray<AActor*> ActorsToIgnore, bool Debug)
-{
-	//if calling from any actor, WorldContextObject = this/self
-	UWorld* World = GEngine->GetWorldFromContextObject(WorldContextObject, EGetWorldErrorMode::LogAndReturnNull);
-	FVector Startpoint = StartTransform.GetLocation();
-	FVector GetRotationXVector = StartTransform.GetRotation().Rotator().Vector();
-	FVector Endpoint = GetRotationXVector * 50000.0f + Startpoint;
-
-	FCollisionQueryParams Params;
-	Params.AddIgnoredActors(ActorsToIgnore);
-	bool bDidHit = World->LineTraceSingleByChannel(OutHit, Startpoint, Endpoint, ECC_Visibility, Params);
-	if (Debug)
-	{
-		DrawDebugLine(World, Startpoint, Endpoint, bDidHit ? FColor::Green : FColor::Red, false, 0.1f, 0, 0.02f);
-	}
-
-	return bDidHit;
-}
 
 bool UBS2FunctionLibrary::PerformWeaponSphereTrace(const UObject* WorldContextObject, const FTransform& StartTransform, FHitResult& OutHit, TArray<AActor*> ActorsToIgnore, float Radius, bool Debug)
 {

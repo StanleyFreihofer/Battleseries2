@@ -16,6 +16,7 @@ AGadget_Base::AGadget_Base()
 	
 	GadgetMeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("GadgetMeshComponent"));
 	SetRootComponent(GadgetMeshComponent); 
+	GadgetMeshComponent->SetSimulatePhysics(true);
 }
 
 // Called every frame

@@ -88,9 +88,6 @@ struct FGadgetInstanceData
 	TSoftObjectPtr<UStaticMesh> GadgetMesh = nullptr;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	bool bRequiresPlacementPreview = false;
-	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	bool bHasTriggerVolume = false;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (EditCondition = "bHasTriggerVolume", EditConditionHides))
@@ -137,13 +134,19 @@ struct FGadgetData : public FTableRowBase
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ToolTip = "Data that defines each instance of this gadget's function and behavior"))
 	FGadgetInstanceData GadgetInstanceData = FGadgetInstanceData();
 	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	bool bRequiresPlacementPreview = false;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ToolTip = "the force at which the gadget is thrown at", EditCondition = "bRequiresPlacementPreview == false", EditConditionHides))
+	float ThrowForce = 0.f;
+	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ToolTip = "if true, will automatically drop gadget on equip"))
 	bool AutoDrop = false;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ToolTip = "if true, this gadget is able to be picked back up when placed"))
 	bool AbleToPickup = false;
 	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ToolTip = "if true, this gadget will automatically be 'used' (if c4, auto detonate, if rc vehicle, auto start controlling)"))
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ToolTip = "if true, this gadget will automatically be 'used' on deploy/drop (if c4, auto detonate, if rc vehicle, auto start controlling)"))
 	bool AutoUse = false;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ToolTip = "the default amount of the gadget a person gets"))					//same as max active instances?		//max inventory count?

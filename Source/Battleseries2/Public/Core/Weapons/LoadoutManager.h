@@ -80,6 +80,8 @@ struct FOnFootWeaponSystem_Runtime
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	TObjectPtr<USceneCaptureComponent2D> ScopeCamera = nullptr;
+	
+
 };
 
 USTRUCT(BlueprintType)
@@ -132,6 +134,9 @@ struct FCombatState
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	bool isSwitchingItems = false;
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	FTimerHandle RangefinderTimer = FTimerHandle();
 	
 	//recoil
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
@@ -204,7 +209,7 @@ class BATTLESERIES2_API ULoadoutManager : public UActorComponent
 		UFUNCTION(BlueprintCallable)
 		void StopAim();
 		UFUNCTION(BlueprintCallable)
-		void Rangefinder();
+		void WeaponRangefinder();
 		UFUNCTION(BlueprintCallable) 
 		void HandleStartFire();
 		UFUNCTION(BlueprintCallable)

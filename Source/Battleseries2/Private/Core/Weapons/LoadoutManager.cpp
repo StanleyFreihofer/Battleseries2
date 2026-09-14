@@ -7,6 +7,7 @@
 #include "Kismet/KismetRenderingLibrary.h"
 #include "Materials/MaterialInstanceDynamic.h"
 #include "Core/Weapons/Projectiles/Projectile_Base.h"
+#include "Core/Gadgets/Gadget_Base.h"
 #include "Data/Core/CoreTypes.h"
 #include "Data/Items/Weapons/ProjectileTypes.h"
 #include "Data/Items/Weapons/Data_Weapon.h"
@@ -25,8 +26,8 @@
 
 ULoadoutManager::ULoadoutManager()
 {
-	PrimaryComponentTick.bCanEverTick = true;
-	PrimaryComponentTick.bStartWithTickEnabled = true;
+	//PrimaryComponentTick.bCanEverTick = true;
+	//PrimaryComponentTick.bStartWithTickEnabled = true;
 }
 
 void ULoadoutManager::BeginPlay()
@@ -37,7 +38,7 @@ void ULoadoutManager::BeginPlay()
 void ULoadoutManager::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-	Rangefinder();
+	//Rangefinder();
 }
 
 #pragma region Initialization/Factory
@@ -370,10 +371,10 @@ void ULoadoutManager::StopAim()
 
 # pragma endregion 
 
-void ULoadoutManager::Rangefinder()
+void ULoadoutManager::WeaponRangefinder()
 {
 	FHitResult OutHit;
-	UBS2FunctionLibrary::PerformWeaponLineTrace(this, GetOwnerCharacter()->FPCamera->GetComponentTransform(), OutHit, { GetOwner() }, false);
+	UBS2FunctionLibrary::PerformLineTrace(this, GetOwnerCharacter()->FPCamera->GetComponentTransform(), OutHit, { GetOwner() }, false);
 	if (Loadout.WeaponSystem.InfantryWeaponState.WeaponState_FP.IsEmpty())	{ return;}
 	TWeakObjectPtr<USkeletalMeshComponent>& WeaponMesh = Loadout.WeaponSystem.InfantryWeaponState.WeaponState_FP[GetCII()].WeaponMesh;
 
@@ -899,6 +900,11 @@ void ULoadoutManager::UnequipWeapon(int32 PreviousWeaponIndex)
 	ECharacterItemType CurrentItemType = GetCategoryForSlot(Loadout.CurrentSlot);
 	TWeakObjectPtr<UAnimInstance> FPArmsAnimInstance = GetOwnerCharacter()->FPArms->GetAnimInstance();
 	
+	if (GetCategoryForSlot(Loadout.CurrentSlot) != ECharacterItemType::Weapon)
+	{
+		GetWorld()->GetTimerManager().ClearTimer(CombatState.RangefinderTimer);
+	}
+	
 	if (Loadout.WeaponSystem.BaseWeaponState.Weapons[PreviousWeaponIndex].isReloading)
 	{
 		TSoftObjectPtr<UAnimMontage> FPReloadMontage = StaticWeaponDataCache[PreviousWeaponIndex]->InfantryWeaponAnimData.FPWeaponAnimData.ReloadWeaponMontage;
@@ -981,6 +987,11 @@ void ULoadoutManager::EquipWeapon(int32 WeaponIndex, bool InitialEquip)
 	UpdateWeaponVisibility(WeaponIndex, false);
 	UBS2FunctionLibrary::UpdateWACData(Loadout.WeaponSystem.WeaponAudioComponent, StaticWeaponData.WeaponFirePerformanceData.RateOfFire, StaticWeaponData.InfantryWeaponAudioData.BaseWeaponAudioData);
 	TSoftObjectPtr<UAnimMontage> FPEquipWeaponMontage;
+	if (!GetWorld()->GetTimerManager().IsTimerActive(CombatState.RangefinderTimer))
+	{
+		GetWorld()->GetTimerManager().SetTimer(CombatState.RangefinderTimer, this, &ULoadoutManager::WeaponRangefinder, 0.05f, true);
+	}
+	
 	if (InitialEquip)
 	{
 		//only do weapon mesh animation on initial equip
@@ -1258,7 +1269,7 @@ void ULoadoutManager::UnequipGadget(int32 PreviousGadgetIndex)
 
 void ULoadoutManager::EquipGadget(int32 GadgetIndex)
 {
-	TWeakObjectPtr<ACharacter_Base> Character = Cast<ACharacter_Base>(GetOwner());
+	TWeakObjectPtr<ACharacter_Base> Character = GetOwnerCharacter();
 	TWeakObjectPtr<UAnimInstance> FPArmsAnimInstance = Character->FPArms->GetAnimInstance();
 	const FGadgetData& GadgetData = *StaticGadgetDataCache[GadgetIndex];
 	const FGadgetAnimData& AnimData = GadgetData.GadgetAnimData;
@@ -1335,11 +1346,18 @@ void ULoadoutManager::StartDeployGadget()
 	const FGadgetData& GadgetData = *StaticGadgetDataCache[GadgetIndex];
 	if (GadgetData.GadgetType == EGadgetType::Vehicle && !GadgetState.ActivePlacedInstances.IsEmpty())	{return;}		//if this gadget is a vehicle & there's 1 deployed, dont deploy another
 	
-	TWeakObjectPtr<ACharacter_Base> Character = Cast<ACharacter_Base>(GetOwner());
+	TWeakObjectPtr<ACharacter_Base> Character = GetOwnerCharacter();
 	TWeakObjectPtr<UAnimInstance> FPArmsAnimInstance = Character->FPArms->GetAnimInstance();
 
 	const FGadgetAnimData& AnimData = GadgetData.GadgetAnimData;
 	AnimData.DeployGadget.LoadSynchronous();
+	
+	if (!AnimData.DeployGadget.Get())
+	{
+		DeployGadget();   // no anim authored for this gadget — deploy immediately instead of hanging on a montage that'll never play
+		return;
+	}
+	
 	UnequipBlendOutDelegate.BindUObject(this, &ULoadoutManager::OnStartDeployGadget_BlendOut);
 	FPArmsAnimInstance->Montage_Play(AnimData.DeployGadget.Get(), 1.0f);
 	FPArmsAnimInstance->Montage_SetBlendingOutDelegate(UnequipBlendOutDelegate, AnimData.DeployGadget.Get());
@@ -1365,7 +1383,16 @@ void ULoadoutManager::DeployGadget()
 	switch (GadgetData.GadgetType)
 	{
 		case EGadgetType::Gadget:
+		{
+			FVector SpawnLocation = GetOwner()->GetActorLocation() + GetOwner()->GetActorForwardVector() * 50.f;
+			FTransform SpawnTransform(GetOwner()->GetActorRotation(), SpawnLocation);
+			AGadget_Base* NewGadgetActor = GetWorld()->SpawnActorDeferred<AGadget_Base>(AGadget_Base::StaticClass(), SpawnTransform, GetOwner(), GetOwnerCharacter(), ESpawnActorCollisionHandlingMethod::AlwaysSpawn);
+			NewGadgetActor->GadgetInstanceStartingData.GadgetID = GadgetState.GadgetID;
+			NewGadgetActor->FinishSpawning(SpawnTransform);
+			NewGadgetActor->GadgetMeshComponent->SetSimulatePhysics(true);
+			NewGadgetActor->GadgetMeshComponent->AddImpulse(GetOwnerCharacter()->GetActorRotation().Vector() * GadgetData.ThrowForce, NAME_None, true);
 			break;
+		}
 		case EGadgetType::Vehicle:
 			//vehicle is a wierd case where only 1 should be deployed at a time so therefore dont deploy 1 if 1 is already deployed/placed
 			if (!GadgetState.ActivePlacedInstances.IsEmpty())	{return;}
@@ -1382,6 +1409,11 @@ void ULoadoutManager::DeployGadget()
 	if (GadgetData.AutoUse)
 	{
 		UseGadget();
+	}
+	
+	if (GadgetState.CurrentInventory == 0)
+	{
+		AutoSwitchItem();		//switch back if out of that gadget
 	}
 }
 
