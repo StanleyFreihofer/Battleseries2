@@ -152,4 +152,12 @@ enum class EWeaponStat : uint8
 	ADSOutSpeed
 };
 
+UENUM(BlueprintType)
+enum class EWeaponStateType : uint8
+{
+	CurrentAmmoInMag,
+	CurrentReserveAmmo,
+	CurrentFireMode
+};
+
 

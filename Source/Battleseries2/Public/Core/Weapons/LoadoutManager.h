@@ -253,9 +253,9 @@ class BATTLESERIES2_API ULoadoutManager : public UActorComponent
 		UFUNCTION(BlueprintCallable)
 		void UpdateCurrentWeaponStats(int32 WeaponIndex);
 		UFUNCTION(BlueprintCallable)
-		void ApplyAttachmentModifier(FWeaponStats_Runtime& RuntimeStats, EWeaponStat WeaponStat, const FStatModifierData& Modifier);
+		void ApplyAttachmentModifier(FWeaponStats_Runtime& RuntimeStats, EWeaponStat WeaponStat, const FWeaponStatModifierData& WeaponModifier);
 		UFUNCTION(BlueprintCallable)
-		float CalculateFinalStatValue(float BaseValue, TArray<FStatModifierData>& ModifierArray);
+		float CalculateFinalStatValue(float BaseValue, TArray<FWeaponStatModifierData>& ModifierArray);
 	
 		UFUNCTION(BlueprintCallable)
 		void UnequipGadget(int32 PreviousGadgetIndex);
@@ -295,7 +295,7 @@ class BATTLESERIES2_API ULoadoutManager : public UActorComponent
 		UFUNCTION(BlueprintCallable, BlueprintPure)
 		void GetAimSpeeds(float& AimInSpeed, float& AimOutSpeed);
 		UFUNCTION(BlueprintCallable, BlueprintPure)
-		void GetAllAttachmentModifierDataOfTypeForWeapon(TMap<EAttachmentSlot, FWeaponAttachmentState>& WeaponAttachmentStates, EWeaponStat WeaponStatType, TArray<FStatModifierData>& OutAttachmentModifierData);
+		void GetAllAttachmentModifierDataOfTypeForWeapon(TMap<EAttachmentSlot, FWeaponAttachmentState>& WeaponAttachmentStates, EWeaponStat WeaponStatType, TArray<FWeaponStatModifierData>& OutAttachmentModifierData);
 		UFUNCTION(BlueprintCallable, BlueprintPure)
 		FWeaponAttachmentState& GetCurrentAttachmentInSlot(EAttachmentSlot Slot);
 		UFUNCTION(BlueprintCallable, BlueprintPure)

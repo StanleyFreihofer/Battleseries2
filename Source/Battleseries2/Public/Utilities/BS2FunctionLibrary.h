@@ -54,6 +54,7 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Battleseries")
 	static UCameraComponent* CreateAndAttachCamera(UObject* Owner, USceneComponent* AttachTarget, FName SocketName);
 	
+#pragma region WeaponFunctions
 	UFUNCTION(BlueprintCallable, Category = "Battleseries | Weapon Functions")
 	static UAudioComponent* CreateWAC(const UObject* WorldContextObject, AActor* Owner, USceneComponent* AttachTarget);
 	
@@ -84,13 +85,17 @@ public:
     static void UpdateWeaponIndex(TArray<FWeaponState> Weapons, int32 InCurrentWeaponIndex, int32& OutNewWeaponIndex);
 	UFUNCTION(Category = "Battleseries | Weapon Functions")
 	static void UpdateWACData(TWeakObjectPtr<UAudioComponent> WAC, float RPM, FWeaponAudioData WeaponAudioData);
-
 	UFUNCTION(Category = "Battleseries | Weapon Functions")
 	static void StartWAC(TWeakObjectPtr<UAudioComponent> WAC);
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Battleseries | Weapon Functions")
 	static int32 GetMaxMagSize(bool canRoundbeChambered, int32 BaseMagSize);
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Battleseries | Weapon Functions")
 	static bool GetIfWeaponCanReload(FWeaponState Weapon, bool canRoundbeChambered, int32 BaseMagSize);
+	
+#pragma endregion
+	
+	UFUNCTION(BlueprintCallable)
+	static void UpdateGadgetInventory(FGadgetState& Gadget, int32 InventoryDelta, int32 MaxInventoryCount);
 
 	UFUNCTION(BlueprintCallable, Category = "Battleseries | Optic Functions")
     static void HandleUpdateOptic(float inDefaultFOV, float inOpticMagnfication, float& OutOpticFOV, FPostProcessSettings inPostProcessData, FPostProcessSettings& OutPostProcessSettings, float& OutPostProcessWeight);

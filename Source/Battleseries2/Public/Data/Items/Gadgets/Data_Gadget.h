@@ -6,7 +6,9 @@
 #include "Data/Core/CoreEnums.h"
 #include "Data/Core/CoreTypes.h"
 #include "Data/Items/ItemStructs.h"
+#include "Data/Items/Weapons/WeaponEnums.h"
 #include "Data/Items/Gadgets/GadgetEnums.h"
+#include "Data/Items/Weapons/Data_WeaponAttachments.h"
 #include "Data_Gadget.generated.h"
 
 
@@ -15,6 +17,8 @@
  * gadgets that are weapons should be listed in their respective data
  * WEAPON GADGETS SHOULD NOT BE LISTED HERE
 **/
+
+struct FWeaponStatModifierData;
 
 USTRUCT(BlueprintType)
 struct FGadgetAnimData 
@@ -67,8 +71,8 @@ struct FGadgetEffectData
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	EEffectCategory EffectCategory = EEffectCategory::StatEffect;
 	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (EditCondition = "EffectCategory == EEffectCategory::StatEffect", EditConditionHides, ToolTip = "each state this gadget affects, with its own operation/value/valuemode"))
-	TMap<EStateToAffect, FStatModifierData> StateModifiers;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (EditCondition = "EffectCategory == EEffectCategory::StatEffect", EditConditionHides, ToolTip = "the weapon states this gadget affects, with its own operation/value/valuemode"))
+	TMap<EWeaponStateType, FWeaponStatModifierData> WeaponStateModifiers;
 	
 	//STAT modifiers (1 for vehicle, character, weapon, etc)
 
@@ -122,7 +126,7 @@ struct FGadgetData : public FTableRowBase
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	EGadgetType GadgetType = EGadgetType::Gadget;
 	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ToolTip = "if the gadget is a vehicle", EditCondition = "GadgetType == EGadgetType::Vehicle || GadgetType == EGadgetType::Weapon", EditConditionHides))
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ToolTip = "if the gadget is a vehicle, this is the VehicleID", EditCondition = "GadgetType == EGadgetType::Vehicle || GadgetType == EGadgetType::Weapon", EditConditionHides))
 	FName ItemID = NAME_None;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ToolTip = "mesh that you hold"))
@@ -152,8 +156,11 @@ struct FGadgetData : public FTableRowBase
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ToolTip = "the default amount of the gadget a person gets"))					//same as max active instances?		//max inventory count?
 	int32 DefaultInventoryCount = 1;
 	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ToolTip = "if true, gadgets 'ammo' count will automatically start replenishing"))
-	bool AutoRefill = false;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ToolTip = "the max  amount of the gadget a person can have"))					
+	int32 MaxInventoryCount = 1;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ToolTip = "if > -1, gadgets 'ammo' count will automatically start replenishing at this rate"))
+	float AutoRefillRate = -1.f;
 	
 	//replenish delay?
 	

@@ -97,7 +97,7 @@ UENUM(BlueprintType)
 enum class EEffectValueMode : uint8
 {
 	FlatValue					UMETA(DisplayName = "Flat Value", ToolTip = "Effect Value used literally"),        
-	PercentOfTargetMax			UMETA(DisplayName = "Percent Of Target Max", ToolTip = "EffectValue is 0-1, scaled against the target's current max for whatever Target is")																	
+	MultipleOfStat				UMETA(DisplayName = "Muliple Of Stat", ToolTip = "Multiplier of Target Value")																	
 };
 
 UENUM(BlueprintType)

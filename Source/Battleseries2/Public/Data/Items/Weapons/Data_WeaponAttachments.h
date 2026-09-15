@@ -63,6 +63,18 @@ struct FWeaponAttachmentClassification
 };
 
 USTRUCT(BlueprintType)
+struct FWeaponStatModifierData
+{
+	GENERATED_BODY()
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	FStatModifierData Modifier = FStatModifierData();
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ToolTip = "this only matters if EffectValueMode isn't FlatValue", EditCondition = "Modifier.EffectValueMode == EEffectValueMode::MultipleOfStat", EditConditionHides))
+	EWeaponStateType ReferenceState = EWeaponStateType::CurrentAmmoInMag;
+};
+
+USTRUCT(BlueprintType)
 struct FAttachmentTuningData
 {
 	GENERATED_BODY()
@@ -80,11 +92,11 @@ struct FAttachmentTuningData
 	// --- STAT INFLUENCE ---
 	//what stat does it influence (positively) (e.g., +10% control)
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Tuning Impact", meta = (EditCondition = "TuningCapability != ETuningCapability::NoTuning", EditConditionHides))
-	TMap<EWeaponStat, FStatModifierData> TuningModifiers;
+	TMap<EWeaponStat, FWeaponStatModifierData> TuningModifiers;
 
 	//what stat does it influence (negatively) (e.g., +15% time)
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Tuning Impact", meta = (EditCondition = "TuningCapability != ETuningCapability::NoTuning", EditConditionHides))
-	TMap<EWeaponStat, FStatModifierData> TuningPenalty;
+	TMap<EWeaponStat, FWeaponStatModifierData> TuningPenalty;
 };
 
 USTRUCT(BlueprintType)
@@ -98,9 +110,9 @@ struct FWeaponAttachmentData : public FTableRowBase
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (EditCondition = "AttachmentClassification.WeaponAttachmentType == EWeaponAttachmentType::Sight", EditConditionHides))
 	FWeaponSightData WeaponSightData = FWeaponSightData();
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (tooltip = "the stat modifiers (positive or negative) of this attachment"))
-	TMap<EWeaponStat, FStatModifierData> AttachmentModifiers;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ToolTip = "the stat modifiers (positive or negative) of this attachment"))
+	TMap<EWeaponStat, FWeaponStatModifierData> AttachmentModifiers;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (tooltip = "the tuning modifiers (positive/negative) for this attachment (modified on top of the base attachment modifiers)"))
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ToolTip = "the tuning modifiers (positive/negative) for this attachment (modified on top of the base attachment modifiers)"))
 	FAttachmentTuningData TuningModifier = FAttachmentTuningData();
 };

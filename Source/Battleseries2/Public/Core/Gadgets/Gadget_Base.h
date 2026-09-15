@@ -58,6 +58,9 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void DestroyGadget();
 	
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	bool GetIsEligibleTarget(AActor* Actor);
+	
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;

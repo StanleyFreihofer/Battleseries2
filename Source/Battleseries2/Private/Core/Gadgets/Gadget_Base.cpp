@@ -5,6 +5,9 @@
 #include "Components/SphereComponent.h"
 #include "Components/BoxComponent.h"
 #include "Data/Items/Gadgets/Data_Gadget.h"
+#include "Vehicle_Base.h"
+#include "Character_Base.h"
+#include "Core/Weapons/Projectiles/Projectile_Base.h"
 #include "Utilities/BS2FunctionLibrary.h"
 #include "Utilities/DataManagerSubsystem.h"
 
@@ -103,6 +106,7 @@ void AGadget_Base::UseGadget()
 		GadgetState.TriggerVolume->GetOverlappingActors(OverlappingActors);
 		for (AActor* Actor : OverlappingActors)
 		{
+			if (!GetIsEligibleTarget(Actor))	{ continue; }
 			//is actor eligible target
 			// apply GadgetData's effect (StateModifiers/StatModifiers map) to Actor here
 		}
@@ -146,6 +150,28 @@ void AGadget_Base::OnTriggerEndOverlap(UPrimitiveComponent* OverlappedComp, AAct
 	{
 		GetWorld()->GetTimerManager().ClearTimer(GadgetState.GadgetTickTimer);
 	}
+}
+
+bool AGadget_Base::GetIsEligibleTarget(AActor* Actor)
+{
+	check(Actor);
+	
+	for (ECoreObjectType ObjectType : GadgetData->GadgetInstanceData.TriggerData.EligibleObjects)
+	{
+		switch (ObjectType)
+		{
+			case ECoreObjectType::Character:
+				if (Actor->IsA<ACharacter_Base>()) { return true; }
+				break;
+			case ECoreObjectType::Vehicle:
+				if (Actor->IsA<AVehicle_Base>()) { return true; }
+				break;
+			case ECoreObjectType::Munition:
+				if (Actor->IsA<AProjectile_Base>()) { return true; }
+				break;
+		}
+	}
+	return false;
 }
 
 

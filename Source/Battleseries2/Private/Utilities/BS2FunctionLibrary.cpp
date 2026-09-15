@@ -15,6 +15,7 @@
 #include "Utilities/I_VehicleDataAccessor.h"
 #include "Components/AudioComponent.h"
 #include "Camera/CameraComponent.h"
+#include "Data/Items/Gadgets/GadgetTypes.h"
 
 bool UBS2FunctionLibrary::PerformSphereTraceMulti(const UObject* WorldContextObject, const FTransform StartTransform, TArray<FHitResult>& OutHits, TArray<AActor*> ActorsToIgnore, float Radius, float Distance, bool Debug)
 {
@@ -159,6 +160,8 @@ UCameraComponent* UBS2FunctionLibrary::CreateAndAttachCamera(UObject* Owner, USc
 	return Cam;
 }
 
+#pragma region WeaponFunctions
+
 UAudioComponent* UBS2FunctionLibrary::CreateWAC(const UObject* WorldContextObject, AActor* Owner, USceneComponent* AttachTarget)
 {
 	UAudioComponent* NewAudioComp = NewObject<UAudioComponent>(Owner);
@@ -266,7 +269,7 @@ int32 UBS2FunctionLibrary::UpdateCurrentAmmoInMag(FWeaponState& CurrentWeapon, i
 	{
 		CurrentWeapon.canFire = false;
 	}
-	UE_LOG(LogTemp, Warning, TEXT("BS2FunctionLibrary::UpdateCurrentAmmoInMag] CAM = %d"), CurrentWeapon.CurrentAmmoinMag);
+	UE_LOG(LogTemp, Warning, TEXT("[BS2FunctionLibrary::UpdateCurrentAmmoInMag] CAM = %d"), CurrentWeapon.CurrentAmmoinMag);
 	return CurrentWeapon.CurrentAmmoinMag;
 }
 
@@ -324,6 +327,13 @@ bool UBS2FunctionLibrary::GetIfWeaponCanReload(FWeaponState Weapon, bool canRoun
 		return true;
 	}
 	return false;
+}
+
+#pragma endregion 
+
+void UBS2FunctionLibrary::UpdateGadgetInventory(FGadgetState& Gadget, int32 InventoryDelta, int32 MaxInventoryCount)
+{
+	Gadget.CurrentInventory = FMath::Clamp(Gadget.CurrentInventory + InventoryDelta, 0, MaxInventoryCount);
 }
 
 void UBS2FunctionLibrary::HandleUpdateOptic(float inDefaultFOV, float inOpticMagnfication, float& OutOpticFOV, FPostProcessSettings inPostProcessData, FPostProcessSettings& OutPostProcessSettings, float& OutPostProcessWeight)

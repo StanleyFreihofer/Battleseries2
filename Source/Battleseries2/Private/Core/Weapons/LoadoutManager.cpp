@@ -1150,7 +1150,7 @@ void ULoadoutManager::UpdateCurrentWeaponStats(int32 WeaponIndex)
 	}
 }
 
-void ULoadoutManager::ApplyAttachmentModifier(FWeaponStats_Runtime& RuntimeStats, EWeaponStat WeaponStat, const FStatModifierData& Modifier)
+void ULoadoutManager::ApplyAttachmentModifier(FWeaponStats_Runtime& RuntimeStats, EWeaponStat WeaponStat, const FWeaponStatModifierData& WeaponModifier)
 {
 	using FloatPtr = float FWeaponStats_Runtime::*;				//FloatPtr = float*
 	using IntPtr = int32 FWeaponStats_Runtime::*;				//IntPtr = int32*
@@ -1228,29 +1228,29 @@ void ULoadoutManager::ApplyAttachmentModifier(FWeaponStats_Runtime& RuntimeStats
 	if (StatTarget->FloatMember)
 	{
 		float& FloatValue = RuntimeStats.*StatTarget->FloatMember;
-		FloatValue = Modifier.ApplyToValue(FloatValue);
+		FloatValue = WeaponModifier.Modifier.ApplyToValue(FloatValue);
 	}
 	else if (StatTarget->IntMember)
 	{
 		int32& IntValue = RuntimeStats.*StatTarget->IntMember;
-		IntValue = FMath::RoundToInt(Modifier.ApplyToValue((float)IntValue));
+		IntValue = FMath::RoundToInt(WeaponModifier.Modifier.ApplyToValue((float)IntValue));
 	}
 	else if (StatTarget->BoolMember)
 	{
 		bool& BoolValue = RuntimeStats.*StatTarget->BoolMember;
-		if (Modifier.Operation == EModifierOp::Set)
+		if (WeaponModifier.Modifier.Operation == EModifierOp::Set)
 		{
-			BoolValue = !FMath::IsNearlyZero(Modifier.ModifierValue);
+			BoolValue = !FMath::IsNearlyZero(WeaponModifier.Modifier.ModifierValue);
 		}
 	}
 }
 
-float ULoadoutManager::CalculateFinalStatValue(float BaseValue, TArray<FStatModifierData>& ModifierArray)
+float ULoadoutManager::CalculateFinalStatValue(float BaseValue, TArray<FWeaponStatModifierData>& ModifierArray)
 {
 	float CurrentValue = BaseValue;
-	for (FStatModifierData& Modifier : ModifierArray)
+	for (FWeaponStatModifierData& WeaponStatModifier : ModifierArray)
 	{
-		CurrentValue = Modifier.ApplyToValue(CurrentValue);
+		CurrentValue = WeaponStatModifier.Modifier.ApplyToValue(CurrentValue);
 	}
 	return CurrentValue;
 }
@@ -1420,7 +1420,7 @@ void ULoadoutManager::DeployGadget()
 			break;
 	}
 	GadgetState.ActivePlacedInstances.Add(NewGadget);
-	GadgetState.CurrentInventory--;
+	UBS2FunctionLibrary::UpdateGadgetInventory(GadgetState, -1, GadgetData.MaxInventoryCount);
 	
 	if (GadgetData.AutoUse)
 	{
@@ -1646,14 +1646,14 @@ void ULoadoutManager::GetAimSpeeds(float& AimInSpeed, float& AimOutSpeed)
 	const float& DefaultAimInSpeed = UBS2FunctionLibrary::GetDataSubsystem(this)->GetInfantryWeaponDataRow(WeaponID)->InfantryWeaponAimData.DefaultAimInSpeed;
 	const float& DefaultAimOutSpeed = UBS2FunctionLibrary::GetDataSubsystem(this)->GetInfantryWeaponDataRow(WeaponID)->InfantryWeaponAimData.DefaultAimOutSpeed;
 	TMap<EAttachmentSlot, FWeaponAttachmentState>& WeaponAttachmentStates = Loadout.WeaponSystem.InfantryWeaponState.WeaponState_FP[GetCII()].WeaponAttachmentStates;
-	TArray<FStatModifierData> ADSModifiers;
+	TArray<FWeaponStatModifierData> ADSModifiers;
 	GetAllAttachmentModifierDataOfTypeForWeapon(WeaponAttachmentStates, EWeaponStat::ADSInSpeed, ADSModifiers);
 	float CurrentAimInSpeed = CalculateFinalStatValue(DefaultAimInSpeed, ADSModifiers);
 	AimInSpeed = CurrentAimInSpeed;
 	AimOutSpeed = DefaultAimOutSpeed;
 }
 
-void ULoadoutManager::GetAllAttachmentModifierDataOfTypeForWeapon(TMap<EAttachmentSlot, FWeaponAttachmentState>& WeaponAttachmentStates, EWeaponStat WeaponStatType, TArray<FStatModifierData>& OutAttachmentModifierData)
+void ULoadoutManager::GetAllAttachmentModifierDataOfTypeForWeapon(TMap<EAttachmentSlot, FWeaponAttachmentState>& WeaponAttachmentStates, EWeaponStat WeaponStatType, TArray<FWeaponStatModifierData>& OutAttachmentModifierData)
 {
 	//consider doing this on start or pickup of a weapon and gather/cache a source of truth/data struct for THE CURRENT STATS of the weapon with all of its attachments
 	//that way we may not have to do expensive lookups
@@ -1661,7 +1661,7 @@ void ULoadoutManager::GetAllAttachmentModifierDataOfTypeForWeapon(TMap<EAttachme
 	{
 		FWeaponAttachmentState& AttachmentState = AttachmentSlot.Value;
 		FName& AttachmentID = AttachmentState.BaseAttachmentState.AttachmentID;
-		const FStatModifierData* NewAttachmentModifierData = UBS2FunctionLibrary::GetDataSubsystem(this)->GetWeaponAttachmentDataRow(AttachmentID)->AttachmentModifiers.Find(WeaponStatType);
+		const FWeaponStatModifierData* NewAttachmentModifierData = UBS2FunctionLibrary::GetDataSubsystem(this)->GetWeaponAttachmentDataRow(AttachmentID)->AttachmentModifiers.Find(WeaponStatType);
 		if (NewAttachmentModifierData)
 		{
 			OutAttachmentModifierData.Add(*NewAttachmentModifierData);

@@ -111,24 +111,29 @@ struct FStatModifierData
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float ModifierValue = 1.0f;
 
-	float ApplyToValue(float InCurrentValue) const
+	float ApplyToValue(float InCurrentValue, float ReferenceValue = 0.f) const
 	{
+		float Magnitude = ModifierValue;
+		if (EffectValueMode == EEffectValueMode::MultipleOfStat)
+		{
+			Magnitude = ModifierValue * ReferenceValue;
+		}
 		switch (Operation)
 		{
 			case EModifierOp::Set:
-				return ModifierValue;
+				return Magnitude;
 			case EModifierOp::Add:
-				return InCurrentValue + ModifierValue;
+				return InCurrentValue + Magnitude;
 			case EModifierOp::Subtract:
-				return InCurrentValue - ModifierValue;
+				return InCurrentValue - Magnitude;
 			case EModifierOp::Multiply:
-				return InCurrentValue * ModifierValue;
+				return InCurrentValue * Magnitude;
 			case EModifierOp::Divide:
-				if (!FMath::IsNearlyZero(ModifierValue))
+				if (!FMath::IsNearlyZero(Magnitude))
 				{
-					return InCurrentValue / ModifierValue;
+					return InCurrentValue / Magnitude;
 				}
-				return InCurrentValue; // Guard against division by zero
+				return Magnitude; // Guard against division by zero
 			default:
 				return InCurrentValue;
 		}
