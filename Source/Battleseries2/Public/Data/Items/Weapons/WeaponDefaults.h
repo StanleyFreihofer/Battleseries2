@@ -11,6 +11,9 @@ USTRUCT(BlueprintType)
 struct FWeaponDefaults
 {
 	GENERATED_BODY()
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	TArray<TSoftObjectPtr<USoundWave>> ResupplyWeaponAmmoSFX;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	TSoftObjectPtr<UMetaSoundSource> DefaultWeaponMetaSound;

@@ -345,11 +345,21 @@ void ULoadoutManager::ApplyWeaponStateModifiers(const TMap<EWeaponStateType, FWe
 			switch (Pair.Key)
 			{
 				case EWeaponStateType::CurrentAmmoInMag:
+				{
+					if (Weapon.CurrentAmmoinMag == Stats.MagSize)	{ continue; }
 					UBS2FunctionLibrary::UpdateCurrentAmmoInMag(Weapon, ModifierValue, Stats.MagSize);
+					int32 AudioIndex = FMath::RandRange(0, UBS2FunctionLibrary::GetDataSubsystem(this)->GetWeaponDefaults()->WeaponDefaults.ResupplyWeaponAmmoSFX.Num() - 1);
+					UGameplayStatics::PlaySound2D(this, UBS2FunctionLibrary::GetDataSubsystem(this)->GetWeaponDefaults()->WeaponDefaults.ResupplyWeaponAmmoSFX[AudioIndex].LoadSynchronous());
 					break;
+				}
 				case EWeaponStateType::CurrentReserveAmmo:
+				{
+					if (Weapon.CurrentReserveAmmo == Stats.MaxReserveAmmo)	{ continue; }
 					UBS2FunctionLibrary::UpdateCurrentReserveAmmo(Weapon, ModifierValue, Stats.MaxReserveAmmo);
+					int32 AudioIndex = FMath::RandRange(0, UBS2FunctionLibrary::GetDataSubsystem(this)->GetWeaponDefaults()->WeaponDefaults.ResupplyWeaponAmmoSFX.Num() - 1);
+					UGameplayStatics::PlaySound2D(this, UBS2FunctionLibrary::GetDataSubsystem(this)->GetWeaponDefaults()->WeaponDefaults.ResupplyWeaponAmmoSFX[AudioIndex].LoadSynchronous());
 					break;
+				}
 			}
 		}
 	}

@@ -131,7 +131,7 @@ void AGadget_Base::UseGadget()
 	GadgetState.CurrentNumOfUses++;
 	if (GadgetData->GadgetInstanceData.MaxUsages > 0 && GadgetState.CurrentNumOfUses >= GadgetData->GadgetInstanceData.MaxUsages)
 	{
-		//Destroy/Disable Gadget
+		DestroyGadget();
 	}
 }
 
