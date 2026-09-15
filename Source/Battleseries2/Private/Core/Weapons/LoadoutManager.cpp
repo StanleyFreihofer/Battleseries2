@@ -496,12 +496,15 @@ void ULoadoutManager::StartFire()
 {
 	//fires exactly once
 	//assumes canfire is true
-	bool SingleFire = false;
 	if (GetCurrentWeaponBaseState()->CurrentFireMode == EFireMode::Single)
 	{
-		SingleFire = true;
+		UBS2FunctionLibrary::StartWAC(Loadout.WeaponSystem.WeaponAudioComponent, 1);
 	}
-	UBS2FunctionLibrary::StartWAC(Loadout.WeaponSystem.WeaponAudioComponent, SingleFire);
+	else
+	{
+		UBS2FunctionLibrary::StartWAC(Loadout.WeaponSystem.WeaponAudioComponent, GetCurrentWeaponBaseState()->CurrentAmmoinMag);
+	}
+
 	
 	GetCurrentWeaponBaseState()->isFiring = true;
 	
@@ -629,7 +632,7 @@ void ULoadoutManager::CeaseFire()
 		FinishedComponent->Deactivate();
 	});
 	
-	if (CurrentWeapon.CurrentFireMode == EFireMode::Auto && GetWorld()->GetTimerManager().IsTimerActive(CurrentWeapon.TimerHandle_AutoFire))
+	if (CurrentWeapon.CurrentFireMode == EFireMode::Auto || CurrentWeapon.CurrentFireMode == EFireMode::Burst && GetWorld()->GetTimerManager().IsTimerActive(CurrentWeapon.TimerHandle_AutoFire))
 	{
 		GetWorld()->GetTimerManager().ClearTimer(CurrentWeapon.TimerHandle_AutoFire);
 	}

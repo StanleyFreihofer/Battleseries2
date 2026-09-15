@@ -88,7 +88,7 @@ public:
 	UFUNCTION(Category = "Battleseries | Weapon Functions")
 	static void UpdateWACData(TWeakObjectPtr<UAudioComponent> WAC, float RPM, FWeaponAudioData WeaponAudioData);
 	UFUNCTION(Category = "Battleseries | Weapon Functions")
-	static void StartWAC(TWeakObjectPtr<UAudioComponent> WAC, bool SingleFire);
+	static void StartWAC(TWeakObjectPtr<UAudioComponent> WAC, int32 AvailableShots);
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Battleseries | Weapon Functions")
 	static int32 GetMaxMagSize(bool canRoundbeChambered, int32 BaseMagSize);
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Battleseries | Weapon Functions")
