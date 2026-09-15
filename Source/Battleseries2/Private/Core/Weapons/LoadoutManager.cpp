@@ -804,6 +804,15 @@ void ULoadoutManager::HandleSwitchItem(ELoadoutSlot NewLoadoutSlot)
 		NewItemType = GetActualGadgetItemType(NewItemIndex);
 	}
 	
+	if (NewItemType == ECharacterItemType::Gadget)
+	{
+		if (Loadout.Gadgets[NewItemIndex].CurrentInventory == 0)
+		{
+			CombatState.isSwitchingItems = false;
+			return;
+		}
+	}
+	
 	// NOW that OldItemType is resolved, get the TRUE resolved index 
 	Loadout.PreviousItemIndex = (OldItemType == ECharacterItemType::Weapon) ? GetWeaponIndexForSlot(OldLoadoutSlot) : GetGadgetIndexForSlot(OldLoadoutSlot);
 	
@@ -1274,7 +1283,14 @@ void ULoadoutManager::EquipGadget(int32 GadgetIndex)
 	const FGadgetData& GadgetData = *StaticGadgetDataCache[GadgetIndex];
 	const FGadgetAnimData& AnimData = GadgetData.GadgetAnimData;
 	TObjectPtr<UStaticMeshComponent> NewGadgetMesh = Loadout.Gadgets[GadgetIndex].HeldMesh_FP.Get();
-	UpdateGadgetVisibility(GadgetIndex, false);
+	if (Loadout.Gadgets[GadgetIndex].CurrentInventory != 0)
+	{
+		UpdateGadgetVisibility(GadgetIndex, false);
+	}
+	else
+	{
+		UpdateGadgetVisibility(GadgetIndex, true);
+	}
 	NewGadgetMesh->SetRelativeLocation(FVector::ZeroVector);
 	
 	AnimData.BaseItemAnimData.EquipMontage.LoadSynchronous();
@@ -1413,6 +1429,7 @@ void ULoadoutManager::DeployGadget()
 	
 	if (GadgetState.CurrentInventory == 0)
 	{
+		UpdateGadgetVisibility(GadgetIndex, true);
 		AutoSwitchItem();		//switch back if out of that gadget
 	}
 }
