@@ -1063,7 +1063,7 @@ TWeakObjectPtr<AProjectile_Base> UVehicleWeaponLogicComponent::StartFire(int32 S
 	const FBaseWeaponData StaticWeaponData = GetBaseWeaponDataInSlot(SeatIndex, GetCWIForSeat(SeatIndex));
 	TWeakObjectPtr<AProjectile_Base> FiredProjectile = nullptr;
 	
-	UBS2FunctionLibrary::StartWAC(GetWAC(SeatIndex));
+	UBS2FunctionLibrary::StartWAC(GetWAC(SeatIndex), false);
 		
 	CurrentWeapon.isFiring = true;
 	FiredProjectile = FireVehicleWeapon(SeatIndex);	//fire weapon immediately AND THEN (if auto/burst) fire rate every shot after

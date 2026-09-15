@@ -52,6 +52,8 @@ struct FWeaponState
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	int32 CurrentReserveAmmo = 0;
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	int32 CurrentBurstCount = 0;
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	FTimerHandle TimerHandle_AutoFire = FTimerHandle();
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	FTimerHandle TimerHandle_Reload = FTimerHandle();

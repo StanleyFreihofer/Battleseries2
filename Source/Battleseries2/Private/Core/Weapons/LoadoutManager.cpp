@@ -450,16 +450,36 @@ void ULoadoutManager::HandleStartFire()
 		return;
 	}
 	
+	const float TriggerDelay = GetCurrentWeaponStaticData()->WeaponFunctionalityData.BaseWeaponFunctionality.WeaponFireModeData.TriggerDelay;
+	
   	switch (CurrentWeapon.CurrentFireMode)
 	{
 		case EFireMode::Single:
-			if (!CombatState.isAttemptingToFire)
-			{
-				CombatState.isAttemptingToFire = true;
-				StartFire();
-			}
+			if (CombatState.isAttemptingToFire)		{ return; }
+  			if (GetWorld()->GetTimerManager().IsTimerActive(CurrentWeapon.TimerHandle_AutoFire))
+  			{
+  				return; // still on cooldown from the last shot
+  			}
+  		
+  			CombatState.isAttemptingToFire = true;
+  		
+  			StartFire();
+  			
+  			if (TriggerDelay > 0.f)
+  			{
+  				GetWorld()->GetTimerManager().SetTimer(CurrentWeapon.TimerHandle_AutoFire, TriggerDelay, false);
+  			}
 			break;
 		case EFireMode::Burst:
+  			if (CombatState.isAttemptingToFire)		{ return; }
+  			CombatState.isAttemptingToFire = true;
+  			if (GetWorld()->GetTimerManager().IsTimerActive(CurrentWeapon.TimerHandle_AutoFire))
+  			{
+  				return; // either autofiring OR still on cooldown from the last shot
+  			}
+  		
+  			StartFire();
+  			StartAutoFire();
 			break;
 		case EFireMode::Auto:
   			if (!GetWorld()->GetTimerManager().IsTimerActive(CurrentWeapon.TimerHandle_AutoFire))
@@ -476,7 +496,12 @@ void ULoadoutManager::StartFire()
 {
 	//fires exactly once
 	//assumes canfire is true
-	UBS2FunctionLibrary::StartWAC(Loadout.WeaponSystem.WeaponAudioComponent);
+	bool SingleFire = false;
+	if (GetCurrentWeaponBaseState()->CurrentFireMode == EFireMode::Single)
+	{
+		SingleFire = true;
+	}
+	UBS2FunctionLibrary::StartWAC(Loadout.WeaponSystem.WeaponAudioComponent, SingleFire);
 	
 	GetCurrentWeaponBaseState()->isFiring = true;
 	
@@ -604,12 +629,13 @@ void ULoadoutManager::CeaseFire()
 		FinishedComponent->Deactivate();
 	});
 	
-	if (GetWorld()->GetTimerManager().IsTimerActive(CurrentWeapon.TimerHandle_AutoFire))
+	if (CurrentWeapon.CurrentFireMode == EFireMode::Auto && GetWorld()->GetTimerManager().IsTimerActive(CurrentWeapon.TimerHandle_AutoFire))
 	{
 		GetWorld()->GetTimerManager().ClearTimer(CurrentWeapon.TimerHandle_AutoFire);
 	}
 
 	CurrentWeapon.isFiring = false;
+	CurrentWeapon.CurrentBurstCount = 0;
 	GetOwnerCharacter()->CharacterState.CharacterMovementState.canSprint = true;
 }
 
@@ -667,6 +693,20 @@ void ULoadoutManager::FireWeapon()
 	//weapon fire audio
 	//spawn casing
 	
+	if (CurrentWeapon.CurrentFireMode == EFireMode::Burst)
+	{
+		CurrentWeapon.CurrentBurstCount++;
+		if (CurrentWeapon.CurrentBurstCount >= StaticWeaponData->WeaponFunctionalityData.BaseWeaponFunctionality.WeaponFireModeData.BurstSize)
+		{
+			CeaseFire();
+			const float& TriggerDelay = StaticWeaponData->WeaponFunctionalityData.BaseWeaponFunctionality.WeaponFireModeData.TriggerDelay;
+			if (TriggerDelay > 0.f)
+			{
+				GetWorld()->GetTimerManager().SetTimer(CurrentWeapon.TimerHandle_AutoFire, TriggerDelay, false);
+			}
+		}
+	}
+	
 	switch (StaticWeaponData->InfantryWeaponAmmoData.BaseAmmoData.AmmoDepletionMethod)
 	{
 		case EAmmoDepletionMethod::Default:
@@ -686,7 +726,6 @@ void ULoadoutManager::FireWeapon()
 		case EAmmoDepletionMethod::None:
 			break;
 	}
-
 }
 
 #pragma endregion
@@ -1372,7 +1411,7 @@ void ULoadoutManager::DeployGadget()
 	FGadgetState& GadgetState = Loadout.Gadgets[GadgetIndex];
 	const FGadgetData& GadgetData = *StaticGadgetDataCache[GadgetIndex];
 	
-	TObjectPtr<APawn> NewGadget = nullptr;
+	TObjectPtr<AActor> NewGadget = nullptr;
 	FActorSpawnParameters GadgetSpawnParams;
 	GadgetSpawnParams.Owner = GetOwner();
 	GadgetSpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
@@ -1387,10 +1426,11 @@ void ULoadoutManager::DeployGadget()
 			NewGadgetActor->FinishSpawning(SpawnTransform);
 			NewGadgetActor->GadgetMeshComponent->SetSimulatePhysics(true);
 			NewGadgetActor->GadgetMeshComponent->AddImpulse(GetOwnerCharacter()->GetActorRotation().Vector() * GadgetData.ThrowForce, NAME_None, true);
+			NewGadget = NewGadgetActor;
 			break;
 		}
 		case EGadgetType::Vehicle:
-			//vehicle is a wierd case where only 1 should be deployed at a time so therefore dont deploy 1 if 1 is already deployed/placed
+			//vehicle is a weird case where only 1 should be deployed at a time so therefore dont deploy 1 if 1 is already deployed/placed
 			if (!GadgetState.ActivePlacedInstances.IsEmpty())	{return;}
 			TObjectPtr<AVehicle_Base> VehicleGadget = GetWorld()->SpawnActorDeferred<AVehicle_Base>(AVehicle_Base::StaticClass(), GetOwner()->GetActorTransform(), GetOwner(), GetOwnerCharacter(), ESpawnActorCollisionHandlingMethod::AlwaysSpawn);
 			VehicleGadget->VehicleStartingData.VehicleID = GadgetData.ItemID;

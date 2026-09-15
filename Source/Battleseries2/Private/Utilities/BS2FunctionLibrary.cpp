@@ -315,9 +315,14 @@ void UBS2FunctionLibrary::UpdateWACData(TWeakObjectPtr<UAudioComponent> WAC, flo
 	}
 }
 
-void UBS2FunctionLibrary::StartWAC(TWeakObjectPtr<UAudioComponent> WAC)
+void UBS2FunctionLibrary::StartWAC(TWeakObjectPtr<UAudioComponent> WAC, bool SingleFire)
 {
 	WAC.Get()->Activate();
+	if (SingleFire)
+	{
+		WAC.Get()->SetTriggerParameter(FName("Event_SingleFire"));
+		return;
+	}
 	WAC.Get()->SetTriggerParameter(FName("Event_StartFire"));
 }
 
