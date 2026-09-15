@@ -5,8 +5,11 @@
 #include "Components/SphereComponent.h"
 #include "Components/BoxComponent.h"
 #include "Data/Items/Gadgets/Data_Gadget.h"
+#include "Data/Items/Weapons/WeaponTypes.h"
 #include "Vehicle_Base.h"
 #include "Character_Base.h"
+#include "Core/Weapons/LoadoutManager.h"
+#include "Core/Weapons/VehicleWeaponLogicComponent.h"
 #include "Core/Weapons/Projectiles/Projectile_Base.h"
 #include "Utilities/BS2FunctionLibrary.h"
 #include "Utilities/DataManagerSubsystem.h"
@@ -96,6 +99,14 @@ void AGadget_Base::Init_TriggerVolume()
 	
 	GadgetState.TriggerVolume->SetupAttachment(GadgetMeshComponent);
 	GadgetState.TriggerVolume->RegisterComponent();
+	
+	GadgetState.TriggerVolume->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+	GadgetState.TriggerVolume->SetCollisionResponseToAllChannels(ECR_Ignore);
+	GadgetState.TriggerVolume->SetCollisionResponseToChannel(ECC_Pawn, ECR_Overlap);
+	GadgetState.TriggerVolume->SetGenerateOverlapEvents(true);
+
+	GadgetState.TriggerVolume->OnComponentBeginOverlap.AddDynamic(this, &AGadget_Base::OnTriggerBeginOverlap);
+	GadgetState.TriggerVolume->OnComponentEndOverlap.AddDynamic(this, &AGadget_Base::OnTriggerEndOverlap);
 }
 
 void AGadget_Base::UseGadget()
@@ -107,8 +118,13 @@ void AGadget_Base::UseGadget()
 		for (AActor* Actor : OverlappingActors)
 		{
 			if (!GetIsEligibleTarget(Actor))	{ continue; }
-			//is actor eligible target
-			// apply GadgetData's effect (StateModifiers/StatModifiers map) to Actor here
+
+			switch (GetActorObjectType(Actor))
+			{
+				case ECoreObjectType::Character:
+					ApplyEffectToCharacter(Cast<ACharacter_Base>(Actor));
+					break;
+			}
 		}
 	}
 	
@@ -124,8 +140,19 @@ void AGadget_Base::DestroyGadget()
 	K2_DestroyActor();
 }
 
+void AGadget_Base::ApplyEffectToCharacter(ACharacter_Base* Character)
+{
+	const FGadgetEffectData& EffectData = GadgetData->GadgetInstanceData.EffectData;
+	
+	if (!EffectData.WeaponStateModifiers.IsEmpty())
+	{
+		Character->LoadoutManager->ApplyWeaponStateModifiers(EffectData.WeaponStateModifiers);
+	}
+}
+
 void AGadget_Base::OnTriggerBeginOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
+	UE_LOG(LogTemp, Warning, TEXT("[Gadget_Base::OnTriggerBeginOverlap]"));
 	//if OtherActor not eligible target, return early
 	
 	if (GadgetData->GadgetInstanceData.EffectData.TickInterval <= 0.f)
@@ -152,27 +179,26 @@ void AGadget_Base::OnTriggerEndOverlap(UPrimitiveComponent* OverlappedComp, AAct
 	}
 }
 
+ECoreObjectType AGadget_Base::GetActorObjectType(AActor* Actor)
+{
+	if (Actor->IsA<ACharacter_Base>()) { return ECoreObjectType::Character; }
+	if (Actor->IsA<AVehicle_Base>()) { return ECoreObjectType::Vehicle; }
+	if (Actor->IsA<AProjectile_Base>()) { return ECoreObjectType::Munition; }
+	
+	return ECoreObjectType::None;
+}
+
 bool AGadget_Base::GetIsEligibleTarget(AActor* Actor)
 {
-	check(Actor);
+	check (Actor);
 	
 	for (ECoreObjectType ObjectType : GadgetData->GadgetInstanceData.TriggerData.EligibleObjects)
 	{
-		switch (ObjectType)
+		if (GetActorObjectType(Actor) == ObjectType)
 		{
-			case ECoreObjectType::Character:
-				if (Actor->IsA<ACharacter_Base>()) { return true; }
-				break;
-			case ECoreObjectType::Vehicle:
-				if (Actor->IsA<AVehicle_Base>()) { return true; }
-				break;
-			case ECoreObjectType::Munition:
-				if (Actor->IsA<AProjectile_Base>()) { return true; }
-				break;
+			return true;
 		}
 	}
-	return false;
+	return false;	
 }
-
-
 

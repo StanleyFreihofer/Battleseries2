@@ -273,6 +273,12 @@ int32 UBS2FunctionLibrary::UpdateCurrentAmmoInMag(FWeaponState& CurrentWeapon, i
 	return CurrentWeapon.CurrentAmmoinMag;
 }
 
+int32 UBS2FunctionLibrary::UpdateCurrentReserveAmmo(FWeaponState& CurrentWeapon, int32 CRADelta, int32 MRA)
+{
+	CurrentWeapon.CurrentReserveAmmo = FMath::Clamp(CurrentWeapon.CurrentReserveAmmo + CRADelta, 0, MRA);
+	return CurrentWeapon.CurrentReserveAmmo;
+}
+
 void UBS2FunctionLibrary::HandleIfWeaponCanFire(FWeaponState& CurrentWeapon)
 {
 	if (CurrentWeapon.CurrentAmmoinMag <= 0 || !CurrentWeapon.isEquipped || CurrentWeapon.isReloading)

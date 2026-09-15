@@ -80,6 +80,8 @@ public:
     UFUNCTION(BlueprintCallable, Category = "Battleseries | Weapon Functions")
     static int32 UpdateCurrentAmmoInMag(FWeaponState& CurrentWeapon, int32 AmmoDelta, int32 MagSize);
 	UFUNCTION(BlueprintCallable, Category = "Battleseries | Weapon Functions")
+	static int32 UpdateCurrentReserveAmmo(FWeaponState& CurrentWeapon, int32 CRADelta, int32 MRA);
+	UFUNCTION(BlueprintCallable, Category = "Battleseries | Weapon Functions")
 	static void HandleIfWeaponCanFire(FWeaponState& CurrentWeapon);
     UFUNCTION(BlueprintCallable, Category = "Battleseries | Weapon Functions")
     static void UpdateWeaponIndex(TArray<FWeaponState> Weapons, int32 InCurrentWeaponIndex, int32& OutNewWeaponIndex);

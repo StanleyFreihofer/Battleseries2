@@ -10,6 +10,7 @@
 #include "Core/Gadgets/Gadget_Base.h"
 #include "Data/Core/CoreTypes.h"
 #include "Data/Items/Weapons/ProjectileTypes.h"
+#include "Data/Items/Weapons/WeaponStructs.h"
 #include "Data/Items/Weapons/Data_Weapon.h"
 #include "Data/Items/Weapons/Data_InfantryWeapon.h"
 #include "Data/Items/Weapons/Data_WeaponAttachments.h"
@@ -317,6 +318,46 @@ void ULoadoutManager::UpdateWeaponVisibility(int32 WeaponIndex, bool Hide)
 	for (auto& AttachmentSlot : Weapon.WeaponAttachmentStates)
 	{
 		AttachmentSlot.Value.SpawnedAttachment->SetHiddenInGame(Hide);
+	}
+}
+
+void ULoadoutManager::ApplyWeaponStateModifiers(const TMap<EWeaponStateType, FWeaponStatModifierData>& Modifiers)
+{
+	for (const auto& Pair : Modifiers)
+	{
+		for (int32 i = 0; i < Loadout.WeaponSystem.BaseWeaponState.Weapons.Num(); i++)
+		{
+			FWeaponState& Weapon = Loadout.WeaponSystem.BaseWeaponState.Weapons[i];
+			const FWeaponStats_Runtime& Stats = Loadout.WeaponSystem.InfantryWeaponState.CurrentWeaponStats[i];
+			
+			float ModifierValue = 0;
+			
+			switch (Pair.Value.Modifier.EffectValueMode)
+			{
+				case EEffectValueMode::FlatValue:
+					ModifierValue = Pair.Value.Modifier.ModifierValue;
+					break;
+				case EEffectValueMode::MultipleOfStat:
+					ModifierValue = ReadWeaponStatValue(Stats, Pair.Value.ReferenceState);
+					break;
+			}
+
+			switch (Pair.Key)
+			{
+				case EWeaponStateType::CurrentAmmoInMag:
+					UBS2FunctionLibrary::UpdateCurrentAmmoInMag(Weapon, ModifierValue, Stats.MagSize);
+					break;
+				case EWeaponStateType::CurrentReserveAmmo:
+					UBS2FunctionLibrary::UpdateCurrentReserveAmmo(Weapon, ModifierValue, Stats.MaxReserveAmmo);
+					break;
+			}
+		}
+	}
+	if (GetOwnerCharacter()->IsLocallyControlled())
+	{
+		FWeaponState& CurrentWeapon = *GetCurrentWeaponBaseState();
+		UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateStatusHUD_CAMCount(CurrentWeapon.CurrentAmmoinMag);
+		UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateStatusHUD_CRACount(CurrentWeapon.CurrentReserveAmmo);
 	}
 }
 
@@ -1152,78 +1193,7 @@ void ULoadoutManager::UpdateCurrentWeaponStats(int32 WeaponIndex)
 
 void ULoadoutManager::ApplyAttachmentModifier(FWeaponStats_Runtime& RuntimeStats, EWeaponStat WeaponStat, const FWeaponStatModifierData& WeaponModifier)
 {
-	using FloatPtr = float FWeaponStats_Runtime::*;				//FloatPtr = float*
-	using IntPtr = int32 FWeaponStats_Runtime::*;				//IntPtr = int32*
-	using BoolPtr = bool FWeaponStats_Runtime::*;
-
-	// Local struct that holds either a float or int pointer-to-member
-	// One of these will always be nullptr depending on the stat's type
-	struct FStatTarget
-	{
-		FloatPtr FloatMember = nullptr;
-		IntPtr IntMember = nullptr;
-		BoolPtr BoolMember = nullptr;
-	};
-
-	// This map is the only place you touch when adding a new stat
-	// "static const" means it's built ONCE for the lifetime of the program
-	// not rebuilt every time this function is called
-	// Key   = which stat we want to affect (the enum)
-	// Value = which field on FWeaponStats_Runtime corresponds to that stat
-	static const TMap<EWeaponStat, FStatTarget> StatTargets =
-	{
-		{ EWeaponStat::ADSInSpeed,      
-			{ 
-				&FWeaponStats_Runtime::AimInSpeed,     
-				nullptr,
-				nullptr
-			} 
-		},
-		{ EWeaponStat::ADSOutSpeed,
-			{
-				&FWeaponStats_Runtime::AimOutSpeed,
-				nullptr,
-				nullptr
-			}
-		},
-		{ EWeaponStat::MuzzleVelocity, 
-			{ 
-				&FWeaponStats_Runtime::MuzzleVelocity, 
-				nullptr,
-				nullptr
-			} 
-		},
-		{ EWeaponStat::BaseDamage,	   
-			{ 
-				&FWeaponStats_Runtime::BaseDamage,    
-				nullptr,
-				nullptr
-			}
-		},
-		{ EWeaponStat::MagSize,        
-			{ 
-				nullptr, 
-				&FWeaponStats_Runtime::MagSize,
-				nullptr
-			} 
-		},
-		{ EWeaponStat::MaxReserveAmmo, 
-			{ 
-				nullptr, 
-				&FWeaponStats_Runtime::MaxReserveAmmo,
-				nullptr
-			}
-		},
-		{ EWeaponStat::ReloadSpeed, 
-			{ 
-			&FWeaponStats_Runtime::ReloadSpeed, 
-			nullptr,
-			nullptr
-			}
-		},
-	};
-
-	const FStatTarget* StatTarget = StatTargets.Find(WeaponStat);
+	const FStatTarget* StatTarget = GetWeaponStatTargets().Find(WeaponStat);
 
 	if (StatTarget->FloatMember)
 	{
@@ -1705,6 +1675,11 @@ FWeaponState* ULoadoutManager::GetCurrentWeaponBaseState()
 	return CurrentWeapon;
 }
 
+TArray<const FInfantryWeaponData*> ULoadoutManager::GetStaticWeaponData()
+{
+	return StaticWeaponDataCache;
+}
+
 const FInfantryWeaponData* ULoadoutManager::GetCurrentWeaponStaticData() 
 {
 	//assumes currentitemindex is correct and that current slot is weapon
@@ -1747,6 +1722,31 @@ int32 ULoadoutManager::GetCII()
 	}
 	
 	return ItemIndex;
+}
+
+const TMap<EWeaponStat, ULoadoutManager::FStatTarget>& ULoadoutManager::GetWeaponStatTargets()
+{
+	static const TMap<EWeaponStat, FStatTarget> StatTargets =
+	{
+		{ EWeaponStat::ADSInSpeed,      { &FWeaponStats_Runtime::AimInSpeed, nullptr, nullptr } },
+		{ EWeaponStat::ADSOutSpeed,     { &FWeaponStats_Runtime::AimOutSpeed, nullptr, nullptr } },
+		{ EWeaponStat::MuzzleVelocity,  { &FWeaponStats_Runtime::MuzzleVelocity, nullptr, nullptr } },
+		{ EWeaponStat::BaseDamage,      { &FWeaponStats_Runtime::BaseDamage, nullptr, nullptr } },
+		{ EWeaponStat::MagSize,         { nullptr, &FWeaponStats_Runtime::MagSize, nullptr } },
+		{ EWeaponStat::MaxReserveAmmo,  { nullptr, &FWeaponStats_Runtime::MaxReserveAmmo, nullptr } },
+		{ EWeaponStat::ReloadSpeed,	 { &FWeaponStats_Runtime::ReloadSpeed, nullptr, nullptr } },
+	};
+	return StatTargets;
+}
+
+float ULoadoutManager::ReadWeaponStatValue(const FWeaponStats_Runtime& RuntimeStats, EWeaponStat WeaponStat)
+{
+	const FStatTarget* StatTarget = GetWeaponStatTargets().Find(WeaponStat);
+	if (!StatTarget) { return 0.f; }
+	if (StatTarget->FloatMember) { return RuntimeStats.*StatTarget->FloatMember; }
+	if (StatTarget->IntMember)   { return static_cast<float>(RuntimeStats.*StatTarget->IntMember); }
+	if (StatTarget->BoolMember)  { return (RuntimeStats.*StatTarget->BoolMember) ? 1.f : 0.f; }
+	return 0.f;
 }
 
 ACharacter_Base* ULoadoutManager::GetOwnerCharacter()

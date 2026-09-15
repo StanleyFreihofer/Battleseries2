@@ -5,6 +5,7 @@
 #include "Data/Core/CoreTypes.h"
 #include "Data/Core/CoreEnums.h"
 #include "Data/Items/Weapons/WeaponEnums.h"
+#include "Data/Items/Weapons/WeaponStructs.h"
 #include "Data_WeaponAttachments.generated.h"
 
 /**
@@ -60,18 +61,6 @@ struct FWeaponAttachmentClassification
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	TSoftObjectPtr<UTexture2D> AttachmentIcon = nullptr;
-};
-
-USTRUCT(BlueprintType)
-struct FWeaponStatModifierData
-{
-	GENERATED_BODY()
-	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	FStatModifierData Modifier = FStatModifierData();
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ToolTip = "this only matters if EffectValueMode isn't FlatValue", EditCondition = "Modifier.EffectValueMode == EEffectValueMode::MultipleOfStat", EditConditionHides))
-	EWeaponStateType ReferenceState = EWeaponStateType::CurrentAmmoInMag;
 };
 
 USTRUCT(BlueprintType)

@@ -58,6 +58,11 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void DestroyGadget();
 	
+	UFUNCTION(BlueprintCallable)
+	void ApplyEffectToCharacter(ACharacter_Base* Character);
+	
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	ECoreObjectType GetActorObjectType(AActor* Actor);
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	bool GetIsEligibleTarget(AActor* Actor);
 	

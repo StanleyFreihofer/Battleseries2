@@ -205,6 +205,8 @@ class BATTLESERIES2_API ULoadoutManager : public UActorComponent
 		UFUNCTION(BlueprintCallable)
 		void UpdateWeaponVisibility(int32 WeaponIndex, bool Hide);
 		UFUNCTION(BlueprintCallable)
+		void ApplyWeaponStateModifiers(const TMap<EWeaponStateType, FWeaponStatModifierData>& Modifiers);
+		UFUNCTION(BlueprintCallable)
 		void StartAim();
 		UFUNCTION(BlueprintCallable)
 		void StopAim();
@@ -314,6 +316,7 @@ class BATTLESERIES2_API ULoadoutManager : public UActorComponent
 		ACharacter_Base* GetOwnerCharacter();
 	
 		FWeaponState* GetCurrentWeaponBaseState();
+		TArray<const FInfantryWeaponData*> GetStaticWeaponData();
 
 	protected:
 		TArray<const FInfantryWeaponData*> StaticWeaponDataCache;				//includes THE WEAPON DATA of gadgets that are weapons
@@ -336,6 +339,15 @@ class BATTLESERIES2_API ULoadoutManager : public UActorComponent
 		FOnMontageBlendingOutStarted UnequipBlendOutDelegate;
 		FOnMontageBlendingOutStarted EquipGadgetBlendOutDelegate;
 		FOnMontageBlendingOutStarted DeployGadgetBlendOutDelegate;
+	
+		struct FStatTarget
+		{
+			float FWeaponStats_Runtime::* FloatMember = nullptr;
+			int32 FWeaponStats_Runtime::* IntMember = nullptr;
+			bool FWeaponStats_Runtime::* BoolMember = nullptr;
+		};
+		static const TMap<EWeaponStat, FStatTarget>& GetWeaponStatTargets();
+		float ReadWeaponStatValue(const FWeaponStats_Runtime& RuntimeStats, EWeaponStat WeaponStat);
 	
 		bool isInitialized = false;  //DELETE/REDO THIS
 };
