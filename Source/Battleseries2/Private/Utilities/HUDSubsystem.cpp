@@ -68,6 +68,8 @@ void UHUDSubsystem::UpdateLockOnIndicatorStatus(ELockOnState LockOnState)
 	}
 }
 
+#pragma region Status HUD Updates
+
 void UHUDSubsystem::UpdateStatusHUD_CAMCount(int32 CAM)
 {
 	StatusHUD->UpdateCAMCount(CAM);
@@ -77,6 +79,13 @@ void UHUDSubsystem::UpdateStatusHUD_CRACount(int32 CRA)
 {
 	StatusHUD->UpdateCRACount(CRA);
 }
+
+void UHUDSubsystem::UpdateStatusHUD_FireMode(FText FireMode)
+{
+	StatusHUD->UpdateCurrentFireMode(FireMode);
+}
+
+#pragma endregion
 
 void UHUDSubsystem::UpdateSpeedHUD_Vehicle(float Speed)
 {

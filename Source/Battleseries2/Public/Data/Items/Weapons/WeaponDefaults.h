@@ -20,6 +20,9 @@ struct FWeaponDefaults
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	TArray<FText> WeaponSlotNames;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ToolTip = "should map 1 to 1 to EFireMode list"))
+	TArray<FText> FireModeDisplayNames;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	float ScopeCameraFOV = 90.0f;

@@ -1135,6 +1135,8 @@ void ULoadoutManager::ToggleFireMode()
 	FWeaponFireModeData& CurrentFireModeData = CurrentWeaponStats.FireModeData;
 	FWeaponState& CurrentWeapon = *GetCurrentWeaponBaseState();
 	EFireMode& CurrentFireMode = CurrentWeapon.CurrentFireMode;
+	
+	bool bSwitched = false;
 
 	switch (CurrentFireMode)
 	{
@@ -1142,32 +1144,47 @@ void ULoadoutManager::ToggleFireMode()
 			if (CurrentFireModeData.canFullAuto)
 			{
 				CurrentFireMode = EFireMode::Auto;
+				bSwitched = true;
 			}
 			else if (CurrentFireModeData.canBurstFire)
 			{
 				CurrentFireMode = EFireMode::Burst;
+				bSwitched = true;
 			}
 			break;
 		case EFireMode::Burst:
 			if (CurrentFireModeData.canSingleFire)
 			{
 				CurrentFireMode = EFireMode::Single;
+				bSwitched = true;
 			}
 			else if (CurrentFireModeData.canFullAuto)
 			{
 				CurrentFireMode = EFireMode::Auto;
+				bSwitched = true;
 			}
 			break;
 		case EFireMode::Auto:
 			if (CurrentFireModeData.canBurstFire)
 			{
 				CurrentFireMode = EFireMode::Burst;
+				bSwitched = true;
 			}
 			else if (CurrentFireModeData.canSingleFire)
 			{
 				CurrentFireMode = EFireMode::Single;
+				bSwitched = true;
 			}
 			break;
+	}
+	
+	if (bSwitched)
+	{
+		UGameplayStatics::PlaySound2D(GetOwner(), GetCurrentWeaponStaticData()->InfantryWeaponAudioData.SelectFireModeSFX.LoadSynchronous());
+		if (GetOwnerCharacter()->IsLocallyControlled())
+		{
+			
+		}
 	}
 }
 
@@ -1226,7 +1243,7 @@ void ULoadoutManager::UpdateCurrentWeaponStats(int32 WeaponIndex)
 	RuntimeStats.SightDistance = StaticWeaponData->InfantryWeaponAimData.DefaultSightDistance;
 	RuntimeStats.MagSize = StaticWeaponData->InfantryWeaponAmmoData.BaseAmmoData.MagSize;
 	RuntimeStats.MaxReserveAmmo = StaticWeaponData->InfantryWeaponAmmoData.BaseAmmoData.MaxReserveAmmo;
-	RuntimeStats.FireModeData.DefaultFireMode = StaticWeaponData->WeaponFunctionalityData.BaseWeaponFunctionality.WeaponFireModeData.DefaultFireMode;
+	RuntimeStats.FireModeData = StaticWeaponData->WeaponFunctionalityData.BaseWeaponFunctionality.WeaponFireModeData;
 	RuntimeStats.ReloadSpeed = StaticWeaponData->InfantryWeaponAmmoData.BaseAmmoData.ReloadSpeed;
 
 	TMap<EAttachmentSlot, FWeaponAttachmentState>& WeaponAttachmentStates = Loadout.WeaponSystem.InfantryWeaponState.WeaponState_FP[WeaponIndex].WeaponAttachmentStates;

@@ -39,7 +39,9 @@ public:
     //onfootreticle
     //minimap
     //scorefeed
-
+	
+#pragma region HUDSpawning
+	
     UFUNCTION(BlueprintCallable)
     void SpawnStatusHUD(TSubclassOf<UUserWidget> HUDClass);
     UFUNCTION(BlueprintCallable)
@@ -48,14 +50,24 @@ public:
     void SpawnLockOnIndicator(TSubclassOf<UUserWidget> HUDClass);
     UFUNCTION(BlueprintCallable)
     void SpawnCustomizationUI(TSubclassOf<UUserWidget> HUDClass);
+	
+#pragma endregion 
+	
     UFUNCTION(BlueprintCallable)
     void UpdateLockOnIndicatorPosition(FVector Location);
     UFUNCTION(BlueprintCallable)
     void UpdateLockOnIndicatorStatus(ELockOnState LockOnState);
+	
+#pragma region Status HUD Updates
     UFUNCTION(BlueprintCallable)
     void UpdateStatusHUD_CAMCount(int32 CAM);
     UFUNCTION(BlueprintCallable)
     void UpdateStatusHUD_CRACount(int32 CRA);
+	UFUNCTION(BlueprintCallable)
+	void UpdateStatusHUD_FireMode(FText FireMode);
+	
+#pragma endregion 
+	
     UFUNCTION(BlueprintCallable)
     void UpdateEquippedWeaponHUD_Vehicle(FText WeaponName, UTexture2D* Reticle, float ReticleScale, bool canFire);
     UFUNCTION(BlueprintCallable)

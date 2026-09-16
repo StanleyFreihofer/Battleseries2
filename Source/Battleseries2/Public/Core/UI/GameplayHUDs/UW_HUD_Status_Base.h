@@ -10,11 +10,15 @@ class BATTLESERIES2_API UUW_HUD_Status_Base : public UUserWidget
 	GENERATED_BODY()
 
 public:
+	//weapon
 	//ammo
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (BindWidget))
 	class UTextBlock* T_CurrentAmmoInMag;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (BindWidget))
 	class UTextBlock* T_CurrentReserveAmmo;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (BindWidget))
+	class UTextBlock* T_CurrentFireMode;
 
 	//soldier health
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (BindWidget))
@@ -32,5 +36,7 @@ public:
 	void UpdateCAMCount(int32 CAM);
 	UFUNCTION(BlueprintCallable)
 	void UpdateCRACount(int32 CRA);
+	UFUNCTION(BlueprintCallable)
+	void UpdateCurrentFireMode(FText FireMode);
 	
 };
