@@ -47,6 +47,8 @@ AVehicle_Base::AVehicle_Base()
 	SpawnComponent = CreateDefaultSubobject<USpawnComponent>(TEXT("Spawn Component"));
 	SpawnComponent->SetupAttachment(GetRootComponent());
 	InteractionWidgetComponent->SetupAttachment(VehicleMeshComponent, "InteractIcon");
+	
+	VehicleMeshComponent->bRenderCustomDepth = true;
 }
 
 // Called when the game starts or when spawned

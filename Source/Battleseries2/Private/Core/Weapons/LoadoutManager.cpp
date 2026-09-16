@@ -1124,6 +1124,9 @@ void ULoadoutManager::EquipWeapon(int32 WeaponIndex, bool InitialEquip)
 	{
 		UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateStatusHUD_CAMCount(CurrentWeapon.CurrentAmmoinMag);
 		UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateStatusHUD_CRACount(CurrentWeapon.CurrentReserveAmmo);
+		TArray<bool> canFires = { StaticWeaponData.WeaponFunctionalityData.BaseWeaponFunctionality.WeaponFireModeData.canFullAuto, StaticWeaponData.WeaponFunctionalityData.BaseWeaponFunctionality.WeaponFireModeData.canBurstFire, StaticWeaponData.WeaponFunctionalityData.BaseWeaponFunctionality.WeaponFireModeData.canSingleFire };
+		UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateStatusHUD_canFireModes(canFires);
+		UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateStatusHUD_FireMode(CurrentWeapon.CurrentFireMode);
 	}
 }
 
@@ -1183,7 +1186,7 @@ void ULoadoutManager::ToggleFireMode()
 		UGameplayStatics::PlaySound2D(GetOwner(), GetCurrentWeaponStaticData()->InfantryWeaponAudioData.SelectFireModeSFX.LoadSynchronous());
 		if (GetOwnerCharacter()->IsLocallyControlled())
 		{
-			
+			UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateStatusHUD_FireMode(CurrentWeapon.CurrentFireMode);
 		}
 	}
 }

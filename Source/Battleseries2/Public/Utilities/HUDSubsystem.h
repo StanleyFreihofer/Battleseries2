@@ -64,7 +64,9 @@ public:
     UFUNCTION(BlueprintCallable)
     void UpdateStatusHUD_CRACount(int32 CRA);
 	UFUNCTION(BlueprintCallable)
-	void UpdateStatusHUD_FireMode(FText FireMode);
+	void UpdateStatusHUD_FireMode(EFireMode FireMode);
+	UFUNCTION(BlueprintCallable)
+	void UpdateStatusHUD_canFireModes(TArray<bool> canFireModes);
 	
 #pragma endregion 
 	

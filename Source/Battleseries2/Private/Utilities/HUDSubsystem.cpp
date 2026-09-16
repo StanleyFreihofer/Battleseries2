@@ -14,10 +14,14 @@
 #include "Core/UI/VehicleHUDs/UW_VehicleHUDComp_TurretBox.h"
 #include "Core/UI/VehicleHUDs/UW_VehicleHUDComp_Speedometer.h"
 #include "Data/Items/Weapons/Data_VehicleWeapon.h"
+#include "Data/Items/Weapons/WeaponDefaults.h"
 #include "Data/Items/Weapons/WeaponEnums.h"
 #include "Character_Base.h"
 #include "Vehicle_Base.h"
 #include "Core/Weapons/VehicleWeaponLogicComponent.h"
+#include "Data/Items/Weapons/WeaponDefaults.h"
+#include "Utilities/BS2FunctionLibrary.h"
+#include "Utilities/DataManagerSubsystem.h"
 
 void UHUDSubsystem::SpawnStatusHUD(TSubclassOf<UUserWidget> HUDClass)
 {
@@ -80,9 +84,15 @@ void UHUDSubsystem::UpdateStatusHUD_CRACount(int32 CRA)
 	StatusHUD->UpdateCRACount(CRA);
 }
 
-void UHUDSubsystem::UpdateStatusHUD_FireMode(FText FireMode)
+void UHUDSubsystem::UpdateStatusHUD_FireMode(EFireMode FireMode)
 {
+	//StatusHUD->UpdateCurrentFireMode(FireMode);
 	StatusHUD->UpdateCurrentFireMode(FireMode);
+}
+
+void UHUDSubsystem::UpdateStatusHUD_canFireModes(TArray<bool> canFireModes)
+{
+	StatusHUD->UpdateCanFireModes(canFireModes);
 }
 
 #pragma endregion

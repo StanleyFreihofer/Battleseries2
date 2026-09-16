@@ -19,12 +19,20 @@ public:
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (BindWidget))
 	class UTextBlock* T_CurrentFireMode;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (BindWidget))
+	class UTextBlock* T_Auto;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (BindWidget))
+	class UTextBlock* T_Burst;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (BindWidget))
+	class UTextBlock* T_Single;
+	
+	
 
 	//soldier health
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (BindWidget))
 	class UTextBlock* T_HealthValue;
-	//UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (BindWidget))
-	//class UProgressBar* PB_HealthBar;
+
 
 	//vehicle health
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (BindWidget))
@@ -37,6 +45,11 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void UpdateCRACount(int32 CRA);
 	UFUNCTION(BlueprintCallable)
-	void UpdateCurrentFireMode(FText FireMode);
+	void UpdateCurrentFireMode(EFireMode FireMode);
+	UFUNCTION(BlueprintCallable)
+	void UpdateCanFireModes(TArray<bool> canFireModes);		
+	
+private:
+	float FireModeNonActiveOpacity = 0.45f;				//<---MOVE THIS TO SOMEWHERE MORE INTENTIONAL/DATA ORIENTED
 	
 };

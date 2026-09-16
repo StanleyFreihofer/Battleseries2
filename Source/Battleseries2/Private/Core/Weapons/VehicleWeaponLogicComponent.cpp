@@ -273,6 +273,7 @@ void UVehicleWeaponLogicComponent::ApplyWeaponDecoratives(const TArray<FDecorati
 			SMComp->SetupAttachment(OwnerDataAccessor->GetMesh(), WeaponDecorative.SocketName);
 			SMComp->SetRelativeTransform(WeaponDecorative.TransformOffset);
 			SMComp->SetCollisionResponseToChannel(ECollisionChannel::ECC_Vehicle, ECollisionResponse::ECR_Ignore);
+			SMComp->bRenderCustomDepth = true;
 			SMComp->RegisterComponent();
 			RuntimeWeaponData.VehicleWeaponState.VehicleWeaponDecoratives[i].DecorativeMesh = SMComp;
 			RuntimeWeaponData.VehicleWeaponState.VehicleWeaponDecoratives[i].DecorativeAttachmentID = WeaponDecorative.AttachmentID;
@@ -315,6 +316,7 @@ USkeletalMeshComponent* UVehicleWeaponLogicComponent::ApplyWeaponMeshToVehicle(U
 
 	TObjectPtr<USkeletalMeshComponent> WeaponComp = NewObject<USkeletalMeshComponent>(GetOwner());
 	WeaponComp->SetupAttachment(OwnerDataAccessor->GetMesh(), SocketName);
+	WeaponComp->bRenderCustomDepth = true;
 	WeaponComp->RegisterComponent(); 
 
 	return WeaponComp;
