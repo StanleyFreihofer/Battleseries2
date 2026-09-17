@@ -155,8 +155,6 @@ struct FInfantryWeaponAimData
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	float DefaultAimOutSpeed = 0.0f;
-	
-
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	float DefaultSightDistance = 0.0f;
