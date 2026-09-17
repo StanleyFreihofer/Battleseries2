@@ -16,6 +16,7 @@
 #include "Components/AudioComponent.h"
 #include "Camera/CameraComponent.h"
 #include "Data/Items/Gadgets/GadgetTypes.h"
+#include "Kismet/KismetMathLibrary.h"
 
 bool UBS2FunctionLibrary::PerformSphereTraceMulti(const UObject* WorldContextObject, const FTransform StartTransform, TArray<FHitResult>& OutHits, TArray<AActor*> ActorsToIgnore, float Radius, float Distance, bool Debug)
 {
@@ -90,6 +91,36 @@ void UBS2FunctionLibrary::PlayAnimSequenceAtDesiredDuration(USkeletalMeshCompone
 	MeshComp->PlayAnimation(AnimSequence, bLooping);
 	UAnimSingleNodeInstance* SingleNode = MeshComp->GetSingleNodeInstance();
 	SingleNode->SetPlayRate(GetDesiredAnimSequencePlayRate(AnimSequence, DesiredAnimDuration));
+}
+
+FTransform UBS2FunctionLibrary::GetSightOffset(UAnimInstance* AnimInstance, FTransform SightTransform, float CameraDistance, FTransform CameraTransform)
+{
+	FTransform MeshWorldTransform = AnimInstance->GetOwningComponent()->GetComponentTransform();
+	CameraTransform.SetScale3D(FVector::OneVector);
+	const FTransform MeshRelativeToCamera = UKismetMathLibrary::MakeRelativeTransform(MeshWorldTransform, CameraTransform);
+	
+	const FVector MeshRelativeLocation = MeshRelativeToCamera.GetLocation();
+	const FRotator MeshRelativeRotation = MeshRelativeToCamera.Rotator();
+	
+	// Undo the sight's own rotation on its own translation offset —
+	// "where would this offset be if the sight had no tilt of its own"
+	const FRotator NegativeSightRotation = SightTransform.Rotator() * -1.0f;
+	const FVector UnrotatedSightLocation = NegativeSightRotation.RotateVector(SightTransform.GetLocation());
+	
+	// Cancel out the mesh's offset from the camera and the sight's own offset,
+	// then push forward by CameraDistance so the sight lands exactly that far in front of the camera
+	FVector CombinedLocation = (MeshRelativeLocation * -1.0f) + (UnrotatedSightLocation * -1.0f);
+	CombinedLocation += FVector(CameraDistance, 0.f, 0.f);
+	
+	// Convert that combined offset back into the weapon mesh's own local space
+	const FRotator NegativeMeshRelativeRotation = MeshRelativeRotation * -1.0f;
+	const FVector FinalLocation = NegativeMeshRelativeRotation.RotateVector(CombinedLocation);
+	
+	// Same idea for rotation: compose the mesh's camera-relative rotation with the sight's own rotation, then invert
+	const FRotator ComposedRotation = UKismetMathLibrary::ComposeRotators(SightTransform.Rotator(), MeshRelativeRotation);
+	const FRotator FinalRotation = ComposedRotation * -1.0f;
+	
+	return FTransform(FinalRotation, FinalLocation, FVector::OneVector);
 }
 
 void UBS2FunctionLibrary::ConvertNamesToVehicleTypes(const TArray<FName>& VehicleTypeNames, TArray<EVehicleType>& OutVehicleTypes)

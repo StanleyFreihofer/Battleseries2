@@ -155,6 +155,8 @@ struct FInfantryWeaponAimData
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	float DefaultAimOutSpeed = 0.0f;
+	
+
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	float DefaultSightDistance = 0.0f;
@@ -167,6 +169,9 @@ struct FInfantryWeaponAnimData_FP
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	FHeldItemAnimData_Base BaseItemAnimData = FHeldItemAnimData_Base();
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ToolTip = "offsets the horizontal distance of the gun/hand's holding via anim IK"))
+	float DefaultGunIKBoneDistance = 0.0f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Actions | Montages")
 	TSoftObjectPtr<UAnimMontage> InspectMontage = nullptr;

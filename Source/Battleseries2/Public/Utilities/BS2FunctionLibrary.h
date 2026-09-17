@@ -32,6 +32,8 @@ public:
 	static float GetDesiredAnimSequencePlayRate(UAnimSequence* AnimSequence, float DesiredAnimDuration);
 	UFUNCTION(BlueprintCallable, Category = "Battleseries | Tools")
 	static void PlayAnimSequenceAtDesiredDuration(USkeletalMeshComponent* MeshComp, UAnimSequence* AnimSequence, float DesiredAnimDuration, bool bLooping);
+	UFUNCTION(BlueprintCallable, Category = "Battleseries | Tools")
+	static FTransform GetSightOffset(UAnimInstance* AnimInstance, FTransform SightTransform, float CameraDistance, FTransform CameraTransform);
 
 	
 	UFUNCTION(BlueprintCallable, Category = "Vehicle|HUD")
