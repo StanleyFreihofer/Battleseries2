@@ -544,6 +544,7 @@ void ULoadoutManager::ShootSimProjectile()
 	const FInfantryWeaponData& StaticWeaponData = *GetCurrentWeaponStaticData();
 	FWeaponState& WeaponState = *GetCurrentWeaponBaseState();
 	FEquippedWeaponState& EWS = Loadout.WeaponSystem.BaseWeaponState.EquippedWeaponState;
+	const FMunitionDamageData& MunitionDamageData = UBS2FunctionLibrary::GetDataSubsystem(this)->GetProjectileDataRow(StaticWeaponData.WeaponFirePerformanceData.MunitionID)->MunitionDamageData;
 	UBS2FunctionLibrary::CreateSimProjectile
 	(
 		StaticWeaponData.WeaponFirePerformanceData.MunitionID,
@@ -552,8 +553,8 @@ void ULoadoutManager::ShootSimProjectile()
 		StaticWeaponData.WeaponFirePerformanceData.MuzzleVelocity,
 		StaticWeaponData.WeaponFirePerformanceData.GravityScale,
 		EWS.RaycastData.MuzzleAimDirections[0],
-		StaticWeaponData.WeaponFirePerformanceData.WeaponDamageData.BaseDamage,
-		StaticWeaponData.WeaponFirePerformanceData.WeaponDamageData.DamageDropoffCurve,
+		MunitionDamageData.BaseDamage,
+		MunitionDamageData.DamageDropoffCurve,
 		UBS2FunctionLibrary::GetProjectileSystem(this)
 	);
 }
@@ -664,12 +665,20 @@ void ULoadoutManager::FireWeapon()
 
 	switch(StaticWeaponData->WeaponFirePerformanceData.WeaponFireType)
 	{
-		case EWeaponFireType::SimProjectile:
-			ShootSimProjectile();
+		case EWeaponFireType::Munition:
+		{
+			EMunitionType MunitionType = UBS2FunctionLibrary::GetDataSubsystem(this)->GetProjectileDataRow(StaticWeaponData->WeaponFirePerformanceData.MunitionID)->MunitionType;
+			switch (MunitionType)
+			{
+				case EMunitionType::SimProjectile:
+					ShootSimProjectile();
+					break;
+				case EMunitionType::ActorProjectile:
+					HandleShootProjectileActor();
+					break;
+			}
 			break;
-		case EWeaponFireType::ActorProjectile:
-			HandleShootProjectileActor();
-			break;
+		}
 		case EWeaponFireType::VFX:
 			break;
 		case EWeaponFireType::Hitscan:

@@ -1086,12 +1086,20 @@ TWeakObjectPtr<AProjectile_Base> UVehicleWeaponLogicComponent::FireVehicleWeapon
 	TWeakObjectPtr<AProjectile_Base> FiredProjectile = nullptr;
 	switch (StaticWeaponData.WeaponFirePerformance.WeaponFireType)
 	{
-		case EWeaponFireType::SimProjectile:
-			HandleShootSimProjectile(VehicleWeaponState, StaticWeaponData, SeatWeaponSystem);
+		case EWeaponFireType::Munition:
+		{
+			EMunitionType MunitionType = UBS2FunctionLibrary::GetDataSubsystem(this)->GetProjectileDataRow(StaticWeaponData.WeaponFirePerformance.MunitionID)->MunitionType;
+			switch (MunitionType)
+			{
+				case EMunitionType::SimProjectile:
+					HandleShootSimProjectile(VehicleWeaponState, StaticWeaponData, SeatWeaponSystem);
+					break;
+				case EMunitionType::ActorProjectile:
+					FiredProjectile = HandleShootProjectileActor(SeatIndex, CWI);
+					break;
+			}
 			break;
-		case EWeaponFireType::ActorProjectile:
-			FiredProjectile = HandleShootProjectileActor(SeatIndex, CWI);
-			break;
+		}
 		case EWeaponFireType::VFX:
 			break;
 		case EWeaponFireType::Hitscan:
@@ -1130,6 +1138,8 @@ void UVehicleWeaponLogicComponent::HandleShootSimProjectile(FVehicleWeaponState&
 	{
 		FVector MuzzleLocation = FVector::ForwardVector;
 		MuzzleLocation = GetMuzzleTransform(VehicleWeaponState, SeatWeaponSystem, MuzzleIndex).GetLocation();
+		
+		const FMunitionDamageData& MunitionDamageData = UBS2FunctionLibrary::GetDataSubsystem(this)->GetProjectileDataRow(StaticWeaponData.WeaponFirePerformance.MunitionID)->MunitionDamageData;
 
 		UBS2FunctionLibrary::CreateSimProjectile
 		(
@@ -1139,8 +1149,8 @@ void UVehicleWeaponLogicComponent::HandleShootSimProjectile(FVehicleWeaponState&
 			StaticWeaponData.WeaponFirePerformance.MuzzleVelocity,
 			StaticWeaponData.WeaponFirePerformance.GravityScale,
 			SeatWeaponSystem.VehicleWeaponSystemState.EquippedWeaponState.RaycastData.MuzzleAimDirections[MuzzleIndex],
-			StaticWeaponData.WeaponFirePerformance.WeaponDamageData.BaseDamage,
-			StaticWeaponData.WeaponFirePerformance.WeaponDamageData.DamageDropoffCurve,
+			MunitionDamageData.BaseDamage,
+			MunitionDamageData.DamageDropoffCurve,
 			UBS2FunctionLibrary::GetProjectileSystem(this)
 		);
 

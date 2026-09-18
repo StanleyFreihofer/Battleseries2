@@ -9,28 +9,16 @@
 #include "Data_Projectile.generated.h"
 
 /**
- * actor projectiles only
+ * munitions/projectiles
  */
 
 USTRUCT(BlueprintType)
-struct FProjectileClassificationData
+struct FMunitionVisualData
 {
 	GENERATED_BODY()
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	FName ProjectileDisplayName = NAME_None;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	EProjectileType ProjectileType = EProjectileType::Bullet;
-};
-
-USTRUCT(BlueprintType)
-struct FProjectileVisualData
-{
-	GENERATED_BODY()
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	TSoftObjectPtr<UStaticMesh> ProjectileMesh = nullptr;
+	TSoftObjectPtr<UStaticMesh> MunitionMesh = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TSoftObjectPtr<UNiagaraSystem> RocketExhaust = nullptr;
@@ -120,20 +108,62 @@ struct FProjectileFlightStage
 };
 
 USTRUCT(BlueprintType)
-struct FProjectileData : public FTableRowBase
+struct FActorProjectileData
 {
 	GENERATED_BODY()
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	FProjectileClassificationData ProjectileClassificationData = FProjectileClassificationData();
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	FProjectileVisualData ProjectileVisualData = FProjectileVisualData();
-
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	EProjectileType ProjectileType = EProjectileType::Bullet;
+	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	FProjectileBehaviorData ProjectileBehaviorData = FProjectileBehaviorData();
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	TArray <FProjectileFlightStage> ProjectileFlightPlan;
+};
+
+USTRUCT(BlueprintType)
+struct FMunitionDamageData
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	float BaseDamage = 0.0f;								//weapons "raw" damage without any falloff
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	TObjectPtr<UCurveFloat> DamageDropoffCurve = nullptr;
+	
+	//penetration
+
+	float GetDamageAtDistance(float Distance) const
+	{
+		if (DamageDropoffCurve)
+		{
+			// If the curve exists, it defines the Max/Min behavior entirely
+			return DamageDropoffCurve->GetFloatValue(Distance);
+		}
+		return BaseDamage;
+	}
+};
+
+USTRUCT(BlueprintType)
+struct FProjectileData : public FTableRowBase
+{
+	GENERATED_BODY()
+		
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FText MunitionDisplayName = FText::GetEmpty();
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)	
+	EMunitionType MunitionType = EMunitionType::SimProjectile;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	FMunitionVisualData MunitionVisualData = FMunitionVisualData();
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	FMunitionDamageData MunitionDamageData = FMunitionDamageData();
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	FActorProjectileData ActorProjectileData = FActorProjectileData();
 
 };

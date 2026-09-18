@@ -87,51 +87,27 @@ struct FWeaponFunctionalityData
 
 //weaponfirehandlingdata (accuracy, recoil, spread, etc)
 //weaponhandlingdata (reload time/speed, etc)
-USTRUCT(BlueprintType)
-struct FWeaponDamageData
-{
-	GENERATED_BODY()
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	float BaseDamage = 0.0f;								//weapons "raw" damage without any falloff
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	UCurveFloat* DamageDropoffCurve = nullptr;
-
-	float GetDamageAtDistance(float Distance) const
-	{
-		if (DamageDropoffCurve)
-		{
-			// If the curve exists, it defines the Max/Min behavior entirely
-			return DamageDropoffCurve->GetFloatValue(Distance);
-		}
-		return BaseDamage;
-	}
-};
 
 USTRUCT(BlueprintType)
 struct FWeaponFirePerformanceData
 {
 	GENERATED_BODY()
-
+	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	EWeaponFireType WeaponFireType = EWeaponFireType::SimProjectile;
+	EWeaponFireType WeaponFireType = EWeaponFireType::Munition; 
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (EditConition = "WeaponFireType == EWeaponFireType::ActorProjectile", EditConditionHides = true))
-	FName MunitionID = NAME_None;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (EditConition = "WeaponFireType == EWeaponFireType::Munition", EditConditionHides = true))
+	FName MunitionID = FName("P_556");
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	float RateOfFire = 0.0f;
 
 	// --- SIMULATED BALLISTICS (Visible only for Sim) ---
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (EditCondition = "WeaponFireType == EWeaponFireType::SimProjectile", EditConditionHides = true))
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	float MuzzleVelocity = 0.0f;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (EditCondition = "WeaponFireType == EWeaponFireType::SimProjectile", EditConditionHides = true))
-	float GravityScale = 1.0f;
-
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	FWeaponDamageData WeaponDamageData = FWeaponDamageData();
+	float GravityScale = 1.0f;
 };
 
 USTRUCT(BlueprintType)

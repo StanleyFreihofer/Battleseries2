@@ -6,6 +6,17 @@
 //rename stuff to munition?
 
 UENUM(BlueprintType)
+enum class EMunitionType : uint8
+{
+	SimProjectile		UMETA(DisplayName = "Sim Projectile"),	
+	ActorProjectile		UMETA(DisplayName = "Actor Projectile"),
+	//grenade?
+	//vfx (fire/incendiary, etc)?
+	//Shotgun shell/pellet?
+	//explosive (c4, mine)?
+};
+
+UENUM(BlueprintType)
 enum class EProjectileType : uint8
 {
 	Bullet					UMETA(DisplayName = "Bullet"),		

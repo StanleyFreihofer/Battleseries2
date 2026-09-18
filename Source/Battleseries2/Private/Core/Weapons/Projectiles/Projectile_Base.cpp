@@ -39,8 +39,8 @@ void AProjectile_Base::Init_ProjectileData()
 	ProjectileData = ProjectileRow;
 
 	TArray<FSoftObjectPath> AssetsToLoad;
-	AssetsToLoad.Add(ProjectileData->ProjectileVisualData.ProjectileMesh.ToSoftObjectPath());
-	AssetsToLoad.Add(ProjectileData->ProjectileVisualData.RocketExhaust.ToSoftObjectPath());
+	AssetsToLoad.Add(ProjectileData->MunitionVisualData.MunitionMesh.ToSoftObjectPath());
+	AssetsToLoad.Add(ProjectileData->MunitionVisualData.RocketExhaust.ToSoftObjectPath());
 
 	FStreamableManager* StreamableManager = Cast<UGameInstance_Base>(UGameplayStatics::GetGameInstance(this))->GetStreamableManager();
 	StreamableManager->RequestAsyncLoad(AssetsToLoad, FStreamableDelegate::CreateUObject(this, &AProjectile_Base::Init_Projectile));
@@ -48,7 +48,7 @@ void AProjectile_Base::Init_ProjectileData()
 
 void AProjectile_Base::Init_Projectile()
 {
-	Init_ProjectileMesh(ProjectileData->ProjectileVisualData.ProjectileMesh.Get());
+	Init_ProjectileMesh(ProjectileData->MunitionVisualData.MunitionMesh.Get());
 	Init_RocketExhaustVFX();
 	//Init_ProjectileFlightData();
 }
@@ -62,11 +62,11 @@ void AProjectile_Base::Init_ProjectileMesh(UStaticMesh* LoadedProjectileMesh)
 
 void AProjectile_Base::Init_RocketExhaustVFX()
 {
-	UNiagaraSystem* ExhaustAsset = ProjectileData->ProjectileVisualData.RocketExhaust.Get();
+	UNiagaraSystem* ExhaustAsset = ProjectileData->MunitionVisualData.RocketExhaust.Get();
 	if (ExhaustAsset != nullptr)
 	{
 		NiagaraComponent->SetAsset(ExhaustAsset);
-		NiagaraComponent->SetRelativeLocation(ProjectileData->ProjectileVisualData.ExhaustLocationOffset);
+		NiagaraComponent->SetRelativeLocation(ProjectileData->MunitionVisualData.ExhaustLocationOffset);
 	}
 }
 
@@ -116,7 +116,7 @@ void AProjectile_Base::FireProjectile(FVector AimDirection)
 		EjectFromPylon();
 	}
 	//GetWorldTimerManager().SetTimer(CollisionTimerHandle, this, &AProjectile_Base::EnableCollision, 0.5f, false);
-	ImpactVFX = ProjectileData->ProjectileVisualData.ImpactVFX.LoadSynchronous();	
+	ImpactVFX = ProjectileData->MunitionVisualData.ImpactVFX.LoadSynchronous();	
 
 	ProjectileState.Origin = AimDirection;
 
@@ -133,7 +133,7 @@ void AProjectile_Base::StartFlightPlan()
 		ProjectileMeshComponent->SetSimulatePhysics(false);
 	}
 	ProjectileMeshComponent->OnComponentHit.AddDynamic(this, &AProjectile_Base::OnHit);		//should not explode if not in use yet (hanging on rack for example)
-	ProjectileMovementComponent->Velocity = ProjectileState.Origin * ProjectileData->ProjectileFlightPlan[0].GuidanceParams.InitialSpeed;
+	ProjectileMovementComponent->Velocity = ProjectileState.Origin * ProjectileData->ActorProjectileData.ProjectileFlightPlan[0].GuidanceParams.InitialSpeed;
 	ProjectileMovementComponent->Activate();
 	NiagaraComponent->Activate();
 }
@@ -165,12 +165,12 @@ void AProjectile_Base::UpdateCollisionIgnores(AActor* ActorToIgnore)
 
 void AProjectile_Base::UpdateFlightPlan(int32 FlightStageIndex)
 {
-	const FProjectileFlightStage& FlightStage = ProjectileData->ProjectileFlightPlan[FlightStageIndex];
+	const FProjectileFlightStage& FlightStage = ProjectileData->ActorProjectileData.ProjectileFlightPlan[FlightStageIndex];
 
 	//undo stuff from previous stage
 	if (FlightStageIndex > 0)
 	{
-		const FProjectileFlightStage& PreviousFlightStage = ProjectileData->ProjectileFlightPlan[FlightStageIndex - 1];
+		const FProjectileFlightStage& PreviousFlightStage = ProjectileData->ActorProjectileData.ProjectileFlightPlan[FlightStageIndex - 1];
 		switch (PreviousFlightStage.BehaviorType)
 		{
 			case EProjectileGuidanceMethod::GuideToTarget:
@@ -245,7 +245,7 @@ void AProjectile_Base::HandleFlightStageTransition(const FProjectileFlightStage&
 void AProjectile_Base::AdvanceFlightStage()
 {
 	int32& CurrentFlightStage = ProjectileState.FlightStageIndex;
-	CurrentFlightStage = (CurrentFlightStage + 1) % ProjectileData->ProjectileFlightPlan.Num();
+	CurrentFlightStage = (CurrentFlightStage + 1) % ProjectileData->ActorProjectileData.ProjectileFlightPlan.Num();
 	UpdateFlightPlan(CurrentFlightStage);
 }
 
@@ -253,7 +253,7 @@ void AProjectile_Base::HandleTransition_LimitedRange()
 {
 	FVector EndPoint = GetActorLocation();
 	float Distance = FVector::Dist(ProjectileState.InitialLocation, EndPoint);
-	if (Distance >= ProjectileData->ProjectileFlightPlan[ProjectileState.FlightStageIndex].RequiredValue)
+	if (Distance >= ProjectileData->ActorProjectileData.ProjectileFlightPlan[ProjectileState.FlightStageIndex].RequiredValue)
 	{
 		GetWorld()->GetTimerManager().ClearTimer(StageTimerHandle);
 		ProjectileState.InitialLocation = FVector();
@@ -269,7 +269,7 @@ void AProjectile_Base::HandleTransition_RangeToTarget()
 	}
 	FVector TargetLocation = ProjectileMovementComponent->HomingTargetComponent->GetComponentLocation();
 	float Distance = FVector::Dist(GetActorLocation(), TargetLocation);
-	if (Distance <= ProjectileData->ProjectileFlightPlan[ProjectileState.FlightStageIndex].RequiredValue)
+	if (Distance <= ProjectileData->ActorProjectileData.ProjectileFlightPlan[ProjectileState.FlightStageIndex].RequiredValue)
 	{
 		GetWorld()->GetTimerManager().ClearTimer(StageTimerHandle);
 		AdvanceFlightStage();
@@ -280,7 +280,7 @@ void AProjectile_Base::HandleTransition_Proximity2D()
 {
 	FVector TargetLocation = ProjectileMovementComponent->HomingTargetComponent->GetComponentLocation();
 	float DistanceXY = FVector::Dist2D(GetActorLocation(), TargetLocation);
-	if (DistanceXY <= ProjectileData->ProjectileFlightPlan[ProjectileState.FlightStageIndex].RequiredValue)		//if directly above
+	if (DistanceXY <= ProjectileData->ActorProjectileData.ProjectileFlightPlan[ProjectileState.FlightStageIndex].RequiredValue)		//if directly above
 	{
 		GetWorld()->GetTimerManager().ClearTimer(StageTimerHandle);
 		AdvanceFlightStage();

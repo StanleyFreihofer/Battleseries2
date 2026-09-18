@@ -32,6 +32,11 @@ void UProjectilePoolSubsystem::SpawnPoolofProjectile(FName MunitionID, int32 Poo
 	FProjectilePoolEntry PoolEntry;
 
 	const FProjectileData* ProjectileData = UBS2FunctionLibrary::GetDataSubsystem(this)->GetProjectileDataRow(MunitionID);
+	
+	if (ProjectileData->MunitionType == EMunitionType::SimProjectile)
+	{
+		return;
+	}
 
 	for (int32 i = 0; i < PoolSize; i++)
 	{
