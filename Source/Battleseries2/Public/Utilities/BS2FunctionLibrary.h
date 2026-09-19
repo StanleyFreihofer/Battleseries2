@@ -75,8 +75,8 @@ public:
     static FVector GetAimDirectionFromMuzzle(FHitResult TraceData, FName MuzzleSocketName, TWeakObjectPtr<USkeletalMeshComponent> WeaponMesh);
     UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Battleseries | Weapon Functions")
 	static FVector GetAimDirectionFromMuzzle_BP(FHitResult TraceData, FName MuzzleSocketName, USkeletalMeshComponent* WeaponMesh);
-    UFUNCTION(BlueprintCallable, Category = "Battleseries | Weapon Functions")
-    static FSimProjectile_Runtime CreateSimProjectile(FName MunitionID, class APlayerState* InstigatorPlayerState, FVector MuzzleLocation, float MuzzleSpeed, float GravityScale, FVector AimDirection, float BaseDamage, UCurveFloat* DamageDropoffCurve, UProjectilePoolSubsystem* ProjectileSubsystem);
+    UFUNCTION(Category = "Battleseries | Weapon Functions")
+    static FSimProjectile_Runtime CreateSimProjectile(FName MunitionID, class APlayerState* InstigatorPlayerState, FVector MuzzleLocation, float MuzzleSpeed, float GravityScale, FVector AimDirection, UProjectilePoolSubsystem* ProjectileSubsystem);
     UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Battleseries | Weapon Functions")
     static void CalculateReload(int32 MagSize, int32 CAM, int32 CRA, int32& OutCAM, int32& OutCRA);
     UFUNCTION(BlueprintCallable, Category = "Battleseries | Weapon Functions")
@@ -108,4 +108,11 @@ public:
 	
 	UFUNCTION(Category = "Battleseries")
 	static void UpdateAudioCompArrayParameter(TWeakObjectPtr<UAudioComponent> AC, TArray<TSoftObjectPtr<USoundWave>> AudioList, FName ParameterName);
+	
+	UFUNCTION(BlueprintCallable, Category = "Battleseries | Combat")
+	static void HandleApplyDamage(FBaseProjectileState BaseMunitionState, FVector CurrentLocation, FHitResult HitResult);
+	
+
+	UFUNCTION(BlueprintCallable, Category = "Battleseries | Combat")
+	bool TakeDmg(float Damage, float& CurrentHealth);
 };

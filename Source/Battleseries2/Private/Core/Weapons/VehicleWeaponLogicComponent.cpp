@@ -1139,7 +1139,7 @@ void UVehicleWeaponLogicComponent::HandleShootSimProjectile(FVehicleWeaponState&
 		FVector MuzzleLocation = FVector::ForwardVector;
 		MuzzleLocation = GetMuzzleTransform(VehicleWeaponState, SeatWeaponSystem, MuzzleIndex).GetLocation();
 		
-		const FMunitionDamageData& MunitionDamageData = UBS2FunctionLibrary::GetDataSubsystem(this)->GetProjectileDataRow(StaticWeaponData.WeaponFirePerformance.MunitionID)->MunitionDamageData;
+		//const FMunitionDamageData& MunitionDamageData = UBS2FunctionLibrary::GetDataSubsystem(this)->GetProjectileDataRow(StaticWeaponData.WeaponFirePerformance.MunitionID)->MunitionDamageData;
 
 		UBS2FunctionLibrary::CreateSimProjectile
 		(
@@ -1149,8 +1149,6 @@ void UVehicleWeaponLogicComponent::HandleShootSimProjectile(FVehicleWeaponState&
 			StaticWeaponData.WeaponFirePerformance.MuzzleVelocity,
 			StaticWeaponData.WeaponFirePerformance.GravityScale,
 			SeatWeaponSystem.VehicleWeaponSystemState.EquippedWeaponState.RaycastData.MuzzleAimDirections[MuzzleIndex],
-			MunitionDamageData.BaseDamage,
-			MunitionDamageData.DamageDropoffCurve,
 			UBS2FunctionLibrary::GetProjectileSystem(this)
 		);
 

@@ -544,7 +544,9 @@ void ULoadoutManager::ShootSimProjectile()
 	const FInfantryWeaponData& StaticWeaponData = *GetCurrentWeaponStaticData();
 	FWeaponState& WeaponState = *GetCurrentWeaponBaseState();
 	FEquippedWeaponState& EWS = Loadout.WeaponSystem.BaseWeaponState.EquippedWeaponState;
-	const FMunitionDamageData& MunitionDamageData = UBS2FunctionLibrary::GetDataSubsystem(this)->GetProjectileDataRow(StaticWeaponData.WeaponFirePerformanceData.MunitionID)->MunitionDamageData;
+	
+	//const FMunitionDamageData& MunitionDamageData = UBS2FunctionLibrary::GetDataSubsystem(this)->GetProjectileDataRow(StaticWeaponData.WeaponFirePerformanceData.MunitionID)->MunitionDamageData;
+	
 	UBS2FunctionLibrary::CreateSimProjectile
 	(
 		StaticWeaponData.WeaponFirePerformanceData.MunitionID,
@@ -553,8 +555,6 @@ void ULoadoutManager::ShootSimProjectile()
 		StaticWeaponData.WeaponFirePerformanceData.MuzzleVelocity,
 		StaticWeaponData.WeaponFirePerformanceData.GravityScale,
 		EWS.RaycastData.MuzzleAimDirections[0],
-		MunitionDamageData.BaseDamage,
-		MunitionDamageData.DamageDropoffCurve,
 		UBS2FunctionLibrary::GetProjectileSystem(this)
 	);
 }

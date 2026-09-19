@@ -18,49 +18,47 @@ struct FProjectile_PreFlightContext
 };
 
 USTRUCT(BlueprintType)
+struct FBaseProjectileState
+{
+	GENERATED_BODY()
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)			//use to look up damage and what not
+	FName MunitionID = NAME_None;
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	TWeakObjectPtr<class APlayerState> InstigatorPlayerState = nullptr;
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)     //the initial location of the projectile (muzzle location)
+	FVector FireOrigin = FVector();
+};
+
+USTRUCT(BlueprintType)
 struct FSimProjectile_Runtime
 {
 	GENERATED_BODY()
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	FBaseProjectileState BaseProjectileState = FBaseProjectileState();
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	FName MunitionID = NAME_None;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	TWeakObjectPtr<class APlayerState> InstigatorPlayerState;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	TWeakObjectPtr<AStaticMeshActor> ProjectileMesh = nullptr;
 
 	//movement state (updated everytick)
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)     //the initial location of the projectile
-	FVector FireOrigin = FVector();
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	FVector CurrentLocation = FVector();
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	FVector CurrentVelocity = FVector();
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	float GravityScale = 0.0f;
-
-	//damage
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float BaseDamage = 0.0f;						//copied from weapon?
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)		//copied from weapon?
-	UCurveFloat* DamageCurve = nullptr;		//multiply by base damage
 };
 
 USTRUCT(BlueprintType)
 struct FActorProjectile_Runtime
 {
 	GENERATED_BODY()
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	FName MunitionID = NAME_None;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	TWeakObjectPtr<class APlayerState> InstigatorPlayerState;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)     //the origin location of the projectile (where fired from)
-	FVector Origin = FVector();
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	FBaseProjectileState BaseProjectileState = FBaseProjectileState();
 
 	//movement state (updated everytick)
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)     //the initial location of the projectile (usually while flight, the location to compare to)
@@ -71,12 +69,6 @@ struct FActorProjectile_Runtime
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float GravityScale = 0.0f;
-
-	//damage
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float BaseDamage = 0.0f;						//copied from weapon?
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)		//copied from weapon?
-	UCurveFloat* DamageCurve = nullptr;		//multiply by base damage
 
 	//Flight Plan State
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)

@@ -6,6 +6,7 @@
 #include "Engine/DataTable.h"
 #include "NiagaraSystem.h"
 #include "Data/Items/Weapons/ProjectileEnums.h"
+#include "Data/Core/Combat/Data_Combat.h"
 #include "Data_Projectile.generated.h"
 
 /**
@@ -86,8 +87,8 @@ struct FProjectileFlightStage
 	GENERATED_BODY()
 
 	// --- BEHAVIOR ---
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Guidance")
-	EProjectileGuidanceMethod BehaviorType = EProjectileGuidanceMethod::BallisticTrajectory; // The algorithm to use (Ballistic, Homing, WireGuided, etc.)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Guidance", meta = (ToolTip = "The algorithm to use (Ballistic, Homing, WireGuided, etc.)"))
+	EProjectileGuidanceMethod BehaviorType = EProjectileGuidanceMethod::BallisticTrajectory;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Guidance")
 	FFlightParameters GuidanceParams = FFlightParameters(); // e.g., Thrust duration, Turn Rate, Max Speed
@@ -123,15 +124,18 @@ struct FActorProjectileData
 };
 
 USTRUCT(BlueprintType)
-struct FMunitionDamageData
+struct FBaseMunitionDamageData
 {
 	GENERATED_BODY()
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ToolTip = "weapons 'raw' damage without any falloff"))
+	float BaseDamage = 0.0f;				
+	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	float BaseDamage = 0.0f;								//weapons "raw" damage without any falloff
+	TMap<EArmorType, float> ArmorDamageMultipliers;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	TObjectPtr<UCurveFloat> DamageDropoffCurve = nullptr;
+	TSoftObjectPtr<UCurveFloat> DamageDropoffCurve = nullptr;
 	
 	//penetration
 
@@ -144,6 +148,51 @@ struct FMunitionDamageData
 		}
 		return BaseDamage;
 	}
+	
+	float CalculateFinalBaseDamage(float Distance, EArmorType ArmorTypeHit) const
+	{
+		const float Damage = GetDamageAtDistance(Distance);
+		const float ArmorDmgMultiplier = ArmorDamageMultipliers.FindRef(ArmorTypeHit);
+		return Damage * ArmorDmgMultiplier;
+	}
+	
+	//radial/splash damage?
+};
+
+USTRUCT(BlueprintType)
+struct FExplosiveDamageData
+{
+	GENERATED_BODY()
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ToolTip = "full BaseDamage is dealt to anything within this radius of the blast origin"))
+	float InnerRadius = 0.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ToolTip = "damage falls off between InnerRadius and this — nothing takes damage beyond it"))
+	float OuterRadius = 0.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ToolTip = "damage dealt exactly at OuterRadius, before it drops to zero"))
+	float MinimumDamage = 0.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ToolTip = "1.0 = linear falloff between the radii; higher = sharper dropoff near InnerRadius"))
+	float DamageFalloffExponent = 1.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ToolTip = "multiplies BaseDamage specifically when this munition directly impacts a target, rather than just being in blast range"))
+	float DirectHitDamageMultiplier = 1.0f;
+};
+
+USTRUCT(BlueprintType)
+struct FMunitionDamageData
+{
+	GENERATED_BODY()
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	EDamageCategory DamageCategory = EDamageCategory::Ballistic;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	FBaseMunitionDamageData BaseDamageData = FBaseMunitionDamageData();
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (EditCondition = "DamageCategory == EDamageCategory::Explosive", EditConditionHides))
+	FExplosiveDamageData ExplosiveDamageData = FExplosiveDamageData();
 };
 
 USTRUCT(BlueprintType)
@@ -163,7 +212,7 @@ struct FProjectileData : public FTableRowBase
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	FMunitionDamageData MunitionDamageData = FMunitionDamageData();
 	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (EditConition = "MunitionType == EMunitionType::ActorProjectile", EditConditionHides))
 	FActorProjectileData ActorProjectileData = FActorProjectileData();
 
 };

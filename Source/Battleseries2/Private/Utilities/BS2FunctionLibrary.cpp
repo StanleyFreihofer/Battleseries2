@@ -2,6 +2,7 @@
 #include "Engine/World.h"
 #include "Engine/GameInstance.h"
 #include "Kismet/KismetSystemLibrary.h"
+#include "Kismet/GameplayStatics.h"
 #include "DrawDebugHelpers.h"
 #include "Animation/AnimSingleNodeInstance.h"
 #include "Data/Items/Weapons/WeaponDefaults.h"
@@ -16,6 +17,8 @@
 #include "Components/AudioComponent.h"
 #include "Camera/CameraComponent.h"
 #include "Data/Items/Gadgets/GadgetTypes.h"
+#include "Data/Items/Weapons/Data_Projectile.h"
+#include "GameFramework/PlayerState.h"
 #include "Kismet/KismetMathLibrary.h"
 
 bool UBS2FunctionLibrary::PerformSphereTraceMulti(const UObject* WorldContextObject, const FTransform StartTransform, TArray<FHitResult>& OutHits, TArray<AActor*> ActorsToIgnore, float Radius, float Distance, bool Debug)
@@ -155,6 +158,8 @@ FString UBS2FunctionLibrary::GetVehicleTypeLiteralString(EVehicleType VehicleTyp
 	return EnumPtr->GetNameStringByValue(static_cast<int64>(VehicleType));
 }
 
+#pragma region Subsystems
+
 UDataManagerSubsystem* UBS2FunctionLibrary::GetDataSubsystem(const UObject* WorldContextObject)
 {
 	return WorldContextObject->GetWorld()->GetGameInstance()->GetSubsystem<UDataManagerSubsystem>();
@@ -179,6 +184,8 @@ IVehicleDataAccessor* UBS2FunctionLibrary::GetVehicleAccessor(AActor* TargetActo
 {
 	return Cast<IVehicleDataAccessor>(TargetActor);
 }
+
+#pragma endregion
 
 UCameraComponent* UBS2FunctionLibrary::CreateAndAttachCamera(UObject* Owner, USceneComponent* AttachTarget, FName SocketName)
 {
@@ -269,16 +276,14 @@ FVector UBS2FunctionLibrary::GetAimDirectionFromMuzzle_BP(FHitResult TraceData, 
 	return GetAimDirectionFromMuzzle(TraceData, MuzzleSocketName, TWeakObjectPtr<USkeletalMeshComponent>(WeaponMesh));
 }
 
-FSimProjectile_Runtime UBS2FunctionLibrary::CreateSimProjectile(FName MunitionID, class APlayerState* InstigatorPlayerState, FVector MuzzleLocation, float MuzzleSpeed, float GravityScale, FVector AimDirection, float BaseDamage, UCurveFloat* DamageDropoffCurve, UProjectilePoolSubsystem* ProjectileSubsystem)
+FSimProjectile_Runtime UBS2FunctionLibrary::CreateSimProjectile(FName MunitionID, class APlayerState* InstigatorPlayerState, FVector MuzzleLocation, float MuzzleSpeed, float GravityScale, FVector AimDirection, UProjectilePoolSubsystem* ProjectileSubsystem)
 {
 	FSimProjectile_Runtime NewSimulatedProjectile = FSimProjectile_Runtime();
-	NewSimulatedProjectile.MunitionID = MunitionID;
-	NewSimulatedProjectile.FireOrigin = MuzzleLocation;
+	NewSimulatedProjectile.BaseProjectileState.MunitionID = MunitionID;
+	NewSimulatedProjectile.BaseProjectileState.FireOrigin = MuzzleLocation;
 	NewSimulatedProjectile.CurrentLocation = MuzzleLocation;
 	NewSimulatedProjectile.CurrentVelocity = AimDirection * MuzzleSpeed;
 	NewSimulatedProjectile.GravityScale = GravityScale;
-	NewSimulatedProjectile.BaseDamage = BaseDamage;
-	NewSimulatedProjectile.DamageCurve = DamageDropoffCurve;
 	ProjectileSubsystem->AddNewSimProjectile(NewSimulatedProjectile);
 	return NewSimulatedProjectile;
 }
@@ -405,6 +410,38 @@ void UBS2FunctionLibrary::UpdateAudioCompArrayParameter(TWeakObjectPtr<UAudioCom
 		LoadedWaves.Add(Wave);
 	}
 	AC.Get()->SetObjectArrayParameter(ParameterName, LoadedWaves);
+}
+
+void UBS2FunctionLibrary::HandleApplyDamage(FBaseProjectileState BaseMunitionState, FVector CurrentLocation, FHitResult HitResult)
+{
+	const FMunitionDamageData& MunitionDamageData = GetDataSubsystem(HitResult.GetActor())->GetProjectileDataRow(BaseMunitionState.MunitionID)->MunitionDamageData;
+	float Distance = FVector::Dist(BaseMunitionState.FireOrigin, CurrentLocation);
+	FVector Direction = (CurrentLocation - BaseMunitionState.FireOrigin).GetSafeNormal();
+	
+	//DO AN INTERFACE TO RETURN ARMOR TYPE
+	
+	float BaseDamage = MunitionDamageData.BaseDamageData.CalculateFinalBaseDamage(Distance, EArmorType::Infantry);						//<--change this to be returned via interface function on hit actor
+	
+	switch (MunitionDamageData.DamageCategory)
+	{
+		case EDamageCategory::Ballistic:
+			UGameplayStatics::ApplyPointDamage(HitResult.GetActor(), BaseDamage, Direction, HitResult, BaseMunitionState.InstigatorPlayerState.Get()->GetOwningController(), BaseMunitionState.InstigatorPlayerState.Get()->GetPawn(), UDamageType::StaticClass());
+			break;
+		case EDamageCategory::Explosive:
+			break;
+	}
+}
+
+bool UBS2FunctionLibrary::TakeDmg(float Damage, float& CurrentHealth)
+{
+	//damage should be final damage/damage after all modifiers to it have been calculated
+	bool HealthDepleted = false;
+	CurrentHealth = FMath::Clamp(CurrentHealth - Damage, 0.0f, CurrentHealth);
+	if (CurrentHealth == 0.0f)
+	{
+		HealthDepleted = true;
+	}
+	return HealthDepleted;
 }
 
 

@@ -29,13 +29,13 @@ void AProjectile_Base::BeginPlay()
 
 void AProjectile_Base::SetProjectileAndInit(FName InputProjectileID, bool ActivateImmediately)
 {
-	ProjectileState.MunitionID = InputProjectileID;
+	ProjectileState.BaseProjectileState.MunitionID = InputProjectileID;
 	Init_ProjectileData();
 }
 
 void AProjectile_Base::Init_ProjectileData()
 {
-	const FProjectileData* ProjectileRow = UBS2FunctionLibrary::GetDataSubsystem(this)->GetProjectileDataRow(ProjectileState.MunitionID);
+	const FProjectileData* ProjectileRow = UBS2FunctionLibrary::GetDataSubsystem(this)->GetProjectileDataRow(ProjectileState.BaseProjectileState.MunitionID);
 	ProjectileData = ProjectileRow;
 
 	TArray<FSoftObjectPath> AssetsToLoad;
@@ -118,7 +118,7 @@ void AProjectile_Base::FireProjectile(FVector AimDirection)
 	//GetWorldTimerManager().SetTimer(CollisionTimerHandle, this, &AProjectile_Base::EnableCollision, 0.5f, false);
 	ImpactVFX = ProjectileData->MunitionVisualData.ImpactVFX.LoadSynchronous();	
 
-	ProjectileState.Origin = AimDirection;
+	ProjectileState.BaseProjectileState.FireOrigin = AimDirection;
 
 	StartFlightPlan();
 	UpdateFlightPlan(0);
@@ -133,7 +133,7 @@ void AProjectile_Base::StartFlightPlan()
 		ProjectileMeshComponent->SetSimulatePhysics(false);
 	}
 	ProjectileMeshComponent->OnComponentHit.AddDynamic(this, &AProjectile_Base::OnHit);		//should not explode if not in use yet (hanging on rack for example)
-	ProjectileMovementComponent->Velocity = ProjectileState.Origin * ProjectileData->ActorProjectileData.ProjectileFlightPlan[0].GuidanceParams.InitialSpeed;
+	ProjectileMovementComponent->Velocity = ProjectileState.BaseProjectileState.FireOrigin * ProjectileData->ActorProjectileData.ProjectileFlightPlan[0].GuidanceParams.InitialSpeed;
 	ProjectileMovementComponent->Activate();
 	NiagaraComponent->Activate();
 }
@@ -194,7 +194,7 @@ void AProjectile_Base::UpdateFlightPlan(int32 FlightStageIndex)
 	switch (FlightStage.BehaviorType)
 	{
 		case EProjectileGuidanceMethod::BallisticTrajectory:
-			ProjectileMovementComponent->Velocity = ProjectileState.Origin * FlightStage.GuidanceParams.InitialSpeed;
+			ProjectileMovementComponent->Velocity = ProjectileState.BaseProjectileState.FireOrigin * FlightStage.GuidanceParams.InitialSpeed;
 			break;
 		case EProjectileGuidanceMethod::PitchToAltitude:
 			FVector UpwardPitch = FVector::UpVector * FlightStage.GuidanceParams.PitchForce;

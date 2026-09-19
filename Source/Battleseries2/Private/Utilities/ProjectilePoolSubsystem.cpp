@@ -1,6 +1,7 @@
 #include "Utilities/ProjectilePoolSubsystem.h"
 #include "Engine/World.h"
 #include "GameFramework/Actor.h"
+#include "Kismet/GameplayStatics.h"
 #include "NiagaraSystem.h"
 #include "NiagaraFunctionLibrary.h"
 #include "NiagaraComponent.h"
@@ -92,7 +93,7 @@ void UProjectilePoolSubsystem::ReturnProjectileToPool(TWeakObjectPtr<AProjectile
 	Projectile->SetActorTickEnabled(false);
 	Projectile->ProjectileMovementComponent->SetComponentTickEnabled(false);
 
-	FName& MunitionID = Projectile->ProjectileState.MunitionID;
+	FName& MunitionID = Projectile->ProjectileState.BaseProjectileState.MunitionID;
 	ProjectileObjectPools.FindOrAdd(MunitionID).PooledProjectiles.Add(Projectile);
 
 	Projectile->SetActorLocation(FVector::ZeroVector);
@@ -133,20 +134,21 @@ void UProjectilePoolSubsystem::UpdateSimulatedProjectiles(float DeltaSeconds)
 			}
 
 			// Debugging only for active projectiles
-			DrawDebugLine(GetWorld(), Sim.CurrentLocation, NewLocation, FColor::Red, false, -1.f, 0, 1.f);
+			DrawDebugLine(GetWorld(), Sim.CurrentLocation, NewLocation, FColor::Red, true, 30.f, 0, 1.f);
 		}
 		else
 		{
 			// 3. Handle the hit
-			DrawDebugLine(GetWorld(), Sim.CurrentLocation, NewLocation, FColor::Yellow, false, -1.f, 0, 1.f);
+			DrawDebugLine(GetWorld(), Sim.CurrentLocation, NewLocation, FColor::Yellow, false, 30.f, 0, 1.f);
 
 			if (AActor* HitActor = OutHit.GetActor())
 			{
 				// Trigger damage here
+				//UGameplayStatics::ApplyPointDamage(HitActor, OutHit)
 			}
 
 			// 4. Final log before the memory is freed
-			UE_LOG(LogTemp, Warning, TEXT("Projectile Hit: %s"), *Sim.MunitionID.ToString());
+			UE_LOG(LogTemp, Warning, TEXT("Projectile Hit: %s"), *Sim.BaseProjectileState.MunitionID.ToString());
 
 			// 5. Remove and IMMEDIATELY move to next iteration
 			SimulatedProjectiles.RemoveAt(i);
