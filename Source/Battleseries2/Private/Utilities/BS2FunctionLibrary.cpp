@@ -22,6 +22,7 @@
 #include "GameFramework/PlayerState.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Utilities/I_Damageable.h"
+#include "VerseVM/VVMJson.h"
 
 bool UBS2FunctionLibrary::PerformSphereTraceMulti(const UObject* WorldContextObject, const FTransform StartTransform, TArray<FHitResult>& OutHits, TArray<AActor*> ActorsToIgnore, float Radius, float Distance, bool Debug)
 {
@@ -423,6 +424,7 @@ void UBS2FunctionLibrary::HandleApplyDamage(FBaseProjectileState BaseMunitionSta
 	
 	EArmorType TargetArmorType = EArmorType::Infantry;
 	float HitzoneMultiplier = 1.0f;
+	FString EnumString;
 	
 	if (HitActor->GetClass()->ImplementsInterface(UDamageable::StaticClass()))
 	{
@@ -430,12 +432,22 @@ void UBS2FunctionLibrary::HandleApplyDamage(FBaseProjectileState BaseMunitionSta
 		HitzoneMultiplier = IDamageable::Execute_GetHitZoneMultiplier(HitActor, HitResult.BoneName, HitResult.ImpactPoint);
 		
 		const UEnum* EnumPtr = StaticEnum<EArmorType>();
-		FString EnumString = EnumPtr->GetDisplayNameTextByValue((int64)TargetArmorType).ToString();
+		EnumString = EnumPtr->GetDisplayNameTextByValue((int64)TargetArmorType).ToString();
 		UE_LOG(LogTemp, Warning, TEXT("[BS2FunctionLibrary::HandleApplyDamage] ArmoryType = %s, HitzoneMultiplier = %f"), *EnumString, HitzoneMultiplier);
 	}
 	
 	float BaseDamage = MunitionDamageData.BaseDamageData.CalculateFinalBaseDamage(Distance, TargetArmorType);				
 	float FinalDamage = BaseDamage * HitzoneMultiplier;
+	
+	if (GEngine)
+	{
+		GEngine->AddOnScreenDebugMessage(
+			-1,
+			10.0f,
+			FColor::Cyan,
+			FString::Printf(TEXT("Damage Dealt = : %f, HitzoneMultipler = %f, ArmorType = %s, BaseDmg = %f, "), FinalDamage, HitzoneMultiplier, *EnumString, MunitionDamageData.BaseDamageData.BaseDamage)
+		);
+	}
 	
 	switch (MunitionDamageData.DamageCategory)
 	{

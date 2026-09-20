@@ -333,7 +333,7 @@ void AProjectile_Base::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, U
 	}
 	if (ImpactVFX)
 	{
-		UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), ImpactVFX, GetActorLocation(), GetActorRotation());
+		UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), ImpactVFX, Hit.ImpactPoint, Hit.ImpactNormal.Rotation());
 	}
 
 	if (OtherActor && OtherActor != this)
