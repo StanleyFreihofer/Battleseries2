@@ -86,13 +86,22 @@ void UHUDSubsystem::UpdateStatusHUD_CRACount(int32 CRA)
 
 void UHUDSubsystem::UpdateStatusHUD_FireMode(EFireMode FireMode)
 {
-	//StatusHUD->UpdateCurrentFireMode(FireMode);
 	StatusHUD->UpdateCurrentFireMode(FireMode);
 }
 
 void UHUDSubsystem::UpdateStatusHUD_canFireModes(TArray<bool> canFireModes)
 {
 	StatusHUD->UpdateCanFireModes(canFireModes);
+}
+
+void UHUDSubsystem::UpdateStatusHUD_VehicleStatusVisibility(bool Hide)
+{
+	StatusHUD->UpdateVehicleStatusVisibility(Hide);
+}
+
+void UHUDSubsystem::UpdateStatusHUD_VehicleHealth(float NewHealth)
+{
+	StatusHUD->UpdateVehicleHealth(NewHealth);
 }
 
 #pragma endregion

@@ -1,4 +1,7 @@
 #include "Core/UI/GameplayHUDs/UW_HUD_Status_Base.h"
+
+#include "Components/Border.h"
+#include "Components/ProgressBar.h"
 #include "Components/TextBlock.h"
 #include "Data/Items/Weapons/WeaponEnums.h"
 
@@ -67,4 +70,26 @@ void UUW_HUD_Status_Base::UpdateCanFireModes(TArray<bool> canFireModes)
 				break;
 		}
 	}
+}
+
+void UUW_HUD_Status_Base::UpdateVehicleStatusVisibility(bool Hide)
+{
+	if (Hide)
+	{
+		B_VehicleStatus->SetVisibility(ESlateVisibility::Collapsed);
+	}
+	else
+	{
+		B_VehicleStatus->SetVisibility(ESlateVisibility::Visible);
+	}
+}
+
+void UUW_HUD_Status_Base::UpdateVehicleHealth(float NewHealth)
+{
+	float HealthPercentage = NewHealth/100;
+	int32 Health = FMath::RoundToInt(NewHealth);
+	FString FormattedHealth = FString::Printf(TEXT("%d"), Health);
+	T_VehicleHealthValue->SetText(FText::FromString(FormattedHealth));
+	
+	PB_VehicleHealthBar->SetPercent(HealthPercentage);
 }

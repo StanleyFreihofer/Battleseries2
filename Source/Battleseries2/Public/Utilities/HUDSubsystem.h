@@ -67,6 +67,10 @@ public:
 	void UpdateStatusHUD_FireMode(EFireMode FireMode);
 	UFUNCTION(BlueprintCallable)
 	void UpdateStatusHUD_canFireModes(TArray<bool> canFireModes);
+	UFUNCTION(BlueprintCallable)
+	void UpdateStatusHUD_VehicleStatusVisibility(bool Hide);
+	UFUNCTION(BlueprintCallable)
+	void UpdateStatusHUD_VehicleHealth(float NewHealth);
 	
 #pragma endregion 
 	

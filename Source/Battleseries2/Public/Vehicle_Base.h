@@ -14,6 +14,7 @@
 #include "Data/Core/CoreTypes.h"
 #include "Data/Vehicles/VehicleTypes.h"
 // UBT/UHT requirements
+#include "Core/Combat/VehicleHealthComponent.h"
 #include "Engine/DataTable.h" 
 #include "Vehicle_Base.generated.h"
 
@@ -333,6 +334,8 @@ public:
 	UCameraComponent* GetRemoteActiveCam(int32 SeatIndex);
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	float GetCurrentSpeed_Chaos();
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	float GetVehicleHealth()	{ return VehicleHealthComponent->VehicleHealthState.BaseHealthState.CurrentHealth; }
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	bool IsInitialized() const { return VehicleCurrentState.bIsInitialized; }
 

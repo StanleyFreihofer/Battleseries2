@@ -554,6 +554,11 @@ void ACharacter_Base::CharacterEnterVehicle()
 	}
 
 	ManageIMC(UBS2FunctionLibrary::GetDataSubsystem(this)->GetCharacterDefaults()->DefaultGameplayIMC.Get(), nullptr, -1);
+	if (IsLocallyControlled())
+	{
+		UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateStatusHUD_VehicleHealth(GetCurrentVehicle()->GetVehicleHealth());
+		UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateStatusHUD_VehicleStatusVisibility(false);
+	}
 }
 
 void ACharacter_Base::CharacterExitVehicle()
@@ -592,6 +597,7 @@ void ACharacter_Base::CharacterExitVehicle()
 			FWeaponState& CurrentWeapon = *LoadoutManager->GetCurrentWeaponBaseState();
 			UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateStatusHUD_CAMCount(CurrentWeapon.CurrentAmmoinMag);
 			UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateStatusHUD_CRACount(CurrentWeapon.CurrentReserveAmmo);
+			UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateStatusHUD_VehicleStatusVisibility(true);
 		}
 	}
 }
