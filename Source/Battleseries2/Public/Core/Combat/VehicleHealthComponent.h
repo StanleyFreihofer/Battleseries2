@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
 #include "Data/Core/Combat/CombatTypes.h"
+#include "Utilities/I_VehicleDataAccessor.h"
 #include "VehicleHealthComponent.generated.h"
 
 /**
@@ -29,6 +30,11 @@ public:
 	
 	UFUNCTION(BlueprintCallable)
 	void Init_VehicleHealth(float StartingHealth);
+	
+	UFUNCTION(BlueprintCallable)
+	void HandleVehicleDestroyed();
+	
+	
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Battleseries | Vehicles")
 	FName GetVehicleArmorZone(const FVector& HitLocation);
 
@@ -38,4 +44,7 @@ protected:
 	
 	UFUNCTION()
 	void HandleTakeAnyDamage(AActor* DamagedActor, float Damage, const class UDamageType* DamageType, class AController* InstigatedBy, AActor* DamageCauser);
+	
+private:
+	IVehicleDataAccessor* OwnerDataAccessor;
 };

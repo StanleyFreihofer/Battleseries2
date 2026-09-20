@@ -2,6 +2,7 @@
 #include "Core/Combat/VehicleHealthComponent.h"
 #include "Utilities/BS2FunctionLibrary.h"
 #include "Utilities/DataManagerSubsystem.h"
+
 #include "Data/Vehicles/VehicleDefaults.h"
 #include "GameFramework/Actor.h"
 
@@ -12,13 +13,32 @@ UVehicleHealthComponent::UVehicleHealthComponent()
 void UVehicleHealthComponent::BeginPlay()
 {
 	Super::BeginPlay();
-	
+	OwnerDataAccessor = Cast<IVehicleDataAccessor>(GetOwner());
 	GetOwner()->OnTakeAnyDamage.AddDynamic(this, &UVehicleHealthComponent::HandleTakeAnyDamage);
 }
 
 void UVehicleHealthComponent::Init_VehicleHealth(float StartingHealth)
 {
 	VehicleHealthState.BaseHealthState.CurrentHealth = StartingHealth;
+}
+
+void UVehicleHealthComponent::HandleVehicleDestroyed()
+{
+	TObjectPtr<USkeletalMeshComponent> VehicleMeshComponent = OwnerDataAccessor->GetMesh();
+	
+	//explosion vfx (also to mask the spawning of the mesh or something)
+	
+	TObjectPtr<UStaticMesh> DestroyedMesh = UBS2FunctionLibrary::GetDataSubsystem(GetOwner())->GetVehicleDataRow(OwnerDataAccessor->GetVehicleID())->DestroyedMesh.LoadSynchronous();
+	
+	
+	VehicleMeshComponent->SetVisibility(false);
+	VehicleMeshComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	VehicleHealthState.DestroyedMesh = NewObject<UStaticMeshComponent>(this);
+	VehicleHealthState.DestroyedMesh->SetupAttachment(VehicleMeshComponent);
+	VehicleHealthState.DestroyedMesh->RegisterComponent();
+	VehicleHealthState.DestroyedMesh->SetStaticMesh(DestroyedMesh);
+	VehicleHealthState.DestroyedMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 }
 
 void UVehicleHealthComponent::HandleTakeAnyDamage(AActor* DamagedActor, float Damage, const class UDamageType* DamageType, class AController* InstigatedBy, AActor* DamageCauser)
@@ -30,7 +50,7 @@ void UVehicleHealthComponent::HandleTakeAnyDamage(AActor* DamagedActor, float Da
 	
 	if (HealthDepleted)
 	{
-		
+		HandleVehicleDestroyed();
 	}
 }
 
@@ -38,7 +58,7 @@ FName UVehicleHealthComponent::GetVehicleArmorZone(const FVector& HitLocation)
 {
 	//SOCKETS SHOULD BE PARENTED TO ROUT
 	const AActor* Owner = GetOwner();
-	USkeletalMeshComponent* VehicleMeshComponent = Cast<USkeletalMeshComponent>(Owner->GetRootComponent());
+	USkeletalMeshComponent* VehicleMeshComponent = OwnerDataAccessor->GetMesh();
 	const UDA_VehicleDefaults& Defaults = *UBS2FunctionLibrary::GetDataSubsystem(GetOwner())->GetVehicleDefaults();
 	const FVector ToHit = (HitLocation - GetOwner()->GetActorLocation()).GetSafeNormal();
 	

@@ -33,4 +33,7 @@ struct FVehicleHealthState
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	bool bIsImmobilized = false;
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	TObjectPtr<UStaticMeshComponent> DestroyedMesh = nullptr;
 };
