@@ -556,6 +556,7 @@ void ACharacter_Base::CharacterEnterVehicle()
 	ManageIMC(UBS2FunctionLibrary::GetDataSubsystem(this)->GetCharacterDefaults()->DefaultGameplayIMC.Get(), nullptr, -1);
 	if (IsLocallyControlled())
 	{
+		GetCurrentVehicle()->VehicleHealthComponent->OnVehicleHealthChanged.AddDynamic(this, &ACharacter_Base::OnVehicleHealthChanged);
 		UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateStatusHUD_VehicleHealth(GetCurrentVehicle()->GetVehicleHealth());
 		UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateStatusHUD_VehicleStatusVisibility(false);
 	}
@@ -588,17 +589,19 @@ void ACharacter_Base::CharacterExitVehicle()
 		}
 
 		UpdateViewTarget(this, FPCamera);
-		CharacterState.CharacterVehicleState = FCharacterVehicleState();
 
 		ManageIMC(nullptr, UBS2FunctionLibrary::GetDataSubsystem(this)->GetCharacterDefaults()->DefaultGameplayIMC.Get(), 1);
 	
 		if (LoadoutManager->GetIsCurrentSlotActuallyWeapon() && IsLocallyControlled())
 		{
+			GetCurrentVehicle()->VehicleHealthComponent->OnVehicleHealthChanged.RemoveDynamic(this, &ACharacter_Base::OnVehicleHealthChanged);
 			FWeaponState& CurrentWeapon = *LoadoutManager->GetCurrentWeaponBaseState();
 			UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateStatusHUD_CAMCount(CurrentWeapon.CurrentAmmoinMag);
 			UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateStatusHUD_CRACount(CurrentWeapon.CurrentReserveAmmo);
 			UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateStatusHUD_VehicleStatusVisibility(true);
 		}
+		
+		CharacterState.CharacterVehicleState = FCharacterVehicleState();
 	}
 }
 
@@ -741,6 +744,14 @@ void ACharacter_Base::UpdateUI_EnterSeat()
 				);
 			}
 			break;
+	}
+}
+
+void ACharacter_Base::OnVehicleHealthChanged()
+{
+	if (IsLocallyControlled())
+	{
+		UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateStatusHUD_VehicleHealth(GetCurrentVehicle()->GetVehicleHealth());
 	}
 }
 

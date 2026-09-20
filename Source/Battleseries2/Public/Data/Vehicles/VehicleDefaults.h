@@ -30,15 +30,6 @@ USTRUCT(BlueprintType)
 struct FVehicleCombatDefinition
 {
     GENERATED_BODY()
-    
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ToolTip = "hits within this many degrees of forward count as front armor"))
-    float FrontArmorAngle = 45.f;
-
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ToolTip = "hits within this many degrees of directly behind count as rear armor"))
-    float RearArmorAngle = 45.f;
-    
-    UPROPERTY(EditAnywhere, BlueprintReadOnly)
-    float SideArmorAngle = 45.f;
 
     UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ToolTip = "hits within this many degrees of straight-down onto the vehicle count as top armor"))
     float TopArmorAngle = 30.f;

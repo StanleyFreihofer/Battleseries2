@@ -3,6 +3,8 @@
 #include "CoreMinimal.h"
 #include "CombatTypes.generated.h"
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnHealthChanged);
+
 USTRUCT(BlueprintType)
 struct FHealthState
 {

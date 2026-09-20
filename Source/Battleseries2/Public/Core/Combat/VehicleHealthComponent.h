@@ -24,6 +24,9 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	FVehicleHealthState VehicleHealthState = FVehicleHealthState();
 	
+	UPROPERTY(BlueprintAssignable, Category = "Event Dispatchers")
+	FOnHealthChanged OnVehicleHealthChanged;
+	
 	UFUNCTION(BlueprintCallable)
 	void Init_VehicleHealth(float StartingHealth);
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Battleseries | Vehicles")

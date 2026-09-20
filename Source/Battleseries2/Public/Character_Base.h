@@ -173,6 +173,8 @@ public:
 	void UpdateSeatIndexes(int32 NewLSI, int32 NewCSI, int32 NewNSI);
 	UFUNCTION(BlueprintCallable)
 	void UpdateUI_EnterSeat();
+	UFUNCTION(BlueprintCallable)
+	void OnVehicleHealthChanged();
 
 #pragma endregion
 

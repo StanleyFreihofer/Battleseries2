@@ -28,7 +28,7 @@ void UHUDSubsystem::SpawnStatusHUD(TSubclassOf<UUserWidget> HUDClass)
 	APlayerController* PC = GetLocalPlayer()->GetPlayerController(GetWorld());
 	check(PC);
 	StatusHUD = CreateWidget<UUW_HUD_Status_Base>(PC, HUDClass);
-	StatusHUD->AddToViewport();
+	StatusHUD->AddToViewport(1000);
 }
 
 void UHUDSubsystem::SpawnVehicleSeatHUD(TSubclassOf<UUserWidget> HUDClass)

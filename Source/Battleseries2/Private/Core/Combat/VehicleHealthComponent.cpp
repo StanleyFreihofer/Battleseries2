@@ -25,10 +25,14 @@ void UVehicleHealthComponent::HandleTakeAnyDamage(AActor* DamagedActor, float Da
 {
 	float& CurrentHealth = VehicleHealthState.BaseHealthState.CurrentHealth;
 	bool HealthDepleted = UBS2FunctionLibrary::TakeDmg(Damage, CurrentHealth);
+	OnVehicleHealthChanged.Broadcast();
 	UE_LOG(LogTemp, Warning, TEXT("[VHC::HandleTakeAnyDamage] CurrentHealth = %f, Damage = %f"), CurrentHealth, Damage);
+	
+	if (HealthDepleted)
+	{
+		
+	}
 }
-
-
 
 FName UVehicleHealthComponent::GetVehicleArmorZone(const FVector& HitLocation)
 {

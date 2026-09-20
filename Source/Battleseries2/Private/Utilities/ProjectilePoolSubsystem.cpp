@@ -145,7 +145,6 @@ void UProjectilePoolSubsystem::UpdateSimulatedProjectiles(float DeltaSeconds)
 			{
 				// Trigger damage here
 				UBS2FunctionLibrary::HandleApplyDamage(Sim.BaseProjectileState, Sim.CurrentLocation, OutHit);
-				//UGameplayStatics::ApplyPointDamage(HitActor, OutHit)
 			}
 
 			// 4. Final log before the memory is freed

@@ -356,6 +356,7 @@ void AProjectile_Base::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, U
 		}
 
 		// --- Handle damage, explosion, or pooling return logic here ---
+		UBS2FunctionLibrary::HandleApplyDamage(ProjectileState.BaseProjectileState, GetActorLocation(), Hit);
 	}
 
 	ProjectileMeshComponent->ClearMoveIgnoreActors();

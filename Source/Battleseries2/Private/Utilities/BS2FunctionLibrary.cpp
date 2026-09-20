@@ -427,9 +427,10 @@ void UBS2FunctionLibrary::HandleApplyDamage(FBaseProjectileState BaseMunitionSta
 	if (HitActor->GetClass()->ImplementsInterface(UDamageable::StaticClass()))
 	{
 		TargetArmorType = IDamageable::Execute_GetArmorType(HitActor);
+		HitzoneMultiplier = IDamageable::Execute_GetHitZoneMultiplier(HitActor, HitResult.BoneName, HitResult.ImpactPoint);
+		
 		const UEnum* EnumPtr = StaticEnum<EArmorType>();
 		FString EnumString = EnumPtr->GetDisplayNameTextByValue((int64)TargetArmorType).ToString();
-		HitzoneMultiplier = IDamageable::Execute_GetHitZoneMultiplier(HitActor, HitResult.BoneName, HitResult.ImpactPoint);
 		UE_LOG(LogTemp, Warning, TEXT("[BS2FunctionLibrary::HandleApplyDamage] ArmoryType = %s, HitzoneMultiplier = %f"), *EnumString, HitzoneMultiplier);
 	}
 	

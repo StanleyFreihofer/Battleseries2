@@ -22,5 +22,8 @@ public:
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
 	float GetHitZoneMultiplier(FName BoneName, FVector HitLocation);		//armor side, headshot multipliers, etc
 	
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
+	void Kill();
+	
 	
 };

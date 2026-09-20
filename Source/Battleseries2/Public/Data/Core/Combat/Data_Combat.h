@@ -26,7 +26,7 @@ struct FHealthData
 	EArmorType ArmorType = EArmorType::Infantry;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ToolTip = "maps Bone Name to damage multiplier, use create things like vehicle armor siding, headshot multipliers, etc"))
-	TMap<FName, float> HitLocationMultipliers;
+	TMap<FName, float> HitLocationMultipliers;			//DEPRECIATE (stored in vehicle defaults and probably character defaults)!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	
 	float CalculateHitLocationMultiplier(float Damage, FName HitBoneName) const
 	{
