@@ -18,8 +18,10 @@
 #include "Camera/CameraComponent.h"
 #include "Data/Items/Gadgets/GadgetTypes.h"
 #include "Data/Items/Weapons/Data_Projectile.h"
+#include "Data/Vehicles/VehicleDefaults.h"
 #include "GameFramework/PlayerState.h"
 #include "Kismet/KismetMathLibrary.h"
+#include "Utilities/I_Damageable.h"
 
 bool UBS2FunctionLibrary::PerformSphereTraceMulti(const UObject* WorldContextObject, const FTransform StartTransform, TArray<FHitResult>& OutHits, TArray<AActor*> ActorsToIgnore, float Radius, float Distance, bool Debug)
 {
@@ -417,15 +419,29 @@ void UBS2FunctionLibrary::HandleApplyDamage(FBaseProjectileState BaseMunitionSta
 	const FMunitionDamageData& MunitionDamageData = GetDataSubsystem(HitResult.GetActor())->GetProjectileDataRow(BaseMunitionState.MunitionID)->MunitionDamageData;
 	float Distance = FVector::Dist(BaseMunitionState.FireOrigin, CurrentLocation);
 	FVector Direction = (CurrentLocation - BaseMunitionState.FireOrigin).GetSafeNormal();
+	TObjectPtr<AActor> HitActor = HitResult.GetActor();
 	
-	//DO AN INTERFACE TO RETURN ARMOR TYPE
+	EArmorType TargetArmorType = EArmorType::Infantry;
+	float HitzoneMultiplier = 1.0f;
 	
-	float BaseDamage = MunitionDamageData.BaseDamageData.CalculateFinalBaseDamage(Distance, EArmorType::Infantry);						//<--change this to be returned via interface function on hit actor
+	if (HitActor->GetClass()->ImplementsInterface(UDamageable::StaticClass()))
+	{
+		TargetArmorType = IDamageable::Execute_GetArmorType(HitActor);
+		const UEnum* EnumPtr = StaticEnum<EArmorType>();
+		FString EnumString = EnumPtr->GetDisplayNameTextByValue((int64)TargetArmorType).ToString();
+		HitzoneMultiplier = IDamageable::Execute_GetHitZoneMultiplier(HitActor, HitResult.BoneName, HitResult.ImpactPoint);
+		UE_LOG(LogTemp, Warning, TEXT("[BS2FunctionLibrary::HandleApplyDamage] ArmoryType = %s, HitzoneMultiplier = %f"), *EnumString, HitzoneMultiplier);
+	}
+	
+	float BaseDamage = MunitionDamageData.BaseDamageData.CalculateFinalBaseDamage(Distance, TargetArmorType);				
+	float FinalDamage = BaseDamage * HitzoneMultiplier;
 	
 	switch (MunitionDamageData.DamageCategory)
 	{
 		case EDamageCategory::Ballistic:
-			UGameplayStatics::ApplyPointDamage(HitResult.GetActor(), BaseDamage, Direction, HitResult, BaseMunitionState.InstigatorPlayerState.Get()->GetOwningController(), BaseMunitionState.InstigatorPlayerState.Get()->GetPawn(), UDamageType::StaticClass());
+		//BaseMunitionState.InstigatorPlayerState.Get()->GetOwningController()
+		//BaseMunitionState.InstigatorPlayerState.Get()->GetPawn()
+			UGameplayStatics::ApplyPointDamage(HitResult.GetActor(), FinalDamage, Direction, HitResult, nullptr, nullptr, UDamageType::StaticClass());
 			break;
 		case EDamageCategory::Explosive:
 			break;
@@ -434,9 +450,14 @@ void UBS2FunctionLibrary::HandleApplyDamage(FBaseProjectileState BaseMunitionSta
 
 bool UBS2FunctionLibrary::TakeDmg(float Damage, float& CurrentHealth)
 {
-	//damage should be final damage/damage after all modifiers to it have been calculated
+	//damage should be final damage/damage after all modifiers to it have been calculated.
+	Damage = FMath::Abs(Damage);
+	UE_LOG(LogTemp, Warning, TEXT("[BS2FunctionLibrary::TakeDmg] Damage = %f"), Damage);
+
 	bool HealthDepleted = false;
 	CurrentHealth = FMath::Clamp(CurrentHealth - Damage, 0.0f, CurrentHealth);
+
+	UE_LOG(LogTemp, Warning, TEXT("[BS2FunctionLibrary::TakeDmg] CurrentHealth = %f"), CurrentHealth);
 	if (CurrentHealth == 0.0f)
 	{
 		HealthDepleted = true;

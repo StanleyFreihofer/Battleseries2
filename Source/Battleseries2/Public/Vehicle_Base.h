@@ -7,6 +7,7 @@
 #include "Utilities/I_Interact.h"
 #include "Utilities/I_VehicleDataAccessor.h"
 #include "Utilities/I_Anims.h"
+#include "Utilities/I_Damageable.h"
 #include "Core/Weapons/I_LockOnTarget.h"
 // Structs used by VALUE must be included
 #include "Data/Vehicles/Data_Vehicle.h" 
@@ -21,6 +22,7 @@ class UWidgetComponent;
 class UCameraComponent;
 class USpawnComponent;
 class UVehicleWeaponLogicComponent;
+class UVehicleHealthComponent;
 class USkeletalMeshComponent;
 class USkeletalMesh;
 class USplineComponent;
@@ -72,7 +74,7 @@ struct FVehicleStartingData
 };
 
 UCLASS()
-class BATTLESERIES2_API AVehicle_Base : public APawn, public IInteract, public IVehicleDataAccessor, public ILockOnTarget, public IAnims
+class BATTLESERIES2_API AVehicle_Base : public APawn, public IInteract, public IVehicleDataAccessor, public ILockOnTarget, public IAnims, public IDamageable
 {
 	GENERATED_BODY()
 
@@ -89,6 +91,8 @@ public:
 	UChaosWheeledVehicleMovementComponent* ChaosVehicleMovement;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
 	UVehicleWeaponLogicComponent* VehicleWeaponLogicComponent;
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Components")
+	UVehicleHealthComponent* VehicleHealthComponent;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
 	USpawnComponent* SpawnComponent;
 
@@ -343,6 +347,8 @@ public:
 	virtual void GetInteractObjectInfo_Implementation(FText& ObjectName, TSoftObjectPtr<UTexture2D>& ObjectIcon) override;
 
 	virtual bool GetIfCanLockOn_Implementation(const TArray<ETargetingCategory>& TargetingCategories, EHomingCapability HomingCapability) override;
+	virtual EArmorType GetArmorType_Implementation() override;
+	virtual float GetHitZoneMultiplier_Implementation(FName BoneName, FVector HitLocation) override;
 #pragma endregion
 
 #pragma region BlueprintWrapperGetters

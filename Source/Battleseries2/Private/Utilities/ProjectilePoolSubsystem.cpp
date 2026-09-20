@@ -144,6 +144,7 @@ void UProjectilePoolSubsystem::UpdateSimulatedProjectiles(float DeltaSeconds)
 			if (AActor* HitActor = OutHit.GetActor())
 			{
 				// Trigger damage here
+				UBS2FunctionLibrary::HandleApplyDamage(Sim.BaseProjectileState, Sim.CurrentLocation, OutHit);
 				//UGameplayStatics::ApplyPointDamage(HitActor, OutHit)
 			}
 

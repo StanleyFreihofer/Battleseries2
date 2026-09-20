@@ -30,6 +30,7 @@
 #include "PhysicsEngine/PhysicsAsset.h"
 #include "Components/AudioComponent.h"
 #include "ChaosVehicleMovementComponent.h"
+#include "Core/Combat/VehicleHealthComponent.h"
 
 // Sets default values
 AVehicle_Base::AVehicle_Base()
@@ -44,6 +45,7 @@ AVehicle_Base::AVehicle_Base()
 	ChaosVehicleMovement->SetUpdatedComponent(VehicleMeshComponent);
 	InteractionWidgetComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("Interaction Widget"));
 	VehicleWeaponLogicComponent = CreateDefaultSubobject<UVehicleWeaponLogicComponent>(TEXT("Vehicle Weapon Logic Component"));
+	VehicleHealthComponent = CreateDefaultSubobject<UVehicleHealthComponent>("Vehicle Health Component");
 	SpawnComponent = CreateDefaultSubobject<USpawnComponent>(TEXT("Spawn Component"));
 	SpawnComponent->SetupAttachment(GetRootComponent());
 	InteractionWidgetComponent->SetupAttachment(VehicleMeshComponent, "InteractIcon");
@@ -387,6 +389,7 @@ void AVehicle_Base::Init_Vehicle()
 	Init_VehicleAnim(VehicleData->Anim_Class.Get());
 	ApplyCamoToVehicle(VehicleStartingData.StartingVehicleLoadout.VehicleCamo);
 	SpawnComponent->Init_SpawnData(VehicleData->Vehicle_DisplayName, VehicleData->VehicleIcon.Get(), ESpawnType::Vehicle);
+	VehicleHealthComponent->Init_VehicleHealth(VehicleStartingData.StartingHealth);
 	
 	Init_Vehicle_Finalize();
 }
@@ -1648,6 +1651,18 @@ bool AVehicle_Base::GetIfCanLockOn_Implementation(const TArray<ETargetingCategor
 			return false;
 	}
 	return false;
+}
+
+EArmorType AVehicle_Base::GetArmorType_Implementation()
+{
+	return VehicleData->VehicleHealthData.BaseHealthData.ArmorType;
+}
+
+float AVehicle_Base::GetHitZoneMultiplier_Implementation(FName BoneName, FVector HitLocation)
+{
+	FName ArmorName = VehicleHealthComponent->GetVehicleArmorZone(HitLocation);
+	float ArmorMultiplier = *UBS2FunctionLibrary::GetDataSubsystem(this)->GetVehicleDefaults()->VehicleCombatDefinition.ArmorHitMultipliers.Find(ArmorName);
+	return ArmorMultiplier;
 }
 
 

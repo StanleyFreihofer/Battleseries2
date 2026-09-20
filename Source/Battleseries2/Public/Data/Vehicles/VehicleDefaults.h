@@ -26,6 +26,33 @@ struct FVehicleTypeDefintion        //entity type definition (store in core inst
     //default turrets, weapons, etc?
 };
 
+USTRUCT(BlueprintType)
+struct FVehicleCombatDefinition
+{
+    GENERATED_BODY()
+    
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ToolTip = "hits within this many degrees of forward count as front armor"))
+    float FrontArmorAngle = 45.f;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ToolTip = "hits within this many degrees of directly behind count as rear armor"))
+    float RearArmorAngle = 45.f;
+    
+    UPROPERTY(EditAnywhere, BlueprintReadOnly)
+    float SideArmorAngle = 45.f;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ToolTip = "hits within this many degrees of straight-down onto the vehicle count as top armor"))
+    float TopArmorAngle = 30.f;
+    
+    UPROPERTY(EditAnywhere, BlueprintReadOnly)
+    TMap<FName, float> ArmorHitMultipliers = 
+    {
+        {"FrontArmor", 0.75f},
+        {"RearArmor", 1.0f},
+        {"SideArmor", 2.0f},
+        {"TopArmor", 1.25f}
+    };
+};
+
 UCLASS(BlueprintType)
 class BATTLESERIES2_API UDA_VehicleDefaults : public UDataAsset
 {
@@ -37,4 +64,7 @@ public:
 
     UPROPERTY(EditAnywhere, BlueprintReadOnly)
     TMap<EVehicleType, FVehicleTypeDefintion> VehicleTypeDefintions;
+    
+    UPROPERTY(EditAnywhere, BlueprintReadOnly)
+    FVehicleCombatDefinition VehicleCombatDefinition = FVehicleCombatDefinition();
 };
