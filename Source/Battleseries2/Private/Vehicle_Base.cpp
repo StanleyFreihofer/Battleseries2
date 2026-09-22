@@ -827,6 +827,7 @@ void AVehicle_Base::DropGunner(TWeakObjectPtr<ACharacter_Base> Character, int32&
 
 void AVehicle_Base::AttemptEnterVehicle(ACharacter_Base* Character)
 {
+	if (GetIsVehicleDestroyed())	{ return; }
 	bool bFoundSeat = CycleThroughSeats(Character);
 	if (bFoundSeat)
 	{
@@ -1612,12 +1613,14 @@ AVehicle_Base& AVehicle_Base::GetVehicle()
 
 void AVehicle_Base::GetInteractObjectInfo_Implementation(FText& ObjectName, TSoftObjectPtr<UTexture2D>& ObjectIcon)
 {
+	if (GetIsVehicleDestroyed())	{ return; }
 	ObjectName = VehicleData->Vehicle_DisplayName;
 	ObjectIcon = VehicleData->VehicleIcon;
 }
 
 bool AVehicle_Base::GetIfCanLockOn_Implementation(const TArray<ETargetingCategory>& TargetingCategories, EHomingCapability HomingCapability)
 {
+	if (GetIsVehicleDestroyed())	{ return false; }
 	switch (HomingCapability)
 	{
 		case EHomingCapability::NoHoming:
@@ -1655,13 +1658,14 @@ bool AVehicle_Base::GetIfCanLockOn_Implementation(const TArray<ETargetingCategor
 
 EArmorType AVehicle_Base::GetArmorType_Implementation()
 {
-	return VehicleData->VehicleHealthData.BaseHealthData.ArmorType;
+	//cache vehicle type definition as ptr?
+	return UBS2FunctionLibrary::GetDataSubsystem(this)->GetVehicleDefaults()->VehicleTypeDefintions.Find(VehicleData->Vehicle_Type)->VehicleHealthDefinition.BaseHealthData.ArmorType;
 }
 
 float AVehicle_Base::GetHitZoneMultiplier_Implementation(FName BoneName, FVector HitLocation)
 {
 	FName ArmorName = VehicleHealthComponent->GetVehicleArmorZone(HitLocation);
-	float ArmorMultiplier = *UBS2FunctionLibrary::GetDataSubsystem(this)->GetVehicleDefaults()->VehicleCombatDefinition.ArmorHitMultipliers.Find(ArmorName);
+	float ArmorMultiplier = *UBS2FunctionLibrary::GetDataSubsystem(this)->GetVehicleDefaults()->VehicleTypeDefintions.Find(VehicleData->Vehicle_Type)->VehicleCombatDefinition.ArmorHitMultipliers.Find(ArmorName);
 	return ArmorMultiplier;
 }
 

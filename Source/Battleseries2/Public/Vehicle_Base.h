@@ -337,6 +337,8 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	float GetVehicleHealth()	{ return VehicleHealthComponent->VehicleHealthState.BaseHealthState.CurrentHealth; }
 	UFUNCTION(BlueprintCallable, BlueprintPure)
+	bool GetIsVehicleDestroyed()	{ return GetVehicleHealth() <= 0;}
+	UFUNCTION(BlueprintCallable, BlueprintPure)
 	bool IsInitialized() const { return VehicleCurrentState.bIsInitialized; }
 
 #pragma region InterfaceGetters

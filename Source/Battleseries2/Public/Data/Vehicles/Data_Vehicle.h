@@ -10,7 +10,6 @@
 #include "ChaosWheeledVehicleMovementComponent.h"
 #include "Data/Vehicles/Data_Seat.h"
 #include "Data/Vehicles/VehicleEnums.h"
-#include "Data/Core/Combat/Data_Combat.h"
 #include "Data_Vehicle.generated.h"
 
 USTRUCT(BlueprintType)
@@ -649,21 +648,6 @@ struct FJetData
 };
 
 USTRUCT(BlueprintType)
-struct FVehicleHealthData
-{
-	GENERATED_BODY()
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	FHealthData BaseHealthData = FHealthData();
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ToolTip = "% of max health dealt in a single hit to cause a mobility hit (movement impacted but not disabled)"))
-	float MobilityHitThreshold = 0.30f;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ToolTip = "% of max health dealt in a single hit to cause a mobility kill (movement fully disabled)"))
-	float MobilityKillThreshold = 0.40f;
-};
-
-USTRUCT(BlueprintType)
 struct FVehicleData : public FTableRowBase		
 {
 	GENERATED_BODY()
@@ -723,9 +707,6 @@ struct FVehicleData : public FTableRowBase
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (EditCondition = "Movement_Type == E_MovementType::Helicopter || Movement_Type == E_MovementType::Jet", EditConditionHides))
 	FAircraftData Aircraft_Data = FAircraftData();
-	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	FVehicleHealthData VehicleHealthData = FVehicleHealthData();
 
 	// --- Static helper function to get row names by vehicle type ---
 	static TArray<FName> GetRowNamesOfType(UDataTable* VehicleDataTable, EVehicleType TypeToFilter)

@@ -445,7 +445,7 @@ void UBS2FunctionLibrary::HandleApplyDamage(FBaseProjectileState BaseMunitionSta
 			-1,
 			10.0f,
 			FColor::Cyan,
-			FString::Printf(TEXT("Damage Dealt = : %f, HitzoneMultipler = %f, ArmorType = %s, BaseDmg = %f, "), FinalDamage, HitzoneMultiplier, *EnumString, MunitionDamageData.BaseDamageData.BaseDamage)
+			FString::Printf(TEXT("Damage Dealt = %f, HitzoneMultipler = %f, ArmorType = %s, BaseDmg = %f, "), FinalDamage, HitzoneMultiplier, *EnumString, MunitionDamageData.BaseDamageData.BaseDamage)
 		);
 	}
 	

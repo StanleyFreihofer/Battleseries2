@@ -1,10 +1,14 @@
 ﻿
 #include "Core/Combat/VehicleHealthComponent.h"
+
+#include "NiagaraFunctionLibrary.h"
+#include "NiagaraSystem.h"
 #include "Utilities/BS2FunctionLibrary.h"
 #include "Utilities/DataManagerSubsystem.h"
-
 #include "Data/Vehicles/VehicleDefaults.h"
 #include "GameFramework/Actor.h"
+
+class UNiagaraSystem;
 
 UVehicleHealthComponent::UVehicleHealthComponent()
 {
@@ -25,20 +29,56 @@ void UVehicleHealthComponent::Init_VehicleHealth(float StartingHealth)
 void UVehicleHealthComponent::HandleVehicleDestroyed()
 {
 	TObjectPtr<USkeletalMeshComponent> VehicleMeshComponent = OwnerDataAccessor->GetMesh();
-	
-	//explosion vfx (also to mask the spawning of the mesh or something)
-	
 	TObjectPtr<UStaticMesh> DestroyedMesh = UBS2FunctionLibrary::GetDataSubsystem(GetOwner())->GetVehicleDataRow(OwnerDataAccessor->GetVehicleID())->DestroyedMesh.LoadSynchronous();
-	
-	
-	VehicleMeshComponent->SetVisibility(false);
-	VehicleMeshComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-
+	UMaterialInterface* DestroyedMaterial = DestroyedMesh->GetMaterial(0);   
 	VehicleHealthState.DestroyedMesh = NewObject<UStaticMeshComponent>(this);
-	VehicleHealthState.DestroyedMesh->SetupAttachment(VehicleMeshComponent);
-	VehicleHealthState.DestroyedMesh->RegisterComponent();
+	VehicleHealthState.DestroyedMesh->SetupAttachment(GetOwner()->GetRootComponent());
+	FVector RelLoc = VehicleHealthState.DestroyedMesh->GetRelativeLocation();
+	VehicleHealthState.DestroyedMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	VehicleHealthState.DestroyedMesh->SetVisibility(false);
 	VehicleHealthState.DestroyedMesh->SetStaticMesh(DestroyedMesh);
-	VehicleHealthState.DestroyedMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+	VehicleHealthState.DestroyedMesh->RegisterComponent();
+
+	TArray<TSoftObjectPtr<UNiagaraSystem>> DestroyFXs = UBS2FunctionLibrary::GetDataSubsystem(this)->GetVehicleDefaults()->VehicleTypeDefintions.Find(OwnerDataAccessor->GetVehicleData().Vehicle_Type)->VehicleCombatDefinition.InitialFireballFX;
+	int32 RandomIndex = FMath::RandRange(0, DestroyFXs.Num() - 1);
+	TSoftObjectPtr<UNiagaraSystem> DestroyFX = DestroyFXs[RandomIndex];
+	TObjectPtr<UNiagaraSystem> Explosion = DestroyFX.LoadSynchronous();
+	UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), Explosion, GetOwner()->GetActorLocation(), GetOwner()->GetActorRotation());
+	
+	VehicleMeshComponent->SetMaterial(0, DestroyedMaterial);
+
+    GetWorld()->GetTimerManager().SetTimer(VehicleHealthState.BaseHealthState.RegenTimer, this, &UVehicleHealthComponent::RevealDestroyedVehicle, GetWorld()->GetDeltaSeconds(), true);
+}
+
+void UVehicleHealthComponent::RevealDestroyedVehicle()
+{
+	TObjectPtr<USkeletalMeshComponent> VehicleMeshComponent = OwnerDataAccessor->GetMesh();
+	const int32 NumBones = VehicleMeshComponent->GetNumBones();
+	const int32 NumLODs = VehicleMeshComponent->GetSkeletalMeshAsset()->GetLODNum();
+	int32 RandNumOfBonesToHide  = FMath::RandRange(10, NumBones);
+	CurrentLODStep++;
+
+	if (CurrentLODStep >= NumLODs)
+	{
+		GetWorld()->GetTimerManager().ClearTimer(LODTimerHandle);
+		VehicleMeshComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		VehicleHealthState.DestroyedMesh->SetVisibility(true);
+		VehicleHealthState.DestroyedMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+		VehicleMeshComponent->SetVisibility(false);
+		return;
+	}
+	
+	for (int32 i = 0; i < RandNumOfBonesToHide; i++)
+	{
+		int32 RandBoneToHide = FMath::RandRange(0, VehicleMeshComponent->GetNumBones());
+		FName BoneName = VehicleMeshComponent->GetBoneName(RandBoneToHide);
+		VehicleMeshComponent->HideBoneByName(BoneName, PBO_None);
+	}
+
+	VehicleMeshComponent->SetForcedLOD(CurrentLODStep + 1);
+
+	
+	//fire vfx around mesh
 }
 
 void UVehicleHealthComponent::HandleTakeAnyDamage(AActor* DamagedActor, float Damage, const class UDamageType* DamageType, class AController* InstigatedBy, AActor* DamageCauser)
@@ -56,7 +96,7 @@ void UVehicleHealthComponent::HandleTakeAnyDamage(AActor* DamagedActor, float Da
 
 FName UVehicleHealthComponent::GetVehicleArmorZone(const FVector& HitLocation)
 {
-	//SOCKETS SHOULD BE PARENTED TO ROUT
+	//SOCKETS SHOULD BE PARENTED TO ROOT
 	const AActor* Owner = GetOwner();
 	USkeletalMeshComponent* VehicleMeshComponent = OwnerDataAccessor->GetMesh();
 	const UDA_VehicleDefaults& Defaults = *UBS2FunctionLibrary::GetDataSubsystem(GetOwner())->GetVehicleDefaults();
@@ -72,7 +112,7 @@ FName UVehicleHealthComponent::GetVehicleArmorZone(const FVector& HitLocation)
 	
 	// Top stays angle-based — a cone around "up" is the right shape for this zone
 	const float AngleFromUp = FMath::RadiansToDegrees(FMath::Acos(FVector::DotProduct(Owner->GetActorUpVector(), ToHit)));
-	if (AngleFromUp <= Defaults.VehicleCombatDefinition.TopArmorAngle)
+	if (AngleFromUp <= Defaults.VehicleTypeDefintions.Find(OwnerDataAccessor->GetVehicleData().Vehicle_Type)->VehicleCombatDefinition.TopArmorAngle)
 	{
 		return "TopArmor";
 	}

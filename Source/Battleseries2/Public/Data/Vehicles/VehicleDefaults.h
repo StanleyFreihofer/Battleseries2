@@ -2,6 +2,8 @@
 
 #include "CoreMinimal.h"
 #include "Engine/DataAsset.h"
+#include "NiagaraSystem.h"
+#include "Data/Core/Combat/Data_Combat.h"
 #include "VehicleDefaults.generated.h"
 
 enum class EVehicleType : uint8;
@@ -9,21 +11,18 @@ enum class EVehicleType : uint8;
 //defines traits of a vehicle type
 
 USTRUCT(BlueprintType)
-struct FVehicleTypeDefintion        //entity type definition (store in core instead?)
+struct FVehicleTypeHealthDefinition
 {
-	GENERATED_BODY()
+    GENERATED_BODY()
 
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-    FText DisplayName = FText::GetEmpty();
+    UPROPERTY(EditAnywhere, BlueprintReadOnly)
+    FHealthData BaseHealthData = FHealthData();
 
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-    FText Description = FText::GetEmpty();
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ToolTip = "% of max health dealt in a single hit to cause a mobility hit (movement impacted but not disabled)"))
+    float MobilityHitThreshold = 0.30f;
 
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-    TSoftObjectPtr<UTexture2D> TypeIcon = nullptr;               //minimap?
-
-    //default seat count?
-    //default turrets, weapons, etc?
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ToolTip = "% of max health dealt in a single hit to cause a mobility kill (movement fully disabled)"))
+    float MobilityKillThreshold = 0.40f;
 };
 
 USTRUCT(BlueprintType)
@@ -42,7 +41,39 @@ struct FVehicleCombatDefinition
         {"SideArmor", 2.0f},
         {"TopArmor", 1.25f}
     };
+    
+    UPROPERTY(EditAnywhere, BlueprintReadOnly)
+    TArray<TSoftObjectPtr<UNiagaraSystem>> InitialFireballFX;
+    
+    UPROPERTY(EditAnywhere, BlueprintReadOnly)
+    TArray<TSoftObjectPtr<UNiagaraSystem>> ExplosionFX;
 };
+
+USTRUCT(BlueprintType)
+struct FVehicleTypeDefintion        //entity type definition (store in core instead?)
+{
+	GENERATED_BODY()
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+    FText DisplayName = FText::GetEmpty();
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+    FText Description = FText::GetEmpty();
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+    TSoftObjectPtr<UTexture2D> TypeIcon = nullptr;               //minimap?
+    
+    UPROPERTY(EditAnywhere, BlueprintReadOnly)
+    FVehicleTypeHealthDefinition VehicleHealthDefinition = FVehicleTypeHealthDefinition();
+    
+    UPROPERTY(EditAnywhere, BlueprintReadOnly)
+    FVehicleCombatDefinition VehicleCombatDefinition = FVehicleCombatDefinition();
+
+    //default seat count?
+    //default turrets, weapons, etc?
+};
+
+
 
 UCLASS(BlueprintType)
 class BATTLESERIES2_API UDA_VehicleDefaults : public UDataAsset
@@ -55,7 +86,4 @@ public:
 
     UPROPERTY(EditAnywhere, BlueprintReadOnly)
     TMap<EVehicleType, FVehicleTypeDefintion> VehicleTypeDefintions;
-    
-    UPROPERTY(EditAnywhere, BlueprintReadOnly)
-    FVehicleCombatDefinition VehicleCombatDefinition = FVehicleCombatDefinition();
 };

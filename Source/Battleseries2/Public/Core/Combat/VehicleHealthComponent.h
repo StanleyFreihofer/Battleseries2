@@ -33,6 +33,8 @@ public:
 	
 	UFUNCTION(BlueprintCallable)
 	void HandleVehicleDestroyed();
+	UFUNCTION(BlueprintCallable)
+	void RevealDestroyedVehicle();
 	
 	
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Battleseries | Vehicles")
@@ -47,4 +49,7 @@ protected:
 	
 private:
 	IVehicleDataAccessor* OwnerDataAccessor;
+	
+	int32 CurrentLODStep = 0;
+	FTimerHandle LODTimerHandle;
 };
