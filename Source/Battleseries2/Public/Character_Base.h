@@ -156,12 +156,6 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void UpdateHeadRotation(FRotator HeadRotation);
 
-#pragma region Vehicle
-
-
-
-#pragma endregion
-
 	UFUNCTION()
 	void UpdateViewTarget(TWeakObjectPtr<AActor> NewViewTarget, TWeakObjectPtr<UCameraComponent> CameraComponent);
 
@@ -179,8 +173,7 @@ public:
 	void ShowCharacterMesh();
 	UFUNCTION(BlueprintCallable)
 	void UpdateCharacterMeshVisibility(bool ShowMesh);
-	UFUNCTION(BlueprintCallable)
-	void UpdateRangefinder_WindowedVehicle();
+
 
 
 	

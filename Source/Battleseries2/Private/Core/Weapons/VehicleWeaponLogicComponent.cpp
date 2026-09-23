@@ -1300,6 +1300,11 @@ void UVehicleWeaponLogicComponent::StartAutoload(int32 SeatIndex, int32 WeaponIn
 	{
 		AutoloadNewMag(SeatIndex, WeaponIndex, MagSize);
 	}, ReloadSpeed, false);
+	
+	if (StaticWeaponData.AmmoData.AutoRefillReserve)
+	{
+		
+	}
 		//set another timer to track previous timers progress for ui purposes
 }
 
@@ -1722,6 +1727,11 @@ TWeakObjectPtr<UAudioComponent> UVehicleWeaponLogicComponent::GetWAC(int32& Seat
 	FVehicleWeaponSystem_Runtime& SeatWeaponSystem = *VehicleWeaponSystem.Find(SeatIndex);
 	TWeakObjectPtr<UAudioComponent> WAC = SeatWeaponSystem.VehicleWeaponSystemState.WeaponAudioComponent;
 	return WAC;
+}
+
+FName UVehicleWeaponLogicComponent::GetEquippedWeaponIDInSeat(int32 SeatIndex) 
+{
+	return GetEquippedWeaponInSeat(SeatIndex).VehicleWeaponState.BaseWeaponRuntimeData.WeaponID;
 }
 
 #pragma endregion

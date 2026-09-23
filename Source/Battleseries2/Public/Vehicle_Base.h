@@ -325,13 +325,17 @@ public:
 	
 
 #pragma region Getters
-
+	
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	int32 GetControlledTurret(int32 SeatIndex);
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	void GetTurretPitchRange(int32 TurretIndex, float& OutMin, float& OutMax, float& OutCurrent);
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	UCameraComponent* GetSeatWeaponCam(int32 SeatIndex);
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	UCameraComponent* GetRemoteActiveCam(int32 SeatIndex);
+	UFUNCTION(BlueprintCallable)
+	float GetCurrentSpeed();
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	float GetCurrentSpeed_Chaos();
 	UFUNCTION(BlueprintCallable, BlueprintPure)

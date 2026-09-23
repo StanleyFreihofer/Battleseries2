@@ -282,6 +282,8 @@ public:
 	UNiagaraComponent* DebugMuzzleVFXPool(int32 SeatIndex, int32 WeaponIndex);
 	UFUNCTION()
 	TWeakObjectPtr<UAudioComponent> GetWAC(int32& SeatIndex);
+	
+	FName GetEquippedWeaponIDInSeat(int32 SeatIndex);
 
 protected:
 	//(SeatIndex, [WeaponIndex] BaseWeaponData)

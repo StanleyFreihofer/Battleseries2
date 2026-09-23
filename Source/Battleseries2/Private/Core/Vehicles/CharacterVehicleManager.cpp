@@ -80,37 +80,46 @@ void UCharacterVehicleManager::CharacterEnterVehicle()
 	//if Vehicle RC Data does actually become a thing, certain things here need to be blocked based on that new property's value
 	if (!GetCurrentVehicle()->VehicleData->bCanRemoteControl)
 	{
-		//only if physically enters vehicle
-		GetOwnerCharacter()->GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Vehicle, ECR_Ignore);
-		GetOwnerCharacter()->GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Vehicle, ECollisionResponse::ECR_Ignore);
-		GetOwnerCharacter()->FPArms->SetCollisionResponseToChannel(ECC_Vehicle, ECR_Ignore);
-		GetOwnerCharacter()->FPLegs->SetCollisionResponseToChannel(ECC_Vehicle, ECR_Ignore);
-		for (int32 i = 0; i < GetOwnerCharacter()->LoadoutManager->Loadout.WeaponSystem.BaseWeaponState.Weapons.Num(); i++)
-		{
-			GetOwnerCharacter()->LoadoutManager->UpdateWeaponCollision(ECC_Vehicle, ECR_Ignore, i);
-		}
-		for (int32 G = 0; G < GetOwnerCharacter()->LoadoutManager->Loadout.Gadgets.Num(); G++)
-		{
-			GetOwnerCharacter()->LoadoutManager->UpdateGadgetCollision(ECC_Vehicle, ECR_Ignore, G);
-		}
-		GetOwnerCharacter()->GetCharacterMovement()->SetMovementMode(MOVE_None);
-		GetOwnerCharacter()->AttachToActor(GetCurrentVehicle(), FAttachmentTransformRules::KeepRelativeTransform);
-		
-		GetOwnerCharacter()->FPArmsSpringArm->bUsePawnControlRotation = false;
-		GetOwnerCharacter()->FPArmsSpringArm->bInheritRoll = true;
-		GetOwnerCharacter()->FPArmsSpringArm->bEnableCameraLag = false;
-		GetOwnerCharacter()->FPCamera->bUsePawnControlRotation = false;
-		GetOwnerCharacter()->FPCamera->SetRelativeRotation(FRotator());
-		GetOwnerCharacter()->bUseControllerRotationYaw = false;
+		PhysicallyEnterVehicle();
 	}
 
 	GetOwnerCharacter()->ManageIMC(UBS2FunctionLibrary::GetDataSubsystem(this)->GetCharacterDefaults()->DefaultGameplayIMC.Get(), nullptr, -1);
 	if (GetOwnerCharacter()->IsLocallyControlled())
 	{
-		GetCurrentVehicle()->VehicleHealthComponent->OnVehicleHealthChanged.AddDynamic(this, &UCharacterVehicleManager::OnVehicleHealthChanged);
-		UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateStatusHUD_VehicleHealth(GetCurrentVehicle()->GetVehicleHealth());
-		UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateStatusHUD_VehicleStatusVisibility(false);
+		EnterVehicle_LocalPlayer();
 	}
+}
+
+void UCharacterVehicleManager::EnterVehicle_LocalPlayer()
+{
+	GetCurrentVehicle()->VehicleHealthComponent->OnVehicleHealthChanged.AddDynamic(this, &UCharacterVehicleManager::OnVehicleHealthChanged);
+	UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateStatusHUD_VehicleHealth(GetCurrentVehicle()->GetVehicleHealth());
+	UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateStatusHUD_VehicleStatusVisibility(false);
+}
+
+void UCharacterVehicleManager::PhysicallyEnterVehicle()
+{
+	GetOwnerCharacter()->GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Vehicle, ECR_Ignore);
+	GetOwnerCharacter()->GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Vehicle, ECollisionResponse::ECR_Ignore);
+	GetOwnerCharacter()->FPArms->SetCollisionResponseToChannel(ECC_Vehicle, ECR_Ignore);
+	GetOwnerCharacter()->FPLegs->SetCollisionResponseToChannel(ECC_Vehicle, ECR_Ignore);
+	for (int32 i = 0; i < GetOwnerCharacter()->LoadoutManager->GetNumWeapons(); i++)
+	{
+		GetOwnerCharacter()->LoadoutManager->UpdateWeaponCollision(ECC_Vehicle, ECR_Ignore, i);
+	}
+	for (int32 G = 0; G < GetOwnerCharacter()->LoadoutManager->GetNumGadgets(); G++)
+	{
+		GetOwnerCharacter()->LoadoutManager->UpdateGadgetCollision(ECC_Vehicle, ECR_Ignore, G);
+	}
+	GetOwnerCharacter()->GetCharacterMovement()->SetMovementMode(MOVE_None);
+	GetOwnerCharacter()->AttachToActor(GetCurrentVehicle(), FAttachmentTransformRules::KeepRelativeTransform);
+		
+	GetOwnerCharacter()->FPArmsSpringArm->bUsePawnControlRotation = false;
+	GetOwnerCharacter()->FPArmsSpringArm->bInheritRoll = true;
+	GetOwnerCharacter()->FPArmsSpringArm->bEnableCameraLag = false;
+	GetOwnerCharacter()->FPCamera->bUsePawnControlRotation = false;
+	GetOwnerCharacter()->FPCamera->SetRelativeRotation(FRotator());
+	GetOwnerCharacter()->bUseControllerRotationYaw = false;
 }
 
 void UCharacterVehicleManager::CharacterExitVehicle()
@@ -122,21 +131,7 @@ void UCharacterVehicleManager::CharacterExitVehicle()
 		
 		if (!GetCurrentVehicle()->VehicleData->bCanRemoteControl)
 		{
-			GetOwnerCharacter()->DetachFromActor(FDetachmentTransformRules::KeepRelativeTransform);
-
-			FVector ExitLocation = CalculateSafeExitLocation(GetCurrentVehicle());
-			GetOwnerCharacter()->SetActorLocation(ExitLocation);
-
-			GetOwnerCharacter()->HandleUpdateStance(ECharacterStance::Standing);
-			GetOwnerCharacter()->GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Vehicle, ECR_Block);
-			GetOwnerCharacter()->GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Vehicle, ECollisionResponse::ECR_Block);
-			GetOwnerCharacter()->GetCharacterMovement()->SetMovementMode(MOVE_Walking);		//make this more dynamic (are we falling out of ejecting from a jet for example)
-
-			GetOwnerCharacter()->FPCamera->bUsePawnControlRotation = true;
-			GetOwnerCharacter()->bUseControllerRotationYaw = true;
-			GetOwnerCharacter()->FPArmsSpringArm->bUsePawnControlRotation = true;
-			GetOwnerCharacter()->FPArmsSpringArm->bInheritRoll = false;
-			GetOwnerCharacter()->FPArmsSpringArm->bEnableCameraLag = true;
+			PhysicallyExitVehicle();
 		}
 
 		GetOwnerCharacter()->UpdateViewTarget(GetOwnerCharacter(), GetOwnerCharacter()->FPCamera);
@@ -145,15 +140,39 @@ void UCharacterVehicleManager::CharacterExitVehicle()
 	
 		if (GetOwnerCharacter()->LoadoutManager->GetIsCurrentSlotActuallyWeapon() && GetOwnerCharacter()->IsLocallyControlled())
 		{
-			GetCurrentVehicle()->VehicleHealthComponent->OnVehicleHealthChanged.RemoveDynamic(this, &UCharacterVehicleManager::OnVehicleHealthChanged);
-			FWeaponState& CurrentWeapon = *GetOwnerCharacter()->LoadoutManager->GetCurrentWeaponBaseState();
-			UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateStatusHUD_CAMCount(CurrentWeapon.CurrentAmmoinMag);
-			UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateStatusHUD_CRACount(CurrentWeapon.CurrentReserveAmmo);
-			UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateStatusHUD_VehicleStatusVisibility(true);
+			ExitVehicle_LocalPlayer();
 		}
 		
 		CharacterVehicleState = FCharacterVehicleState();
 	}
+}
+
+void UCharacterVehicleManager::ExitVehicle_LocalPlayer()
+{
+	GetCurrentVehicle()->VehicleHealthComponent->OnVehicleHealthChanged.RemoveDynamic(this, &UCharacterVehicleManager::OnVehicleHealthChanged);
+	FWeaponState& CurrentWeapon = *GetOwnerCharacter()->LoadoutManager->GetCurrentWeaponBaseState();
+	UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateStatusHUD_CAMCount(CurrentWeapon.CurrentAmmoinMag);
+	UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateStatusHUD_CRACount(CurrentWeapon.CurrentReserveAmmo);
+	UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateStatusHUD_VehicleStatusVisibility(true);
+}
+
+void UCharacterVehicleManager::PhysicallyExitVehicle()
+{
+	GetOwnerCharacter()->DetachFromActor(FDetachmentTransformRules::KeepRelativeTransform);
+
+	FVector ExitLocation = CalculateSafeExitLocation(GetCurrentVehicle());
+	GetOwnerCharacter()->SetActorLocation(ExitLocation);
+
+	GetOwnerCharacter()->HandleUpdateStance(ECharacterStance::Standing);
+	GetOwnerCharacter()->GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Vehicle, ECR_Block);
+	GetOwnerCharacter()->GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Vehicle, ECollisionResponse::ECR_Block);
+	GetOwnerCharacter()->GetCharacterMovement()->SetMovementMode(MOVE_Walking);		//make this more dynamic (are we falling out of ejecting from a jet for example)
+
+	GetOwnerCharacter()->FPCamera->bUsePawnControlRotation = true;
+	GetOwnerCharacter()->bUseControllerRotationYaw = true;
+	GetOwnerCharacter()->FPArmsSpringArm->bUsePawnControlRotation = true;
+	GetOwnerCharacter()->FPArmsSpringArm->bInheritRoll = false;
+	GetOwnerCharacter()->FPArmsSpringArm->bEnableCameraLag = true;
 }
 
 void UCharacterVehicleManager::CharacterEnterSeat(const FCharacterSeatContext& SeatContext)
@@ -169,19 +188,7 @@ void UCharacterVehicleManager::CharacterEnterSeat(const FCharacterSeatContext& S
 				break;
 			case E_SeatRole::DriverGunner:
 			case E_SeatRole::Gunner:
-				TObjectPtr<UVehicleWeaponLogicComponent> VWLC = GetCurrentVehicle()->VehicleWeaponLogicComponent;
-				const FVehicleWeaponInstanceData& VWID = VWLC->GetVWID(GetCSI(), VWLC->GetCWIForSeat(GetCSI()), VWLC->GetEquippedWeaponInSeat(GetCSI()).VehicleWeaponState.BaseWeaponRuntimeData.WeaponID);
-				if (VWID.AttachmentInstanceData.bAttachCharacter)
-				{
-					TWeakObjectPtr<USkeletalMeshComponent> WeaponMesh = VWLC->VehicleWeaponSystem.Find(GetCSI())->VehicleWeaponSystemState.WeaponSystemMesh;
-					FAttachmentTransformRules AttachmentRules(EAttachmentRule::SnapToTarget, false);
-					GetOwnerCharacter()->GetRootComponent()->AttachToComponent(WeaponMesh.Get(), AttachmentRules, FName("Test"));
-					GetOwnerCharacter()->SetActorRelativeTransform(VWID.AttachmentInstanceData.CharacterTransform);
-				}
-				else
-				{
-					GetOwnerCharacter()->SetActorRelativeTransform(SeatContext.SeatTransform);
-				}
+				HandleEnterSeat_Gunner(SeatContext);
 				break;
 		}
 
@@ -197,7 +204,23 @@ void UCharacterVehicleManager::CharacterEnterSeat(const FCharacterSeatContext& S
 	}
 
 	UpdateUI_EnterSeat();
+}
 
+void UCharacterVehicleManager::HandleEnterSeat_Gunner(const FCharacterSeatContext& SeatContext)
+{
+	TObjectPtr<UVehicleWeaponLogicComponent> VWLC = GetCurrentVehicle()->VehicleWeaponLogicComponent;
+	const FVehicleWeaponInstanceData& VWID = VWLC->GetVWID(GetCSI(), VWLC->GetCWIForSeat(GetCSI()), VWLC->GetEquippedWeaponIDInSeat(GetCSI()));
+	if (VWID.AttachmentInstanceData.bAttachCharacter)
+	{
+		TWeakObjectPtr<USkeletalMeshComponent> WeaponMesh = VWLC->VehicleWeaponSystem.Find(GetCSI())->VehicleWeaponSystemState.WeaponSystemMesh;
+		FAttachmentTransformRules AttachmentRules(EAttachmentRule::SnapToTarget, false);
+		GetOwnerCharacter()->GetRootComponent()->AttachToComponent(WeaponMesh.Get(), AttachmentRules, FName("Test"));
+		GetOwnerCharacter()->SetActorRelativeTransform(VWID.AttachmentInstanceData.CharacterTransform);
+	}
+	else
+	{
+		GetOwnerCharacter()->SetActorRelativeTransform(SeatContext.SeatTransform);
+	}
 }
 
 void UCharacterVehicleManager::CharacterExitSeat(const FCharacterSeatContext& SeatContext)
@@ -285,32 +308,35 @@ void UCharacterVehicleManager::UpdateUI_EnterSeat()
 	switch (GetCurrentVehicle()->VehicleData->Seats[GetCSI()].SeatRole)
 	{
 		case E_SeatRole::Driver:
-			UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateSpeedHUD_Vehicle(GetCurrentVehicle()->GetVelocity().Size());
+			UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateSpeedHUD_Vehicle(GetCurrentVehicle()->GetCurrentSpeed());
 			break;
 		case E_SeatRole::Gunner:
+			UpdateUI_EnterSeat_Turrets();
 			break;
 		case E_SeatRole::DriverGunner:
 			//HUD
-			UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateSpeedHUD_Vehicle(GetCurrentVehicle()->GetVelocity().Size());
-
-			//turrets/heading
-			if (UCameraComponent* ActiveCam = GetCurrentVehicle()->GetRemoteActiveCam(GetCSI()))
-			{
-				UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateCompassHUD_Vehicle(ActiveCam->GetComponentRotation().Yaw);
-				UBS2FunctionLibrary::GetHUDSubsystem(this)->HandleTurretRotationUpdate(ActiveCam->GetComponentRotation().Yaw);
-			}
-			if (GetCurrentVehicle()->VehicleData->Seats[GetCSI()].AvailableItems.ControlledTurretIndexes.Num())
-			{
-				const int32& CTI = GetCurrentVehicle()->GetControlledTurret(GetCSI());
-
-				UBS2FunctionLibrary::GetHUDSubsystem(this)->HandleTurretPitchUpdate
-				(
-					GetCurrentVehicle()->VehicleData->Turrets[CTI].TurretPitch.TurretMinMax.GetLowerBoundValue(),
-					GetCurrentVehicle()->VehicleData->Turrets[CTI].TurretPitch.TurretMinMax.GetUpperBoundValue(),
-					GetCurrentVehicle()->VehicleWeaponLogicComponent->TurretStates[CTI].CurrentTurretPitch
-				);
-			}
+			UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateSpeedHUD_Vehicle(GetCurrentVehicle()->GetCurrentSpeed());
+			UpdateUI_EnterSeat_Turrets();
 			break;
+	}
+}
+
+void UCharacterVehicleManager::UpdateUI_EnterSeat_Turrets()
+{
+	//turrets/heading
+	if (UCameraComponent* ActiveCam = GetCurrentVehicle()->GetRemoteActiveCam(GetCSI()))
+	{
+		UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateCompassHUD_Vehicle(ActiveCam->GetComponentRotation().Yaw);
+		UBS2FunctionLibrary::GetHUDSubsystem(this)->HandleTurretRotationUpdate(ActiveCam->GetComponentRotation().Yaw);
+	}
+	if (GetCurrentVehicle()->VehicleData->Seats[GetCSI()].AvailableItems.ControlledTurretIndexes.Num())
+	{
+		const int32& CTI = GetCurrentVehicle()->GetControlledTurret(GetCSI());
+				
+		float MinPitch, MaxPitch, CurrentPitch;
+		GetCurrentVehicle()->GetTurretPitchRange(CTI, MinPitch, MaxPitch, CurrentPitch);
+
+		UBS2FunctionLibrary::GetHUDSubsystem(this)->HandleTurretPitchUpdate(MinPitch, MaxPitch, CurrentPitch);
 	}
 }
 
@@ -319,6 +345,141 @@ void UCharacterVehicleManager::OnVehicleHealthChanged()
 	if (GetOwnerCharacter()->IsLocallyControlled())
 	{
 		UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateStatusHUD_VehicleHealth(GetCurrentVehicle()->GetVehicleHealth());
+	}
+}
+
+void UCharacterVehicleManager::UpdateRangefinder_WindowedVehicle()
+{
+	//free looking? (make sure its correctly managed this time)
+	if (!GetInVehicle()|| !GetCurrentVehicle())
+	{
+		return;
+	}
+
+	const FSeatData& OccupiedSeatData = GetCurrentVehicle()->VehicleData->Seats[GetCSI()];
+	if (OccupiedSeatData.ViewMethod != E_ViewMethod::Windowed)
+	{
+		return;
+	}
+
+	TWeakObjectPtr<UVehicleWeaponLogicComponent> VWLC = GetCurrentVehicle()->VehicleWeaponLogicComponent;
+	FVehicleWeapon_Runtime& CurrentWeapon = VWLC->GetEquippedWeaponInSeat(GetCSI());
+	TArray<AActor*> IgnoreActors = {GetCurrentVehicle() };
+	FTransform TraceTransform;
+	FVector PlayerEyePos;
+
+	switch (CurrentWeapon.VehicleWeaponInstanceData.WindowedAimAnchor)
+	{
+		case EWindowedAimAnchor::FreeAim:
+			TraceTransform = GetOwnerCharacter()->FPCamera->GetComponentTransform();
+			PlayerEyePos = TraceTransform.GetLocation();
+			break;
+		case EWindowedAimAnchor::FixedHead:
+		{
+			FVector StartLocation = GetOwnerCharacter()->FPArms->GetSocketLocation(FName("FixedCamera"));
+			TraceTransform = FTransform(GetOwner()->GetActorQuat(), StartLocation);
+			PlayerEyePos = StartLocation;
+			break;
+		}
+		case EWindowedAimAnchor::FixedPoint:
+		{
+			FString SocketString = FString::Printf(TEXT("SC_%02d"), GetCSI());
+			FName SocketName = FName(*SocketString);
+			FVector StartLocation = GetCurrentVehicle()->VehicleMeshComponent->GetSocketLocation(SocketName);
+			TraceTransform = FTransform(GetCurrentVehicle()->GetActorQuat(), StartLocation);
+			PlayerEyePos = StartLocation;
+			break;
+		}
+		case EWindowedAimAnchor::Hull:
+		{
+			FVector HullStart = GetCurrentVehicle()->GetActorLocation() + (GetCurrentVehicle()->GetActorUpVector() * 100.0f);
+			TraceTransform = FTransform(GetCurrentVehicle()->GetActorQuat(), HullStart);
+			PlayerEyePos = HullStart;
+			break;
+		}
+	}
+
+	VWLC->UpdateSeatRangefinder(GetCSI(), TraceTransform, IgnoreActors);
+
+	if (!GetOwnerCharacter()->IsLocallyControlled())
+	{
+		return;
+	}
+
+	UWidgetComponent* SeatHUDComp = GetCurrentVehicle()->VehicleCurrentState.SeatStates[GetCSI()].SeatHUDComponent;
+	if (!SeatHUDComp)
+	{
+		return;
+	}
+
+	// Retrieve Hit and Component Data
+	auto* WeaponSystem = VWLC->VehicleWeaponSystem.Find(GetCSI());
+
+	FHitResult& HitResult = WeaponSystem->VehicleWeaponSystemState.EquippedWeaponState.RaycastData.RangefinderData;
+	TObjectPtr<UStaticMeshComponent> Quad = WeaponSystem->VehicleWeaponSystemState.ReticleQuad.Get();
+
+	FString SocketString = FString::Printf(TEXT("SC_%02d"), GetCSI());
+	FName SocketName = FName(*SocketString);
+	FVector StartLocation = GetCurrentVehicle()->VehicleMeshComponent->GetSocketLocation(SocketName);
+
+	/**
+	if (Quad)
+	{
+		FVector EyePos = StartLocation;	//FPCamera->GetComponentLocation();
+		FVector TargetPos = HitResult.bBlockingHit ? HitResult.ImpactPoint : TraceTransform.GetLocation() + (TraceTransform.GetUnitAxis(EAxis::X) * 100000.0f);
+
+		// Calculate where the eye-to-target line hits the HUD glass plane
+		FVector IntersectionPoint = FMath::LinePlaneIntersection(EyePos, TargetPos, SeatHUDComp->GetComponentLocation(), SeatHUDComp->GetForwardVector());
+
+		Quad->SetWorldLocation(IntersectionPoint);
+	}
+	**/
+	FPlane HUDPlane = FPlane(SeatHUDComp->GetComponentLocation(), SeatHUDComp->GetForwardVector());
+	if (Quad)
+	{
+		// 3. FIX PARALLAX: Determine what the eye point actually is for the player
+		// If FreeAim, the player is look-controlling the camera. For others, they are looking through the fixed seat glass.
+
+
+		// 4. FIX CONVERGENCE POINT: Establish exactly where the physical system hits
+		FVector TargetImpactPos;
+		if (HitResult.bBlockingHit)
+		{
+			TargetImpactPos = HitResult.ImpactPoint;
+		}
+		else
+		{
+			// Fallback if looking at the open sky: project out 1000 meters along the directional anchor axis
+			TargetImpactPos = TraceTransform.GetLocation() + (TraceTransform.GetUnitAxis(EAxis::X) * 100000.0f);
+		}
+
+		// 5. PROJECT LINE UNTO HUD GLASS: Raycast from the actual player eye to the true impact point
+		FVector IntersectionPoint;
+		bool bIntersects = FMath::SegmentPlaneIntersection(
+			PlayerEyePos,
+			TargetImpactPos,
+			HUDPlane,
+			IntersectionPoint
+		);
+
+		if (bIntersects)
+		{
+			Quad->SetWorldLocation(IntersectionPoint);
+
+			// Optional Quality of Life: Orient the quad face flat against the HUD glass plane
+			//Quad->SetWorldRotation(SeatHUDComp->GetComponentRotation());
+
+			// Ensure it stays visible when tracking cleanly
+			if (!Quad->IsVisible())
+			{
+				Quad->SetVisibility(true);
+			}
+		}
+		else
+		{
+			// If the trajectory convergence point falls entirely outside the viewport plane bounds, hide it
+			Quad->SetVisibility(false);
+		}
 	}
 }
 

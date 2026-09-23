@@ -1524,6 +1524,16 @@ void ULoadoutManager::OnDeployedVehicleGadgetReady()
 	VehicleGadget->AttemptEnterVehicle(GetOwnerCharacter());
 }
 
+int32 ULoadoutManager::GetNumWeapons()
+{
+	return Loadout.WeaponSystem.BaseWeaponState.Weapons.Num();
+}
+
+int32 ULoadoutManager::GetNumGadgets()
+{
+	return Loadout.Gadgets.Num();
+}
+
 #pragma endregion
 
 #pragma region Getters

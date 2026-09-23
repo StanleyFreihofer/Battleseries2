@@ -274,6 +274,10 @@ class BATTLESERIES2_API ULoadoutManager : public UActorComponent
 		UFUNCTION()
 		void OnDeployedVehicleGadgetReady();
 	
+		UFUNCTION(BlueprintCallable)
+		int32 GetNumWeapons();
+		UFUNCTION(BlueprintCallable)
+		int32 GetNumGadgets();
 		UFUNCTION(BlueprintCallable, BlueprintPure)
 		ECharacterItemType GetCategoryForSlot(ELoadoutSlot LoadoutSlot);
 		UFUNCTION(BlueprintCallable, BlueprintPure)

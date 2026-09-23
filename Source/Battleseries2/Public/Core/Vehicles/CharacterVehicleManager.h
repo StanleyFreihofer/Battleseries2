@@ -29,9 +29,19 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void CharacterEnterVehicle();
 	UFUNCTION(BlueprintCallable)
+	void EnterVehicle_LocalPlayer();
+	UFUNCTION(BlueprintCallable)
+	void PhysicallyEnterVehicle();
+	UFUNCTION(BlueprintCallable)
 	void CharacterExitVehicle();
 	UFUNCTION(BlueprintCallable)
+	void ExitVehicle_LocalPlayer();
+	UFUNCTION(BlueprintCallable)
+	void PhysicallyExitVehicle();
+	UFUNCTION(BlueprintCallable)
 	void CharacterEnterSeat(const FCharacterSeatContext& SeatContext);
+	UFUNCTION(BlueprintCallable)
+	void HandleEnterSeat_Gunner(const FCharacterSeatContext& SeatContext);
 	UFUNCTION(BlueprintCallable)
 	void CharacterExitSeat(const FCharacterSeatContext& SeatContext);
 	UFUNCTION(BlueprintCallable)
@@ -43,7 +53,11 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void UpdateUI_EnterSeat();
 	UFUNCTION(BlueprintCallable)
+	void UpdateUI_EnterSeat_Turrets();
+	UFUNCTION(BlueprintCallable)
 	void OnVehicleHealthChanged();
+	UFUNCTION(BlueprintCallable)
+	void UpdateRangefinder_WindowedVehicle();
 	
 	UFUNCTION(BlueprintCallable)
 	ACharacter_Base* GetOwnerCharacter();

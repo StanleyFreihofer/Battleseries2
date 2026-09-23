@@ -810,7 +810,7 @@ void AVehicle_Base::SetupGunner(ACharacter_Base* Character)
 	const FSeatData& SeatData = VehicleData->Seats[Character->VehicleManager->GetCSI()];
 	if (SeatData.ViewMethod == E_ViewMethod::Windowed)
 	{
-		VehicleWeaponLogicComponent->WindowedRangefinder.AddDynamic(Character, &ACharacter_Base::UpdateRangefinder_WindowedVehicle);
+		VehicleWeaponLogicComponent->WindowedRangefinder.AddDynamic(Character->VehicleManager, &UCharacterVehicleManager::UpdateRangefinder_WindowedVehicle);
 	}
 
 	VehicleWeaponLogicComponent->EquipWeapon(Character->VehicleManager->GetCSI(), 0);
@@ -819,7 +819,7 @@ void AVehicle_Base::SetupGunner(ACharacter_Base* Character)
 
 void AVehicle_Base::DropGunner(TWeakObjectPtr<ACharacter_Base> Character, int32& SeatIndex)
 {
-	VehicleWeaponLogicComponent->WindowedRangefinder.RemoveDynamic(Character.Get(), &ACharacter_Base::UpdateRangefinder_WindowedVehicle);
+	VehicleWeaponLogicComponent->WindowedRangefinder.RemoveDynamic(Character.Get()->VehicleManager, &UCharacterVehicleManager::UpdateRangefinder_WindowedVehicle);
 	VehicleWeaponLogicComponent->UnequipWeapon(SeatIndex, VehicleWeaponLogicComponent->GetCWIForSeat(SeatIndex), VehicleWeaponLogicComponent->GetEquippedWeaponInSeat(SeatIndex).VehicleWeaponState.BaseWeaponRuntimeData.isFiring);
 	VehicleWeaponLogicComponent->GetWAC(SeatIndex)->Deactivate();
 }
@@ -1551,6 +1551,13 @@ int32 AVehicle_Base::GetControlledTurret(int32 SeatIndex)
 	return VehicleData->Seats[SeatIndex].AvailableItems.ControlledTurretIndexes[0];
 }
 
+void AVehicle_Base::GetTurretPitchRange(int32 TurretIndex, float& OutMin, float& OutMax, float& OutCurrent)
+{
+	OutMin = VehicleData->Turrets[TurretIndex].TurretPitch.TurretMinMax.GetLowerBoundValue();
+	OutMax = VehicleData->Turrets[TurretIndex].TurretPitch.TurretMinMax.GetUpperBoundValue();
+	OutCurrent = VehicleWeaponLogicComponent->TurretStates[TurretIndex].CurrentTurretPitch;
+}
+
 UCameraComponent* AVehicle_Base::GetSeatWeaponCam(int32 SeatIndex)
 {
 	const FSeatData& SeatData = VehicleData->Seats[SeatIndex];
@@ -1579,6 +1586,11 @@ UCameraComponent* AVehicle_Base::GetRemoteActiveCam(int32 SeatIndex)
 {
 	UCameraComponent* WeaponCam = GetSeatWeaponCam(SeatIndex);
 	return WeaponCam ? WeaponCam : VehicleCurrentState.SeatStates[SeatIndex].DefaultCamera;
+}
+
+float AVehicle_Base::GetCurrentSpeed()
+{
+	return GetVelocity().Size();
 }
 
 float AVehicle_Base::GetCurrentSpeed_Chaos()
