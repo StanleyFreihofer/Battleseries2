@@ -551,6 +551,7 @@ void ULoadoutManager::ShootSimProjectile()
 	(
 		StaticWeaponData.WeaponFirePerformanceData.MunitionID,
 		nullptr,
+		{GetOwner()},
 		MuzzleLocation,
 		StaticWeaponData.WeaponFirePerformanceData.MuzzleVelocity,
 		StaticWeaponData.WeaponFirePerformanceData.GravityScale,

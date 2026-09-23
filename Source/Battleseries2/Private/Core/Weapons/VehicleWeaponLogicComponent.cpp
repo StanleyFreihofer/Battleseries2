@@ -1145,7 +1145,8 @@ void UVehicleWeaponLogicComponent::HandleShootSimProjectile(FVehicleWeaponState&
 		UBS2FunctionLibrary::CreateSimProjectile
 		(
 			StaticWeaponData.WeaponFirePerformance.MunitionID,
-			nullptr,
+			nullptr, 
+			{ GetOwner()},
 			MuzzleLocation,
 			StaticWeaponData.WeaponFirePerformance.MuzzleVelocity,
 			StaticWeaponData.WeaponFirePerformance.GravityScale,

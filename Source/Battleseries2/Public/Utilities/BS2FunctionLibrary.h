@@ -78,7 +78,7 @@ public:
     UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Battleseries | Weapon Functions")
 	static FVector GetAimDirectionFromMuzzle_BP(FHitResult TraceData, FName MuzzleSocketName, USkeletalMeshComponent* WeaponMesh);
     UFUNCTION(Category = "Battleseries | Weapon Functions")
-    static FSimProjectile_Runtime CreateSimProjectile(FName MunitionID, class APlayerState* InstigatorPlayerState, FVector MuzzleLocation, float MuzzleSpeed, float GravityScale, FVector AimDirection, UProjectilePoolSubsystem* ProjectileSubsystem);
+    static FSimProjectile_Runtime CreateSimProjectile(FName MunitionID, class APlayerState* InstigatorPlayerState, TArray<AActor*> IgnoredActors, FVector MuzzleLocation, float MuzzleSpeed, float GravityScale, FVector AimDirection, UProjectilePoolSubsystem* ProjectileSubsystem);
     UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Battleseries | Weapon Functions")
     static void CalculateReload(int32 MagSize, int32 CAM, int32 CRA, int32& OutCAM, int32& OutCRA);
     UFUNCTION(BlueprintCallable, Category = "Battleseries | Weapon Functions")

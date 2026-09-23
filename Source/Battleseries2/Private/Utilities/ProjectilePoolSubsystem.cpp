@@ -114,7 +114,6 @@ void UProjectilePoolSubsystem::UpdateSimulatedProjectiles(float DeltaSeconds)
 
 	for (int32 i = SimulatedProjectiles.Num() - 1; i >= 0; i--)
 	{
-		// 1. Get a COPY or be very careful with the reference
 		FSimProjectile_Runtime& Sim = SimulatedProjectiles[i];
 
 		NewVelocity = CalculateDrop(Sim.CurrentVelocity, Sim.GravityScale, DeltaSeconds);
@@ -132,28 +131,35 @@ void UProjectilePoolSubsystem::UpdateSimulatedProjectiles(float DeltaSeconds)
 			{
 				Sim.ProjectileMesh->SetActorLocation(NewLocation);
 			}
-
-			// Debugging only for active projectiles
 			DrawDebugLine(GetWorld(), Sim.CurrentLocation, NewLocation, FColor::Red, true, 30.f, 0, 1.f);
 		}
 		else
 		{
-			// 3. Handle the hit
-			DrawDebugLine(GetWorld(), Sim.CurrentLocation, NewLocation, FColor::Yellow, false, 30.f, 0, 1.f);
-
-			if (AActor* HitActor = OutHit.GetActor())
-			{
-				// Trigger damage here
-				UBS2FunctionLibrary::HandleApplyDamage(Sim.BaseProjectileState, Sim.CurrentLocation, OutHit);
-			}
-
-			// 4. Final log before the memory is freed
-			UE_LOG(LogTemp, Warning, TEXT("Projectile Hit: %s"), *Sim.BaseProjectileState.MunitionID.ToString());
-
-			// 5. Remove and IMMEDIATELY move to next iteration
-			SimulatedProjectiles.RemoveAt(i);
+			HandleSimProjectileHit(Sim, OutHit, NewLocation, i);
 		}
 	}
+}
+
+void UProjectilePoolSubsystem::HandleSimProjectileHit(FSimProjectile_Runtime& SimProjectile, FHitResult Hit, FVector NewLocation, int32 index)
+{
+	DrawDebugLine(GetWorld(), SimProjectile.CurrentLocation, NewLocation, FColor::Yellow, false, 30.f, 0, 1.f);
+	
+	if (Hit.GetActor() != nullptr)
+	{
+		for (AActor* IgnoredActor : SimProjectile.BaseProjectileState.IgnoredActors)
+		{
+			if (Hit.GetActor() == IgnoredActor)
+			{
+				return;
+			}
+		}
+	}
+	
+	UBS2FunctionLibrary::HandleApplyDamage(SimProjectile.BaseProjectileState, SimProjectile.CurrentLocation, Hit);
+	
+	UE_LOG(LogTemp, Warning, TEXT("Projectile Hit: %s"), *SimProjectile.BaseProjectileState.MunitionID.ToString());
+	
+	SimulatedProjectiles.RemoveAt(index);
 }
 
 FVector UProjectilePoolSubsystem::CalculateDrop(FVector Velocity, float Gravity, float DeltaSeconds)

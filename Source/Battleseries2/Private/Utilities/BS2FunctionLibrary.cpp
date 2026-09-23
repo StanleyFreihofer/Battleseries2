@@ -279,10 +279,11 @@ FVector UBS2FunctionLibrary::GetAimDirectionFromMuzzle_BP(FHitResult TraceData, 
 	return GetAimDirectionFromMuzzle(TraceData, MuzzleSocketName, TWeakObjectPtr<USkeletalMeshComponent>(WeaponMesh));
 }
 
-FSimProjectile_Runtime UBS2FunctionLibrary::CreateSimProjectile(FName MunitionID, class APlayerState* InstigatorPlayerState, FVector MuzzleLocation, float MuzzleSpeed, float GravityScale, FVector AimDirection, UProjectilePoolSubsystem* ProjectileSubsystem)
+FSimProjectile_Runtime UBS2FunctionLibrary::CreateSimProjectile(FName MunitionID, class APlayerState* InstigatorPlayerState, TArray<AActor*> IgnoredActors, FVector MuzzleLocation, float MuzzleSpeed, float GravityScale, FVector AimDirection, UProjectilePoolSubsystem* ProjectileSubsystem)
 {
 	FSimProjectile_Runtime NewSimulatedProjectile = FSimProjectile_Runtime();
 	NewSimulatedProjectile.BaseProjectileState.MunitionID = MunitionID;
+	NewSimulatedProjectile.BaseProjectileState.IgnoredActors = IgnoredActors;
 	NewSimulatedProjectile.BaseProjectileState.FireOrigin = MuzzleLocation;
 	NewSimulatedProjectile.CurrentLocation = MuzzleLocation;
 	NewSimulatedProjectile.CurrentVelocity = AimDirection * MuzzleSpeed;

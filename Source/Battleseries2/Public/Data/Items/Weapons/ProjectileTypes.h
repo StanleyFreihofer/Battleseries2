@@ -30,6 +30,9 @@ struct FBaseProjectileState
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)     //the initial location of the projectile (muzzle location)
 	FVector FireOrigin = FVector();
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	TArray<AActor*> IgnoredActors;				//differentiate between actors that can hit/end life and actors to damage?
 };
 
 USTRUCT(BlueprintType)

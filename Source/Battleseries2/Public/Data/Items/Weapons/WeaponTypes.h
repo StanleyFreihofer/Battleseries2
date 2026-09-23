@@ -55,7 +55,7 @@ struct FWeaponState
 	int32 CurrentBurstCount = 0;
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	FTimerHandle TimerHandle_AutoFire = FTimerHandle();
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)			//currently only used by vehicles
 	FTimerHandle TimerHandle_Reload = FTimerHandle();
 
 	UPROPERTY(VisibleAnywhere)

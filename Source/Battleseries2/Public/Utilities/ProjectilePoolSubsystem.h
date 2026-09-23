@@ -62,6 +62,8 @@ public:
 
     UFUNCTION(BlueprintCallable)
     void UpdateSimulatedProjectiles(float DeltaSeconds);
+    UFUNCTION(BlueprintCallable)
+    void HandleSimProjectileHit(FSimProjectile_Runtime& SimProjectile, FHitResult Hit, FVector NewLocation, int32 Index);
 
     UFUNCTION(BlueprintCallable)
     FVector CalculateDrop(FVector Velocity, float Gravity, float DeltaSeconds);
