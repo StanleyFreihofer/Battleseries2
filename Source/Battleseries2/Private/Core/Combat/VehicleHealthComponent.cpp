@@ -31,6 +31,7 @@ void UVehicleHealthComponent::HandleVehicleDestroyed()
 	TObjectPtr<USkeletalMeshComponent> VehicleMeshComponent = OwnerDataAccessor->GetMesh();
 	TObjectPtr<UStaticMesh> DestroyedMesh = UBS2FunctionLibrary::GetDataSubsystem(GetOwner())->GetVehicleDataRow(OwnerDataAccessor->GetVehicleID())->DestroyedMesh.LoadSynchronous();
 	UMaterialInterface* DestroyedMaterial = DestroyedMesh->GetMaterial(0);   
+	if (VehicleHealthState.DestroyedMesh.Get())		{return;}
 	VehicleHealthState.DestroyedMesh = NewObject<UStaticMeshComponent>(this);
 	VehicleHealthState.DestroyedMesh->SetupAttachment(GetOwner()->GetRootComponent());
 	FVector RelLoc = VehicleHealthState.DestroyedMesh->GetRelativeLocation();
@@ -101,6 +102,7 @@ void UVehicleHealthComponent::RevealDestroyedVehicle()
 
 void UVehicleHealthComponent::HandleTakeAnyDamage(AActor* DamagedActor, float Damage, const class UDamageType* DamageType, class AController* InstigatedBy, AActor* DamageCauser)
 {
+	if (VehicleHealthState.BaseHealthState.CurrentHealth <= 0.f)		{return;}		
 	float& CurrentHealth = VehicleHealthState.BaseHealthState.CurrentHealth;
 	bool HealthDepleted = UBS2FunctionLibrary::TakeDmg(Damage, CurrentHealth);
 	OnVehicleHealthChanged.Broadcast();

@@ -1135,7 +1135,7 @@ void AVehicle_Base::UpdateMovement_Heli()
 	const FVector ForwardDir = YawOnly.Vector();
 	const FVector RightDir = FRotationMatrix(YawOnly).GetScaledAxis(EAxis::Y);
 	// Forward: pitch * -1 (nose-down = positive thrust along yaw direction)
-	const FVector ForwardComp = ForwardDir * State.CurrentForwardMomentum * (PitchDeg * -1.0f);
+	const FVector ForwardComp = ForwardDir * State.CurrentForwardMomentum; //* (PitchDeg * -1.0f);
 	// Right: momentum scaled by roll angle (bank = lateral drift)
 	const FVector RightComp = RightDir * State.CurrentForwardMomentum * GetActorRotation().Roll;
 	const FVector UpComp = GetActorUpVector() * State.CurrentHoverVelocity;

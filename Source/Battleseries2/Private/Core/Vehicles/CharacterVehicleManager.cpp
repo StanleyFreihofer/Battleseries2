@@ -364,7 +364,7 @@ void UCharacterVehicleManager::UpdateRangefinder_WindowedVehicle()
 
 	TWeakObjectPtr<UVehicleWeaponLogicComponent> VWLC = GetCurrentVehicle()->VehicleWeaponLogicComponent;
 	FVehicleWeapon_Runtime& CurrentWeapon = VWLC->GetEquippedWeaponInSeat(GetCSI());
-	TArray<AActor*> IgnoreActors = {GetCurrentVehicle() };
+	TArray<AActor*> IgnoreActors = {GetCurrentVehicle(), GetOwner() };
 	FTransform TraceTransform;
 	FVector PlayerEyePos;
 

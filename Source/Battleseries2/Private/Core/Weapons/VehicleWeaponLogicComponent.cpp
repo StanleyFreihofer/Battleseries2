@@ -785,6 +785,7 @@ void UVehicleWeaponLogicComponent::HandleLockOn(int32 SeatIndex, int32 WeaponInd
 	FHitResult& HitResult = SeatWeaponSystem.VehicleWeaponSystemState.EquippedWeaponState.RaycastData.RangefinderData;
 
 	bool ValidLockableActor = HitResult.GetActor() && HitResult.GetActor()->GetClass()->ImplementsInterface(ULockOnTarget::StaticClass());
+	//UE_LOG(LogTemp, Warning, TEXT("[VWLC::HandleLockOn] HitLockableActor = %d, HitActor = %s"), ValidLockableActor, *HitResult.GetActor()->GetName());
 	if (ValidLockableActor)
 	{
 		bool canLockOn = ILockOnTarget::Execute_GetIfCanLockOn(HitResult.GetActor(), StaticHomingData.CanTarget, StaticHomingData.HomingCapability);
