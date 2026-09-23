@@ -21,6 +21,7 @@
 #include "NiagaraComponent.h"
 #include "AudioParameterControllerInterface.h"
 #include "Vehicle_Base.h"
+#include "Kismet/GameplayStatics.h"
 
 UVehicleWeaponLogicComponent::UVehicleWeaponLogicComponent()
 {
@@ -1267,11 +1268,10 @@ void UVehicleWeaponLogicComponent::HandleStartAutoload(int32 SeatIndex)
 	int32& CWI = GetCWIForSeat(SeatIndex);
 	const FBaseWeaponData& StaticWeaponData = GetBaseWeaponDataInSlot(SeatIndex, CWI);
 	FWeaponState& CurrentWeapon = GetEquippedWeaponInSeat(SeatIndex).VehicleWeaponState.BaseWeaponRuntimeData;
-
-	CurrentWeapon.isReloading = true;
-	if (CurrentWeapon.CurrentReserveAmmo > 0)
+	
+	if (UBS2FunctionLibrary::GetIfWeaponCanReload(CurrentWeapon, false, StaticWeaponData.AmmoData.MagSize))
 	{
-		StartAutoload(StaticWeaponData, SeatIndex, CWI);
+		StartAutoload(SeatIndex, CWI);
 	}
 	else
 	{
@@ -1279,20 +1279,28 @@ void UVehicleWeaponLogicComponent::HandleStartAutoload(int32 SeatIndex)
 	}
 }
 
-void UVehicleWeaponLogicComponent::StartAutoload(const FBaseWeaponData& StaticWeaponData, int32 SeatIndex, int32 WeaponIndex)
+void UVehicleWeaponLogicComponent::StartAutoload(int32 SeatIndex, int32 WeaponIndex)
 {
 	FTimerHandle& TimerHandle_Reload = VehicleWeaponSystem.Find(SeatIndex)->Weapons[WeaponIndex].VehicleWeaponState.BaseWeaponRuntimeData.TimerHandle_Reload;
-	if (!GetWorld()->GetTimerManager().IsTimerActive(TimerHandle_Reload))
+	const FBaseWeaponData& StaticWeaponData = GetBaseWeaponDataInSlot(SeatIndex, WeaponIndex);
+	FWeaponState& CurrentWeapon = VehicleWeaponSystem.Find(SeatIndex)->Weapons[WeaponIndex].VehicleWeaponState.BaseWeaponRuntimeData;
+	
+	if (GetWorld()->GetTimerManager().IsTimerActive(TimerHandle_Reload))	{ return; }
+	
+	CurrentWeapon.isReloading = true;
+	const float& ReloadSpeed = StaticWeaponData.AmmoData.ReloadSpeed;
+	const int32& MagSize = StaticWeaponData.AmmoData.MagSize;
+	
+	if (CurrentWeapon.isEquipped)
 	{
-		const float& ReloadSpeed = StaticWeaponData.AmmoData.ReloadSpeed;
-		const int32& MagSize = StaticWeaponData.AmmoData.MagSize;
-
-		GetWorld()->GetTimerManager().SetTimer(TimerHandle_Reload, [this, SeatIndex, WeaponIndex, MagSize]()
-		{
-			AutoloadNewMag(SeatIndex, WeaponIndex, MagSize);
-		}, ReloadSpeed, false);
-		//set another timer to track previous timers progress for ui purposes
+		UGameplayStatics::PlaySound2D(this, StaticWeaponData.WeaponAudio.Reload.LoadSynchronous());
 	}
+
+	GetWorld()->GetTimerManager().SetTimer(TimerHandle_Reload, [this, SeatIndex, WeaponIndex, MagSize]()
+	{
+		AutoloadNewMag(SeatIndex, WeaponIndex, MagSize);
+	}, ReloadSpeed, false);
+		//set another timer to track previous timers progress for ui purposes
 }
 
 void UVehicleWeaponLogicComponent::AutoloadNewMag(int32 SeatIndex, int32 WeaponIndex, int32 MagSize)

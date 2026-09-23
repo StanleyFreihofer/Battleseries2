@@ -37,8 +37,8 @@ struct FVehicleCombatDefinition
     TMap<FName, float> ArmorHitMultipliers = 
     {
         {"FrontArmor", 0.75f},
-        {"RearArmor", 1.0f},
-        {"SideArmor", 2.0f},
+        {"RearArmor", 2.0f},
+        {"SideArmor", 1.0f},
         {"TopArmor", 1.25f}
     };
     
@@ -83,6 +83,9 @@ class BATTLESERIES2_API UDA_VehicleDefaults : public UDataAsset
 public:
     UPROPERTY(EditAnywhere, BlueprintReadOnly)
     TSoftObjectPtr<UMaterialInterface> HUDMasterMaterial = nullptr;
+    
+    UPROPERTY(EditAnywhere, BlueprintReadOnly)
+    TArray<TSoftObjectPtr<UNiagaraSystem>> FireFX;
 
     UPROPERTY(EditAnywhere, BlueprintReadOnly)
     TMap<EVehicleType, FVehicleTypeDefintion> VehicleTypeDefintions;

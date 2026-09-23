@@ -47,10 +47,10 @@ void UVehicleHealthComponent::HandleVehicleDestroyed()
 	
 	VehicleMeshComponent->SetMaterial(0, DestroyedMaterial);
 
-    GetWorld()->GetTimerManager().SetTimer(VehicleHealthState.BaseHealthState.RegenTimer, this, &UVehicleHealthComponent::RevealDestroyedVehicle, GetWorld()->GetDeltaSeconds(), true);
+    GetWorld()->GetTimerManager().SetTimer(VehicleHealthState.BaseHealthState.RegenTimer, this, &UVehicleHealthComponent::ShiftToDestroyedMesh, GetWorld()->GetDeltaSeconds(), true);
 }
 
-void UVehicleHealthComponent::RevealDestroyedVehicle()
+void UVehicleHealthComponent::ShiftToDestroyedMesh()
 {
 	TObjectPtr<USkeletalMeshComponent> VehicleMeshComponent = OwnerDataAccessor->GetMesh();
 	const int32 NumBones = VehicleMeshComponent->GetNumBones();
@@ -60,14 +60,7 @@ void UVehicleHealthComponent::RevealDestroyedVehicle()
 
 	if (CurrentLODStep >= NumLODs)
 	{
-		GetWorld()->GetTimerManager().ClearTimer(VehicleHealthState.BaseHealthState.RegenTimer);
-		VehicleMeshComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-		VehicleHealthState.DestroyedMesh->SetVisibility(true);
-		VehicleHealthState.DestroyedMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-		VehicleHealthState.DestroyedMesh->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
-		VehicleHealthState.DestroyedMesh->SetSimulatePhysics(true);
-		VehicleHealthState.DestroyedMesh->AddImpulse(FVector::UpVector * 500.f, NAME_None, true);
-		VehicleMeshComponent->SetVisibility(false);
+		RevealDestroyedVehicle();
 		return;
 	}
 	
@@ -79,9 +72,31 @@ void UVehicleHealthComponent::RevealDestroyedVehicle()
 	}
 
 	VehicleMeshComponent->SetForcedLOD(CurrentLODStep + 1);
+}
 
+void UVehicleHealthComponent::RevealDestroyedVehicle()
+{
+	TObjectPtr<USkeletalMeshComponent> VehicleMeshComponent = OwnerDataAccessor->GetMesh();
+	GetWorld()->GetTimerManager().ClearTimer(VehicleHealthState.BaseHealthState.RegenTimer);
+	VehicleMeshComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	VehicleHealthState.DestroyedMesh->SetVisibility(true);
+	VehicleHealthState.DestroyedMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+	VehicleHealthState.DestroyedMesh->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
+	VehicleHealthState.DestroyedMesh->SetSimulatePhysics(true);
+	VehicleHealthState.DestroyedMesh->AddImpulse(FVector::UpVector * 500.f, NAME_None, true);
+	VehicleMeshComponent->SetVisibility(false);
 	
-	//fire vfx around mesh
+	TArray<FName> BoneNames; 
+	VehicleMeshComponent->GetBoneNames(BoneNames);
+	TArray<TSoftObjectPtr<UNiagaraSystem>> FireFXs = UBS2FunctionLibrary::GetDataSubsystem(this)->GetVehicleDefaults()->FireFX;
+	for (int32 i = 0; i < FMath::RandRange(0, BoneNames.Num() - 1); i++)
+	{
+		int32 RandBoneIdx = FMath::RandRange(0, BoneNames.Num() - 1);
+		FName RandBoneName = BoneNames[RandBoneIdx];
+		int32 RandFXIdx = FMath::RandRange(0, FireFXs.Num() - 1);
+		TObjectPtr<UNiagaraSystem> FireFX = FireFXs[RandFXIdx].LoadSynchronous();
+		UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), FireFX, VehicleMeshComponent->GetBoneLocation(RandBoneName));
+	}
 }
 
 void UVehicleHealthComponent::HandleTakeAnyDamage(AActor* DamagedActor, float Damage, const class UDamageType* DamageType, class AController* InstigatedBy, AActor* DamageCauser)

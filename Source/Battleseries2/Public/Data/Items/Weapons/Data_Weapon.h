@@ -132,6 +132,9 @@ struct FWeaponAudioData
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Interior")
 	TArray<TSoftObjectPtr<USoundWave>> InteriorTail; 
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	TSoftObjectPtr<USoundWave> Reload = nullptr;
 };
 
 USTRUCT(BlueprintType)
@@ -170,7 +173,7 @@ struct FAmmoData
 	bool isBulletFed = false;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ToolTip = "Time it takes to reload (for infantry weapons determines animation play rate)"))
-	float ReloadSpeed = 0.0f;		//is this gonna work with anim-based reloads?
+	float ReloadSpeed = 0.0f;	
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	bool AutoRefillReserve = false;

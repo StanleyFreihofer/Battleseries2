@@ -245,7 +245,7 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void HandleStartAutoload(int32 SeatIndex);
 	UFUNCTION(BlueprintCallable)
-	void StartAutoload(const FBaseWeaponData& StaticWeaponData, int32 SeatIndex, int32 WeaponIndex);
+	void StartAutoload(int32 SeatIndex, int32 WeaponIndex);
 	UFUNCTION(BlueprintCallable)
 	void AutoloadNewMag(int32 SeatIndex, int32 WeaponIndex, int32 MagSize);
 	UFUNCTION(BlueprintCallable)

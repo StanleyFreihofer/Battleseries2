@@ -34,6 +34,8 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void HandleVehicleDestroyed();
 	UFUNCTION(BlueprintCallable)
+	void ShiftToDestroyedMesh();
+	UFUNCTION(BlueprintCallable)
 	void RevealDestroyedVehicle();
 	
 	

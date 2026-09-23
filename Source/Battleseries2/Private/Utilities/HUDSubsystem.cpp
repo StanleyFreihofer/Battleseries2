@@ -18,6 +18,7 @@
 #include "Data/Items/Weapons/WeaponEnums.h"
 #include "Character_Base.h"
 #include "Vehicle_Base.h"
+#include  "Core/Vehicles/CharacterVehicleManager.h"
 #include "Core/Weapons/VehicleWeaponLogicComponent.h"
 #include "Data/Items/Weapons/WeaponDefaults.h"
 #include "Utilities/BS2FunctionLibrary.h"
@@ -183,7 +184,7 @@ void UHUDSubsystem::UpdateTurretLinesHUD_Vehicle()
 {
 	APlayerController* PC = GetLocalPlayer()->GetPlayerController(GetWorld());
 	ACharacter_Base* Character = (PC) ? Cast<ACharacter_Base>(PC->GetPawn()) : nullptr;
-	AVehicle_Base* Vehicle = Character->GetCurrentVehicle();
+	AVehicle_Base* Vehicle = Character->VehicleManager->GetCurrentVehicle();
 	if (CurrentVehicleHMD && CurrentVehicleHMD->TurretLines)
 	{
 		for (int32 i = 0; i < Vehicle->VehicleWeaponLogicComponent->TurretStates.Num(); i++)

@@ -78,8 +78,7 @@ struct FCharacterState
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "State")
 	FCharacterStanceState CharacterStanceState = FCharacterStanceState();
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "State")
-	FCharacterVehicleState CharacterVehicleState = FCharacterVehicleState();
+
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "State")
 	FInteractionState InteractionState = FInteractionState();

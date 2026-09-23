@@ -17,6 +17,7 @@ class USaveSubsystem;
 class AVehicle_Base;
 class UDataManagerSubsystem;
 class ULoadoutManager;
+class UCharacterVehicleManager;
 struct FCharacterSeatContext;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnWeaponInputReleased_Vehicle, int32, SeatIndex);
@@ -57,7 +58,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
 	USkeletalMeshComponent* FPLegs = nullptr;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
-	ULoadoutManager* LoadoutManager;
+	ULoadoutManager* LoadoutManager = nullptr;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
+	UCharacterVehicleManager* VehicleManager = nullptr;
 
 #pragma endregion
 
@@ -155,26 +158,7 @@ public:
 
 #pragma region Vehicle
 
-	UFUNCTION(BlueprintCallable)
-	void ManageinVehicleStatus(AVehicle_Base* Vehicle, bool In_Vehicle);
-	UFUNCTION(BlueprintCallable)
-	void UpdateSeatList(TArray<ACharacter_Base*> Characters);
-	UFUNCTION(BlueprintCallable)
-	void CharacterEnterVehicle();
-	UFUNCTION(BlueprintCallable)
-	void CharacterExitVehicle();
-	UFUNCTION(BlueprintCallable)
-	void CharacterEnterSeat(const FCharacterSeatContext& SeatContext);
-	UFUNCTION(BlueprintCallable)
-	void CharacterExitSeat(const FCharacterSeatContext& SeatContext);
-	UFUNCTION(BlueprintCallable)
-	FVector CalculateSafeExitLocation(AActor* Vehicle);
-	UFUNCTION(BlueprintCallable)
-	void UpdateSeatIndexes(int32 NewLSI, int32 NewCSI, int32 NewNSI);
-	UFUNCTION(BlueprintCallable)
-	void UpdateUI_EnterSeat();
-	UFUNCTION(BlueprintCallable)
-	void OnVehicleHealthChanged();
+
 
 #pragma endregion
 
@@ -198,19 +182,12 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void UpdateRangefinder_WindowedVehicle();
 
-	UFUNCTION(BlueprintCallable)
-	void UpdateVehicleHUD(TSubclassOf<UUserWidget> HUDClass);
+
 	
 	UFUNCTION(BlueprintImplementableEvent)
 	void UpdateViewTarget_BP(AActor* ViewTarget, UCameraComponent* Cam);
 
-
-	UFUNCTION(BlueprintCallable, BlueprintPure)
-	AVehicle_Base* GetCurrentVehicle();
-	UFUNCTION(BlueprintCallable, BlueprintPure, meta = (BlueprintThreadSafe))
-	int32& GetCSI();
-	UFUNCTION(BlueprintCallable, BlueprintPure)
-	bool& GetInVehicle();
+	
 	UFUNCTION(BlueprintCallable, BlueprintPure, meta = (BlueprintThreadSafe))
 	ECharacterStance& GetCurrentStance();
 	UFUNCTION(BlueprintCallable, BlueprintPure, meta = (BlueprintThreadSafe))

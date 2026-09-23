@@ -17,6 +17,7 @@
 #include "Core/UI/VehicleHUDs/UW_HUD_Vehicle_Base.h"
 #include "Core/UI/GameplayHUDs/UW_HUD_Status_Base.h"
 #include "Core/PlayerController_Base.h"
+#include "Core/Vehicles/CharacterVehicleManager.h"
 #include "Core/Weapons/Projectiles/Projectile_Base.h"
 #include "Utilities/I_Interact.h"
 #include "Utilities/HUDSubsystem.h"
@@ -35,6 +36,7 @@ ACharacter_Base::ACharacter_Base(const FObjectInitializer& ObjectInitializer) : 
 	FPArms = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("FPArms"));
 	FPLegs = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("FPLegs"));
 	LoadoutManager = CreateDefaultSubobject<ULoadoutManager>(TEXT("LoadoutManager"));
+	VehicleManager = CreateDefaultSubobject<UCharacterVehicleManager>(TEXT("VehicleManager"));
 	FPArmsSpringArm->SetupAttachment(GetCapsuleComponent());
 	FPLegsSpringArm->SetupAttachment(GetCapsuleComponent());
 	FPArms->SetupAttachment(FPArmsSpringArm);
@@ -129,14 +131,14 @@ void ACharacter_Base::Init_CharacterMovement()
 
 void ACharacter_Base::Input_Look(FVector2D InputAxisValue)
 {
-	if (!CharacterState.CharacterVehicleState.inVehicle)
+	if (!VehicleManager->GetInVehicle())
 	{
 		AddControllerYawInput(InputAxisValue.X);
 		AddControllerPitchInput(InputAxisValue.Y);
 	}
 	else
 	{
-		switch (GetCurrentVehicle()->VehicleData->Seats[GetCSI()].DefaultCharacterContext.CharacterRotationMethod)
+		switch (VehicleManager->GetCurrentVehicle()->VehicleData->Seats[VehicleManager->GetCSI()].DefaultCharacterContext.CharacterRotationMethod)
 		{
 			case EControlRotationMethod::Freelook:
 				Freelook(InputAxisValue);
@@ -148,7 +150,7 @@ void ACharacter_Base::Input_Look(FVector2D InputAxisValue)
 
 void ACharacter_Base::Input_Move(FVector2D InputAxisValue)
 {
-	if (CharacterState.CharacterVehicleState.inVehicle) { return; }
+	if (VehicleManager->GetInVehicle()) { return; }
 
 	AddMovementInput(FVector(GetActorForwardVector()), InputAxisValue.Y);
 	AddMovementInput(FVector(GetActorRightVector()), InputAxisValue.X);
@@ -177,18 +179,18 @@ void ACharacter_Base::Input_Sprint(bool Sprint)
 
 void ACharacter_Base::Input_Interact()
 {
-	if (CharacterState.CharacterVehicleState.inVehicle)	{ return; }
+	if (VehicleManager->GetInVehicle())	{ return; }
 	StartInteract();
 }
 
 void ACharacter_Base::Input_ShootWeapon_Vehicle()
 {
 	TWeakObjectPtr<AProjectile_Base> FiredProjectile;
-	switch (GetCurrentVehicle()->VehicleData->Seats[GetCSI()].SeatRole)
+	switch (VehicleManager->GetCurrentVehicle()->VehicleData->Seats[VehicleManager->GetCSI()].SeatRole)
 	{
 		case E_SeatRole::DriverGunner:
 		case E_SeatRole::Gunner:
-			FiredProjectile = GetCurrentVehicle()->VehicleWeaponLogicComponent->HandleStartFire(GetCSI());
+			FiredProjectile = VehicleManager->GetCurrentVehicle()->VehicleWeaponLogicComponent->HandleStartFire(VehicleManager->GetCSI());
 			break;
 	}
 
@@ -201,13 +203,13 @@ void ACharacter_Base::Input_ShootWeapon_Vehicle()
 
 void ACharacter_Base::Input_SwitchWeapon_Vehicle()
 {
-	bool bSwitched = GetCurrentVehicle()->VehicleWeaponLogicComponent->SwitchWeapon(GetCSI());
+	bool bSwitched = VehicleManager->GetCurrentVehicle()->VehicleWeaponLogicComponent->SwitchWeapon(VehicleManager->GetCSI());
 	if (!bSwitched)
 	{
 		return;
 	}
-	const FSeatData& SeatData = GetCurrentVehicle()->VehicleData->Seats[GetCSI()];
-	GetCurrentVehicle()->HandleViewMethod(this, SeatData);
+	const FSeatData& SeatData = VehicleManager->GetCurrentVehicle()->VehicleData->Seats[VehicleManager->GetCSI()];
+	VehicleManager->GetCurrentVehicle()->HandleViewMethod(this, SeatData);
 }
 
 #pragma endregion
@@ -216,7 +218,7 @@ void ACharacter_Base::Input_SwitchWeapon_Vehicle()
 
 void ACharacter_Base::InteractTrace()
 {
-	if (!GetController() || CharacterState.CharacterVehicleState.inVehicle)
+	if (!GetController() || VehicleManager->GetInVehicle())
 	{
 		return;
 	}
@@ -494,266 +496,7 @@ void ACharacter_Base::UpdateHeadRotation(FRotator HeadRotation)
 
 #pragma region Vehicle
 
-void ACharacter_Base::ManageinVehicleStatus(AVehicle_Base* Vehicle, bool In_Vehicle)
-{
-	CharacterState.CharacterVehicleState.inVehicle = In_Vehicle;
-	CharacterState.CharacterVehicleState.CurrentVehicle = Vehicle;
-	if (CharacterState.CharacterVehicleState.inVehicle)
-	{
-		CharacterEnterVehicle();
-	}
-	else
-	{
-		CharacterExitVehicle();
-	}
-}
 
-void ACharacter_Base::UpdateSeatList(TArray<ACharacter_Base*> Characters)
-{
-	TArray<FSeatState> Seats = CharacterState.CharacterVehicleState.CurrentVehicle->VehicleCurrentState.SeatStates;
-	for (int32 SI = 0; SI < Seats.Num(); SI++)
-	{
-		for (ACharacter_Base* Character : Characters)
-		{
-			if (Character->CharacterState.CharacterVehicleState.CSI == SI)
-			{
-				//do something UI here (show seat as occupied, that characters name, etc)
-				continue;
-			}
-		}
-	}
-}
-
-void ACharacter_Base::CharacterEnterVehicle()
-{
-	//if Vehicle RC Data does actually become a thing, certain things here need to be blocked based on that new property's value
-	if (!GetCurrentVehicle()->VehicleData->bCanRemoteControl)
-	{
-		//only if physically enters vehicle
-		GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Vehicle, ECR_Ignore);
-		GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Vehicle, ECollisionResponse::ECR_Ignore);
-		FPArms->SetCollisionResponseToChannel(ECC_Vehicle, ECR_Ignore);
-		FPLegs->SetCollisionResponseToChannel(ECC_Vehicle, ECR_Ignore);
-		for (int32 i = 0; i < LoadoutManager->Loadout.WeaponSystem.BaseWeaponState.Weapons.Num(); i++)
-		{
-			LoadoutManager->UpdateWeaponCollision(ECC_Vehicle, ECR_Ignore, i);
-		}
-		for (int32 G = 0; G < LoadoutManager->Loadout.Gadgets.Num(); G++)
-		{
-			LoadoutManager->UpdateGadgetCollision(ECC_Vehicle, ECR_Ignore, G);
-		}
-		GetCharacterMovement()->SetMovementMode(MOVE_None);
-		AttachToActor(GetCurrentVehicle(), FAttachmentTransformRules::KeepRelativeTransform);
-		
-		FPArmsSpringArm->bUsePawnControlRotation = false;
-		FPArmsSpringArm->bInheritRoll = true;
-		FPArmsSpringArm->bEnableCameraLag = false;
-		FPCamera->bUsePawnControlRotation = false;
-		FPCamera->SetRelativeRotation(FRotator());
-		bUseControllerRotationYaw = false;
-	}
-
-	ManageIMC(UBS2FunctionLibrary::GetDataSubsystem(this)->GetCharacterDefaults()->DefaultGameplayIMC.Get(), nullptr, -1);
-	if (IsLocallyControlled())
-	{
-		GetCurrentVehicle()->VehicleHealthComponent->OnVehicleHealthChanged.AddDynamic(this, &ACharacter_Base::OnVehicleHealthChanged);
-		UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateStatusHUD_VehicleHealth(GetCurrentVehicle()->GetVehicleHealth());
-		UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateStatusHUD_VehicleStatusVisibility(false);
-	}
-}
-
-void ACharacter_Base::CharacterExitVehicle()
-{
-	if (GetCurrentVehicle())
-	{
-		//CharacterExitSeat(GetCurrentVehicle()->VehicleData->Seats[GetCSI()].DefaultCharacterContext);
-		GetCurrentVehicle()->DropSeat(this, GetCSI());
-		
-		if (!GetCurrentVehicle()->VehicleData->bCanRemoteControl)
-		{
-			DetachFromActor(FDetachmentTransformRules::KeepRelativeTransform);
-
-			FVector ExitLocation = CalculateSafeExitLocation(GetCurrentVehicle());
-			SetActorLocation(ExitLocation);
-
-			HandleUpdateStance(ECharacterStance::Standing);
-			GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Vehicle, ECR_Block);
-			GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Vehicle, ECollisionResponse::ECR_Block);
-			GetCharacterMovement()->SetMovementMode(MOVE_Walking);		//make this more dynamic (are we falling out of ejecting from a jet for example)
-
-			FPCamera->bUsePawnControlRotation = true;
-			bUseControllerRotationYaw = true;
-			FPArmsSpringArm->bUsePawnControlRotation = true;
-			FPArmsSpringArm->bInheritRoll = false;
-			FPArmsSpringArm->bEnableCameraLag = true;
-		}
-
-		UpdateViewTarget(this, FPCamera);
-
-		ManageIMC(nullptr, UBS2FunctionLibrary::GetDataSubsystem(this)->GetCharacterDefaults()->DefaultGameplayIMC.Get(), 1);
-	
-		if (LoadoutManager->GetIsCurrentSlotActuallyWeapon() && IsLocallyControlled())
-		{
-			GetCurrentVehicle()->VehicleHealthComponent->OnVehicleHealthChanged.RemoveDynamic(this, &ACharacter_Base::OnVehicleHealthChanged);
-			FWeaponState& CurrentWeapon = *LoadoutManager->GetCurrentWeaponBaseState();
-			UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateStatusHUD_CAMCount(CurrentWeapon.CurrentAmmoinMag);
-			UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateStatusHUD_CRACount(CurrentWeapon.CurrentReserveAmmo);
-			UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateStatusHUD_VehicleStatusVisibility(true);
-		}
-		
-		CharacterState.CharacterVehicleState = FCharacterVehicleState();
-	}
-}
-
-void ACharacter_Base::CharacterEnterSeat(const FCharacterSeatContext& SeatContext)
-{
-	//if Vehicle RC Data does actually become a thing, Character transform should not be set (block switch behind if)
-	if (!GetCurrentVehicle()->VehicleData->bCanRemoteControl)
-	{
-		switch (GetCurrentVehicle()->GetVehicleData().Seats[GetCSI()].SeatRole)
-		{
-			case E_SeatRole::Driver:
-			case E_SeatRole::Passenger:
-				SetActorRelativeTransform(SeatContext.SeatTransform);
-				break;
-			case E_SeatRole::DriverGunner:
-			case E_SeatRole::Gunner:
-				TObjectPtr<UVehicleWeaponLogicComponent> VWLC = GetCurrentVehicle()->VehicleWeaponLogicComponent;
-				const FVehicleWeaponInstanceData& VWID = VWLC->GetVWID(GetCSI(), VWLC->GetCWIForSeat(GetCSI()), VWLC->GetEquippedWeaponInSeat(GetCSI()).VehicleWeaponState.BaseWeaponRuntimeData.WeaponID);
-				if (VWID.AttachmentInstanceData.bAttachCharacter)
-				{
-					TWeakObjectPtr<USkeletalMeshComponent> WeaponMesh = VWLC->VehicleWeaponSystem.Find(GetCSI())->VehicleWeaponSystemState.WeaponSystemMesh;
-					FAttachmentTransformRules AttachmentRules(EAttachmentRule::SnapToTarget, false);
-					GetRootComponent()->AttachToComponent(WeaponMesh.Get(), AttachmentRules, FName("Test"));
-					SetActorRelativeTransform(VWID.AttachmentInstanceData.CharacterTransform);
-				}
-				else
-				{
-					SetActorRelativeTransform(SeatContext.SeatTransform);
-				}
-				break;
-		}
-
-		HandleUpdateStance(SeatContext.SeatStance);
-		UpdateCharacterMeshVisibility(SeatContext.bIsCharacterVisible);
-	}
-	
-	ManageIMC(nullptr, SeatContext.InputMappingContext, 1);
-
-	if (SeatContext.SeatHMD)
-	{
-		UpdateVehicleHUD(SeatContext.SeatHMD);
-	}
-
-	UpdateUI_EnterSeat();
-
-}
-
-void ACharacter_Base::CharacterExitSeat(const FCharacterSeatContext& SeatContext)
-{
-	if (!GetCurrentVehicle()->VehicleData->bCanRemoteControl)
-	{
-		if (GetAttachParentActor()->GetRootComponent() != GetRootComponent()->GetAttachParent())
-		{
-			GetRootComponent()->DetachFromComponent(FDetachmentTransformRules::KeepRelativeTransform);
-			AttachToActor(GetCurrentVehicle(), FAttachmentTransformRules::KeepRelativeTransform);
-		}
-	}
-
-	UpdateVehicleHUD(nullptr);
-	ManageIMC(SeatContext.InputMappingContext, nullptr, 0);
-}
-
-FVector ACharacter_Base::CalculateSafeExitLocation(AActor* Vehicle)
-{
-	// Define exit points relative to the vehicle (Right, Left, Back)
-	TArray<FVector> ExitOffsets;
-	ExitOffsets.Add(FVector(0, 250, 50));   // Right
-	ExitOffsets.Add(FVector(0, -250, 50));  // Left
-	ExitOffsets.Add(FVector(-300, 0, 50));  // Back
-
-	FCollisionQueryParams Params;
-	Params.AddIgnoredActor(Vehicle);
-	Params.AddIgnoredActor(this);
-
-	// Use the actual capsule shape for the sweep
-	FCollisionShape GraduationCapsule = GetCapsuleComponent()->GetCollisionShape();
-	FVector VehicleLoc = Vehicle->GetActorLocation();
-
-	for (const FVector& Offset : ExitOffsets)
-	{
-		FVector TargetLocation = Vehicle->GetActorTransform().TransformPosition(Offset);
-
-		// Ensure the exit point is on the ground (Project down)
-		FHitResult GroundHit;
-		FVector GroundCheckStart = TargetLocation + FVector(0, 0, 100);
-		FVector GroundCheckEnd = TargetLocation - FVector(0, 0, 500);
-
-		if (GetWorld()->LineTraceSingleByChannel(GroundHit, GroundCheckStart, GroundCheckEnd, ECC_WorldStatic, Params))
-		{
-			TargetLocation = GroundHit.ImpactPoint + FVector(0, 0, GraduationCapsule.GetCapsuleHalfHeight());
-		}
-
-		// Final check: Does the capsule actually fit here without overlapping?
-		if (!GetWorld()->OverlapBlockingTestByChannel(TargetLocation, FQuat::Identity, ECC_Pawn, GraduationCapsule, Params))
-		{
-			return TargetLocation;
-		}
-	}
-
-	// Fallback: If all else fails, try a point slightly further away or above
-	return Vehicle->GetActorLocation() + (Vehicle->GetActorUpVector() * 250.0f);
-}
-
-void ACharacter_Base::UpdateSeatIndexes(int32 NewLSI, int32 NewCSI, int32 NewNSI)
-{
-	CharacterState.CharacterVehicleState.LSI = NewLSI;
-	CharacterState.CharacterVehicleState.CSI = NewCSI;
-	CharacterState.CharacterVehicleState.NSI = NewNSI;
-}
-
-void ACharacter_Base::UpdateUI_EnterSeat()
-{
-	//sync vehicle states for hud
-	switch (GetCurrentVehicle()->VehicleData->Seats[GetCSI()].SeatRole)
-	{
-		case E_SeatRole::Driver:
-			UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateSpeedHUD_Vehicle(GetCurrentVehicle()->GetVelocity().Size());
-			break;
-		case E_SeatRole::Gunner:
-			break;
-		case E_SeatRole::DriverGunner:
-			//HUD
-			UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateSpeedHUD_Vehicle(GetCurrentVehicle()->GetVelocity().Size());
-
-			//turrets/heading
-			if (UCameraComponent* ActiveCam = GetCurrentVehicle()->GetRemoteActiveCam(GetCSI()))
-			{
-				UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateCompassHUD_Vehicle(ActiveCam->GetComponentRotation().Yaw);
-				UBS2FunctionLibrary::GetHUDSubsystem(this)->HandleTurretRotationUpdate(ActiveCam->GetComponentRotation().Yaw);
-			}
-			if (GetCurrentVehicle()->VehicleData->Seats[GetCSI()].AvailableItems.ControlledTurretIndexes.Num())
-			{
-				const int32& CTI = GetCurrentVehicle()->GetControlledTurret(GetCSI());
-
-				UBS2FunctionLibrary::GetHUDSubsystem(this)->HandleTurretPitchUpdate
-				(
-					GetCurrentVehicle()->VehicleData->Turrets[CTI].TurretPitch.TurretMinMax.GetLowerBoundValue(),
-					GetCurrentVehicle()->VehicleData->Turrets[CTI].TurretPitch.TurretMinMax.GetUpperBoundValue(),
-					GetCurrentVehicle()->VehicleWeaponLogicComponent->TurretStates[CTI].CurrentTurretPitch
-				);
-			}
-			break;
-	}
-}
-
-void ACharacter_Base::OnVehicleHealthChanged()
-{
-	if (IsLocallyControlled())
-	{
-		UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateStatusHUD_VehicleHealth(GetCurrentVehicle()->GetVehicleHealth());
-	}
-}
 
 #pragma endregion
 
@@ -782,9 +525,9 @@ void ACharacter_Base::BindInputAction(class UInputComponent* PlayerInputComponen
 
 void ACharacter_Base::HandleFireCompleted()
 {
-	if (CharacterState.CharacterVehicleState.inVehicle)
+	if (VehicleManager->GetInVehicle())
 	{
-		OnFireReleased_Vehicle.Broadcast(GetCSI());
+		OnFireReleased_Vehicle.Broadcast(VehicleManager->GetCSI());
 	}
 }
 
@@ -839,20 +582,20 @@ void ACharacter_Base::UpdateCharacterMeshVisibility(bool ShowMesh)
 void ACharacter_Base::UpdateRangefinder_WindowedVehicle()
 {
 	//free looking? (make sure its correctly managed this time)
-	if (!CharacterState.CharacterVehicleState.inVehicle || !GetCurrentVehicle())
+	if (!VehicleManager->GetInVehicle()|| !VehicleManager->GetCurrentVehicle())
 	{
 		return;
 	}
 
-	const FSeatData& OccupiedSeatData = GetCurrentVehicle()->VehicleData->Seats[GetCSI()];
+	const FSeatData& OccupiedSeatData = VehicleManager->GetCurrentVehicle()->VehicleData->Seats[VehicleManager->GetCSI()];
 	if (OccupiedSeatData.ViewMethod != E_ViewMethod::Windowed)
 	{
 		return;
 	}
 
-	TWeakObjectPtr<UVehicleWeaponLogicComponent> VWLC = GetCurrentVehicle()->VehicleWeaponLogicComponent;
-	FVehicleWeapon_Runtime& CurrentWeapon = VWLC->GetEquippedWeaponInSeat(GetCSI());
-	TArray<AActor*> IgnoreActors = { GetCurrentVehicle() };
+	TWeakObjectPtr<UVehicleWeaponLogicComponent> VWLC = VehicleManager->GetCurrentVehicle()->VehicleWeaponLogicComponent;
+	FVehicleWeapon_Runtime& CurrentWeapon = VWLC->GetEquippedWeaponInSeat(VehicleManager->GetCSI());
+	TArray<AActor*> IgnoreActors = { VehicleManager->GetCurrentVehicle() };
 	FTransform TraceTransform;
 	FVector PlayerEyePos;
 
@@ -871,44 +614,44 @@ void ACharacter_Base::UpdateRangefinder_WindowedVehicle()
 		}
 		case EWindowedAimAnchor::FixedPoint:
 		{
-			FString SocketString = FString::Printf(TEXT("SC_%02d"), GetCSI());
+			FString SocketString = FString::Printf(TEXT("SC_%02d"), VehicleManager->GetCSI());
 			FName SocketName = FName(*SocketString);
-			FVector StartLocation = GetCurrentVehicle()->VehicleMeshComponent->GetSocketLocation(SocketName);
-			TraceTransform = FTransform(GetCurrentVehicle()->GetActorQuat(), StartLocation);
+			FVector StartLocation = VehicleManager->GetCurrentVehicle()->VehicleMeshComponent->GetSocketLocation(SocketName);
+			TraceTransform = FTransform(VehicleManager->GetCurrentVehicle()->GetActorQuat(), StartLocation);
 			PlayerEyePos = StartLocation;
 			break;
 		}
 		case EWindowedAimAnchor::Hull:
 		{
-			FVector HullStart = GetCurrentVehicle()->GetActorLocation() + (GetCurrentVehicle()->GetActorUpVector() * 100.0f);
-			TraceTransform = FTransform(GetCurrentVehicle()->GetActorQuat(), HullStart);
+			FVector HullStart = VehicleManager->GetCurrentVehicle()->GetActorLocation() + (VehicleManager->GetCurrentVehicle()->GetActorUpVector() * 100.0f);
+			TraceTransform = FTransform(VehicleManager->GetCurrentVehicle()->GetActorQuat(), HullStart);
 			PlayerEyePos = HullStart;
 			break;
 		}
 	}
 
-	VWLC->UpdateSeatRangefinder(GetCSI(), TraceTransform, IgnoreActors);
+	VWLC->UpdateSeatRangefinder(VehicleManager->GetCSI(), TraceTransform, IgnoreActors);
 
 	if (!IsLocallyControlled())
 	{
 		return;
 	}
 
-	UWidgetComponent* SeatHUDComp = GetCurrentVehicle()->VehicleCurrentState.SeatStates[GetCSI()].SeatHUDComponent;
+	UWidgetComponent* SeatHUDComp = VehicleManager->GetCurrentVehicle()->VehicleCurrentState.SeatStates[VehicleManager->GetCSI()].SeatHUDComponent;
 	if (!SeatHUDComp)
 	{
 		return;
 	}
 
 	// Retrieve Hit and Component Data
-	auto* WeaponSystem = VWLC->VehicleWeaponSystem.Find(GetCSI());
+	auto* WeaponSystem = VWLC->VehicleWeaponSystem.Find(VehicleManager->GetCSI());
 
 	FHitResult& HitResult = WeaponSystem->VehicleWeaponSystemState.EquippedWeaponState.RaycastData.RangefinderData;
 	TObjectPtr<UStaticMeshComponent> Quad = WeaponSystem->VehicleWeaponSystemState.ReticleQuad.Get();
 
-	FString SocketString = FString::Printf(TEXT("SC_%02d"), GetCSI());
+	FString SocketString = FString::Printf(TEXT("SC_%02d"), VehicleManager->GetCSI());
 	FName SocketName = FName(*SocketString);
-	FVector StartLocation = GetCurrentVehicle()->VehicleMeshComponent->GetSocketLocation(SocketName);
+	FVector StartLocation = VehicleManager->GetCurrentVehicle()->VehicleMeshComponent->GetSocketLocation(SocketName);
 
 	/**
 	if (Quad)
@@ -971,27 +714,7 @@ void ACharacter_Base::UpdateRangefinder_WindowedVehicle()
 	}
 }
 
-AVehicle_Base* ACharacter_Base::GetCurrentVehicle()
-{
-	if (CharacterState.CharacterVehicleState.CurrentVehicle)
-	{
-		return CharacterState.CharacterVehicleState.CurrentVehicle;
-	}
-	else
-	{
-		return nullptr;
-	}
-}
 
-int32& ACharacter_Base::GetCSI()
-{
-	return CharacterState.CharacterVehicleState.CSI;
-}
-
-bool& ACharacter_Base::GetInVehicle()
-{
-	return CharacterState.CharacterVehicleState.inVehicle;
-}
 
 ECharacterStance& ACharacter_Base::GetCurrentStance()
 {
@@ -1003,21 +726,7 @@ ECharacterMovementMode& ACharacter_Base::GetCurrentMovementMode()
 	return CharacterState.CharacterMovementState.CurrentMovementMode;
 }
 
-void ACharacter_Base::UpdateVehicleHUD(TSubclassOf<UUserWidget> HUDClass)
-{
-	if (TObjectPtr<UHUDSubsystem> HUDSub = UBS2FunctionLibrary::GetHUDSubsystem(this))
-	{
-		if (!HUDSub->CurrentVehicleHMD && HUDClass)
-		{
-			HUDSub->SpawnVehicleSeatHUD(HUDClass);
-		}
-		else if (!HUDClass && HUDSub->CurrentVehicleHMD)
-		{
-			HUDSub->CurrentVehicleHMD->RemoveFromParent();
-			HUDSub->CurrentVehicleHMD = nullptr;
-		}
-	}
-}
+
 
 TMap<TObjectPtr<const UInputMappingContext>, int32> ACharacter_Base::DebugCurrentIMC()
 {
