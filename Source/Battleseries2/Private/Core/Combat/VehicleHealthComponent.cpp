@@ -60,17 +60,20 @@ void UVehicleHealthComponent::RevealDestroyedVehicle()
 
 	if (CurrentLODStep >= NumLODs)
 	{
-		GetWorld()->GetTimerManager().ClearTimer(LODTimerHandle);
+		GetWorld()->GetTimerManager().ClearTimer(VehicleHealthState.BaseHealthState.RegenTimer);
 		VehicleMeshComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 		VehicleHealthState.DestroyedMesh->SetVisibility(true);
 		VehicleHealthState.DestroyedMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+		VehicleHealthState.DestroyedMesh->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
+		VehicleHealthState.DestroyedMesh->SetSimulatePhysics(true);
+		VehicleHealthState.DestroyedMesh->AddImpulse(FVector::UpVector * 500.f, NAME_None, true);
 		VehicleMeshComponent->SetVisibility(false);
 		return;
 	}
 	
 	for (int32 i = 0; i < RandNumOfBonesToHide; i++)
 	{
-		int32 RandBoneToHide = FMath::RandRange(0, VehicleMeshComponent->GetNumBones());
+		int32 RandBoneToHide = FMath::RandRange(0, VehicleMeshComponent->GetNumBones() - 1);
 		FName BoneName = VehicleMeshComponent->GetBoneName(RandBoneToHide);
 		VehicleMeshComponent->HideBoneByName(BoneName, PBO_None);
 	}

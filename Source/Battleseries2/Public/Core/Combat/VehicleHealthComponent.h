@@ -51,5 +51,4 @@ private:
 	IVehicleDataAccessor* OwnerDataAccessor;
 	
 	int32 CurrentLODStep = 0;
-	FTimerHandle LODTimerHandle;
 };
