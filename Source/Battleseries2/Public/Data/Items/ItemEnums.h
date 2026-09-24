@@ -77,3 +77,4 @@ enum class EAttachmentSlot : uint8
 	//bottom rail?
 	//charm?
 };
+ENUM_RANGE_BY_FIRST_AND_LAST(EAttachmentSlot, EAttachmentSlot::FrontSight, EAttachmentSlot::Magazine)

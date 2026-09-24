@@ -235,13 +235,28 @@ void ULoadoutManager::ApplyAttachments(const FPlayerLoadoutConfig_Weapon& Attach
 		const FPlayerLoadoutConfig_WeaponAttachment& AttachmentConfig = Slot.Value;
 		FWeaponAttachmentState& RuntimeSlotState = WeaponToApplyTo.WeaponAttachmentStates.FindOrAdd(SlotType);
 		
-		const FWeaponAttachmentData& AttachmentData = *UBS2FunctionLibrary::GetDataSubsystem(this)->GetWeaponAttachmentDataRow(AttachmentConfig.AttachmentID);
-		//if (AttachmentData.AttachmentClassification.AttachmentMesh.IsValid())
-		//{
-			Init_AttachmentMesh(RuntimeSlotState, WeaponToApplyTo, SlotType);
-		//}
-		
+		Init_AttachmentMesh(RuntimeSlotState, WeaponToApplyTo, SlotType);
 		UpdateAttachment(RuntimeSlotState, AttachmentConfig.AttachmentID, GetBaseWeaponState(WeaponIndex).WeaponID, SlotType);
+	}
+	
+	//any slots not explicitly configured, fall back to a default attachment
+	for (EAttachmentSlot AttachmentSlot : TEnumRange<EAttachmentSlot>())
+	{
+		if (WeaponToApplyTo.WeaponAttachmentStates.Find(AttachmentSlot)) { continue; }
+
+		const FAvailableAttachments* SlotData = StaticWeaponDataCache[WeaponIndex]->GunAttachmentData.AvailableAttachmentSlots.Find(AttachmentSlot);
+		if (!SlotData) { continue; }
+
+		FName DefaultAttachmentID = NAME_None;
+		if (auto It = SlotData->Attachments.CreateConstIterator())
+		{
+			DefaultAttachmentID = It.Key();
+		}
+		if (DefaultAttachmentID == NAME_None) { continue; } // slot exists but has no attachments configured at all or no attachment is an option
+
+		FWeaponAttachmentState& RuntimeSlotState = WeaponToApplyTo.WeaponAttachmentStates.FindOrAdd(AttachmentSlot);
+		Init_AttachmentMesh(RuntimeSlotState, WeaponToApplyTo, AttachmentSlot);
+		UpdateAttachment(RuntimeSlotState, DefaultAttachmentID, GetBaseWeaponState(WeaponIndex).WeaponID, AttachmentSlot);
 	}
 }
 
@@ -301,7 +316,6 @@ void ULoadoutManager::UpdateScopeCamera()
 
 void ULoadoutManager::UpdateAttachment(FWeaponAttachmentState& RuntimeSlotState, FName AttachmentID, FName WeaponID, EAttachmentSlot AttachmentSlot)
 {
-
 	const FWeaponAttachmentData& AttachmentData = *UBS2FunctionLibrary::GetDataSubsystem(this)->GetWeaponAttachmentDataRow(AttachmentID);
 	
 	if (!AttachmentData.AttachmentClassification.AttachmentMesh.IsNull())
