@@ -185,6 +185,8 @@ class BATTLESERIES2_API ULoadoutManager : public UActorComponent
 		UFUNCTION(BlueprintCallable)
 		void SetupCustomWeapon(int32 WeaponIndex, FPlayerLoadoutConfig_Weapon WeaponLoadout);
 		UFUNCTION(BlueprintCallable)
+		void ApplyAttachment(int32 WeaponIndex, EAttachmentSlot AttachmentSlot, FName AttachmentID);
+		UFUNCTION(BlueprintCallable)
 		void ApplyAttachments(const FPlayerLoadoutConfig_Weapon& AttachmentsToApply, int32 WeaponIndex);
 		UFUNCTION()
 		void UpdateWeaponMesh(FName WeaponID, TWeakObjectPtr<USkeletalMeshComponent>& WeaponMeshComp);

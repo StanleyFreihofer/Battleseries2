@@ -226,6 +226,14 @@ void ULoadoutManager::SetupCustomWeapon(int32 WeaponIndex, FPlayerLoadoutConfig_
 	UpdateCurrentWeaponStats(WeaponIndex);
 }
 
+void ULoadoutManager::ApplyAttachment(int32 WeaponIndex, EAttachmentSlot AttachmentSlot, FName AttachmentID)
+{
+	FInfantryWeaponState& WeaponToApplyTo = Loadout.WeaponSystem.InfantryWeaponState.WeaponState_FP[WeaponIndex];
+	FWeaponAttachmentState& RuntimeSlotState = WeaponToApplyTo.WeaponAttachmentStates.FindOrAdd(AttachmentSlot);
+	Init_AttachmentMesh(RuntimeSlotState, WeaponToApplyTo, AttachmentSlot);
+	UpdateAttachment(RuntimeSlotState, AttachmentID, GetBaseWeaponState(WeaponIndex).WeaponID, AttachmentSlot);
+}
+
 void ULoadoutManager::ApplyAttachments(const FPlayerLoadoutConfig_Weapon& AttachmentsToApply, int32 WeaponIndex)
 {
 	FInfantryWeaponState& WeaponToApplyTo = Loadout.WeaponSystem.InfantryWeaponState.WeaponState_FP[WeaponIndex];
@@ -233,10 +241,8 @@ void ULoadoutManager::ApplyAttachments(const FPlayerLoadoutConfig_Weapon& Attach
 	{
 		const EAttachmentSlot& SlotType = Slot.Key;
 		const FPlayerLoadoutConfig_WeaponAttachment& AttachmentConfig = Slot.Value;
-		FWeaponAttachmentState& RuntimeSlotState = WeaponToApplyTo.WeaponAttachmentStates.FindOrAdd(SlotType);
 		
-		Init_AttachmentMesh(RuntimeSlotState, WeaponToApplyTo, SlotType);
-		UpdateAttachment(RuntimeSlotState, AttachmentConfig.AttachmentID, GetBaseWeaponState(WeaponIndex).WeaponID, SlotType);
+		ApplyAttachment(WeaponIndex, SlotType, AttachmentConfig.AttachmentID);
 	}
 	
 	//any slots not explicitly configured, fall back to a default attachment
@@ -253,10 +259,8 @@ void ULoadoutManager::ApplyAttachments(const FPlayerLoadoutConfig_Weapon& Attach
 			DefaultAttachmentID = It.Key();
 		}
 		if (DefaultAttachmentID == NAME_None) { continue; } // slot exists but has no attachments configured at all or no attachment is an option
-
-		FWeaponAttachmentState& RuntimeSlotState = WeaponToApplyTo.WeaponAttachmentStates.FindOrAdd(AttachmentSlot);
-		Init_AttachmentMesh(RuntimeSlotState, WeaponToApplyTo, AttachmentSlot);
-		UpdateAttachment(RuntimeSlotState, DefaultAttachmentID, GetBaseWeaponState(WeaponIndex).WeaponID, AttachmentSlot);
+		
+		ApplyAttachment(WeaponIndex, AttachmentSlot, DefaultAttachmentID);
 	}
 }
 
