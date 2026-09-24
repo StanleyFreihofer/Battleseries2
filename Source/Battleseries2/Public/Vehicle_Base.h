@@ -180,11 +180,7 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Seats", meta = (DisplayName = "Cycle Through Seats", ReturnDisplayName = "Found Seat"))
 	bool CycleThroughSeats(ACharacter_Base* Character);
 
-	UFUNCTION(BlueprintCallable)
-	void HandleViewMethod(ACharacter_Base* Character, const FSeatData& SeatData);
 
-	UFUNCTION(BlueprintCallable)
-	void HandleViewMethod_Default(ACharacter_Base* Character, const FSeatData& SeatData);
 
 	UFUNCTION(BlueprintCallable)
 	void HandleSeatOccupationStatus(bool Occupy, int32 SeatIndex);

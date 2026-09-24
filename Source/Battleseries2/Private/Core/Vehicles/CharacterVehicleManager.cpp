@@ -483,6 +483,47 @@ void UCharacterVehicleManager::UpdateRangefinder_WindowedVehicle()
 	}
 }
 
+void UCharacterVehicleManager::HandleViewMethod(const FSeatData& SeatData)
+{
+	//move to character?
+	if (SeatData.SeatRole != E_SeatRole::DriverGunner && SeatData.SeatRole != E_SeatRole::Gunner)
+	{
+		HandleViewMethod_Default(SeatData);
+		return;
+	}
+
+	int32 SeatIndex = GetCSI();
+
+	GetCurrentVehicle()->SyncActiveCameraForSeat(SeatIndex);
+	
+	UCameraComponent* WeaponCam = GetCurrentVehicle()->GetSeatWeaponCam(SeatIndex);
+	if (!WeaponCam)
+	{
+		HandleViewMethod_Default(SeatData);
+		return;
+	}
+	
+	TWeakObjectPtr<AActor> ViewTarget = GetCurrentVehicle()->VehicleWeaponLogicComponent->GetCurrentViewTargetAtSeatIndex(SeatIndex);
+	GetOwnerCharacter()->UpdateViewTarget(ViewTarget, WeaponCam);
+}
+
+void UCharacterVehicleManager::HandleViewMethod_Default(const FSeatData& SeatData)
+{
+	//move to character?
+	switch (SeatData.ViewMethod)
+	{
+		case E_ViewMethod::Windowed:
+			GetOwnerCharacter()->UpdateViewTarget(GetOwnerCharacter(), GetOwnerCharacter()->FPCamera);
+			break;
+		case E_ViewMethod::Remote:
+		{
+			int32 SeatIndex = GetOwnerCharacter()->VehicleManager->GetCSI();
+			GetCurrentVehicle()->SyncActiveCameraForSeat(SeatIndex);
+			GetOwnerCharacter()->UpdateViewTarget(GetCurrentVehicle(), GetCurrentVehicle()->VehicleCurrentState.SeatStates[SeatIndex].DefaultCamera);
+			break;
+		}
+	}
+}
 
 ACharacter_Base* UCharacterVehicleManager::GetOwnerCharacter()
 {

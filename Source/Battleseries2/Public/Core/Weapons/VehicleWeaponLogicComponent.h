@@ -259,6 +259,8 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void EquipWeapon(int32 SeatIndex, int32 WeaponIndex);
 	UFUNCTION(BlueprintCallable)
+	void EquipWeapon_UpdateUI(int32 SeatIndex, int32 WeaponIndex);
+	UFUNCTION(BlueprintCallable)
 	void UnequipWeapon(int32& SeatIndex, int32& WeaponIndex, bool& bWasFiring);
 	UFUNCTION(BlueprintCallable)
 	void UpdateSeatWACData(int32 SeatIndex, int32 WeaponIndex);

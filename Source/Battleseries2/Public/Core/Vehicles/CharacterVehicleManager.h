@@ -60,6 +60,12 @@ public:
 	void UpdateRangefinder_WindowedVehicle();
 	
 	UFUNCTION(BlueprintCallable)
+	void HandleViewMethod(const FSeatData& SeatData);
+
+	UFUNCTION(BlueprintCallable)
+	void HandleViewMethod_Default(const FSeatData& SeatData);
+	
+	UFUNCTION(BlueprintCallable)
 	ACharacter_Base* GetOwnerCharacter();
 	
 	UFUNCTION(BlueprintCallable, BlueprintPure, meta = (BlueprintThreadSafe))

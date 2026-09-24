@@ -21,6 +21,8 @@ struct FGadgetInstanceStartingData
 	//bool bAutoUse = false;
 };
 
+//layer interaction system with this?
+
 UCLASS()
 class BATTLESERIES2_API AGadget_Base : public AActor
 {
@@ -34,7 +36,7 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Components")
 	UStaticMeshComponent* GadgetMeshComponent = nullptr;
 	
-	
+	//Variables
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (ExposeOnSpawn = "true"), Category = "__Instance")
 	FGadgetInstanceStartingData GadgetInstanceStartingData = FGadgetInstanceStartingData();
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)

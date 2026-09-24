@@ -209,7 +209,7 @@ void ACharacter_Base::Input_SwitchWeapon_Vehicle()
 		return;
 	}
 	const FSeatData& SeatData = VehicleManager->GetCurrentVehicle()->VehicleData->Seats[VehicleManager->GetCSI()];
-	VehicleManager->GetCurrentVehicle()->HandleViewMethod(this, SeatData);
+	VehicleManager->HandleViewMethod(SeatData);
 }
 
 #pragma endregion

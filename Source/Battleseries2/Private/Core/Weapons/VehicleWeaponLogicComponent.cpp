@@ -1463,57 +1463,13 @@ void UVehicleWeaponLogicComponent::EquipWeapon(int32 SeatIndex, int32 WeaponInde
 	const FBaseWeaponData& StaticWeaponData = GetBaseWeaponDataInSlot(SeatIndex, WeaponIndex);
 	FVehicleWeapon_Runtime& CurrentVehicleWeapon = GetEquippedWeaponInSeat(SeatIndex);
 	FWeaponState& CurrentWeapon = CurrentVehicleWeapon.VehicleWeaponState.BaseWeaponRuntimeData;
-	const FVehicleWeaponInstanceData& VWID = GetVWID(SeatIndex, WeaponIndex, CurrentWeapon.WeaponID);
+	//const FVehicleWeaponInstanceData& VWID = GetVWID(SeatIndex, WeaponIndex, CurrentWeapon.WeaponID);
 
 	UpdateSeatWACData(SeatIndex, WeaponIndex);
 
 	GetWorld()->GetTimerManager().SetTimerForNextTick([this, SeatIndex, WeaponIndex]()
 	{
-		FVehicleWeaponSystem_Runtime& SWS = *VehicleWeaponSystem.Find(SeatIndex);
-		FWeaponState& NewWeapon = SWS.Weapons[WeaponIndex].VehicleWeaponState.BaseWeaponRuntimeData;
-		const FBaseWeaponData& StaticWeaponData = GetBaseWeaponDataInSlot(SeatIndex, WeaponIndex);
-
-		//HUD/HMD
-		if (OwnerDataAccessor->GetVehicleState().SeatStates[SeatIndex].UpdateHUD)
-		{
-			//HMD
-			UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateStatusHUD_CAMCount(NewWeapon.CurrentAmmoinMag);
-			UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateStatusHUD_CRACount(NewWeapon.CurrentReserveAmmo);
-			UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateEquippedWeaponHUD_Vehicle
-			(
-				GetBaseWeaponDataInSlot(SeatIndex, WeaponIndex).WeaponClassification.WeaponDisplayNameAbrev,
-				GetEquippedWeaponInSeat(SeatIndex).VehicleWeaponInstanceData.WeaponUIInstanceData.WeaponReticle,
-				GetEquippedWeaponInSeat(SeatIndex).VehicleWeaponInstanceData.WeaponUIInstanceData.ReticleScale,
-				GetEquippedWeaponInSeat(SeatIndex).VehicleWeaponState.BaseWeaponRuntimeData.canFire
-			);
-
-			//HUD (HUD Componenet)
-			if (OwnerDataAccessor->GetVehicleState().SeatStates[SeatIndex].SeatHUDComponent)
-			{
-				TObjectPtr<UUW_HUD_Vehicle_Base> VehicleHUD = Cast<UUW_HUD_Vehicle_Base>(OwnerDataAccessor->GetVehicleState().SeatStates[SeatIndex].SeatHUDComponent->GetUserWidgetObject());
-				VehicleHUD->UpdateEquippedWeaponHUD
-				(
-					GetBaseWeaponDataInSlot(SeatIndex, WeaponIndex).WeaponClassification.WeaponDisplayNameAbrev,
-					GetEquippedWeaponInSeat(SeatIndex).VehicleWeaponInstanceData.WeaponUIInstanceData.WeaponReticle,
-					GetEquippedWeaponInSeat(SeatIndex).VehicleWeaponInstanceData.WeaponUIInstanceData.ReticleScale,
-					GetEquippedWeaponInSeat(SeatIndex).VehicleWeaponState.BaseWeaponRuntimeData.canFire
-				);
-			}
-
-			//separate quad (reticle)
-			TWeakObjectPtr<UStaticMeshComponent> Quad = SWS.VehicleWeaponSystemState.ReticleQuad;
-			if (Quad.Get())
-			{
-				UMaterialInterface* CurrentMat = Quad->GetMaterial(0);
-				UMaterialInstanceDynamic* DynMat = Cast<UMaterialInstanceDynamic>(CurrentMat);
-				DynMat->SetTextureParameterValue(FName("ReticleTexture"), GetEquippedWeaponInSeat(SeatIndex).VehicleWeaponInstanceData.WeaponUIInstanceData.WeaponReticle);
-				Quad->SetRelativeScale3D(FVector::OneVector);
-				FVector NewScale = Quad->GetRelativeScale3D() * GetEquippedWeaponInSeat(SeatIndex).VehicleWeaponInstanceData.WeaponUIInstanceData.ReticleScale;
-				Quad->SetRelativeScale3D(NewScale);
-			}
-			//whatever other update HMD (like HUD system updates but without the subsystem)
-			//how handle that without the hud system switchboard
-		}
+		EquipWeapon_UpdateUI(SeatIndex, WeaponIndex);
 	});
 
 	SeatWeaponSystem.Weapons[WeaponIndex].VehicleWeaponState.BaseWeaponRuntimeData.isEquipped = true;
@@ -1534,6 +1490,52 @@ void UVehicleWeaponLogicComponent::EquipWeapon(int32 SeatIndex, int32 WeaponInde
 	SeatWeaponSystem.VehicleWeaponSystemState.EquippedWeaponState.RaycastData.MuzzleAimDirections.SetNum(MuzzleCount);
 	//equip weapon audio
 	//equip weapon animation
+}
+
+void UVehicleWeaponLogicComponent::EquipWeapon_UpdateUI(int32 SeatIndex, int32 WeaponIndex)
+{
+	FVehicleWeaponSystem_Runtime& SWS = *VehicleWeaponSystem.Find(SeatIndex);
+	FWeaponState& NewWeapon = SWS.Weapons[WeaponIndex].VehicleWeaponState.BaseWeaponRuntimeData;
+	//const FBaseWeaponData& StaticWeaponData = GetBaseWeaponDataInSlot(SeatIndex, WeaponIndex);
+	//HUD/HMD
+	if (!OwnerDataAccessor->GetVehicleState().SeatStates[SeatIndex].UpdateHUD)		{ return; }
+	//HMD
+	UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateStatusHUD_CAMCount(NewWeapon.CurrentAmmoinMag);
+	UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateStatusHUD_CRACount(NewWeapon.CurrentReserveAmmo);
+	UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateEquippedWeaponHUD_Vehicle
+	(
+		GetBaseWeaponDataInSlot(SeatIndex, WeaponIndex).WeaponClassification.WeaponDisplayNameAbrev,
+		GetEquippedWeaponInSeat(SeatIndex).VehicleWeaponInstanceData.WeaponUIInstanceData.WeaponReticle,
+		GetEquippedWeaponInSeat(SeatIndex).VehicleWeaponInstanceData.WeaponUIInstanceData.ReticleScale,
+		GetEquippedWeaponInSeat(SeatIndex).VehicleWeaponState.BaseWeaponRuntimeData.canFire
+	);
+
+	//HUD (HUD Component)
+	if (OwnerDataAccessor->GetVehicleState().SeatStates[SeatIndex].SeatHUDComponent)
+	{
+		TObjectPtr<UUW_HUD_Vehicle_Base> VehicleHUD = Cast<UUW_HUD_Vehicle_Base>(OwnerDataAccessor->GetVehicleState().SeatStates[SeatIndex].SeatHUDComponent->GetUserWidgetObject());
+		VehicleHUD->UpdateEquippedWeaponHUD
+		(
+			GetBaseWeaponDataInSlot(SeatIndex, WeaponIndex).WeaponClassification.WeaponDisplayNameAbrev,
+			GetEquippedWeaponInSeat(SeatIndex).VehicleWeaponInstanceData.WeaponUIInstanceData.WeaponReticle,
+			GetEquippedWeaponInSeat(SeatIndex).VehicleWeaponInstanceData.WeaponUIInstanceData.ReticleScale,
+			GetEquippedWeaponInSeat(SeatIndex).VehicleWeaponState.BaseWeaponRuntimeData.canFire
+		);
+	}
+
+	//separate quad (reticle)
+	TWeakObjectPtr<UStaticMeshComponent> Quad = SWS.VehicleWeaponSystemState.ReticleQuad;
+	if (Quad.Get())
+	{
+		UMaterialInterface* CurrentMat = Quad->GetMaterial(0);
+		UMaterialInstanceDynamic* DynMat = Cast<UMaterialInstanceDynamic>(CurrentMat);
+		DynMat->SetTextureParameterValue(FName("ReticleTexture"), GetEquippedWeaponInSeat(SeatIndex).VehicleWeaponInstanceData.WeaponUIInstanceData.WeaponReticle);
+		Quad->SetRelativeScale3D(FVector::OneVector);
+		FVector NewScale = Quad->GetRelativeScale3D() * GetEquippedWeaponInSeat(SeatIndex).VehicleWeaponInstanceData.WeaponUIInstanceData.ReticleScale;
+		Quad->SetRelativeScale3D(NewScale);
+	}
+	//whatever other update HMD (like HUD system updates but without the subsystem)
+	//how handle that without the hud system switchboard
 }
 
 void UVehicleWeaponLogicComponent::UnequipWeapon(int32& SeatIndex, int32& WeaponIndex, bool& bWasFiring)
@@ -1558,19 +1560,6 @@ void UVehicleWeaponLogicComponent::UpdateSeatWACData(int32 SeatIndex, int32 Weap
 	TWeakObjectPtr<UAudioComponent> WAC = SeatWeaponSystem.VehicleWeaponSystemState.WeaponAudioComponent;
 	
 	UBS2FunctionLibrary::UpdateWACData(WAC, StaticData.WeaponFirePerformance.RateOfFire, StaticData.WeaponAudio);
-
-	/**
-	WAC->SetFloatParameter(FName("Data_RPM"), StaticData.WeaponFirePerformance.RateOfFire);
-	WAC->SetObjectParameter(FName("Data_StopFireAudio"), StaticData.WeaponAudio.FireStop.LoadSynchronous());
-
-	TArray<UObject*> LoadedWaves;
-	for (const TSoftObjectPtr<USoundWave>& SoftWave : StaticData.WeaponAudio.FireLoop)
-	{
-		TObjectPtr<USoundWave> Wave = SoftWave.LoadSynchronous();
-		LoadedWaves.Add(Wave);
-	}
-	WAC->SetObjectArrayParameter(FName("Data_FireLoopAudio"), LoadedWaves);
-	**/
 }
 
 void UVehicleWeaponLogicComponent::UpdateWeaponStatusUI(int32& SeatIndex, bool& canFire)

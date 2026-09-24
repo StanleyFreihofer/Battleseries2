@@ -633,48 +633,6 @@ bool AVehicle_Base::CycleThroughSeats(ACharacter_Base* Character)
 	return false;
 }
 
-void AVehicle_Base::HandleViewMethod(ACharacter_Base* Character, const FSeatData& SeatData)
-{
-	//move to character?
-	if (SeatData.SeatRole != E_SeatRole::DriverGunner && SeatData.SeatRole != E_SeatRole::Gunner)
-	{
-		HandleViewMethod_Default(Character, SeatData);
-		return;
-	}
-
-	int32 SeatIndex = Character->VehicleManager->GetCSI();
-
-	SyncActiveCameraForSeat(SeatIndex);
-	
-	UCameraComponent* WeaponCam = GetSeatWeaponCam(SeatIndex);
-	if (!WeaponCam)
-	{
-		HandleViewMethod_Default(Character, SeatData);
-		return;
-	}
-	
-	TWeakObjectPtr<AActor> ViewTarget = VehicleWeaponLogicComponent->GetCurrentViewTargetAtSeatIndex(SeatIndex);
-	Character->UpdateViewTarget(ViewTarget, WeaponCam);
-}
-
-void AVehicle_Base::HandleViewMethod_Default(ACharacter_Base* Character, const FSeatData& SeatData)
-{
-	//move to character?
-	switch (SeatData.ViewMethod)
-	{
-		case E_ViewMethod::Windowed:
-			Character->UpdateViewTarget(Character, Character->FPCamera);
-			break;
-		case E_ViewMethod::Remote:
-		{
-			int32 SeatIndex = Character->VehicleManager->GetCSI();
-			SyncActiveCameraForSeat(SeatIndex);
-			Character->UpdateViewTarget(this, VehicleCurrentState.SeatStates[SeatIndex].DefaultCamera);
-			break;
-		}
-	}
-}
-
 void AVehicle_Base::HandleSeatOccupationStatus(bool Occupy, int32 SeatIndex)
 {
 	if (Occupy)
@@ -743,7 +701,7 @@ void AVehicle_Base::SetupNewSeat(ACharacter_Base* Character)
 		case E_SeatRole::Passenger:
 			break;
 	}
-	HandleViewMethod(Character, SeatData);
+	Character->VehicleManager->HandleViewMethod(SeatData);
 
 	Character->VehicleManager->CharacterEnterSeat(SeatData.DefaultCharacterContext);
 	if (VehicleMeshComponent->GetAnimInstance()->GetClass()->ImplementsInterface(UAnims::StaticClass()))
