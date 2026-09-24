@@ -485,7 +485,6 @@ void UCharacterVehicleManager::UpdateRangefinder_WindowedVehicle()
 
 void UCharacterVehicleManager::HandleViewMethod(const FSeatData& SeatData)
 {
-	//move to character?
 	if (SeatData.SeatRole != E_SeatRole::DriverGunner && SeatData.SeatRole != E_SeatRole::Gunner)
 	{
 		HandleViewMethod_Default(SeatData);
@@ -509,7 +508,6 @@ void UCharacterVehicleManager::HandleViewMethod(const FSeatData& SeatData)
 
 void UCharacterVehicleManager::HandleViewMethod_Default(const FSeatData& SeatData)
 {
-	//move to character?
 	switch (SeatData.ViewMethod)
 	{
 		case E_ViewMethod::Windowed:

@@ -600,8 +600,16 @@ void ULoadoutManager::UpdateControllerRecoil()
 	const FControllerRecoilData& RecoilData = StaticWeaponData.WeaponRecoilData.ControllerRecoilData;
 	TObjectPtr<ACharacter_Base> Character = GetOwnerCharacter();
 	
-	float PitchValue = RecoilData.PitchControllerRecoil->GetFloatValue(CombatState.RecoilElapsedTime);
-	float YawValue = RecoilData.YawControllerRecoil->GetFloatValue(CombatState.RecoilElapsedTime);
+	float PitchValue, YawValue = 0.f;
+	
+	if (RecoilData.PitchControllerRecoil)
+	{
+		PitchValue = RecoilData.PitchControllerRecoil->GetFloatValue(CombatState.RecoilElapsedTime);
+	}
+	if (RecoilData.YawControllerRecoil)
+	{
+		YawValue = RecoilData.YawControllerRecoil->GetFloatValue(CombatState.RecoilElapsedTime);
+	}
 	
 	if (!CombatState.isAiming)
 	{
@@ -613,6 +621,8 @@ void ULoadoutManager::UpdateControllerRecoil()
 	Character->AddControllerYawInput(YawValue);
 	
 	CombatState.RecoilElapsedTime += 1.0f/60.0f;	
+	
+	if (!RecoilData.PitchControllerRecoil)	{ return;}
 	
 	if (CombatState.RecoilElapsedTime >= RecoilData.PitchControllerRecoil->FloatCurve.GetLastKey().Time)
 	{
@@ -791,7 +801,10 @@ void ULoadoutManager::ReloadWeapon()
 	WeaponReloadAnim.LoadSynchronous();
 
 	//InfantryWeaponState_FP.WeaponMesh->PlayAnimation(WeaponReloadAnim.Get(), false);
-	UBS2FunctionLibrary::PlayAnimSequenceAtDesiredDuration(InfantryWeaponState_FP.WeaponMesh.Get(), WeaponReloadAnim.Get(), ReloadSpeed, false);
+	if (WeaponReloadAnim.Get())
+	{
+		UBS2FunctionLibrary::PlayAnimSequenceAtDesiredDuration(InfantryWeaponState_FP.WeaponMesh.Get(), WeaponReloadAnim.Get(), ReloadSpeed, false);
+	}
 	
 	/**
 	if (StaticWeaponData->WeaponFunctionalityData.canADSReload && CombatState.isAiming)
