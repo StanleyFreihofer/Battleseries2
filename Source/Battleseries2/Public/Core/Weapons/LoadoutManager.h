@@ -177,7 +177,7 @@ class BATTLESERIES2_API ULoadoutManager : public UActorComponent
 		UFUNCTION(BlueprintCallable)
 		void Init_WAC();
 		UFUNCTION(BlueprintCallable)
-		void Init_Attachment(FWeaponAttachmentState& RuntimeSlotState, FInfantryWeaponState& WeaponToApplyTo, EAttachmentSlot AttachmentSlot);
+		void Init_AttachmentMesh(FWeaponAttachmentState& RuntimeSlotState, FInfantryWeaponState& WeaponToApplyTo, EAttachmentSlot AttachmentSlot);
 		UFUNCTION(BlueprintCallable)
 		void Init_Gadget(FName GadgetID, int32 GadgetIndex);
 		UFUNCTION()
@@ -210,6 +210,8 @@ class BATTLESERIES2_API ULoadoutManager : public UActorComponent
 		void StartAim();
 		UFUNCTION(BlueprintCallable)
 		void StopAim();
+		UFUNCTION(BlueprintCallable)
+		void HandleScopeHUD(bool TurnOn);
 		UFUNCTION(BlueprintCallable)
 		void WeaponRangefinder();
 		UFUNCTION(BlueprintCallable) 

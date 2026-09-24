@@ -1422,7 +1422,7 @@ void AVehicle_Base::TurnOnPPOptic(int32 SeatIndex)
 	UGameplayStatics::PlaySound2D(GetWorld(), CurrentOpticData.PowerOnSound);
 	if (VehicleCurrentState.SeatStates[SeatIndex].UpdateHUD)
 	{
-		UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdaticOpticNameHUD_Vehicle(CurrentOpticData.OpticDisplayNameAbrev);
+		UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateOpticNameHUD_Vehicle(CurrentOpticData.OpticDisplayNameAbrev);
 		if (CurrentOpticData.InverseUIColor.A > 0)
 		{
 			UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateVehicleHUD_Color(CurrentOpticData.InverseUIColor);
@@ -1440,7 +1440,7 @@ void AVehicle_Base::TurnOffPPOptic(int32 SeatIndex, int32 PreviousOpticIndex)
 	UGameplayStatics::PlaySound2D(GetWorld(), PreviousOpticData.PowerOffSound);
 	if (VehicleCurrentState.SeatStates[SeatIndex].UpdateHUD)
 	{
-		UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdaticOpticNameHUD_Vehicle(CurrentOpticData.OpticDisplayNameAbrev);
+		UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateOpticNameHUD_Vehicle(CurrentOpticData.OpticDisplayNameAbrev);
 		if (PreviousOpticData.InverseUIColor.A > 0)
 		{
 

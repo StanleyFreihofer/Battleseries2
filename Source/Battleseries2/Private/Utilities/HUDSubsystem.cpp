@@ -50,10 +50,22 @@ void UHUDSubsystem::SpawnLockOnIndicator(TSubclassOf<UUserWidget> HUDClass)
 	LockOnIndicator->AddToViewport();
 }
 
+void UHUDSubsystem::SpawnScopeHUD(TSubclassOf<UUserWidget> HUDClass)
+{
+	if (ScopeWidget)
+	{
+		ScopeWidget->RemoveFromParent();
+		ScopeWidget = nullptr;
+	}
+	APlayerController* PC = GetLocalPlayer()->GetPlayerController(GetWorld());
+	ScopeWidget = CreateWidget<UUserWidget>(PC, HUDClass);
+	ScopeWidget->AddToViewport();
+}
+
 void UHUDSubsystem::SpawnCustomizationUI(TSubclassOf<UUserWidget> HUDClass)
 {
 	APlayerController* PC = GetLocalPlayer()->GetPlayerController(GetWorld());
-	CustomizationWidget = CreateWidget< UUW_Customization>(PC, HUDClass);
+	CustomizationWidget = CreateWidget<UUW_Customization>(PC, HUDClass);
 	CustomizationWidget->AddToViewport();
 }
 
@@ -233,7 +245,7 @@ void UHUDSubsystem::HandleTurretPitchUpdate(float MinPitch, float MaxPitch, floa
 	UpdateTurretElevationHUD_Vehicle(MinPitch, MaxPitch, CurrentPitch);
 }
 
-void UHUDSubsystem::UpdaticOpticNameHUD_Vehicle(FText OpticDisplayName)
+void UHUDSubsystem::UpdateOpticNameHUD_Vehicle(FText OpticDisplayName)
 {
 	if (CurrentVehicleHMD)
 	{

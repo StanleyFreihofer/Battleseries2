@@ -23,6 +23,9 @@ struct FWeaponSightData
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	ESightSlot SightSlot = ESightSlot::FrontSight;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ToolTip = "use to achieve black around scope effect, only added on screen when ADS"))
+	TSubclassOf<UUserWidget> ScopeHUD = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (tooltip = "optic settings to pull from optic data table"))
 	TArray<FName> OpticIDs;

@@ -21,19 +21,21 @@ class BATTLESERIES2_API UHUDSubsystem : public ULocalPlayerSubsystem
 
 public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
-    UUW_HUD_Status_Base* StatusHUD = nullptr;         //ammo, health
+    TObjectPtr<UUW_HUD_Status_Base> StatusHUD = nullptr;         //ammo, health
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
-    UUW_HUD_Vehicle_Base* CurrentVehicleHMD = nullptr;        //standard HUD
+    TObjectPtr<UUW_HUD_Vehicle_Base> CurrentVehicleHMD = nullptr;        //standard HUD
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
-    UUW_HUD_LockOnIndicator_Base* LockOnIndicator = nullptr;
-
+    TObjectPtr<UUW_HUD_LockOnIndicator_Base> LockOnIndicator = nullptr;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TObjectPtr<UUserWidget> ScopeWidget = nullptr;
     //UPROPERTY(EditAnywhere, BlueprintReadWrite)
     //spawn UI
 
     UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "HUD | Customization")
-    UUW_Customization* CustomizationWidget = nullptr;
+    TObjectPtr<UUW_Customization> CustomizationWidget = nullptr;
 
     //killfeed
     //onfootreticle
@@ -48,6 +50,8 @@ public:
     void SpawnVehicleSeatHUD(TSubclassOf<UUserWidget> HUDClass);
     UFUNCTION(BlueprintCallable)
     void SpawnLockOnIndicator(TSubclassOf<UUserWidget> HUDClass);
+	UFUNCTION(BlueprintCallable)
+	void SpawnScopeHUD(TSubclassOf<UUserWidget> HUDClass);
     UFUNCTION(BlueprintCallable)
     void SpawnCustomizationUI(TSubclassOf<UUserWidget> HUDClass);
 	
@@ -99,7 +103,7 @@ public:
     UFUNCTION(BlueprintCallable)
     void HandleTurretPitchUpdate(float MinPitch, float MaxPitch, float CurrentPitch);
     UFUNCTION(BlueprintCallable)
-    void UpdaticOpticNameHUD_Vehicle(FText OpticDisplayName);
+    void UpdateOpticNameHUD_Vehicle(FText OpticDisplayName);
     UFUNCTION(BlueprintCallable)
     void UpdateOpticMagnificationHUD_Vehicle(float OpticMagnification);
     UFUNCTION(BlueprintCallable)

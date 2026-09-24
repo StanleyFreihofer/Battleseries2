@@ -181,7 +181,7 @@ void ULoadoutManager::Init_WAC()
 	Loadout.WeaponSystem.WeaponAudioComponent = UBS2FunctionLibrary::CreateWAC(this, GetOwner(), GetOwner()->GetRootComponent());
 }
 
-void ULoadoutManager::Init_Attachment(FWeaponAttachmentState& RuntimeSlotState, FInfantryWeaponState& WeaponToApplyTo, EAttachmentSlot AttachmentSlot)
+void ULoadoutManager::Init_AttachmentMesh(FWeaponAttachmentState& RuntimeSlotState, FInfantryWeaponState& WeaponToApplyTo, EAttachmentSlot AttachmentSlot)
 {
 	//Initialize/Create Attachment, attach to gun, cache
 	TWeakObjectPtr<UStaticMeshComponent> NewAttachment = NewObject<UStaticMeshComponent>(GetOwner());
@@ -234,8 +234,13 @@ void ULoadoutManager::ApplyAttachments(const FPlayerLoadoutConfig_Weapon& Attach
 		const EAttachmentSlot& SlotType = Slot.Key;
 		const FPlayerLoadoutConfig_WeaponAttachment& AttachmentConfig = Slot.Value;
 		FWeaponAttachmentState& RuntimeSlotState = WeaponToApplyTo.WeaponAttachmentStates.FindOrAdd(SlotType);
-
-		Init_Attachment(RuntimeSlotState, WeaponToApplyTo, SlotType);
+		
+		const FWeaponAttachmentData& AttachmentData = *UBS2FunctionLibrary::GetDataSubsystem(this)->GetWeaponAttachmentDataRow(AttachmentConfig.AttachmentID);
+		//if (AttachmentData.AttachmentClassification.AttachmentMesh.IsValid())
+		//{
+			Init_AttachmentMesh(RuntimeSlotState, WeaponToApplyTo, SlotType);
+		//}
+		
 		UpdateAttachment(RuntimeSlotState, AttachmentConfig.AttachmentID, GetBaseWeaponState(WeaponIndex).WeaponID, SlotType);
 	}
 }
@@ -281,23 +286,33 @@ void ULoadoutManager::UpdateScopeCamera()
 	if (Loadout.WeaponSystem.InfantryWeaponState.WeaponState_FP[GetCII()].WeaponAttachmentStates.Find(EAttachmentSlot::Scope))
 	{
 		FWeaponAttachmentState& WeaponAttachmentState = *Loadout.WeaponSystem.InfantryWeaponState.WeaponState_FP[GetCII()].WeaponAttachmentStates.Find(EAttachmentSlot::Scope);
+		if (!WeaponAttachmentState.SpawnedAttachment.IsValid() || !WeaponAttachmentState.SpawnedAttachment->GetStaticMesh())	{ return; }
+		if (WeaponAttachmentState.BaseAttachmentState.AttachmentID == NAME_None)	{return;}
 		int32 PIPMatIndex = UBS2FunctionLibrary::GetDataSubsystem(this)->GetWeaponAttachmentDataRow(WeaponAttachmentState.BaseAttachmentState.AttachmentID)->WeaponSightData.PIPMaterialIndex;
 		if (PIPMatIndex < 0) { return; }
+		if (!WeaponAttachmentState.SpawnedAttachment.IsValid())	{ return;}
 		UMaterialInstanceDynamic* MID = WeaponAttachmentState.SpawnedAttachment->CreateDynamicMaterialInstance(PIPMatIndex, WeaponAttachmentState.SpawnedAttachment->GetMaterial(PIPMatIndex));
+		if (!MID) { return; }
 		WeaponAttachmentState.SpawnedAttachment->SetMaterial(PIPMatIndex, MID);
+		check (Loadout.WeaponSystem.ScopeCamera.Get());
 		MID->SetTextureParameterValue(FName("RenderTarget"), Loadout.WeaponSystem.ScopeCamera->TextureTarget);
 	}
 }
 
 void ULoadoutManager::UpdateAttachment(FWeaponAttachmentState& RuntimeSlotState, FName AttachmentID, FName WeaponID, EAttachmentSlot AttachmentSlot)
 {
-	//update attachment mesh
-	const FWeaponAttachmentData& AttachmentData = *UBS2FunctionLibrary::GetDataSubsystem(this)->GetWeaponAttachmentDataRow(AttachmentID);
-	TWeakObjectPtr<UStaticMesh> AttachmentMesh = AttachmentData.AttachmentClassification.AttachmentMesh.LoadSynchronous();
-	const FVector& AttachmentOffset = GetAttachmentDefaultOffset(WeaponID, AttachmentSlot, AttachmentID);
 
-	RuntimeSlotState.SpawnedAttachment->SetStaticMesh(AttachmentMesh.Get());
-	RuntimeSlotState.SpawnedAttachment->SetRelativeLocation(AttachmentOffset);
+	const FWeaponAttachmentData& AttachmentData = *UBS2FunctionLibrary::GetDataSubsystem(this)->GetWeaponAttachmentDataRow(AttachmentID);
+	
+	if (!AttachmentData.AttachmentClassification.AttachmentMesh.IsNull())
+	{
+		//update attachment mesh
+		TWeakObjectPtr<UStaticMesh> AttachmentMesh = AttachmentData.AttachmentClassification.AttachmentMesh.LoadSynchronous();
+		const FVector& AttachmentOffset = GetAttachmentDefaultOffset(WeaponID, AttachmentSlot, AttachmentID);
+		RuntimeSlotState.SpawnedAttachment->SetStaticMesh(AttachmentMesh.Get());
+		RuntimeSlotState.SpawnedAttachment->SetRelativeLocation(AttachmentOffset);
+	}
+	
 	RuntimeSlotState.BaseAttachmentState.AttachmentID = AttachmentID;
 }
 
@@ -317,6 +332,7 @@ void ULoadoutManager::UpdateWeaponVisibility(int32 WeaponIndex, bool Hide)
 	Weapon.WeaponMesh->SetHiddenInGame(Hide);
 	for (auto& AttachmentSlot : Weapon.WeaponAttachmentStates)
 	{
+		if (!AttachmentSlot.Value.SpawnedAttachment.Get()) { continue;}
 		AttachmentSlot.Value.SpawnedAttachment->SetHiddenInGame(Hide);
 	}
 }
@@ -386,7 +402,6 @@ void ULoadoutManager::StartAim()
 	}
 	const FInfantryWeaponAimData& AimData = GetCurrentWeaponStaticData()->InfantryWeaponAimData;
 	CombatState.canAim = AimData.canAim;
-
 	
 	if (AimData.HideArms)
 	{
@@ -400,24 +415,49 @@ void ULoadoutManager::StartAim()
 			GetCurrentInfantryWeaponState_FP().WeaponMesh->AttachToComponent(Character->FPArms, FAttachmentTransformRules(EAttachmentRule::SnapToTarget, EAttachmentRule::SnapToTarget, EAttachmentRule::SnapToTarget, true), AttachSocketName);
 		}
 	}
+	HandleScopeHUD(true);
 	CombatState.isAiming = true;
 }
 
 void ULoadoutManager::StopAim()
 {
+	HandleScopeHUD(false);
 	const FInfantryWeaponAimData& AimData = GetCurrentWeaponStaticData()->InfantryWeaponAimData;
+
 	if (!AimData.canAim) { return; }
 	if (!CombatState.isAiming) { return; }
 	if (AimData.HideArms)
 	{
-		TWeakObjectPtr<ACharacter_Base> Character = Cast<ACharacter_Base>(GetOwner());
+		TWeakObjectPtr<ACharacter_Base> Character = GetOwnerCharacter();
 		USkeletalMeshComponent* FPArms = Character->FPArms;
 		FPArms->SetVisibility(true);
 		FString SocketString = FString::Printf(TEXT("Socket_%s"), *GetCurrentWeaponBaseState()->WeaponID.ToString());
 		FName AttachSocketName = FName(*SocketString);
 		GetCurrentInfantryWeaponState_FP().WeaponMesh->AttachToComponent(Character->FPArms, FAttachmentTransformRules(EAttachmentRule::SnapToTarget, EAttachmentRule::SnapToTarget, EAttachmentRule::SnapToTarget, true), AttachSocketName);
 	}
+
 	CombatState.isAiming = false;
+}
+
+void ULoadoutManager::HandleScopeHUD(bool TurnOn)
+{
+	if (!TurnOn)
+	{
+		if (UBS2FunctionLibrary::GetHUDSubsystem(this)->ScopeWidget.Get())
+		{
+			UBS2FunctionLibrary::GetHUDSubsystem(this)->ScopeWidget->RemoveFromParent();
+			UBS2FunctionLibrary::GetHUDSubsystem(this)->ScopeWidget = nullptr;
+		}
+		return;
+	}
+
+	if (GetCurrentAttachmentInSlot(EAttachmentSlot::Scope).BaseAttachmentState.AttachmentID != NAME_None && GetOwnerCharacter()->IsLocallyControlled())
+	{
+		FName& ScopeID = GetCurrentAttachmentInSlot(EAttachmentSlot::Scope).BaseAttachmentState.AttachmentID;
+		TSubclassOf<UUserWidget> ScopeHUD = UBS2FunctionLibrary::GetDataSubsystem(this)->GetWeaponAttachmentDataRow(ScopeID)->WeaponSightData.ScopeHUD;
+		if (!ScopeHUD) { return; }
+		UBS2FunctionLibrary::GetHUDSubsystem(this)->SpawnScopeHUD(ScopeHUD);
+	}
 }
 
 # pragma endregion 
@@ -1129,7 +1169,7 @@ void ULoadoutManager::EquipWeapon(int32 WeaponIndex, bool InitialEquip)
 		FPEquipWeaponMontage = AnimData.FPWeaponAnimData.BaseItemAnimData.EquipMontage;
 	}
 	
-	if (WeaponEquipAnim)
+	if (!WeaponEquipAnim.IsNull())
 	{
 		WeaponEquipAnim.LoadSynchronous();
 		NewWeaponMesh->PlayAnimation(WeaponEquipAnim.Get(), false);
