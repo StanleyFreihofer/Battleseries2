@@ -1117,18 +1117,22 @@ void ULoadoutManager::EquipWeapon(int32 WeaponIndex, bool InitialEquip)
 		GetWorld()->GetTimerManager().SetTimer(CombatState.RangefinderTimer, this, &ULoadoutManager::WeaponRangefinder, 0.05f, true);
 	}
 	
+	TSoftObjectPtr<UAnimSequence> WeaponEquipAnim;
 	if (InitialEquip)
 	{
-		//only do weapon mesh animation on initial equip
-		TSoftObjectPtr<UAnimSequence> WeaponEquipAnim = AnimData.WeaponAnimData.WeaponEquip;
-		WeaponEquipAnim.LoadSynchronous();
-		NewWeaponMesh->PlayAnimation(WeaponEquipAnim.Get(), false);
-		
+		WeaponEquipAnim = AnimData.WeaponAnimData.WeaponEquipInitial;
 		FPEquipWeaponMontage = AnimData.FPWeaponAnimData.BaseItemAnimData.InitialEquipMontage;
 	}
 	else
 	{
+		WeaponEquipAnim = AnimData.WeaponAnimData.WeaponEquip;
 		FPEquipWeaponMontage = AnimData.FPWeaponAnimData.BaseItemAnimData.EquipMontage;
+	}
+	
+	if (WeaponEquipAnim)
+	{
+		WeaponEquipAnim.LoadSynchronous();
+		NewWeaponMesh->PlayAnimation(WeaponEquipAnim.Get(), false);
 	}
 
 	FPEquipWeaponMontage.LoadSynchronous();

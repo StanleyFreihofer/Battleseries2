@@ -234,12 +234,12 @@ struct FInfantryWeaponAnimData_Weapon
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	TSoftObjectPtr<UAnimSequence> WeaponEquip = nullptr;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	TSoftObjectPtr<UAnimSequence> WeaponEquipInitial = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	TSoftObjectPtr<UAnimSequence> WeaponInspect = nullptr;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	TSoftObjectPtr<UAnimSequence> WeaponUnholsterInitial = nullptr;
 };
 
 USTRUCT(BlueprintType)
