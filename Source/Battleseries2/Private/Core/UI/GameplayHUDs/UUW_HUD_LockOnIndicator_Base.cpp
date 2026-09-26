@@ -13,8 +13,8 @@ void UUW_HUD_LockOnIndicator_Base::UpdateIndicatorPosition(FVector Location)
     UCanvasPanelSlot* IndicatorSlot = UWidgetLayoutLibrary::SlotAsCanvasSlot(IndicatorGroup);
     FVector2D IndicatorScreenPosition; 
     UWidgetLayoutLibrary::ProjectWorldLocationToWidgetPosition(PlayerController, Location, IndicatorScreenPosition, false);
-
-    IndicatorSlot->SetPosition(IndicatorScreenPosition);
+    
+   // IndicatorSlot->SetPosition(IndicatorScreenPosition);
 }
 
 void UUW_HUD_LockOnIndicator_Base::UpdateLockIndicatorStatus(ELockOnState LockOnState)

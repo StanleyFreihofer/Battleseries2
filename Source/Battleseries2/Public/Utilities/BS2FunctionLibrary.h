@@ -4,7 +4,9 @@
 #include "UObject/NoExportTypes.h"
 #include "Engine/DataTable.h"
 #include "Data/Vehicles/Data_Vehicle.h"
+#include "Data/Items/Weapons/WeaponTypes.h"
 #include "Kismet/BlueprintFunctionLibrary.h"
+#include "TimerManager.h"
 #include "BS2FunctionLibrary.generated.h"
 
 class UDataManagerSubsystem;
@@ -20,6 +22,11 @@ class BATTLESERIES2_API UBS2FunctionLibrary : public UBlueprintFunctionLibrary
 
 public:
 
+	// UBS2FunctionLibrary
+	UFUNCTION(BlueprintCallable, Category = "Battleseries | Tools")
+	static float MetersToUU(float Meters) { return Meters * 100.f; }
+	UFUNCTION(BlueprintCallable, Category = "Battleseries | Tools")
+	static float UUToMeters(float UU) { return UU / 100.f; }
     UFUNCTION(BlueprintCallable, Category = "Battleseries | Tools")
     static bool PerformSphereTraceMulti(const UObject* WorldContextObject, const FTransform StartTransform, TArray<FHitResult>& OutHits, TArray<AActor*> ActorsToIgnore, float Radius, float Distance, bool Debug);
 	UFUNCTION(BlueprintCallable, Category = "Battleseries | Tools")
@@ -86,6 +93,8 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Battleseries | Weapon Functions")
 	static int32 UpdateCurrentReserveAmmo(FWeaponState& CurrentWeapon, int32 CRADelta, int32 MRA);
 	UFUNCTION(BlueprintCallable, Category = "Battleseries | Weapon Functions")
+	static bool GetIfWeaponShouldBeAbleToFire(FWeaponState& WeaponState);
+	UFUNCTION(BlueprintCallable, Category = "Battleseries | Weapon Functions")
 	static void HandleIfWeaponCanFire(FWeaponState& CurrentWeapon);
     UFUNCTION(BlueprintCallable, Category = "Battleseries | Weapon Functions")
     static void UpdateWeaponIndex(TArray<FWeaponState> Weapons, int32 InCurrentWeaponIndex, int32& OutNewWeaponIndex);
@@ -97,6 +106,11 @@ public:
 	static int32 GetMaxMagSize(bool canRoundbeChambered, int32 BaseMagSize);
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Battleseries | Weapon Functions")
 	static bool GetIfWeaponCanReload(FWeaponState Weapon, bool canRoundbeChambered, int32 BaseMagSize);
+
+	static void StartLockingOn(UObject* WorldContextObject, FTimerDelegate& LockOnDelegate, float AcquireTime, AActor* HitActor, FLockOnState& LockOnState, bool UpdateHUD, TSubclassOf<UUserWidget> IndicatorReticle);
+	static void LockOn(UObject* WorldContextObject, FWeaponState& WeaponState, bool UpdateHUD, EHomingCapability HomingCapability);
+	static void StartCancelLockOn(UObject* WorldContextObject, FTimerDelegate& LockOnDelegate, FLockOnState& LockOnState, float ElapsedTime, bool UpdateHUD);
+	static void CancelLockOn(UObject* WorldContextObject, FWeaponState& WeaponState, bool UpdateHUD, EHomingCapability HomingCapability);
 	
 #pragma endregion
 	

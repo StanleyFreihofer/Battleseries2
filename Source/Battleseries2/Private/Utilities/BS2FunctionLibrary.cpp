@@ -319,14 +319,20 @@ int32 UBS2FunctionLibrary::UpdateCurrentReserveAmmo(FWeaponState& CurrentWeapon,
 	return CurrentWeapon.CurrentReserveAmmo;
 }
 
+bool UBS2FunctionLibrary::GetIfWeaponShouldBeAbleToFire(FWeaponState& WeaponState)
+{
+	//doesnt update can fire and doesnt check canFire
+	//can be used to update canFire
+	if (WeaponState.CurrentAmmoinMag <= 0 || !WeaponState.isEquipped || WeaponState.isReloading)
+	{
+		return false;
+	}
+	return true;
+}
+
 void UBS2FunctionLibrary::HandleIfWeaponCanFire(FWeaponState& CurrentWeapon)
 {
-	if (CurrentWeapon.CurrentAmmoinMag <= 0 || !CurrentWeapon.isEquipped || CurrentWeapon.isReloading)
-	{
-		CurrentWeapon.canFire = false;
-		return;
-	}
-	CurrentWeapon.canFire = true;
+	CurrentWeapon.canFire = GetIfWeaponShouldBeAbleToFire(CurrentWeapon);
 }
 
 void UBS2FunctionLibrary::UpdateWeaponIndex(TArray<FWeaponState> Weapons, int32 InCurrentWeaponIndex, int32& OutNewWeaponIndex)
@@ -374,6 +380,67 @@ bool UBS2FunctionLibrary::GetIfWeaponCanReload(FWeaponState Weapon, bool canRoun
 		return true;
 	}
 	return false;
+}
+
+void UBS2FunctionLibrary::StartLockingOn(UObject* WorldContextObject, FTimerDelegate& LockOnDelegate, float AcquireTime, AActor* HitActor, FLockOnState& LockOnState, bool UpdateHUD, TSubclassOf<UUserWidget> IndicatorReticle)
+{
+	WorldContextObject->GetWorld()->GetTimerManager().SetTimer(LockOnState.LockOnTimer, LockOnDelegate, AcquireTime, false);			//binding should've happened before hand
+	LockOnState.AcquiredTargetComp = HitActor->GetRootComponent();
+	LockOnState.CurrentLockStatus = ELockOnState::IsLockingOn;
+	if (UpdateHUD)
+	{
+		GetHUDSubsystem(HitActor)->SpawnLockOnIndicator(IndicatorReticle);
+	}
+}
+
+void UBS2FunctionLibrary::LockOn(UObject* WorldContextObject, FWeaponState& WeaponState, bool UpdateHUD, EHomingCapability HomingCapability)
+{
+	WeaponState.LockOnState.CurrentLockStatus = ELockOnState::IsLockedOn;
+	WorldContextObject->GetWorld()->GetTimerManager().ClearTimer(WeaponState.LockOnState.LockOnTimer);
+	
+	if (GetIfWeaponShouldBeAbleToFire(WeaponState) && HomingCapability == EHomingCapability::RequireLockOn)
+	{
+		WeaponState.canFire = true;
+	}
+	
+	if (UpdateHUD)
+	{
+		GetHUDSubsystem(WorldContextObject)->UpdateLockOnIndicatorStatus(WeaponState.LockOnState.CurrentLockStatus);
+	}
+}
+
+void UBS2FunctionLibrary::StartCancelLockOn(UObject* WorldContextObject, FTimerDelegate& LockOnDelegate, FLockOnState& LockOnState, float ElapsedTime, bool UpdateHUD)
+{
+	float FinalElapsedTime = ElapsedTime;
+	if (WorldContextObject->GetWorld()->GetTimerManager().IsTimerActive(LockOnState.LockOnTimer))
+	{
+		FinalElapsedTime = WorldContextObject->GetWorld()->GetTimerManager().GetTimerElapsed(LockOnState.LockOnTimer);
+	}
+	WorldContextObject->GetWorld()->GetTimerManager().SetTimer(LockOnState.LockOnTimer, LockOnDelegate, FinalElapsedTime, false);
+	LockOnState.CurrentLockStatus = ELockOnState::IsLosingLock;
+	
+	if (UpdateHUD)
+	{
+		GetHUDSubsystem(WorldContextObject)->UpdateLockOnIndicatorStatus(LockOnState.CurrentLockStatus);
+	}
+}
+
+void UBS2FunctionLibrary::CancelLockOn(UObject* WorldContextObject, FWeaponState& WeaponState, bool UpdateHUD, EHomingCapability HomingCapability)
+{
+	WeaponState.LockOnState.CurrentLockStatus = ELockOnState::NotLockingOn;
+	WeaponState.LockOnState.AcquiredTargetComp = nullptr;
+	WorldContextObject->GetWorld()->GetTimerManager().ClearTimer(WeaponState.LockOnState.LockOnTimer);
+	
+	if (GetIfWeaponShouldBeAbleToFire(WeaponState) && HomingCapability == EHomingCapability::RequireLockOn)
+	{
+		WeaponState.canFire = false;
+	}
+	
+	if (UpdateHUD)
+	{
+		UBS2FunctionLibrary::GetHUDSubsystem(WorldContextObject)->UpdateLockOnIndicatorStatus(WeaponState.LockOnState.CurrentLockStatus);
+		UBS2FunctionLibrary::GetHUDSubsystem(WorldContextObject)->RemoveWidget(UBS2FunctionLibrary::GetHUDSubsystem(WorldContextObject)->LockOnIndicator);
+	}
 }
 
 #pragma endregion 

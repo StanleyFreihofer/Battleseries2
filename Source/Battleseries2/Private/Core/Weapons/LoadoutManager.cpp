@@ -768,7 +768,10 @@ void ULoadoutManager::FireWeapon()
 		UNiagaraComponent* MuzzleFlash = UNiagaraFunctionLibrary::SpawnSystemAttached(StaticWeaponData->WeaponVFXData.MuzzleFlashFX.LoadSynchronous(), IWS_FP.WeaponMesh.Get(), FName("Muzzle"), FVector::ZeroVector, IWS_FP.WeaponMesh->GetSocketRotation(FName("Muzzle")), EAttachLocation::KeepRelativeOffset, false, true, ENCPoolMethod::None, true);
 		MuzzleFlash->SetNiagaraVariableBool("User.Trigger", true);
 	}
-	IWS_FP.WeaponMesh->PlayAnimation(StaticWeaponData->InfantryWeaponAnimData.WeaponAnimData.WeaponFire.LoadSynchronous(), false);
+	if (!StaticWeaponData->InfantryWeaponAnimData.WeaponAnimData.WeaponFire.IsNull())
+	{
+		IWS_FP.WeaponMesh->PlayAnimation(StaticWeaponData->InfantryWeaponAnimData.WeaponAnimData.WeaponFire.LoadSynchronous(), false);
+	}
 	//weapon fire anim
 	//weapon slide anim (third person)
 	//weapon fire audio
