@@ -101,6 +101,7 @@ void ULoadoutManager::Init_WeaponLoadout(TArray<FName> Weapons, TArray<FPlayerLo
 	Loadout.WeaponSystem.InfantryWeaponState.WeaponState_FP.SetNum(Weapons.Num());
 	Loadout.WeaponSystem.InfantryWeaponState.WeaponState_TP.SetNum(Weapons.Num());
 	Loadout.WeaponSystem.InfantryWeaponState.CurrentWeaponStats.SetNum(Weapons.Num());
+	Loadout.WeaponSystem.InfantryWeaponState.wasEquipped.SetNum(Weapons.Num());
 
 	for (int32 i = 0; i < Weapons.Num(); i++)
 	{
@@ -170,6 +171,8 @@ void ULoadoutManager::Init_WeaponState(int32 WeaponIndex)
 {
 	//if using current weapon stats to initialize, the stats need to be valid/setup beforehand
 	FWeaponStats_Runtime& CurrentWeaponStats = Loadout.WeaponSystem.InfantryWeaponState.CurrentWeaponStats[WeaponIndex];
+	
+	Loadout.WeaponSystem.InfantryWeaponState.wasEquipped[WeaponIndex] = false;			//will play initial equip on 1st equip
 	FWeaponState& BaseWeaponState = GetBaseWeaponState(WeaponIndex);
 	BaseWeaponState.CurrentAmmoinMag = GetMaxMagSize(WeaponIndex);
 	BaseWeaponState.CurrentReserveAmmo = CurrentWeaponStats.MaxReserveAmmo;
@@ -482,14 +485,124 @@ void ULoadoutManager::HandleScopeHUD(bool TurnOn)
 
 void ULoadoutManager::WeaponRangefinder()
 {
-	FHitResult OutHit;
-	UBS2FunctionLibrary::PerformLineTrace(this, GetOwnerCharacter()->FPCamera->GetComponentTransform(), OutHit, { GetOwner() }, false);
+	FHitResult OutHit = Loadout.WeaponSystem.BaseWeaponState.EquippedWeaponState.RaycastData.RangefinderData;
+	FTransform CamTransform = GetOwnerCharacter()->FPCamera->GetComponentTransform();
+	bool LockOn = GetCurrentWeaponStaticData()->WeaponFunctionalityData.BaseWeaponFunctionality.HomingFunctionality.HomingCapability != EHomingCapability::NoHoming;
+	if (LockOn)
+	{
+		HandleHoming(CamTransform);
+	}
+	else
+	{
+		UBS2FunctionLibrary::PerformLineTrace(this, CamTransform, OutHit, { GetOwner() }, false);
+		Loadout.WeaponSystem.BaseWeaponState.EquippedWeaponState.RaycastData.RangefinderData = OutHit;
+	}
+
 	if (Loadout.WeaponSystem.InfantryWeaponState.WeaponState_FP.IsEmpty())	{ return;}
 	TWeakObjectPtr<USkeletalMeshComponent>& WeaponMesh = Loadout.WeaponSystem.InfantryWeaponState.WeaponState_FP[GetCII()].WeaponMesh;
-
-	Loadout.WeaponSystem.BaseWeaponState.EquippedWeaponState.RaycastData.RangefinderData = OutHit;
-
 	Loadout.WeaponSystem.BaseWeaponState.EquippedWeaponState.RaycastData.MuzzleAimDirections[0] = UBS2FunctionLibrary::GetAimDirectionFromMuzzle(OutHit, FName("Muzzle"), WeaponMesh);
+}
+
+void ULoadoutManager::HandleHoming(FTransform TraceTransform)
+{
+	FHitResult& OutHit = Loadout.WeaponSystem.BaseWeaponState.EquippedWeaponState.RaycastData.RangefinderData;
+	const FWeaponHomingData& StaticHomingData = GetCurrentWeaponStaticData()->WeaponFunctionalityData.BaseWeaponFunctionality.HomingFunctionality;
+
+	bool bHit = UBS2FunctionLibrary::PerformWeaponSphereTrace(this, TraceTransform, OutHit, {GetOwner()}, GetCurrentWeaponStaticData()->WeaponFunctionalityData.BaseWeaponFunctionality.HomingFunctionality.LockOnRadius, true);
+	
+	switch (StaticHomingData.HomingCapability)
+	{
+		case EHomingCapability::RequireLockOn:
+		case EHomingCapability::CanLockOn:
+			HandleLockOn();
+			break;
+	}
+}
+
+void ULoadoutManager::DemoteLockOnStatus()
+{
+	switch (GetCurrentWeaponBaseState()->LockOnState.CurrentLockStatus)
+	{
+		case ELockOnState::IsLockingOn:
+		case ELockOnState::IsLockedOn:
+			StartCancelLockOn();
+			break;
+	}
+}
+
+void ULoadoutManager::HandleLockOn()
+{
+	const FWeaponHomingData& StaticHomingData = GetCurrentWeaponStaticData()->WeaponFunctionalityData.BaseWeaponFunctionality.HomingFunctionality;
+	FHitResult& OutHit = Loadout.WeaponSystem.BaseWeaponState.EquippedWeaponState.RaycastData.RangefinderData;
+	FLockOnState& LockOnState = GetCurrentWeaponBaseState()->LockOnState;
+	bool isLocallyControlled = GetOwnerCharacter()->IsLocallyControlled();
+	
+	bool canLockOn = UBS2FunctionLibrary::GetCanLockOn_Final(StaticHomingData, OutHit);
+
+	if (canLockOn && CombatState.isAiming)
+	{
+		//anything from here on can be seen as a "promotion" of lock status 
+		switch (LockOnState.CurrentLockStatus)
+		{
+			case ELockOnState::NotLockingOn:
+				StartLockingOn();
+				break;
+			case ELockOnState::IsLockingOn:
+			case ELockOnState::IsLockedOn:
+				if (isLocallyControlled)
+				{
+					UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateLockOnIndicatorPosition(OutHit.GetActor()->GetRootComponent()->GetSocketLocation(FName("LockOn")));
+				}
+				break;
+			case ELockOnState::IsLosingLock:
+				//DO SOMETHING HERE!!!!!!!!!!!!!!!!!!!!!!!
+				break;
+		}
+	}
+	else
+	{
+		DemoteLockOnStatus();
+	}
+}
+
+void ULoadoutManager::StartLockingOn()
+{
+	FHitResult& OutHit = Loadout.WeaponSystem.BaseWeaponState.EquippedWeaponState.RaycastData.RangefinderData;
+	const FWeaponHomingData& StaticHomingData = GetCurrentWeaponStaticData()->WeaponFunctionalityData.BaseWeaponFunctionality.HomingFunctionality;
+	FLockOnState& LockOnState = GetCurrentWeaponBaseState()->LockOnState;
+	bool isLocallyControlled = GetOwnerCharacter()->IsLocallyControlled();
+	
+	FTimerDelegate LockOnDelegate;
+	LockOnDelegate.BindUFunction(this, FName("LockOn"));
+	UBS2FunctionLibrary::StartLockingOn(this, LockOnDelegate, StaticHomingData.AcquireTime, OutHit.GetActor(), LockOnState, isLocallyControlled, StaticHomingData.IndicatorReticle);
+	Loadout.WeaponSystem.WeaponAudioComponent->Activate();
+	Loadout.WeaponSystem.WeaponAudioComponent->SetTriggerParameter(FName("Event_LockingOn"));
+}
+
+void ULoadoutManager::LockOn()
+{
+	const FWeaponHomingData& StaticHomingData = GetCurrentWeaponStaticData()->WeaponFunctionalityData.BaseWeaponFunctionality.HomingFunctionality;
+	bool isLocallyControlled = GetOwnerCharacter()->IsLocallyControlled();
+	UBS2FunctionLibrary::LockOn(this, *GetCurrentWeaponBaseState(), isLocallyControlled, StaticHomingData.HomingCapability);
+	Loadout.WeaponSystem.WeaponAudioComponent->SetTriggerParameter(FName("Event_LockOn"));
+}
+
+void ULoadoutManager::StartCancelLockOn()
+{
+	float ElapsedTime = 1.0f;
+	FLockOnState& LockOnState = GetCurrentWeaponBaseState()->LockOnState;
+	
+	FTimerDelegate LockOnDelegate;
+	LockOnDelegate.BindUFunction(this, FName("CancelLockOn"));
+	
+	UBS2FunctionLibrary::StartCancelLockOn(this, LockOnDelegate, LockOnState, ElapsedTime, GetOwnerCharacter()->IsLocallyControlled());
+}
+
+void ULoadoutManager::CancelLockOn()
+{
+	const FWeaponHomingData& StaticHomingData = GetCurrentWeaponStaticData()->WeaponFunctionalityData.BaseWeaponFunctionality.HomingFunctionality;
+	
+	UBS2FunctionLibrary::CancelLockOn(this, *GetCurrentWeaponBaseState(), GetOwnerCharacter()->IsLocallyControlled(), StaticHomingData.HomingCapability);
 }
 
 #pragma region WeaponFire
@@ -513,6 +626,7 @@ void ULoadoutManager::HandleStartFire()
   	switch (CurrentWeapon.CurrentFireMode)
 	{
 		case EFireMode::Single:
+  			//HandleStartSingleFire
 			if (CombatState.isAttemptingToFire)		{ return; }
   			if (GetWorld()->GetTimerManager().IsTimerActive(CurrentWeapon.TimerHandle_AutoFire))
   			{
@@ -554,16 +668,8 @@ void ULoadoutManager::StartFire()
 {
 	//fires exactly once
 	//assumes canfire is true
-	if (GetCurrentWeaponBaseState()->CurrentFireMode == EFireMode::Single)
-	{
-		UBS2FunctionLibrary::StartWAC(Loadout.WeaponSystem.WeaponAudioComponent, 1);
-	}
-	else
-	{
-		UBS2FunctionLibrary::StartWAC(Loadout.WeaponSystem.WeaponAudioComponent, GetCurrentWeaponBaseState()->CurrentAmmoinMag);
-	}
-
-	
+	UBS2FunctionLibrary::HandleStartWAC(Loadout.WeaponSystem.WeaponAudioComponent, *GetCurrentWeaponBaseState());
+	Loadout.WeaponSystem.WeaponAudioComponent.Get()->SetTriggerParameter(FName("Event_StartFire"));
 	GetCurrentWeaponBaseState()->isFiring = true;
 	
 	if (GetOwnerCharacter()->CharacterState.CharacterMovementState.CurrentMovementMode == ECharacterMovementMode::Sprinting)
@@ -621,6 +727,8 @@ void ULoadoutManager::ShootSimProjectile()
 void ULoadoutManager::HandleShootProjectileActor()
 {
 	const FInfantryWeaponData& StaticWeaponData = *GetCurrentWeaponStaticData();
+	FLockOnState& LockOnState = GetCurrentWeaponBaseState()->LockOnState;
+	FHitResult& HitResult = Loadout.WeaponSystem.BaseWeaponState.EquippedWeaponState.RaycastData.RangefinderData;
 	TWeakObjectPtr<AProjectile_Base> FiredProjectile = nullptr;
 	if (GetCurrentWeaponStaticData()->InfantryWeaponAmmoData.isProjectileMounted)
 	{
@@ -633,6 +741,7 @@ void ULoadoutManager::HandleShootProjectileActor()
 		FVector& AimDirection = Loadout.WeaponSystem.BaseWeaponState.EquippedWeaponState.RaycastData.MuzzleAimDirections[0];
 		FTransform MuzzleTransform = UBS2FunctionLibrary::GetMuzzleTransform(FName("Muzzle"), GetCurrentInfantryWeaponState_FP().WeaponMesh);
 		FiredProjectile->SetActorTransform(MuzzleTransform);
+		UBS2FunctionLibrary::SetupMunitionGuidance(FiredProjectile, StaticWeaponData.WeaponFunctionalityData.BaseWeaponFunctionality.HomingFunctionality.HomingCapability, LockOnState, HitResult);
 		FiredProjectile->FireProjectile(AimDirection);
 	}
 }
@@ -697,10 +806,12 @@ void ULoadoutManager::CeaseFire()
 	FWeaponState& CurrentWeapon = *GetCurrentWeaponBaseState();
 	
 	Loadout.WeaponSystem.WeaponAudioComponent->SetTriggerParameter(FName("Event_StopFire"));
+	/**
 	Loadout.WeaponSystem.WeaponAudioComponent->OnAudioFinishedNative.AddWeakLambda(this, [this](UAudioComponent* FinishedComponent)
 	{
 		FinishedComponent->Deactivate();
 	});
+	**/
 	
 	if (CurrentWeapon.CurrentFireMode == EFireMode::Auto || CurrentWeapon.CurrentFireMode == EFireMode::Burst && GetWorld()->GetTimerManager().IsTimerActive(CurrentWeapon.TimerHandle_AutoFire))
 	{
@@ -929,6 +1040,7 @@ void ULoadoutManager::OnReloadFinished(UAnimMontage* Montage, bool bInterrupted,
 	UBS2FunctionLibrary::CalculateReload(MagSize, CurrentWeapon.CurrentAmmoinMag, CurrentWeapon.CurrentReserveAmmo, NewCAM, NewCRA);
 	CurrentWeapon.CurrentAmmoinMag = NewCAM;
 	CurrentWeapon.CurrentReserveAmmo = NewCRA;
+	Loadout.WeaponSystem.WeaponAudioComponent.Get()->SetIntParameter(FName("State_AvailableShots"), NewCAM);
 	if (GetOwnerCharacter()->IsLocallyControlled())
 	{
 		UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateStatusHUD_CAMCount(CurrentWeapon.CurrentAmmoinMag);
@@ -1177,10 +1289,12 @@ void ULoadoutManager::EquipWeapon(int32 WeaponIndex, bool InitialEquip)
 	{
 		GetWorld()->GetTimerManager().SetTimer(CombatState.RangefinderTimer, this, &ULoadoutManager::WeaponRangefinder, 0.05f, true);
 	}
+	//UBS2FunctionLibrary::HandleStartWAC(Loadout.WeaponSystem.WeaponAudioComponent, *GetCurrentWeaponBaseState());
 	
 	TSoftObjectPtr<UAnimSequence> WeaponEquipAnim;
-	if (InitialEquip)
+	if (!Loadout.WeaponSystem.InfantryWeaponState.wasEquipped[WeaponIndex])
 	{
+		Loadout.WeaponSystem.InfantryWeaponState.wasEquipped[WeaponIndex] = true;
 		WeaponEquipAnim = AnimData.WeaponAnimData.WeaponEquipInitial;
 		FPEquipWeaponMontage = AnimData.FPWeaponAnimData.BaseItemAnimData.InitialEquipMontage;
 	}

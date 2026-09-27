@@ -62,6 +62,9 @@ struct FInfantryWeaponSystem
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	TArray<FWeaponStats_Runtime> CurrentWeaponStats;
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	TArray<bool> wasEquipped;;
 };
 
 USTRUCT(BlueprintType)
@@ -216,6 +219,20 @@ class BATTLESERIES2_API ULoadoutManager : public UActorComponent
 		void HandleScopeHUD(bool TurnOn);
 		UFUNCTION(BlueprintCallable)
 		void WeaponRangefinder();
+		UFUNCTION(BlueprintCallable)
+		void HandleHoming(FTransform TraceTransform);
+		UFUNCTION(BlueprintCallable)
+		void DemoteLockOnStatus();
+		UFUNCTION(BlueprintCallable)
+		void HandleLockOn();
+		UFUNCTION(BlueprintCallable)
+		void StartLockingOn();
+		UFUNCTION(BlueprintCallable)
+		void LockOn();
+		UFUNCTION(BlueprintCallable)
+		void StartCancelLockOn();
+		UFUNCTION(BlueprintCallable)
+		void CancelLockOn();
 		UFUNCTION(BlueprintCallable) 
 		void HandleStartFire();
 		UFUNCTION(BlueprintCallable)

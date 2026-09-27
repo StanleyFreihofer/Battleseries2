@@ -217,9 +217,6 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void UpdateLockOnIndicator(bool UpdateHUD, FHitResult& HitResult, FLockOnState& LockOnState);
 
-	UFUNCTION()
-	void UpdateManualGuidance(TWeakObjectPtr<AProjectile_Base> FiredProjectile, int32 SeatIndex, int32 WeaponIndex);
-
 	UFUNCTION(BlueprintCallable)
 	FName BuildMuzzleName(FName SeatName, int32 WeaponIndex, EMuzzleType MuzzleType, int32 MuzzleIndex);
 	UFUNCTION()
@@ -238,8 +235,8 @@ public:
 	void HandleShootSimProjectile(FVehicleWeaponState& VehicleWeaponState, const FBaseWeaponData& StaticWeaponData, FVehicleWeaponSystem_Runtime& SeatWeaponSystem);
 	UFUNCTION()
 	TWeakObjectPtr<AProjectile_Base> HandleShootProjectileActor(int32 SeatIndex, int32 WeaponIndex);
-	UFUNCTION()
-	void SetupProjectileGuidance(TWeakObjectPtr<AProjectile_Base> FiredProjectile, EHomingCapability HomingCapability, FLockOnState& LockOnState, FHitResult& HitResult);
+	//UFUNCTION()
+	//void SetupProjectileGuidance(TWeakObjectPtr<AProjectile_Base> FiredProjectile, EHomingCapability HomingCapability, FLockOnState& LockOnState, FHitResult& HitResult);
 	UFUNCTION(BlueprintCallable)
 	void HandleAmmoDepletion(int32 SeatIndex, int32 WeaponIndex);
 	UFUNCTION(BlueprintCallable)

@@ -747,10 +747,8 @@ void UVehicleWeaponLogicComponent::HandleHoming(int32 SeatIndex, FTransform Trac
 	const FWeaponHomingData& StaticHomingData = StaticWeaponData.WeaponFunctionality.HomingFunctionality;
 	FVehicleWeapon_Runtime& CurrentWeapon = GetEquippedWeaponInSeat(SeatIndex);
 	FHitResult& HitResult = SystemPtr->VehicleWeaponSystemState.EquippedWeaponState.RaycastData.RangefinderData;
-
+	
 	bool bHit = UBS2FunctionLibrary::PerformWeaponSphereTrace(this, TraceTransform, HitResult, ActorsToIgnore, StaticWeaponData.WeaponFunctionality.HomingFunctionality.LockOnRadius, true);
-
-	FLockOnState& LockOnState = CurrentWeapon.VehicleWeaponState.BaseWeaponRuntimeData.LockOnState;
 
 	switch (StaticHomingData.HomingCapability)
 	{
@@ -760,15 +758,7 @@ void UVehicleWeaponLogicComponent::HandleHoming(int32 SeatIndex, FTransform Trac
 			break;
 		case EHomingCapability::WireGuided1:
 		case EHomingCapability::WireGuided2:
-			CurrentWeapon.VehicleWeaponState.BaseWeaponRuntimeData.InFlightProjectiles.RemoveAll([](const TWeakObjectPtr<AProjectile_Base>& Projectile)
-			{
-				return !Projectile.IsValid() || Projectile->IsHidden();
-			});
-			for (TWeakObjectPtr<AProjectile_Base> InFlightProjectile : CurrentWeapon.VehicleWeaponState.BaseWeaponRuntimeData.InFlightProjectiles)
-			{
-				FVector TargetLocation = HitResult.bBlockingHit ? HitResult.ImpactPoint : HitResult.TraceEnd;
-				InFlightProjectile->UpdateManualHoming(TargetLocation);
-			}
+			UBS2FunctionLibrary::HandleInFlightManuallyGuidedMunitions(CurrentWeapon.VehicleWeaponState.BaseWeaponRuntimeData, HitResult);
 			break;
 	}
 }
@@ -783,34 +773,24 @@ void UVehicleWeaponLogicComponent::HandleLockOn(int32 SeatIndex, int32 WeaponInd
 	const FWeaponHomingData& StaticHomingData = StaticWeaponData.WeaponFunctionality.HomingFunctionality;
 	FLockOnState& LockOnState = CurrentWeapon.VehicleWeaponState.BaseWeaponRuntimeData.LockOnState;
 	FHitResult& HitResult = SeatWeaponSystem.VehicleWeaponSystemState.EquippedWeaponState.RaycastData.RangefinderData;
+	
+	bool canLockOn = UBS2FunctionLibrary::GetCanLockOn_Final(StaticHomingData, HitResult);
 
-	bool ValidLockableActor = HitResult.GetActor() && HitResult.GetActor()->GetClass()->ImplementsInterface(ULockOnTarget::StaticClass());
-	//UE_LOG(LogTemp, Warning, TEXT("[VWLC::HandleLockOn] HitLockableActor = %d, HitActor = %s"), ValidLockableActor, *HitResult.GetActor()->GetName());
-	if (ValidLockableActor)
+	if (canLockOn)
 	{
-		bool canLockOn = ILockOnTarget::Execute_GetIfCanLockOn(HitResult.GetActor(), StaticHomingData.CanTarget, StaticHomingData.HomingCapability);
-		bool inRange = StaticHomingData.LockOnRange <= 0 || HitResult.Distance <= StaticHomingData.LockOnRange;
-
-		if (canLockOn && inRange)
+		//anything from here on can be seen as a "promotion" of lock status 
+		switch (LockOnState.CurrentLockStatus)
 		{
-			//anything from here on can be seen as a "promotion" of lock status 
-			switch (LockOnState.CurrentLockStatus)
-			{
-				case ELockOnState::NotLockingOn:
-					StartLockingOn(SeatIndex, CurrentWeapon, StaticHomingData, HitResult);
-					break;
-				case ELockOnState::IsLockingOn:
-				case ELockOnState::IsLockedOn:
-					UpdateLockOnIndicator(OwnerDataAccessor->GetVehicleState().SeatStates[SeatIndex].UpdateHUD, HitResult, LockOnState);
-					break;
-				case ELockOnState::IsLosingLock:
-					//DO SOMETHING HERE!!!!!!!!!!!!!!!!!!!!!!!
-					break;
-			}
-		}
-		else
-		{
-			DemoteLockOnStatus(SeatIndex, LockOnState);
+			case ELockOnState::NotLockingOn:
+				StartLockingOn(SeatIndex, CurrentWeapon, StaticHomingData, HitResult);
+				break;
+			case ELockOnState::IsLockingOn:
+			case ELockOnState::IsLockedOn:
+				UpdateLockOnIndicator(OwnerDataAccessor->GetVehicleState().SeatStates[SeatIndex].UpdateHUD, HitResult, LockOnState);
+				break;
+			case ELockOnState::IsLosingLock:
+				//DO SOMETHING HERE!!!!!!!!!!!!!!!!!!!!!!!
+				break;
 		}
 	}
 	else
@@ -829,6 +809,7 @@ void UVehicleWeaponLogicComponent::StartLockingOn(int32& SeatIndex, FVehicleWeap
 	
 	UBS2FunctionLibrary::StartLockingOn(this, LockOnDelegate, HomingData.AcquireTime, HitResult.GetActor(), LockOnState, OwnerDataAccessor->GetVehicleState().SeatStates[SeatIndex].UpdateHUD, HomingData.IndicatorReticle);
 	
+	UBS2FunctionLibrary::HandleStartWAC(GetWAC(SeatIndex), CurrentWeapon.VehicleWeaponState.BaseWeaponRuntimeData);
 	GetWAC(SeatIndex)->SetTriggerParameter(FName("Event_LockingOn"));
 }
 
@@ -904,25 +885,6 @@ void UVehicleWeaponLogicComponent::UpdateLockOnIndicator(bool UpdateHUD, FHitRes
 }
 
 #pragma endregion
-
-void UVehicleWeaponLogicComponent::UpdateManualGuidance(TWeakObjectPtr<AProjectile_Base> FiredProjectile, int32 SeatIndex, int32 WeaponIndex)
-{
-	//remember, called on tick by rangefinder
-	FVehicleWeaponSystem_Runtime& SeatWeaponSystem = *VehicleWeaponSystem.Find(SeatIndex);
-	FVehicleWeapon_Runtime& VehicleWeapon = SeatWeaponSystem.Weapons[WeaponIndex];
-	FVehicleWeaponState& VehicleWeaponState = VehicleWeapon.VehicleWeaponState;
-	FHitResult& HitResult = SeatWeaponSystem.VehicleWeaponSystemState.EquippedWeaponState.RaycastData.RangefinderData;
-	const FBaseWeaponData& StaticWeaponData = GetBaseWeaponDataInSlot(SeatIndex, WeaponIndex);
-
-	switch (StaticWeaponData.WeaponFunctionality.HomingFunctionality.HomingCapability)
-	{
-		case EHomingCapability::WireGuided1:
-		case EHomingCapability::WireGuided2:
-			FVector TargetLocation = HitResult.bBlockingHit ? HitResult.ImpactPoint : HitResult.TraceEnd;
-			FiredProjectile->UpdateManualHoming(TargetLocation);
-			break;
-	}
-}
 
 #pragma endregion
 
@@ -1053,7 +1015,8 @@ TWeakObjectPtr<AProjectile_Base> UVehicleWeaponLogicComponent::StartFire(int32 S
 	const FBaseWeaponData StaticWeaponData = GetBaseWeaponDataInSlot(SeatIndex, GetCWIForSeat(SeatIndex));
 	TWeakObjectPtr<AProjectile_Base> FiredProjectile = nullptr;
 	
-	UBS2FunctionLibrary::StartWAC(GetWAC(SeatIndex), CurrentWeapon.CurrentAmmoinMag);
+	UBS2FunctionLibrary::HandleStartWAC(GetWAC(SeatIndex), CurrentWeapon);
+	GetWAC(SeatIndex).Get()->SetTriggerParameter(FName("Event_StartFire"));
 		
 	CurrentWeapon.isFiring = true;
 	FiredProjectile = FireVehicleWeapon(SeatIndex);	//fire weapon immediately AND THEN (if auto/burst) fire rate every shot after
@@ -1160,13 +1123,14 @@ TWeakObjectPtr<AProjectile_Base> UVehicleWeaponLogicComponent::HandleShootProjec
 	{
 		FiredProjectile = VehicleWeaponState.CurrentMountedProjectiles[0];
 		FiredProjectile->UpdateCollisionIgnores(GetOwner());
-		SetupProjectileGuidance(FiredProjectile, StaticWeaponData.WeaponFunctionality.HomingFunctionality.HomingCapability, LockOnState, HitResult);
+		UBS2FunctionLibrary::SetupMunitionGuidance(FiredProjectile, StaticWeaponData.WeaponFunctionality.HomingFunctionality.HomingCapability, LockOnState, HitResult);
+		//SetupProjectileGuidance(FiredProjectile, StaticWeaponData.WeaponFunctionality.HomingFunctionality.HomingCapability, LockOnState, HitResult);
 		FiredProjectile->FireProjectile(FiredProjectile->GetActorForwardVector());		//doesnt use aim direction if mounted right now
 		//call some sort of "drop from rack" function on projectile?
 		if (FiredProjectile.IsValid())
 		{
 			VehicleWeaponState.CurrentMountedProjectiles.RemoveAt(0, EAllowShrinking::Yes);
-			VehicleWeapon.VehicleWeaponState.BaseWeaponRuntimeData.InFlightProjectiles.Add(FiredProjectile);
+			VehicleWeaponState.BaseWeaponRuntimeData.InFlightProjectiles.Add(FiredProjectile);
 		}
 	}
 	else
@@ -1178,7 +1142,8 @@ TWeakObjectPtr<AProjectile_Base> UVehicleWeaponLogicComponent::HandleShootProjec
 			FTransform MuzzleTransform;
 			FiredProjectile = UBS2FunctionLibrary::GetProjectileSystem(this)->AcquireProjectileFromPool(StaticWeaponData.WeaponFirePerformance.MunitionID);
 			FiredProjectile->UpdateCollisionIgnores(GetOwner());
-			SetupProjectileGuidance(FiredProjectile, StaticWeaponData.WeaponFunctionality.HomingFunctionality.HomingCapability, LockOnState, HitResult);
+			UBS2FunctionLibrary::SetupMunitionGuidance(FiredProjectile, StaticWeaponData.WeaponFunctionality.HomingFunctionality.HomingCapability, LockOnState, HitResult);
+			//SetupProjectileGuidance(FiredProjectile, StaticWeaponData.WeaponFunctionality.HomingFunctionality.HomingCapability, LockOnState, HitResult);
 			UE_LOG(LogTemp, Error, TEXT("[VWLC::HandleShootProjectileActor] Muzzle Index = %d"), MuzzleIndex);
 			MuzzleTransform = GetMuzzleTransform(VehicleWeaponState, SeatWeaponSystem, MuzzleIndex);
 			FiredProjectile->SetActorTransform(MuzzleTransform);
@@ -1190,6 +1155,7 @@ TWeakObjectPtr<AProjectile_Base> UVehicleWeaponLogicComponent::HandleShootProjec
 	return FiredProjectile;
 }
 
+/**
 void UVehicleWeaponLogicComponent::SetupProjectileGuidance(TWeakObjectPtr<AProjectile_Base> FiredProjectile, EHomingCapability HomingCapability, FLockOnState& LockOnState, FHitResult& HitResult)
 {
 	switch (HomingCapability)
@@ -1204,6 +1170,7 @@ void UVehicleWeaponLogicComponent::SetupProjectileGuidance(TWeakObjectPtr<AProje
 		FiredProjectile->ProjectileMovementComponent->HomingTargetComponent = LockOnState.AcquiredTargetComp.Get();
 	}
 }
+**/
 
 #pragma endregion
 

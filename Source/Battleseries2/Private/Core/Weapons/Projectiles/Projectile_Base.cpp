@@ -197,9 +197,15 @@ void AProjectile_Base::UpdateFlightPlan(int32 FlightStageIndex)
 			ProjectileMovementComponent->Velocity = ProjectileState.BaseProjectileState.FireOrigin * FlightStage.GuidanceParams.InitialSpeed;
 			break;
 		case EProjectileGuidanceMethod::PitchToAltitude:
-			FVector UpwardPitch = FVector::UpVector * FlightStage.GuidanceParams.PitchForce;
-			ProjectileMovementComponent->Velocity += UpwardPitch;
+		{
+			const float Speed = ProjectileMovementComponent->Velocity.Size();
+			const FRotator CurrentHeading = ProjectileMovementComponent->Velocity.Rotation();
+			const FRotator ClimbRotation(FlightStage.GuidanceParams.PitchForce, CurrentHeading.Yaw, 0.f); // preserve heading, set pitch explicitly
+			ProjectileMovementComponent->Velocity = ClimbRotation.Vector() * Speed;
+			//FVector UpwardPitch = FVector::UpVector * FlightStage.GuidanceParams.PitchForce;
+			//ProjectileMovementComponent->Velocity += UpwardPitch;
 			break;
+		}
 		case EProjectileGuidanceMethod::ManualGuideToPoint:	
 			ProjectileMovementComponent->bIsHomingProjectile = false;		//does not guide toward an actor/component (uses custom function to guide towards a point)
 			ProjectileMovementComponent->HomingAccelerationMagnitude = FlightStage.GuidanceParams.Acceleration;

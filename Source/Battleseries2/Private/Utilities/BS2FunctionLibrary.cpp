@@ -3,6 +3,7 @@
 #include "Engine/GameInstance.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "Kismet/GameplayStatics.h"
+#include "Blueprint/UserWidget.h"
 #include "DrawDebugHelpers.h"
 #include "Animation/AnimSingleNodeInstance.h"
 #include "Data/Items/Weapons/WeaponDefaults.h"
@@ -16,6 +17,8 @@
 #include "Utilities/I_VehicleDataAccessor.h"
 #include "Components/AudioComponent.h"
 #include "Camera/CameraComponent.h"
+#include "Core/Weapons/I_LockOnTarget.h"
+#include "Core/Weapons/Projectiles/Projectile_Base.h"
 #include "Data/Items/Gadgets/GadgetTypes.h"
 #include "Data/Items/Weapons/Data_Projectile.h"
 #include "Data/Vehicles/VehicleDefaults.h"
@@ -361,11 +364,23 @@ void UBS2FunctionLibrary::UpdateWACData(TWeakObjectPtr<UAudioComponent> WAC, flo
 	}
 }
 
+void UBS2FunctionLibrary::HandleStartWAC(TWeakObjectPtr<UAudioComponent> WAC, FWeaponState& CurrentWeapon)
+{
+	if (CurrentWeapon.CurrentFireMode == EFireMode::Single)
+	{
+		StartWAC(WAC, 1);
+	}
+	else
+	{
+		StartWAC(WAC, CurrentWeapon.CurrentAmmoinMag);
+	}
+}
+
 void UBS2FunctionLibrary::StartWAC(TWeakObjectPtr<UAudioComponent> WAC, int32 AvailableShots)
 {
 	WAC.Get()->Activate();
 	WAC.Get()->SetIntParameter(FName("State_AvailableShots"), AvailableShots);
-	WAC.Get()->SetTriggerParameter(FName("Event_StartFire"));
+	//WAC.Get()->SetTriggerParameter(FName("Event_StartFire"));
 }
 
 int32 UBS2FunctionLibrary::GetMaxMagSize(bool canRoundbeChambered, int32 BaseMagSize)
@@ -389,6 +404,7 @@ void UBS2FunctionLibrary::StartLockingOn(UObject* WorldContextObject, FTimerDele
 	LockOnState.CurrentLockStatus = ELockOnState::IsLockingOn;
 	if (UpdateHUD)
 	{
+		if (IndicatorReticle == nullptr)	{ return; }
 		GetHUDSubsystem(HitActor)->SpawnLockOnIndicator(IndicatorReticle);
 	}
 }
@@ -438,8 +454,65 @@ void UBS2FunctionLibrary::CancelLockOn(UObject* WorldContextObject, FWeaponState
 	
 	if (UpdateHUD)
 	{
-		UBS2FunctionLibrary::GetHUDSubsystem(WorldContextObject)->UpdateLockOnIndicatorStatus(WeaponState.LockOnState.CurrentLockStatus);
-		UBS2FunctionLibrary::GetHUDSubsystem(WorldContextObject)->RemoveWidget(UBS2FunctionLibrary::GetHUDSubsystem(WorldContextObject)->LockOnIndicator);
+		GetHUDSubsystem(WorldContextObject)->UpdateLockOnIndicatorStatus(WeaponState.LockOnState.CurrentLockStatus);
+		GetHUDSubsystem(WorldContextObject)->RemoveWidget(GetHUDSubsystem(WorldContextObject)->LockOnIndicator);
+	}
+}
+
+bool UBS2FunctionLibrary::GetCanLockOn(const FWeaponHomingData& HomingData, AActor* HitActor)
+{
+	bool canLockOn = false;
+	if (HitActor && HitActor->GetClass()->ImplementsInterface(ULockOnTarget::StaticClass()))
+	{
+		canLockOn = ILockOnTarget::Execute_GetIfCanLockOn(HitActor, HomingData.CanTarget, HomingData.HomingCapability);
+	}
+	return canLockOn;
+}
+
+bool UBS2FunctionLibrary::GetIfLockOnInRange(const FWeaponHomingData& HomingData, float Distance)
+{
+	bool inRange = HomingData.LockOnRange <= 0 || Distance <= HomingData.LockOnRange;
+	return inRange;
+}
+
+bool UBS2FunctionLibrary::GetCanLockOn_Final(const FWeaponHomingData& HomingData, FHitResult HitResult)
+{
+	bool canLockOn = GetCanLockOn(HomingData, HitResult.GetActor());
+	bool inRange = GetIfLockOnInRange(HomingData, HitResult.Distance);
+	return inRange && canLockOn;
+}
+
+void UBS2FunctionLibrary::UpdateManuallyGuidedMunition(FHitResult HitResult, TWeakObjectPtr<AProjectile_Base> Projectile)
+{
+	FVector TargetLocation = HitResult.bBlockingHit ? HitResult.ImpactPoint : HitResult.TraceEnd;
+	Projectile->UpdateManualHoming(TargetLocation);
+}
+
+void UBS2FunctionLibrary::HandleInFlightManuallyGuidedMunitions(FWeaponState& WeaponState, FHitResult HitResult)
+{
+	//handle in flight manually guided munitions
+	WeaponState.InFlightProjectiles.RemoveAll([](const TWeakObjectPtr<AProjectile_Base>& Projectile)
+	{
+		return !Projectile.IsValid() || Projectile->IsHidden();
+	});
+	for (TWeakObjectPtr<AProjectile_Base> InFlightProjectile : WeaponState.InFlightProjectiles)
+	{
+		UpdateManuallyGuidedMunition(HitResult, InFlightProjectile);
+	}
+}
+
+void UBS2FunctionLibrary::SetupMunitionGuidance(TWeakObjectPtr<AProjectile_Base> FiredProjectile, EHomingCapability HomingCapability, FLockOnState& LockOnState, FHitResult& HitResult)
+{
+	switch (HomingCapability)
+	{
+		case EHomingCapability::GPSGuidance:
+			FVector TargetLocation = HitResult.bBlockingHit ? HitResult.ImpactPoint : HitResult.TraceEnd;
+			FiredProjectile.Get()->UpdateHomingPoint(TargetLocation);
+			break;
+	}
+	if (LockOnState.AcquiredTargetComp.IsValid())
+	{
+		FiredProjectile->ProjectileMovementComponent->HomingTargetComponent = LockOnState.AcquiredTargetComp.Get();
 	}
 }
 

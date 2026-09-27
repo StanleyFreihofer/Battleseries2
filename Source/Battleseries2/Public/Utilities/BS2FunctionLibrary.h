@@ -14,6 +14,7 @@ class UHUDSubsystem;
 class USaveSubsystem;
 class UProjectilePoolSubsystem;
 class IVehicleDataAccessor;
+class AProjectile_Base;
 
 UCLASS()
 class BATTLESERIES2_API UBS2FunctionLibrary : public UBlueprintFunctionLibrary
@@ -100,6 +101,8 @@ public:
     static void UpdateWeaponIndex(TArray<FWeaponState> Weapons, int32 InCurrentWeaponIndex, int32& OutNewWeaponIndex);
 	UFUNCTION(Category = "Battleseries | Weapon Functions")
 	static void UpdateWACData(TWeakObjectPtr<UAudioComponent> WAC, float RPM, FWeaponAudioData WeaponAudioData);
+	UFUNCTION()
+	static void HandleStartWAC(TWeakObjectPtr<UAudioComponent> WAC, FWeaponState& CurrentWeapon);
 	UFUNCTION(Category = "Battleseries | Weapon Functions")
 	static void StartWAC(TWeakObjectPtr<UAudioComponent> WAC, int32 AvailableShots);
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Battleseries | Weapon Functions")
@@ -111,6 +114,13 @@ public:
 	static void LockOn(UObject* WorldContextObject, FWeaponState& WeaponState, bool UpdateHUD, EHomingCapability HomingCapability);
 	static void StartCancelLockOn(UObject* WorldContextObject, FTimerDelegate& LockOnDelegate, FLockOnState& LockOnState, float ElapsedTime, bool UpdateHUD);
 	static void CancelLockOn(UObject* WorldContextObject, FWeaponState& WeaponState, bool UpdateHUD, EHomingCapability HomingCapability);
+	static bool GetCanLockOn(const FWeaponHomingData& HomingData, AActor* HitActor);
+	static bool GetIfLockOnInRange(const FWeaponHomingData& HomingData, float Distance);
+	static bool GetCanLockOn_Final(const FWeaponHomingData& HomingData, FHitResult HitResult);
+	static void UpdateManuallyGuidedMunition(FHitResult HitResult, TWeakObjectPtr<AProjectile_Base> Projectile);
+	static void HandleInFlightManuallyGuidedMunitions(FWeaponState& WeaponState, FHitResult HitResult);
+	
+	static void SetupMunitionGuidance(TWeakObjectPtr<AProjectile_Base> FiredProjectile, EHomingCapability HomingCapability, FLockOnState& LockOnState, FHitResult& HitResult);
 	
 #pragma endregion
 	
