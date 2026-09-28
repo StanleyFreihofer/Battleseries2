@@ -126,8 +126,9 @@ void AProjectile_Base::FireProjectile(FVector AimDirection)
 
 void AProjectile_Base::StartFlightPlan()
 {
-	ProjectileMeshComponent->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-	SetActorEnableCollision(true);
+	//ProjectileMeshComponent->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+	//SetActorEnableCollision(true);
+	GetWorldTimerManager().SetTimer(CollisionTimerHandle, this, &AProjectile_Base::EnableCollision, 0.5f, false);
 	if (ProjectileMeshComponent->IsSimulatingPhysics())
 	{
 		ProjectileMeshComponent->SetSimulatePhysics(false);

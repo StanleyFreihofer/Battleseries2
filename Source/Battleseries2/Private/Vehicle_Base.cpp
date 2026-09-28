@@ -1081,11 +1081,16 @@ void AVehicle_Base::UpdateMovement_Heli()
 	//update momentum heli
 	const float PitchDeg = FMath::Clamp(GetActorRotation().Pitch, -50.0f, 50.0f);
 	const float NormalizedPitch = (PitchDeg + 50.0f) / 100.0f; // NormalizeToRange(-50, 50, 0, 1)
+	//const float PitchDeg = FMath::Clamp(State.CurrentPitchSpeed, -Data.MaxPitchSpeed, Data.MaxPitchSpeed);
+	//const float NormalizedPitch = (PitchDeg + Data.MaxPitchSpeed) / (Data.MaxPitchSpeed * 2.0f); // NormalizeToRange(-50, 50, 0, 1)
 
 	const float CurveValue = Data.PitchCurve ? Data.PitchCurve->GetFloatValue(NormalizedPitch) : NormalizedPitch;
 
 	State.CurrentForwardMomentum += CurveValue * Data.Acceleration * DeltaTime;
 	State.CurrentForwardMomentum = FMath::Clamp(State.CurrentForwardMomentum, Data.MinMomentum, Data.MaxMomentum);
+	//float Momentum = FMath::Clamp(State.CurrentForwardMomentum, Data.MinMomentum, Data.MaxMomentum);
+	//const float TargetMomentum = FMath::Clamp(CurveValue * Data.Acceleration, Data.MinMomentum, Data.MaxMomentum);
+	//State.CurrentForwardMomentum = FMath::FInterpTo(State.CurrentForwardMomentum, TargetMomentum, DeltaTime, 2.f);						//Momentum;//FMath::IsNegative(Momentum) ? Momentum * -1.f : Momentum ;			//<--PROBABLY A BANDAID FIX!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 	//calculate target velocity from momentum
 	// Forward component: actor yaw only (strip pitch/roll from direction)
@@ -1093,9 +1098,9 @@ void AVehicle_Base::UpdateMovement_Heli()
 	const FVector ForwardDir = YawOnly.Vector();
 	const FVector RightDir = FRotationMatrix(YawOnly).GetScaledAxis(EAxis::Y);
 	// Forward: pitch * -1 (nose-down = positive thrust along yaw direction)
-	const FVector ForwardComp = ForwardDir * State.CurrentForwardMomentum; //* (PitchDeg * -1.0f);
+	const FVector ForwardComp = ForwardDir * ((GetActorRotation().Pitch * State.CurrentForwardMomentum) * -1.0f); 													///State.CurrentForwardMomentum * (PitchDeg * -1.0f);
 	// Right: momentum scaled by roll angle (bank = lateral drift)
-	const FVector RightComp = RightDir * State.CurrentForwardMomentum * GetActorRotation().Roll;
+	const FVector RightComp = RightDir * (State.CurrentForwardMomentum * GetActorRotation().Roll);
 	const FVector UpComp = GetActorUpVector() * State.CurrentHoverVelocity;
 	const FVector TargetVel = ForwardComp + RightComp + UpComp;
 	// Smooth velocity interpolation

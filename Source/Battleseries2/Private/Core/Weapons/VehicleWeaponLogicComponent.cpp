@@ -1139,38 +1139,15 @@ TWeakObjectPtr<AProjectile_Base> UVehicleWeaponLogicComponent::HandleShootProjec
 		{
 			//pull from pool/spawn
 			FVector& AimDirection = SeatWeaponSystem.VehicleWeaponSystemState.EquippedWeaponState.RaycastData.MuzzleAimDirections[MuzzleIndex];
-			FTransform MuzzleTransform;
-			FiredProjectile = UBS2FunctionLibrary::GetProjectileSystem(this)->AcquireProjectileFromPool(StaticWeaponData.WeaponFirePerformance.MunitionID);
-			FiredProjectile->UpdateCollisionIgnores(GetOwner());
-			UBS2FunctionLibrary::SetupMunitionGuidance(FiredProjectile, StaticWeaponData.WeaponFunctionality.HomingFunctionality.HomingCapability, LockOnState, HitResult);
-			//SetupProjectileGuidance(FiredProjectile, StaticWeaponData.WeaponFunctionality.HomingFunctionality.HomingCapability, LockOnState, HitResult);
-			UE_LOG(LogTemp, Error, TEXT("[VWLC::HandleShootProjectileActor] Muzzle Index = %d"), MuzzleIndex);
-			MuzzleTransform = GetMuzzleTransform(VehicleWeaponState, SeatWeaponSystem, MuzzleIndex);
-			FiredProjectile->SetActorTransform(MuzzleTransform);
-			FiredProjectile->FireProjectile(AimDirection);
+			FTransform MuzzleTransform = GetMuzzleTransform(VehicleWeaponState, SeatWeaponSystem, MuzzleIndex);
+			FiredProjectile = UBS2FunctionLibrary::ShootUnmountedProjectileActor(Cast<APawn>(GetOwner()), {GetOwner()}, AimDirection, MuzzleTransform, StaticWeaponData.WeaponFirePerformance.MunitionID, StaticWeaponData.WeaponFunctionality.HomingFunctionality.HomingCapability, LockOnState, HitResult);
+			
 			VehicleWeapon.VehicleWeaponState.BaseWeaponRuntimeData.InFlightProjectiles.Add(FiredProjectile);
 		}
 	}
 
 	return FiredProjectile;
 }
-
-/**
-void UVehicleWeaponLogicComponent::SetupProjectileGuidance(TWeakObjectPtr<AProjectile_Base> FiredProjectile, EHomingCapability HomingCapability, FLockOnState& LockOnState, FHitResult& HitResult)
-{
-	switch (HomingCapability)
-	{
-		case EHomingCapability::GPSGuidance:
-			FVector TargetLocation = HitResult.bBlockingHit ? HitResult.ImpactPoint : HitResult.TraceEnd;
-			FiredProjectile.Get()->UpdateHomingPoint(TargetLocation);
-			break;
-	}
-	if (LockOnState.AcquiredTargetComp.IsValid())
-	{
-		FiredProjectile->ProjectileMovementComponent->HomingTargetComponent = LockOnState.AcquiredTargetComp.Get();
-	}
-}
-**/
 
 #pragma endregion
 

@@ -120,6 +120,8 @@ public:
 	static void UpdateManuallyGuidedMunition(FHitResult HitResult, TWeakObjectPtr<AProjectile_Base> Projectile);
 	static void HandleInFlightManuallyGuidedMunitions(FWeaponState& WeaponState, FHitResult HitResult);
 	
+	static TWeakObjectPtr<AProjectile_Base> ShootUnmountedProjectileActor(APawn* FiringPawn, TArray<AActor*> ActorsToIgnore, FVector AimDirection, FTransform MuzzleTransform, FName MunitionID, EHomingCapability HomingCapability, FLockOnState LockOnState, FHitResult HitResult);
+	
 	static void SetupMunitionGuidance(TWeakObjectPtr<AProjectile_Base> FiredProjectile, EHomingCapability HomingCapability, FLockOnState& LockOnState, FHitResult& HitResult);
 	
 #pragma endregion

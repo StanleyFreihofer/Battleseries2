@@ -736,13 +736,9 @@ void ULoadoutManager::HandleShootProjectileActor()
 	}
 	else
 	{
-		FiredProjectile = UBS2FunctionLibrary::GetProjectileSystem(this)->AcquireProjectileFromPool(StaticWeaponData.WeaponFirePerformanceData.MunitionID);
-		FiredProjectile->MoveIgnoreActorAdd(GetOwner());
 		FVector& AimDirection = Loadout.WeaponSystem.BaseWeaponState.EquippedWeaponState.RaycastData.MuzzleAimDirections[0];
 		FTransform MuzzleTransform = UBS2FunctionLibrary::GetMuzzleTransform(FName("Muzzle"), GetCurrentInfantryWeaponState_FP().WeaponMesh);
-		FiredProjectile->SetActorTransform(MuzzleTransform);
-		UBS2FunctionLibrary::SetupMunitionGuidance(FiredProjectile, StaticWeaponData.WeaponFunctionalityData.BaseWeaponFunctionality.HomingFunctionality.HomingCapability, LockOnState, HitResult);
-		FiredProjectile->FireProjectile(AimDirection);
+		UBS2FunctionLibrary::ShootUnmountedProjectileActor(Cast<APawn>(GetOwner()), {GetOwner()}, AimDirection, MuzzleTransform, StaticWeaponData.WeaponFirePerformanceData.MunitionID, StaticWeaponData.WeaponFunctionalityData.BaseWeaponFunctionality.HomingFunctionality.HomingCapability, LockOnState, HitResult);
 	}
 }
 
