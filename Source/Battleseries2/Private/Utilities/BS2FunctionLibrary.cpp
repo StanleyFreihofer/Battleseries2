@@ -263,17 +263,66 @@ FTransform UBS2FunctionLibrary::GetMuzzleTransform(FName MuzzleSocketName, TWeak
 	return SocketTransform;
 }
 
-FVector UBS2FunctionLibrary::CalculateAimDirection(FHitResult TraceData, FVector MuzzleLocation)
+FVector UBS2FunctionLibrary::CalculateRawAimDirection(FHitResult TraceData, FVector MuzzleLocation)
 {
 	FVector TargetPoint = TraceData.bBlockingHit ? TraceData.ImpactPoint : TraceData.TraceEnd;
 	FVector RawAimDirection = (TargetPoint - MuzzleLocation).GetSafeNormal();
 	return RawAimDirection;
 }
 
+FVector UBS2FunctionLibrary::CalculateAimDirection(FHitResult TraceData, FTransform MuzzleTransform, float MaxOffAxisAngleDegrees)
+{
+	FVector RawAimDirection = CalculateRawAimDirection(TraceData, MuzzleTransform.GetLocation());
+	
+	//clamp raw direction at a max cone angle around the muzzle's forward vector
+	//if ideal shot exceeds that cone, cap it at the cone edge
+	const FVector MuzzleForward = MuzzleTransform.GetRotation().GetForwardVector();
+	const float CosMaxAngle = FMath::Cos(FMath::DegreesToRadians(MaxOffAxisAngleDegrees));
+	const float CosCurrentAngle = FVector::DotProduct(RawAimDirection, MuzzleForward);
+	
+	if (CosCurrentAngle >= CosMaxAngle)
+	{
+		return RawAimDirection; // within the firing cone, use as-is
+	}
+	
+	const FVector Perpendicular = (RawAimDirection - MuzzleForward * CosCurrentAngle).GetSafeNormal();
+	const FVector ClampedDirection = MuzzleForward * CosMaxAngle + Perpendicular * FMath::Sin(FMath::DegreesToRadians(MaxOffAxisAngleDegrees));
+	return ClampedDirection;
+}
+
+FVector UBS2FunctionLibrary::CalculateFinalAimDirection(FHitResult TraceData, FTransform MuzzleTransform, AActor* FiringActor, float MaxInwardAngleDegrees, float MaxOutwardAngleDegrees)
+{
+	float InwardSign = GetInwardSign(MuzzleTransform.GetLocation(), FiringActor);
+	FVector RawAimDirection = CalculateRawAimDirection(TraceData, MuzzleTransform.GetLocation());
+	float MaxOffAxisAngleDegrees = DetermineMaxOffAxisAngle(RawAimDirection, FiringActor->GetActorRightVector(), InwardSign, MaxInwardAngleDegrees, MaxOutwardAngleDegrees);
+	FVector FinalAimDirection = CalculateAimDirection(TraceData, MuzzleTransform, MaxOffAxisAngleDegrees);
+	
+	return FinalAimDirection;
+}
+
+float UBS2FunctionLibrary::GetInwardSign(FVector MuzzleLocation, AActor* FiringActor)
+{
+	const FVector Location = FiringActor->GetActorLocation();
+	const FVector RightVector = FiringActor->GetActorRightVector();
+	const float LateralOffset = FVector::DotProduct(MuzzleLocation - Location, RightVector);
+	const float InwardSign = (LateralOffset > 0.f) ? -1.f : 1.f;
+	
+	return InwardSign;
+	// right-mounted pod: inward = toward vehicle's left (negative right), so InwardSign = -1
+	// left-mounted pod: inward = toward vehicle's right (positive), so InwardSign = +1
+}
+
+float UBS2FunctionLibrary::DetermineMaxOffAxisAngle(const FVector& RawAimDirection, const FVector& ActorRightVector, float InwardSign, float MaxInwardAngleDegrees, float MaxOutwardAngleDegrees)
+{
+	const float LateralComponent = FVector::DotProduct(RawAimDirection, ActorRightVector);
+	const bool bLeaningInward = FMath::Sign(LateralComponent) == InwardSign;
+	return bLeaningInward ? MaxInwardAngleDegrees : MaxOutwardAngleDegrees;
+}
+
 FVector UBS2FunctionLibrary::GetAimDirectionFromMuzzle(FHitResult TraceData, FName MuzzleSocketName, TWeakObjectPtr<USkeletalMeshComponent> WeaponMesh)
 {
 	FVector MuzzleLocation = GetMuzzleTransform(MuzzleSocketName, WeaponMesh).GetLocation();
-	FVector AimDirection = CalculateAimDirection(TraceData, MuzzleLocation);
+	FVector AimDirection = CalculateRawAimDirection(TraceData, MuzzleLocation);
 	return AimDirection;
 }
 

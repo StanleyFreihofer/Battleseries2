@@ -46,13 +46,13 @@ struct FAttachmentInstanceData
 {
 	GENERATED_BODY()
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (Tooltip = "The mesh for this weapon if not just part of the vehicle mesh", EditCondition = "bHasSeparateMesh", EditConditionHides = true))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (Tooltip = "The mesh for this weapon if not just part of the vehicle mesh"))
 	FName AttachmentID = FName();
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (EditCondition = "bHasSeparateMesh", EditConditionHides = true))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FTransform AttachmentTransform = FTransform::Identity;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (Tooltip = "whether or not to attach the character to a socket on this mesh, would allow the character to move with mesh, like a turret for example", EditCondition = "bHasSeparateMesh", EditConditionHides = true))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (Tooltip = "whether or not to attach the character to a socket on this mesh, would allow the character to move with mesh, like a turret for example"))
 	bool bAttachCharacter = false;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (Tooltip = "relative transform of character on this mesh if attached", EditCondition = "bAttachCharacter", EditConditionHides = true))
@@ -80,6 +80,12 @@ struct FVehicleWeaponInstanceData
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	EFireMethod FireMethod = EFireMethod::Default;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	float MaxInwardAngle = -1.f;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	float MaxOutwardAngle = -1.f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	bool bAreProjectilesMounted = false;

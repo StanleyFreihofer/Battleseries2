@@ -78,9 +78,17 @@ public:
     static bool PerformWeaponSphereTrace(const UObject* WorldContextObject, const FTransform& StartTransform, FHitResult& OutHit, TArray<AActor*> ActorsToIgnore, float Radius, bool Debug);
     UFUNCTION()
     static FTransform GetMuzzleTransform(FName MuzzleSocketName, TWeakObjectPtr<USkeletalMeshComponent> SocketMesh);
-
+	
     UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Battleseries | Weapon Functions")
-    static FVector CalculateAimDirection(FHitResult TraceData, FVector MuzzleLocation);
+    static FVector CalculateRawAimDirection(FHitResult TraceData, FVector MuzzleLocation);
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Battleseries | Weapon Functions")
+	static FVector CalculateAimDirection(FHitResult TraceData, FTransform MuzzleTransform, float MaxOffAxisAngleDegrees);
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Battleseries | Weapon Functions")
+	static FVector CalculateFinalAimDirection(FHitResult TraceData, FTransform MuzzleTransform, AActor* FiringActor, float MaxInwardAngleDegrees, float MaxOutwardAngleDegrees);
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Battleseries | Weapon Functions")
+	static float GetInwardSign(FVector MuzzleLocation, AActor* FiringActor);
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Battleseries | Weapon Functions")
+	static float DetermineMaxOffAxisAngle(const FVector& RawAimDirection, const FVector& ActorRightVector, float InwardSign, float MaxInwardAngleDegrees, float MaxOutwardAngleDegrees);
     UFUNCTION()
     static FVector GetAimDirectionFromMuzzle(FHitResult TraceData, FName MuzzleSocketName, TWeakObjectPtr<USkeletalMeshComponent> WeaponMesh);
     UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Battleseries | Weapon Functions")

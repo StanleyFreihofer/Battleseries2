@@ -624,6 +624,9 @@ void UVehicleWeaponLogicComponent::UpdateTurretCam(int32 SeatIndex, float Turret
 void UVehicleWeaponLogicComponent::HandleSeatRangefinders()
 {
 	const FVehicleData& VehicleData = OwnerDataAccessor->GetVehicleData();
+	TArray<AActor*> IgnoredActors;
+	GetOwner()->GetAttachedActors(IgnoredActors);
+	IgnoredActors.Add(GetOwner());
 	for (auto& SeatWeaponSystem : VehicleWeaponSystem)	//for each weapon system in the vehicle
 	{
 		int32& SeatIndex = SeatWeaponSystem.Key;
@@ -642,7 +645,7 @@ void UVehicleWeaponLogicComponent::HandleSeatRangefinders()
 		if (SeatData.ViewMethod == E_ViewMethod::Remote || SeatWeaponSystem.Value.Weapons[WeaponIndex].VehicleWeaponInstanceData.bHasSpecialCam)		//if remote or specialweapon cam, do rangefinder
 		{
 			FTransform CamTransform = OwnerDataAccessor->GetVehicle().GetRemoteActiveCam(SeatIndex)->GetComponentTransform();
-			UpdateSeatRangefinder(SeatIndex, CamTransform, {});
+			UpdateSeatRangefinder(SeatIndex, CamTransform, {IgnoredActors});
 		}
 		else
 		{
@@ -699,6 +702,7 @@ void UVehicleWeaponLogicComponent::CalculateAimDirection(TWeakObjectPtr<USkeleta
 {
 	FVehicleWeaponSystem_Runtime& SeatWeaponSystem = *VehicleWeaponSystem.Find(SeatIndex);
 	int32& CWI = GetCWIForSeat(SeatIndex);
+	const FVehicleWeaponInstanceData& VWID = GetVWID(SeatIndex, WeaponIndex, GetEquippedWeaponIDInSeat(SeatIndex));
 	FVehicleWeapon_Runtime& VehicleWeapon = SeatWeaponSystem.Weapons[CWI];
 	if (!VehicleWeapon.VehicleWeaponInstanceData.bAreProjectilesMounted)		//arent we already check this isnt true before calling this function?
 	{
@@ -719,13 +723,33 @@ void UVehicleWeaponLogicComponent::CalculateAimDirection(TWeakObjectPtr<USkeleta
 				return;
 			}
 			FName MuzzleSocketName = SeatWeaponSystem.Weapons[WeaponIndex].VehicleWeaponState.MuzzleSockets[MI];
-			FVector MuzzleLocation = UBS2FunctionLibrary::GetMuzzleTransform(MuzzleSocketName, Mesh).GetLocation();
-
+			FTransform MuzzleTransform = UBS2FunctionLibrary::GetMuzzleTransform(MuzzleSocketName, Mesh);
+			FVector MuzzleLocation = MuzzleTransform.GetLocation();
+			
+			float MaxInward = VWID.MaxInwardAngle;
+			float MaxOutward = VWID.MaxOutwardAngle;
+			const FVector MuzzleForward = MuzzleTransform.GetRotation().GetForwardVector();
+			
 			//CALCULATE AIM DIRECTION
-			AimDirections[MI] = UBS2FunctionLibrary::CalculateAimDirection(HitResult, MuzzleLocation);
+			AimDirections[MI] = UBS2FunctionLibrary::CalculateFinalAimDirection(HitResult, MuzzleTransform, GetOwner(), MaxInward, MaxOutward);
+			
+			//Debug 
+			FVector RawAimDirection = UBS2FunctionLibrary::CalculateRawAimDirection(HitResult, MuzzleLocation);
+			float InwardSign = UBS2FunctionLibrary::GetInwardSign(MuzzleLocation, GetOwner());
+			
+			const FVector InwardLateralDir = GetOwner()->GetActorRightVector() * InwardSign;
+			const FVector OutwardLateralDir = -InwardLateralDir;
+			const FVector InwardBoundaryDir = (MuzzleForward * FMath::Cos(FMath::DegreesToRadians(MaxInward)) + InwardLateralDir * FMath::Sin(FMath::DegreesToRadians(MaxInward))).GetSafeNormal();
+			const FVector OutwardBoundaryDir = (MuzzleForward * FMath::Cos(FMath::DegreesToRadians(MaxOutward)) + OutwardLateralDir * FMath::Sin(FMath::DegreesToRadians(MaxOutward))).GetSafeNormal();
+			
+			DrawDebugLine(GetWorld(), MuzzleLocation, MuzzleLocation + MuzzleForward * 100000, FColor::White, false, -1.f, 0, 1.0f);       // cone axis
+			DrawDebugLine(GetWorld(), MuzzleLocation, MuzzleLocation + InwardBoundaryDir * 100000, FColor::Red, false, -1.f, 0, 1.0f);     // inward limit (toward hull)
+			DrawDebugLine(GetWorld(), MuzzleLocation, MuzzleLocation + OutwardBoundaryDir * 100000, FColor::Cyan, false, -1.f, 0, 1.0f);   // outward limit
+			DrawDebugLine(GetWorld(), MuzzleLocation, MuzzleLocation + RawAimDirection * 100000, FColor::Yellow, false, -1.f, 0, 1.0f);    // pre-clamp target direction
+			DrawDebugLine(GetWorld(), MuzzleLocation, MuzzleLocation + AimDirections[MI] * 100000, FColor::Green, false, -1.f, 0, 2.5f);		//actu shot direction
 
 			// DEBUG: Draw the convergence line
-			UWeaponFunctions::Debug_ProjectilePath(GetWorld(), MuzzleLocation, HitResult);
+			//UWeaponFunctions::Debug_ProjectilePath(GetWorld(), MuzzleTransform.GetLocation(), HitResult);
 		}
 	}
 	else
@@ -1089,8 +1113,6 @@ void UVehicleWeaponLogicComponent::HandleShootSimProjectile(FVehicleWeaponState&
 	{
 		FVector MuzzleLocation = FVector::ForwardVector;
 		MuzzleLocation = GetMuzzleTransform(VehicleWeaponState, SeatWeaponSystem, MuzzleIndex).GetLocation();
-		
-		//const FMunitionDamageData& MunitionDamageData = UBS2FunctionLibrary::GetDataSubsystem(this)->GetProjectileDataRow(StaticWeaponData.WeaponFirePerformance.MunitionID)->MunitionDamageData;
 
 		UBS2FunctionLibrary::CreateSimProjectile
 		(
@@ -1103,8 +1125,6 @@ void UVehicleWeaponLogicComponent::HandleShootSimProjectile(FVehicleWeaponState&
 			SeatWeaponSystem.VehicleWeaponSystemState.EquippedWeaponState.RaycastData.MuzzleAimDirections[MuzzleIndex],
 			UBS2FunctionLibrary::GetProjectileSystem(this)
 		);
-
-
 	}
 }
 
@@ -1124,7 +1144,7 @@ TWeakObjectPtr<AProjectile_Base> UVehicleWeaponLogicComponent::HandleShootProjec
 		FiredProjectile = VehicleWeaponState.CurrentMountedProjectiles[0];
 		FiredProjectile->UpdateCollisionIgnores(GetOwner());
 		UBS2FunctionLibrary::SetupMunitionGuidance(FiredProjectile, StaticWeaponData.WeaponFunctionality.HomingFunctionality.HomingCapability, LockOnState, HitResult);
-		//SetupProjectileGuidance(FiredProjectile, StaticWeaponData.WeaponFunctionality.HomingFunctionality.HomingCapability, LockOnState, HitResult);
+
 		FiredProjectile->FireProjectile(FiredProjectile->GetActorForwardVector());		//doesnt use aim direction if mounted right now
 		//call some sort of "drop from rack" function on projectile?
 		if (FiredProjectile.IsValid())

@@ -19,6 +19,8 @@ AProjectile_Base::AProjectile_Base()
 	ProjectileMeshComponent->SetNotifyRigidBodyCollision(true);
 	ProjectileMovementComponent->bRotationFollowsVelocity = true;
 	ProjectileMovementComponent->bInitialVelocityInLocalSpace = true;
+	ProjectileMeshComponent->SetCollisionResponseToAllChannels(ECR_Ignore);
+	ProjectileMeshComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
 }
 
@@ -84,8 +86,8 @@ void AProjectile_Base::SetPreflightContext(UPrimitiveComponent* AttachComponent,
 
 	// Turn off physics/collision while attached to hardpoint
 	ProjectileMeshComponent->SetSimulatePhysics(false);
-	ProjectileMeshComponent->SetCollisionResponseToAllChannels(ECR_Ignore);
-	ProjectileMeshComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	//ProjectileMeshComponent->SetCollisionResponseToAllChannels(ECR_Ignore);
+	//ProjectileMeshComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
 	FAttachmentTransformRules AttachmentRules(EAttachmentRule::SnapToTarget, EAttachmentRule::SnapToTarget, EAttachmentRule::SnapToTarget, false);
 	AttachToComponent(AttachComponent, AttachmentRules, AttachSocket);
@@ -106,7 +108,7 @@ void AProjectile_Base::EjectFromPylon()
 
 	UE_LOG(LogTemp, Warning, TEXT("[Projectile_Base::EjectFromPylon] DetachFromActor"));
 	GetRootComponent()->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
-	GetWorldTimerManager().SetTimer(CollisionTimerHandle, this, &AProjectile_Base::EnableCollision, 0.5f, false);
+	//GetWorldTimerManager().SetTimer(CollisionTimerHandle, this, &AProjectile_Base::EnableCollision, 0.5f, false);
 }
 
 void AProjectile_Base::FireProjectile(FVector AimDirection)
@@ -128,7 +130,7 @@ void AProjectile_Base::StartFlightPlan()
 {
 	//ProjectileMeshComponent->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 	//SetActorEnableCollision(true);
-	GetWorldTimerManager().SetTimer(CollisionTimerHandle, this, &AProjectile_Base::EnableCollision, 0.5f, false);
+	GetWorldTimerManager().SetTimer(CollisionTimerHandle, this, &AProjectile_Base::EnableCollision, .01f, false);
 	if (ProjectileMeshComponent->IsSimulatingPhysics())
 	{
 		ProjectileMeshComponent->SetSimulatePhysics(false);

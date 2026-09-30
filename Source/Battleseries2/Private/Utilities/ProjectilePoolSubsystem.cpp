@@ -92,6 +92,8 @@ void UProjectilePoolSubsystem::ReturnProjectileToPool(TWeakObjectPtr<AProjectile
 	Projectile->SetActorEnableCollision(false);
 	Projectile->SetActorTickEnabled(false);
 	Projectile->ProjectileMovementComponent->SetComponentTickEnabled(false);
+	Projectile->ProjectileMeshComponent->SetCollisionResponseToAllChannels(ECR_Ignore);
+	Projectile->ProjectileMeshComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
 	FName& MunitionID = Projectile->ProjectileState.BaseProjectileState.MunitionID;
 	ProjectileObjectPools.FindOrAdd(MunitionID).PooledProjectiles.Add(Projectile);
