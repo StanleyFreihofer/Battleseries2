@@ -30,6 +30,9 @@ struct FWeaponAttachmentState
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TWeakObjectPtr<UStaticMeshComponent> SpawnedAttachment = nullptr; // The actual mesh on the gun
+	
+	UPROPERTY(VisibleAnywhere)
+	TArray<TWeakObjectPtr<UStaticMeshComponent>> SpawnedDecorative;
 };
 
 USTRUCT(BlueprintType)
@@ -182,6 +185,8 @@ class BATTLESERIES2_API ULoadoutManager : public UActorComponent
 		UFUNCTION(BlueprintCallable)
 		void Init_AttachmentMesh(FWeaponAttachmentState& RuntimeSlotState, FInfantryWeaponState& WeaponToApplyTo, EAttachmentSlot AttachmentSlot);
 		UFUNCTION(BlueprintCallable)
+		void Init_AttachmentDecorativeMesh(FWeaponAttachmentState& RuntimeSlotState, FInfantryWeaponState& WeaponToApplyTo, EAttachmentSlot AttachmentSlot, FName AttachmentID);
+		UFUNCTION(BlueprintCallable)
 		void Init_Gadget(FName GadgetID, int32 GadgetIndex);
 		UFUNCTION()
 		void Init_GadgetMesh(TWeakObjectPtr<UStaticMeshComponent>& HeldGadgetMesh);
@@ -314,7 +319,9 @@ class BATTLESERIES2_API ULoadoutManager : public UActorComponent
 		UFUNCTION(BlueprintCallable, BlueprintPure)
 		int32 GetMaxMagSize(int32 WeaponIndex);
 		UFUNCTION(BlueprintCallable, BlueprintPure)
-		FName GetSocketNameForSlot(EAttachmentSlot Slot);
+		FName GetSocketNameForSlot(EAttachmentSlot Slot, bool Decorative);
+		UFUNCTION()
+		FName GetDecorativeSocketName(int32 Index, TWeakObjectPtr<USkeletalMeshComponent> WeaponMeshComponent,  EAttachmentSlot Slot);
 		UFUNCTION(BlueprintCallable, BlueprintPure)
 		FTransform GetSightTransform();
 		UFUNCTION(BlueprintCallable, BlueprintPure)

@@ -64,6 +64,9 @@ struct FWeaponAttachmentClassification
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	TSoftObjectPtr<UTexture2D> AttachmentIcon = nullptr;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ToolTip = "decorative mesh attached to weapon in addition to main mesh (mg belt for example), 1 is spawned and attached for each 'S_AttachmentSlot_Decorative_index'"))
+	TSoftObjectPtr<UStaticMesh> DecorativeMesh = nullptr;
 };
 
 USTRUCT(BlueprintType)

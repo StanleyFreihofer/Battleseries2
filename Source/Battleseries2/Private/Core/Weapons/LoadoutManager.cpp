@@ -189,8 +189,29 @@ void ULoadoutManager::Init_AttachmentMesh(FWeaponAttachmentState& RuntimeSlotSta
 	//Initialize/Create Attachment, attach to gun, cache
 	TWeakObjectPtr<UStaticMeshComponent> NewAttachment = NewObject<UStaticMeshComponent>(GetOwner());
 	NewAttachment->RegisterComponent();
-	NewAttachment->AttachToComponent(WeaponToApplyTo.WeaponMesh.Get(), FAttachmentTransformRules::SnapToTargetIncludingScale, GetSocketNameForSlot(AttachmentSlot));
+	NewAttachment->AttachToComponent(WeaponToApplyTo.WeaponMesh.Get(), FAttachmentTransformRules::SnapToTargetIncludingScale, GetSocketNameForSlot(AttachmentSlot, false));
 	RuntimeSlotState.SpawnedAttachment = NewAttachment;
+}
+
+void ULoadoutManager::Init_AttachmentDecorativeMesh(FWeaponAttachmentState& RuntimeSlotState, FInfantryWeaponState& WeaponToApplyTo, EAttachmentSlot AttachmentSlot, FName AttachmentID)
+{
+	const FWeaponAttachmentData& AttachmentData = *UBS2FunctionLibrary::GetDataSubsystem(this)->GetWeaponAttachmentDataRow(AttachmentID);
+	if (AttachmentData.AttachmentClassification.DecorativeMesh.IsNull())	{ return; }
+	FName AttachSocketBase = GetSocketNameForSlot(AttachmentSlot, true);
+	FString SocketStringBase = AttachSocketBase.ToString();
+
+	for (int32 i = 0; i < 32; i++)
+	{
+		FName SocketName = GetDecorativeSocketName(i, WeaponToApplyTo.WeaponMesh.Get(), AttachmentSlot);
+		if (SocketName != NAME_None)
+		{
+			TWeakObjectPtr<UStaticMeshComponent> NewAttachment = NewObject<UStaticMeshComponent>(GetOwner());
+			NewAttachment->RegisterComponent();
+			NewAttachment->AttachToComponent(WeaponToApplyTo.WeaponMesh.Get(), FAttachmentTransformRules::SnapToTargetIncludingScale, SocketName);
+			NewAttachment->SetStaticMesh(AttachmentData.AttachmentClassification.DecorativeMesh.LoadSynchronous());
+			WeaponToApplyTo.WeaponAttachmentStates.Find(AttachmentSlot)->SpawnedDecorative.Add(NewAttachment);
+		}
+	}
 }
 
 void ULoadoutManager::Init_Gadget(FName GadgetID, int32 GadgetIndex)
@@ -235,6 +256,8 @@ void ULoadoutManager::ApplyAttachment(int32 WeaponIndex, EAttachmentSlot Attachm
 	FWeaponAttachmentState& RuntimeSlotState = WeaponToApplyTo.WeaponAttachmentStates.FindOrAdd(AttachmentSlot);
 	Init_AttachmentMesh(RuntimeSlotState, WeaponToApplyTo, AttachmentSlot);
 	UpdateAttachment(RuntimeSlotState, AttachmentID, GetBaseWeaponState(WeaponIndex).WeaponID, AttachmentSlot);
+	
+	Init_AttachmentDecorativeMesh(RuntimeSlotState, WeaponToApplyTo, AttachmentSlot, AttachmentID);
 }
 
 void ULoadoutManager::ApplyAttachments(const FPlayerLoadoutConfig_Weapon& AttachmentsToApply, int32 WeaponIndex)
@@ -1812,34 +1835,69 @@ int32 ULoadoutManager::GetMaxMagSize(int32 WeaponIndex)
 	return bCanBeChambered ? MagSize + 1 : MagSize;
 }
 
-FName ULoadoutManager::GetSocketNameForSlot(EAttachmentSlot Slot)
+FName ULoadoutManager::GetSocketNameForSlot(EAttachmentSlot Slot, bool Decorative)
 {
+	FString SocketName = FString();
+	FString FinalSocketName = FString();
 	switch (Slot)
 	{
 		case EAttachmentSlot::FrontSight:
-			return TEXT("S_FrontSight");
+			SocketName = TEXT("S_FrontSight");
+			break;
 		case EAttachmentSlot::RearSight:
-			return TEXT("S_RearSight");
+			SocketName = TEXT("S_RearSight");
+			break;
 		case EAttachmentSlot::Scope:       
-			return TEXT("S_Optic");
+			SocketName = TEXT("S_Optic");
+			break;
 		case EAttachmentSlot::ScopeAccessory:
-			return TEXT("S_OpticAccessory");
+			SocketName = TEXT("S_OpticAccessory");
+			break;
 		case EAttachmentSlot::Handguard:
-			return TEXT("S_Handguard");
+			SocketName = TEXT("S_Handguard");
+			break;
 		case EAttachmentSlot::Muzzle:			
-			return TEXT("S_Muzzle");
+			SocketName = TEXT("S_Muzzle");
+			break;
 		case EAttachmentSlot::Underbarrel:		
-			return TEXT("S_Underbarrel");
+			SocketName = TEXT("S_Underbarrel");
+			break;
 		case EAttachmentSlot::LeftRail:	    
-			return TEXT("S_Rail_L");
+			SocketName = TEXT("S_Rail_L");
+			break;
 		case EAttachmentSlot::RightRail:   
-			return TEXT("S_Rail_R");
+			SocketName = TEXT("S_Rail_R");
+			break;
 		case EAttachmentSlot::PistolGrip:
-			return TEXT("S_PistolGrip");
+			SocketName = TEXT("S_PistolGrip");	
+			break;
 		case EAttachmentSlot::Magazine:    
-			return TEXT("S_Mag");
+			SocketName = TEXT("S_Mag");
+			break;
 		case EAttachmentSlot::Stock:       
-			return TEXT("S_Stock");
+			SocketName = TEXT("S_Stock");
+			break;
+	}
+	if (Decorative)
+	{
+		FinalSocketName = SocketName.Append(TEXT("_Decorative_"));
+	}
+	else
+	{
+		FinalSocketName = SocketName;
+	}
+	FName FinalName = FName(*FinalSocketName);
+	return FinalName;
+}
+
+FName ULoadoutManager::GetDecorativeSocketName(int32 Index, TWeakObjectPtr<USkeletalMeshComponent> WeaponMeshComponent, EAttachmentSlot Slot)
+{
+	FName BaseSocketName = GetSocketNameForSlot(Slot, true);
+	FString BaseSocketString = BaseSocketName.ToString();
+	FName SocketName = (*BaseSocketString.Append(FString::FromInt(Index)));
+	if (WeaponMeshComponent->DoesSocketExist(SocketName))
+	{
+		return SocketName;
 	}
 	return NAME_None;
 }
