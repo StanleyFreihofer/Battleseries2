@@ -152,6 +152,7 @@ void UProjectilePoolSubsystem::HandleSimProjectileHit(FSimProjectile_Runtime& Si
 		{
 			if (Hit.GetActor() == IgnoredActor)
 			{
+				//does projectile keep moving or go through hit object?
 				return;
 			}
 		}
@@ -160,6 +161,13 @@ void UProjectilePoolSubsystem::HandleSimProjectileHit(FSimProjectile_Runtime& Si
 	UBS2FunctionLibrary::HandleApplyDamage(SimProjectile.BaseProjectileState, SimProjectile.CurrentLocation, Hit);
 	
 	UE_LOG(LogTemp, Warning, TEXT("Projectile Hit: %s"), *SimProjectile.BaseProjectileState.MunitionID.ToString());
+	
+	TSoftObjectPtr<UNiagaraSystem> ImpactVFX = UBS2FunctionLibrary::GetDataSubsystem(this)->GetProjectileDataRow(SimProjectile.BaseProjectileState.MunitionID)->MunitionVisualData.ImpactVFX;
+	if (!ImpactVFX.IsNull())
+	{
+		ImpactVFX.LoadSynchronous();
+		UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), ImpactVFX.Get(), Hit.ImpactPoint, Hit.ImpactNormal.Rotation());
+	}
 	
 	SimulatedProjectiles.RemoveAt(index);
 }

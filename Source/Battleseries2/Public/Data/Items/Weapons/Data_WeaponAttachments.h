@@ -46,6 +46,40 @@ struct FWeaponSightData
 };
 
 USTRUCT(BlueprintType)
+struct FAmmoVisualElement
+{
+	GENERATED_BODY()
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	EAmmoVisualBehavior Behavior = EAmmoVisualBehavior::Static;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (EditCondition = "Behavior != EAmmoVisualBehavior::HideBone", EditConditionHides))
+	TSoftObjectPtr<UStaticMesh> Mesh = nullptr;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ToolTip = "spawns one per socket found: <Prefix>_0, _1 ... (or bone name for HideBone)"))
+	FName SocketPrefix = NAME_None;	//make this more standardized rather than a standalone variable
+};
+
+USTRUCT(BlueprintType)
+struct FMagazineData
+{
+	GENERATED_BODY()
+	
+	//override ammo visuals bool?
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ToolTip = "attach AttachmentMesh here instead of the Magazine slot's default socket (e.g. S_Mag_Side for M249 STANAG adapter). none = default"))
+	FName SocketOverride = NAME_None;		//make this more standardized rather than a standalone variable
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ToolTip = "loads 1 round at a time (enter/loop/exit) vs whole mag. lives here since conversions change it (shotgun box mag)"))
+	bool bIsBulletFed = false;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ToolTip = "all visible ammo/feed meshes for this feed (belt, rounds, casings, in-hand items)"))
+	TArray<FAmmoVisualElement> AmmoVisuals;
+	
+	//any animation overrides
+};
+
+USTRUCT(BlueprintType)
 struct FWeaponAttachmentClassification
 {
 	GENERATED_BODY()
@@ -104,6 +138,9 @@ struct FWeaponAttachmentData : public FTableRowBase
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (EditCondition = "AttachmentClassification.WeaponAttachmentType == EWeaponAttachmentType::Sight", EditConditionHides))
 	FWeaponSightData WeaponSightData = FWeaponSightData();
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (EditCondition = "AttachmentClassification.WeaponAttachmentType == EWeaponAttachmentType::Mag", EditConditionHides))
+	FMagazineData MagazineData = FMagazineData();
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ToolTip = "the stat modifiers (positive or negative) of this attachment"))
 	TMap<EWeaponStat, FWeaponStatModifierData> AttachmentModifiers;

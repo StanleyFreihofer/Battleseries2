@@ -189,27 +189,43 @@ void ULoadoutManager::Init_AttachmentMesh(FWeaponAttachmentState& RuntimeSlotSta
 	//Initialize/Create Attachment, attach to gun, cache
 	TWeakObjectPtr<UStaticMeshComponent> NewAttachment = NewObject<UStaticMeshComponent>(GetOwner());
 	NewAttachment->RegisterComponent();
-	NewAttachment->AttachToComponent(WeaponToApplyTo.WeaponMesh.Get(), FAttachmentTransformRules::SnapToTargetIncludingScale, GetSocketNameForSlot(AttachmentSlot, false));
+	NewAttachment->AttachToComponent(WeaponToApplyTo.WeaponMesh.Get(), FAttachmentTransformRules::SnapToTargetIncludingScale, GetSocketNameForSlot(AttachmentSlot));
 	RuntimeSlotState.SpawnedAttachment = NewAttachment;
 }
 
-void ULoadoutManager::Init_AttachmentDecorativeMesh(FWeaponAttachmentState& RuntimeSlotState, FInfantryWeaponState& WeaponToApplyTo, EAttachmentSlot AttachmentSlot, FName AttachmentID)
+void ULoadoutManager::Init_AmmoVisuals(int32 WeaponIndex, FName AttachmentID)
 {
-	const FWeaponAttachmentData& AttachmentData = *UBS2FunctionLibrary::GetDataSubsystem(this)->GetWeaponAttachmentDataRow(AttachmentID);
-	if (AttachmentData.AttachmentClassification.DecorativeMesh.IsNull())	{ return; }
-	FName AttachSocketBase = GetSocketNameForSlot(AttachmentSlot, true);
-	FString SocketStringBase = AttachSocketBase.ToString();
-
-	for (int32 i = 0; i < 32; i++)
+	FInfantryWeaponState& WeaponState = Loadout.WeaponSystem.InfantryWeaponState.WeaponState_FP[WeaponIndex];
+	const FMagazineData& MagazineData = UBS2FunctionLibrary::GetDataSubsystem(this)->GetWeaponAttachmentDataRow(AttachmentID)->MagazineData;
+	
+	WeaponState.AmmoVisuals.SetNum(MagazineData.AmmoVisuals.Num());
+	
+	for (int32 i = 0; i < MagazineData.AmmoVisuals.Num(); i++)
 	{
-		FName SocketName = GetDecorativeSocketName(i, WeaponToApplyTo.WeaponMesh.Get(), AttachmentSlot);
-		if (SocketName != NAME_None)
+		const FAmmoVisualElement& Element = MagazineData.AmmoVisuals[i];
+		if (Element.Behavior == EAmmoVisualBehavior::HideBone)		{ continue; }
+		
+		const FString Prefix = Element.SocketPrefix.ToString();
+
+		TArray<FName> Sockets;
+		for (int32 n = 0; WeaponState.WeaponMesh->DoesSocketExist(FName(FString::Printf(TEXT("S_%s_%d"), *Prefix, n))); n++)
+		{
+			//S_SocketPrefix_n
+			Sockets.Add(FName(FString::Printf(TEXT("S_%s_%d"), *Prefix, n)));
+		}
+		if (Sockets.IsEmpty())
+		{
+			Sockets.Add(Element.SocketPrefix);
+		}
+		
+		UStaticMesh* Mesh = Element.Mesh.LoadSynchronous();
+		for (const FName& Socket : Sockets)
 		{
 			TWeakObjectPtr<UStaticMeshComponent> NewAttachment = NewObject<UStaticMeshComponent>(GetOwner());
 			NewAttachment->RegisterComponent();
-			NewAttachment->AttachToComponent(WeaponToApplyTo.WeaponMesh.Get(), FAttachmentTransformRules::SnapToTargetIncludingScale, SocketName);
-			NewAttachment->SetStaticMesh(AttachmentData.AttachmentClassification.DecorativeMesh.LoadSynchronous());
-			WeaponToApplyTo.WeaponAttachmentStates.Find(AttachmentSlot)->SpawnedDecorative.Add(NewAttachment);
+			NewAttachment->AttachToComponent(WeaponState.WeaponMesh.Get(), FAttachmentTransformRules::SnapToTargetIncludingScale, Socket);
+			NewAttachment->SetStaticMesh(Mesh);
+			WeaponState.AmmoVisuals[i].Instances.Add(NewAttachment);
 		}
 	}
 }
@@ -257,7 +273,12 @@ void ULoadoutManager::ApplyAttachment(int32 WeaponIndex, EAttachmentSlot Attachm
 	Init_AttachmentMesh(RuntimeSlotState, WeaponToApplyTo, AttachmentSlot);
 	UpdateAttachment(RuntimeSlotState, AttachmentID, GetBaseWeaponState(WeaponIndex).WeaponID, AttachmentSlot);
 	
-	Init_AttachmentDecorativeMesh(RuntimeSlotState, WeaponToApplyTo, AttachmentSlot, AttachmentID);
+	switch (AttachmentSlot)
+	{
+		case EAttachmentSlot::Magazine:
+			Init_AmmoVisuals(WeaponIndex, AttachmentID);
+			break;
+	}
 }
 
 void ULoadoutManager::ApplyAttachments(const FPlayerLoadoutConfig_Weapon& AttachmentsToApply, int32 WeaponIndex)
@@ -357,6 +378,17 @@ void ULoadoutManager::UpdateAttachment(FWeaponAttachmentState& RuntimeSlotState,
 		RuntimeSlotState.SpawnedAttachment->SetRelativeLocation(AttachmentOffset);
 	}
 	
+	switch (AttachmentSlot)
+	{
+		case EAttachmentSlot::Magazine:
+			if (AttachmentData.MagazineData.SocketOverride != NAME_None)
+			{
+				USceneComponent* WeaponAttachedTo = RuntimeSlotState.SpawnedAttachment->GetAttachParent();
+				RuntimeSlotState.SpawnedAttachment->AttachToComponent(WeaponAttachedTo, FAttachmentTransformRules::SnapToTargetIncludingScale, AttachmentData.MagazineData.SocketOverride);
+			}
+			break;
+	}
+	
 	RuntimeSlotState.BaseAttachmentState.AttachmentID = AttachmentID;
 }
 
@@ -366,6 +398,17 @@ void ULoadoutManager::UpdateWeaponCollision(ECollisionChannel CollisionChannel, 
 	for (auto& Attachment : Loadout.WeaponSystem.InfantryWeaponState.WeaponState_FP[WeaponIndex].WeaponAttachmentStates)
 	{
 		Attachment.Value.SpawnedAttachment.Get()->SetCollisionResponseToChannel(CollisionChannel, CollisionResponse);
+		
+		if (Attachment.Key == EAttachmentSlot::Magazine)
+		{
+			for (FAmmoVisualElement_Runtime& Element : Loadout.WeaponSystem.InfantryWeaponState.WeaponState_FP[WeaponIndex].AmmoVisuals)
+			{
+				for (TWeakObjectPtr<UStaticMeshComponent> Instance : Element.Instances)
+				{
+					Instance.Get()->SetCollisionResponseToChannel(CollisionChannel, CollisionResponse);
+				}
+			}
+		}
 	}
 	//WeaponSystem.InfantryWeaponSystem.WeaponState_TP[WeaponSystem.BaseWeaponSystem.EquippedWeaponState.CurrentWeaponIndex].WeaponMesh->SetCollisionResponseToChannel(CollisionChannel, CollisionResponse);
 }
@@ -378,6 +421,16 @@ void ULoadoutManager::UpdateWeaponVisibility(int32 WeaponIndex, bool Hide)
 	{
 		if (!AttachmentSlot.Value.SpawnedAttachment.Get()) { continue;}
 		AttachmentSlot.Value.SpawnedAttachment->SetHiddenInGame(Hide);
+		if (AttachmentSlot.Key == EAttachmentSlot::Magazine)
+		{
+			for (FAmmoVisualElement_Runtime& Element : Weapon.AmmoVisuals)
+			{
+				for (TWeakObjectPtr<UStaticMeshComponent> Instance : Element.Instances)
+				{
+					Instance.Get()->SetHiddenInGame(Hide);
+				}
+			}
+		}
 	}
 }
 
@@ -526,6 +579,8 @@ void ULoadoutManager::WeaponRangefinder()
 	Loadout.WeaponSystem.BaseWeaponState.EquippedWeaponState.RaycastData.MuzzleAimDirections[0] = UBS2FunctionLibrary::GetAimDirectionFromMuzzle(OutHit, FName("Muzzle"), WeaponMesh);
 }
 
+#pragma region Homing/LockOn
+
 void ULoadoutManager::HandleHoming(FTransform TraceTransform)
 {
 	FHitResult& OutHit = Loadout.WeaponSystem.BaseWeaponState.EquippedWeaponState.RaycastData.RangefinderData;
@@ -627,6 +682,8 @@ void ULoadoutManager::CancelLockOn()
 	
 	UBS2FunctionLibrary::CancelLockOn(this, *GetCurrentWeaponBaseState(), GetOwnerCharacter()->IsLocallyControlled(), StaticHomingData.HomingCapability);
 }
+
+#pragma endregion
 
 #pragma region WeaponFire
 
@@ -1835,7 +1892,7 @@ int32 ULoadoutManager::GetMaxMagSize(int32 WeaponIndex)
 	return bCanBeChambered ? MagSize + 1 : MagSize;
 }
 
-FName ULoadoutManager::GetSocketNameForSlot(EAttachmentSlot Slot, bool Decorative)
+FName ULoadoutManager::GetSocketNameForSlot(EAttachmentSlot Slot)
 {
 	FString SocketName = FString();
 	FString FinalSocketName = FString();
@@ -1878,21 +1935,12 @@ FName ULoadoutManager::GetSocketNameForSlot(EAttachmentSlot Slot, bool Decorativ
 			SocketName = TEXT("S_Stock");
 			break;
 	}
-	if (Decorative)
-	{
-		FinalSocketName = SocketName.Append(TEXT("_Decorative_"));
-	}
-	else
-	{
-		FinalSocketName = SocketName;
-	}
-	FName FinalName = FName(*FinalSocketName);
-	return FinalName;
+	return FName(*SocketName);
 }
 
 FName ULoadoutManager::GetDecorativeSocketName(int32 Index, TWeakObjectPtr<USkeletalMeshComponent> WeaponMeshComponent, EAttachmentSlot Slot)
 {
-	FName BaseSocketName = GetSocketNameForSlot(Slot, true);
+	FName BaseSocketName = GetSocketNameForSlot(Slot);
 	FString BaseSocketString = BaseSocketName.ToString();
 	FName SocketName = (*BaseSocketString.Append(FString::FromInt(Index)));
 	if (WeaponMeshComponent->DoesSocketExist(SocketName))

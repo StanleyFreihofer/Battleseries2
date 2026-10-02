@@ -21,18 +21,24 @@ struct FPlayerLoadoutConfig_Class;
 //this class is used by on-foot weapons/characters
 
 USTRUCT(BlueprintType)
+struct FAmmoVisualElement_Runtime
+{
+	GENERATED_BODY()
+
+	UPROPERTY(VisibleAnywhere)					//in socket order, [0] = next round fired. empty for HideBone
+	TArray<TWeakObjectPtr<UStaticMeshComponent>> Instances;
+};
+
+USTRUCT(BlueprintType)
 struct FWeaponAttachmentState
 {
 	GENERATED_BODY()
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	FPlayerLoadoutConfig_WeaponAttachment BaseAttachmentState = FPlayerLoadoutConfig_WeaponAttachment();		//attachmentID, railoffset
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	TWeakObjectPtr<UStaticMeshComponent> SpawnedAttachment = nullptr; // The actual mesh on the gun
-	
-	UPROPERTY(VisibleAnywhere)
-	TArray<TWeakObjectPtr<UStaticMeshComponent>> SpawnedDecorative;
 };
 
 USTRUCT(BlueprintType)
@@ -40,11 +46,14 @@ struct FInfantryWeaponState
 {
 	GENERATED_BODY()
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	TMap<EAttachmentSlot, FWeaponAttachmentState> WeaponAttachmentStates;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	TWeakObjectPtr<USkeletalMeshComponent> WeaponMesh = nullptr;
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)					//parallel to equipped mag's MagazineData.AmmoVisuals
+	TArray<FAmmoVisualElement_Runtime> AmmoVisuals;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	int32 CurrentOpticIndex = 0;
@@ -57,10 +66,10 @@ struct FInfantryWeaponSystem
 	//each array item corresponds to weapon index
 	GENERATED_BODY()
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	TArray<FInfantryWeaponState> WeaponState_FP;			//change to be more individual structs?
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	TArray<FInfantryWeaponState> WeaponState_TP;			//change to be more individual structs?
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
@@ -185,7 +194,7 @@ class BATTLESERIES2_API ULoadoutManager : public UActorComponent
 		UFUNCTION(BlueprintCallable)
 		void Init_AttachmentMesh(FWeaponAttachmentState& RuntimeSlotState, FInfantryWeaponState& WeaponToApplyTo, EAttachmentSlot AttachmentSlot);
 		UFUNCTION(BlueprintCallable)
-		void Init_AttachmentDecorativeMesh(FWeaponAttachmentState& RuntimeSlotState, FInfantryWeaponState& WeaponToApplyTo, EAttachmentSlot AttachmentSlot, FName AttachmentID);
+		void Init_AmmoVisuals(int32 WeaponIndex, FName AttachmentID);
 		UFUNCTION(BlueprintCallable)
 		void Init_Gadget(FName GadgetID, int32 GadgetIndex);
 		UFUNCTION()
@@ -319,7 +328,7 @@ class BATTLESERIES2_API ULoadoutManager : public UActorComponent
 		UFUNCTION(BlueprintCallable, BlueprintPure)
 		int32 GetMaxMagSize(int32 WeaponIndex);
 		UFUNCTION(BlueprintCallable, BlueprintPure)
-		FName GetSocketNameForSlot(EAttachmentSlot Slot, bool Decorative);
+		FName GetSocketNameForSlot(EAttachmentSlot Slot);
 		UFUNCTION()
 		FName GetDecorativeSocketName(int32 Index, TWeakObjectPtr<USkeletalMeshComponent> WeaponMeshComponent,  EAttachmentSlot Slot);
 		UFUNCTION(BlueprintCallable, BlueprintPure)

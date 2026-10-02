@@ -61,6 +61,15 @@ enum class ESightSlot : uint8
 	Canted			UMETA(DisplayName = "Canted/Flip/Hybrid")
 };
 
+UENUM(BlueprintType)
+enum class EAmmoVisualBehavior : uint8
+{
+	Static		UMETA(ToolTip = "always visible (e.g. belt stub that never drains)"),
+	PerRound	UMETA(ToolTip = "visible count follows CurrentAmmoInMag (belt links, MGL cylinder)"),
+	ReloadOnly	UMETA(ToolTip = "hidden until shown/hidden by anim notify (shell in hand, casing)"),
+	HideBone	UMETA(ToolTip = "bone on weapon mesh hidden/unhidden (current ProjectileBoneToHide)")
+};
+
 #pragma endregion
 
 UENUM(BlueprintType)
