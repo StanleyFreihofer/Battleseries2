@@ -367,6 +367,7 @@ void ULoadoutManager::UpdateScopeCamera()
 
 void ULoadoutManager::UpdateAttachment(FWeaponAttachmentState& RuntimeSlotState, FName AttachmentID, FName WeaponID, EAttachmentSlot AttachmentSlot)
 {
+	//visual only function?
 	const FWeaponAttachmentData& AttachmentData = *UBS2FunctionLibrary::GetDataSubsystem(this)->GetWeaponAttachmentDataRow(AttachmentID);
 	
 	if (!AttachmentData.AttachmentClassification.AttachmentMesh.IsNull())
@@ -1014,7 +1015,7 @@ void ULoadoutManager::ReloadWeapon()
 		OnReloadFinished(Montage, bInterrupted, WeaponIndex);
 	});
 	
-	if (!UBS2FunctionLibrary::GetIfWeaponCanReload(CurrentWeapon, StaticWeaponData->InfantryWeaponAmmoData.bCanRoundBeChambered, StaticWeaponData->InfantryWeaponAmmoData.BaseAmmoData.MagSize))		{ return; }
+	if (!UBS2FunctionLibrary::GetIfWeaponCanReload(CurrentWeapon, StaticWeaponData->InfantryWeaponAmmoData.bCanRoundBeChambered, GetCurrentWeaponStats().MagSize))		{ return; }
 	if (!StaticWeaponData->WeaponFunctionalityData.canADSReload)
 	{
 		CombatState.canAim = false;
@@ -1526,6 +1527,8 @@ void ULoadoutManager::UpdateCurrentWeaponStats(int32 WeaponIndex)
 	RuntimeStats.MaxReserveAmmo = StaticWeaponData->InfantryWeaponAmmoData.BaseAmmoData.MaxReserveAmmo;
 	RuntimeStats.FireModeData = StaticWeaponData->WeaponFunctionalityData.BaseWeaponFunctionality.WeaponFireModeData;
 	RuntimeStats.ReloadSpeed = StaticWeaponData->InfantryWeaponAmmoData.BaseAmmoData.ReloadSpeed;
+	
+	const FWeaponStats_Runtime BaseWeaponStats = RuntimeStats;
 
 	TMap<EAttachmentSlot, FWeaponAttachmentState>& WeaponAttachmentStates = Loadout.WeaponSystem.InfantryWeaponState.WeaponState_FP[WeaponIndex].WeaponAttachmentStates;
 	for (auto& SlotPair : WeaponAttachmentStates)
@@ -1536,24 +1539,28 @@ void ULoadoutManager::UpdateCurrentWeaponStats(int32 WeaponIndex)
 
 		for (auto& ModifierPair : AttachmentData->AttachmentModifiers)
 		{
-			ApplyAttachmentModifier(RuntimeStats, ModifierPair.Key, ModifierPair.Value);
+			ApplyAttachmentModifier(WeaponIndex, ModifierPair.Key, ModifierPair.Value, BaseWeaponStats);
 		}
 	}
 }
 
-void ULoadoutManager::ApplyAttachmentModifier(FWeaponStats_Runtime& RuntimeStats, EWeaponStat WeaponStat, const FWeaponStatModifierData& WeaponModifier)
+void ULoadoutManager::ApplyAttachmentModifier(int32 WeaponIndex, EWeaponStat WeaponStat, const FWeaponStatModifierData& WeaponModifier, const FWeaponStats_Runtime& BaseWeaponStats)
 {
+	FWeaponStats_Runtime& RuntimeStats = Loadout.WeaponSystem.InfantryWeaponState.CurrentWeaponStats[WeaponIndex];
+	
+	const float ReferenceValue = WeaponModifier.Modifier.EffectValueMode == EEffectValueMode::MultipleOfStat ? ReadWeaponStatValue(BaseWeaponStats, WeaponStat) : 0.0f;
+	
 	const FStatTarget* StatTarget = GetWeaponStatTargets().Find(WeaponStat);
 
 	if (StatTarget->FloatMember)
 	{
 		float& FloatValue = RuntimeStats.*StatTarget->FloatMember;
-		FloatValue = WeaponModifier.Modifier.ApplyToValue(FloatValue);
+		FloatValue = WeaponModifier.Modifier.ApplyToValue(FloatValue, ReferenceValue);
 	}
 	else if (StatTarget->IntMember)
 	{
 		int32& IntValue = RuntimeStats.*StatTarget->IntMember;
-		IntValue = FMath::RoundToInt(WeaponModifier.Modifier.ApplyToValue((float)IntValue));
+		IntValue = FMath::RoundToInt(WeaponModifier.Modifier.ApplyToValue((float)IntValue, ReferenceValue));
 	}
 	else if (StatTarget->BoolMember)
 	{

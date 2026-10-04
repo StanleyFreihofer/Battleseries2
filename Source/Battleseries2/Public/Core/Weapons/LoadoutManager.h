@@ -290,7 +290,7 @@ class BATTLESERIES2_API ULoadoutManager : public UActorComponent
 		UFUNCTION(BlueprintCallable)
 		void UpdateCurrentWeaponStats(int32 WeaponIndex);
 		UFUNCTION(BlueprintCallable)
-		void ApplyAttachmentModifier(FWeaponStats_Runtime& RuntimeStats, EWeaponStat WeaponStat, const FWeaponStatModifierData& WeaponModifier);
+		void ApplyAttachmentModifier(int32 WeaponIndex, EWeaponStat WeaponStat, const FWeaponStatModifierData& WeaponModifier, const FWeaponStats_Runtime& BaseWeaponStats);
 		UFUNCTION(BlueprintCallable)
 		float CalculateFinalStatValue(float BaseValue, TArray<FWeaponStatModifierData>& ModifierArray);
 	
