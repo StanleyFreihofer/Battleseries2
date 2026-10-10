@@ -33,8 +33,8 @@ struct FWeaponSightData
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (tooltip = "the default number to increase/decrease the sight distance by (helps to ensure when aim, sight distance brings camera to front of sight rather than center/in it"))
 	float SightDistanceOffset = 0.0f;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (tooltip = "the number to increase/decrease the default SightTransform by, helps to ensure vertically we aim down center of sight"))
-	float VerticalAimpointOffset = 0.0f;
+	//UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (tooltip = "the number to increase/decrease the default SightTransform by, helps to ensure vertically we aim down center of sight"))
+	//float VerticalAimpointOffset = 0.0f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	int32 PIPMaterialIndex = -1;
