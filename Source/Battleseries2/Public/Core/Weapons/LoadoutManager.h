@@ -332,6 +332,8 @@ class BATTLESERIES2_API ULoadoutManager : public UActorComponent
 		UFUNCTION()
 		FName GetDecorativeSocketName(int32 Index, TWeakObjectPtr<USkeletalMeshComponent> WeaponMeshComponent,  EAttachmentSlot Slot);
 		UFUNCTION(BlueprintCallable, BlueprintPure)
+		USceneComponent* GetActiveAimpointSource();
+		UFUNCTION(BlueprintCallable, BlueprintPure)
 		FTransform GetSightTransform();
 		UFUNCTION(BlueprintCallable, BlueprintPure)
 		float GetSightDistance();

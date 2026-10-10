@@ -1957,8 +1957,46 @@ FName ULoadoutManager::GetDecorativeSocketName(int32 Index, TWeakObjectPtr<USkel
 	return NAME_None;
 }
 
+USceneComponent* ULoadoutManager::GetActiveAimpointSource()
+{
+	FInfantryWeaponState& WeaponState = GetCurrentInfantryWeaponState_FP();
+
+	// priority: scope > rear sight > weapon's own (integrated irons)
+	static const EAttachmentSlot SightPriority[] = { EAttachmentSlot::Scope, EAttachmentSlot::RearSight };
+
+	for (EAttachmentSlot Slot : SightPriority)
+	{
+		if (FWeaponAttachmentState* SightState = WeaponState.WeaponAttachmentStates.Find(Slot))
+		{
+			if (SightState->SpawnedAttachment.IsValid() && SightState->SpawnedAttachment->DoesSocketExist(FName("Aimpoint")))
+			{
+				return SightState->SpawnedAttachment.Get();
+			}
+		}
+	}
+	return WeaponState.WeaponMesh.Get();
+}
+
 FTransform ULoadoutManager::GetSightTransform()
 {
+	FInfantryWeaponState& InfantryWeaponState = GetCurrentInfantryWeaponState_FP();	
+	USkeletalMeshComponent* WeaponMesh = InfantryWeaponState.WeaponMesh.Get();
+
+	// aimpoint relative to the BONE the weapon's socket hangs off (the bone the sight IK moves)
+	// includes the socket's own offset/rotation, so any attach setup works
+	USkinnedMeshComponent* AttachParent = Cast<USkinnedMeshComponent>(WeaponMesh->GetAttachParent());
+	const FName ParentBone = AttachParent->GetSocketBoneName(WeaponMesh->GetAttachSocketName());
+	const FTransform ParentBoneWorld = AttachParent->GetSocketTransform(ParentBone);		//bone names work here too
+
+	const FTransform AimpointWorld = GetActiveAimpointSource()->GetSocketTransform(FName("Aimpoint"), RTS_World);          //WeaponMesh->GetSocketTransform(FName("Aimpoint"), RTS_World);
+	return AimpointWorld.GetRelativeTransform(ParentBoneWorld);
+	
+	/**
+	const FTransform ParentSocketWorld = WeaponMesh->GetAttachParent()->GetSocketTransform(WeaponMesh->GetAttachSocketName());
+	const FTransform AimpointWorld = WeaponMesh->GetSocketTransform(FName("Aimpoint"), RTS_World);
+	return AimpointWorld.GetRelativeTransform(ParentSocketWorld);
+	
+	/**
 	FTransform SightTransform = Loadout.WeaponSystem.InfantryWeaponState.WeaponState_FP[GetCII()].WeaponMesh->GetSocketTransform(FName("Aimpoint"), ERelativeTransformSpace::RTS_Component);
 	FInfantryWeaponState& InfantryWeaponState = Loadout.WeaponSystem.InfantryWeaponState.WeaponState_FP[GetCII()];
 	float VerticalAimpointOffset = 0.0f;
@@ -1979,6 +2017,7 @@ FTransform ULoadoutManager::GetSightTransform()
 		SightTransform.SetLocation(NewLocation);
 	}
 	return SightTransform;
+	**/
 }
 
 float ULoadoutManager::GetSightDistance()
