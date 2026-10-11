@@ -2,8 +2,6 @@
 
 #include "CoreMinimal.h"
 #include "Engine/DataTable.h"
-#include "Data/Core/CoreTypes.h"
-#include "Data/Core/CoreEnums.h"
 #include "Data/Items/Weapons/WeaponEnums.h"
 #include "Data/Items/Weapons/WeaponStructs.h"
 #include "Data_WeaponAttachments.generated.h"
@@ -77,6 +75,11 @@ struct FMagazineData
 	TArray<FAmmoVisualElement> AmmoVisuals;
 	
 	//any animation overrides
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	FWeaponAnimData_ArmsReload ReloadWeaponAnimOverrides_FP = FWeaponAnimData_ArmsReload();
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	FWeaponAnimData_Reload WeaponReloadAnimOverrides = FWeaponAnimData_Reload();
 };
 
 USTRUCT(BlueprintType)

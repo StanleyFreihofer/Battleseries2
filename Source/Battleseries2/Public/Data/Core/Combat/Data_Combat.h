@@ -17,10 +17,10 @@ struct FHealthData
 	float MaxHealth = 100.f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ToolTip = "seconds after last damage before regen begins"))
-	float RegenDelay = 16.f;   // BF3's actual value
+	float RegenDelay = 16.f;  
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ToolTip = "HP per second once regen begins"))
-	float RegenRate = 5.f;     // BF3's actual value
+	float RegenRate = 5.f;   
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ToolTip = "what type of armor this is"))
 	EArmorType ArmorType = EArmorType::Infantry;

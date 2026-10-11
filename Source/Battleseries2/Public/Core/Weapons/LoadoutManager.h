@@ -15,6 +15,7 @@ class USkeletalMeshComponent;
 class UStaticMeshComponent;
 class AProjectile_Base;
 struct FPlayerLoadoutConfig_Class;
+struct FWeaponAnimData_ArmsReload;
 
 
 //the base component class for handling runtime weapon data and logic
@@ -339,6 +340,10 @@ class BATTLESERIES2_API ULoadoutManager : public UActorComponent
 		float GetSightDistance();
 		UFUNCTION(BlueprintCallable, BlueprintPure)
 		void GetAimSpeeds(float& AimInSpeed, float& AimOutSpeed);
+		UFUNCTION(BlueprintCallable, BlueprintPure)
+		FWeaponAnimData_ArmsReload GetWeaponReloadData_FP(int32 WeaponIndex);
+		UFUNCTION(BlueprintCallable, BlueprintPure)
+		FWeaponAnimData_Reload GetWeaponReloadData(int32 WeaponIndex);
 		UFUNCTION(BlueprintCallable, BlueprintPure)
 		void GetAllAttachmentModifierDataOfTypeForWeapon(TMap<EAttachmentSlot, FWeaponAttachmentState>& WeaponAttachmentStates, EWeaponStat WeaponStatType, TArray<FWeaponStatModifierData>& OutAttachmentModifierData);
 		UFUNCTION(BlueprintCallable, BlueprintPure)

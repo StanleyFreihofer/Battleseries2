@@ -129,7 +129,7 @@ struct FBaseMunitionDamageData
 	GENERATED_BODY()
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ToolTip = "weapons 'raw' damage without any falloff"))
-	float BaseDamage = 0.0f;				
+	float BaseDamage = 0.0f;				//depreciate (damage should be soley determined by damage curve, if no drop off flat curve as this just adds additional unecessary complexity????
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	TMap<EArmorType, float> ArmorDamageMultipliers;

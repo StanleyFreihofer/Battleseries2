@@ -13,14 +13,8 @@ struct FHealthState
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	float CurrentHealth = 0.f;
 
-	//UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
-	//bool bIsDead = false;
-
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)			//used both for delay and tick
 	FTimerHandle RegenTimer = FTimerHandle();
-
-	//UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
-	//FTimerHandle RegenTickTimer = FTimerHandle();
 };
 
 USTRUCT(BlueprintType)
@@ -37,3 +31,7 @@ struct FVehicleHealthState
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	TObjectPtr<UStaticMeshComponent> DestroyedMesh = nullptr;
 };
+
+//combat state?
+//is lazed/designated?
+//current faction

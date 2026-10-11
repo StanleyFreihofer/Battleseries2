@@ -6,6 +6,7 @@
 #include "Data/Items/Weapons/WeaponEnums.h"
 #include "Data/Items/ItemEnums.h"
 #include "Data/Items/Weapons/Data_Weapon.h"
+#include "Data/Items/Weapons/WeaponStructs.h"
 #include "Data_InfantryWeapon.generated.h"
 
 USTRUCT(BlueprintType)
@@ -129,11 +130,6 @@ struct FInfantryWeaponAmmoData
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	bool bCanRoundBeChambered = true;
-	
-	
-	//REMOVE????????????????????????????????????????????????????????????????? (functionality moved to weapon attachment ammo visual data)
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (tooltip = "if the weapon mesh has a projectile/munition as part of it, this will hide unless reloading"))
-	FName ProjectileBoneToHide = NAME_None;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (tooltip = "is projectile mounted/loaded in gun (will show the actual projectile fired)"))
 	bool isProjectileMounted = false;
@@ -175,27 +171,15 @@ struct FInfantryWeaponAnimData_FP
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Actions | Montages")
 	TSoftObjectPtr<UAnimMontage> InspectMontage = nullptr;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Actions | Montages")
-	TSoftObjectPtr<UAnimMontage> ReloadWeaponMontage = nullptr;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Actions | Montages")
-	TSoftObjectPtr<UAnimMontage> ReloadEmptyWeaponMontage = nullptr;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	FWeaponAnimData_ArmsReload ReloadWeaponAnimData_FP = FWeaponAnimData_ArmsReload();
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Actions | Montages")
 	TSoftObjectPtr<UAnimMontage> FireWeaponMontage = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Actions | Montages")
 	TSoftObjectPtr<UAnimMontage> DryFireMontage = nullptr;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Transitions | Montages")
-	TSoftObjectPtr<UAnimMontage> EnterReloadMontage = nullptr;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Transitions | Montages")
-	TSoftObjectPtr<UAnimMontage> ExitReloadMontage = nullptr;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Transitions | Montages")
-	TSoftObjectPtr<UAnimMontage> LoopReloadMontage = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Regrip | Montages")
 	TSoftObjectPtr<UAnimMontage> ShoulderRegrip = nullptr;
@@ -223,16 +207,7 @@ struct FInfantryWeaponAnimData_Weapon
 	TSoftObjectPtr<UAnimSequence> WeaponFire = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	TSoftObjectPtr<UAnimSequence> WeaponReload = nullptr;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	TSoftObjectPtr<UAnimSequence> WeaponReloadEmpty = nullptr;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	TSoftObjectPtr<UAnimSequence> WeaponReloadEnter = nullptr;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	TSoftObjectPtr<UAnimSequence> WeaponReloadExit = nullptr;
+	FWeaponAnimData_Reload WeaponReloadAnims = FWeaponAnimData_Reload();
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	TSoftObjectPtr<UAnimSequence> WeaponEquip = nullptr;

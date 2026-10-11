@@ -452,7 +452,7 @@ void ULoadoutManager::ApplyWeaponStateModifiers(const TMap<EWeaponStateType, FWe
 					ModifierValue = Pair.Value.Modifier.ModifierValue;
 					break;
 				case EEffectValueMode::MultipleOfStat:
-					ModifierValue = ReadWeaponStatValue(Stats, Pair.Value.ReferenceState);
+					ModifierValue = ReadWeaponStatValue(Stats, Pair.Value.ReferenceStat);
 					break;
 			}
 
@@ -1034,18 +1034,24 @@ void ULoadoutManager::ReloadWeapon()
 	
 	bool bEmptyMag = CurrentWeapon.CurrentAmmoinMag <= 0;
 
+	/**
 	if (!StaticWeaponData->InfantryWeaponAmmoData.ProjectileBoneToHide.IsNone())
 	{
 		InfantryWeaponState_FP.WeaponMesh->UnHideBoneByName(StaticWeaponData->InfantryWeaponAmmoData.ProjectileBoneToHide);
 	}
+	**/
 
 	TWeakObjectPtr<ACharacter_Base> Character = GetOwnerCharacter();
 	USkeletalMeshComponent* FPArms = Character->FPArms;
 	TWeakObjectPtr<UAnimInstance> FPArmsAnimInstance = FPArms->GetAnimInstance();
 	float& ReloadSpeed = GetCurrentWeaponStats().ReloadSpeed;
+	
+	//pick character and weapon reload animation data based on mag attachments
+	FWeaponAnimData_ArmsReload ReloadAnimData_FP = GetWeaponReloadData_FP(WeaponIndex);
+	FWeaponAnimData_Reload ReloadAnimData_Weapon = GetWeaponReloadData(WeaponIndex);
 
-	TSoftObjectPtr<UAnimMontage> FPReloadMontage = bEmptyMag ? StaticWeaponData->InfantryWeaponAnimData.FPWeaponAnimData.ReloadEmptyWeaponMontage : StaticWeaponData->InfantryWeaponAnimData.FPWeaponAnimData.ReloadWeaponMontage;
-	TSoftObjectPtr<UAnimSequence> WeaponReloadAnim = bEmptyMag ? StaticWeaponData->InfantryWeaponAnimData.WeaponAnimData.WeaponReloadEmpty : StaticWeaponData->InfantryWeaponAnimData.WeaponAnimData.WeaponReload;
+	TSoftObjectPtr<UAnimMontage>& FPReloadMontage = bEmptyMag ? ReloadAnimData_FP.ReloadEmptyWeaponMontage : ReloadAnimData_FP.ReloadWeaponMontage;
+	TSoftObjectPtr<UAnimSequence>& WeaponReloadAnim = bEmptyMag ? ReloadAnimData_Weapon.WeaponReloadEmpty : ReloadAnimData_Weapon.WeaponReload;
 	FPReloadMontage.LoadSynchronous();
 	WeaponReloadAnim.LoadSynchronous();
 
@@ -1282,7 +1288,7 @@ void ULoadoutManager::UnequipWeapon(int32 PreviousWeaponIndex)
 	
 	if (Loadout.WeaponSystem.BaseWeaponState.Weapons[PreviousWeaponIndex].isReloading)
 	{
-		TSoftObjectPtr<UAnimMontage> FPReloadMontage = StaticWeaponDataCache[PreviousWeaponIndex]->InfantryWeaponAnimData.FPWeaponAnimData.ReloadWeaponMontage;
+		TSoftObjectPtr<UAnimMontage> FPReloadMontage = GetWeaponReloadData_FP(PreviousWeaponIndex).ReloadWeaponMontage;	
 		FPArmsAnimInstance->Montage_Stop(0.1f, FPReloadMontage.Get());
 	}
 	
@@ -1390,10 +1396,13 @@ void ULoadoutManager::EquipWeapon(int32 WeaponIndex, bool InitialEquip)
 	FPEquipWeaponMontage.LoadSynchronous();
 	FPArmsAnimInstance->Montage_Play(FPEquipWeaponMontage.Get(), 1.0f);
 	IAnims::Execute_OnEquipWeapon_FP(FPArmsAnimInstance.Get(), AnimData.FPWeaponAnimData);
+	
+	/**
 	if (!StaticWeaponDataCache[WeaponIndex]->InfantryWeaponAmmoData.ProjectileBoneToHide.IsNone())
 	{
 		InfantryWeaponState_FP.WeaponMesh->HideBoneByName(StaticWeaponDataCache[WeaponIndex]->InfantryWeaponAmmoData.ProjectileBoneToHide, EPhysBodyOp::PBO_None);
 	}
+	**/
 	UpdateScopeCamera();
 	
 	FWeaponState& CurrentWeapon = GetBaseWeaponState(GetCII());
@@ -1990,34 +1999,6 @@ FTransform ULoadoutManager::GetSightTransform()
 
 	const FTransform AimpointWorld = GetActiveAimpointSource()->GetSocketTransform(FName("Aimpoint"), RTS_World);          //WeaponMesh->GetSocketTransform(FName("Aimpoint"), RTS_World);
 	return AimpointWorld.GetRelativeTransform(ParentBoneWorld);
-	
-	/**
-	const FTransform ParentSocketWorld = WeaponMesh->GetAttachParent()->GetSocketTransform(WeaponMesh->GetAttachSocketName());
-	const FTransform AimpointWorld = WeaponMesh->GetSocketTransform(FName("Aimpoint"), RTS_World);
-	return AimpointWorld.GetRelativeTransform(ParentSocketWorld);
-	
-	/**
-	FTransform SightTransform = Loadout.WeaponSystem.InfantryWeaponState.WeaponState_FP[GetCII()].WeaponMesh->GetSocketTransform(FName("Aimpoint"), ERelativeTransformSpace::RTS_Component);
-	FInfantryWeaponState& InfantryWeaponState = Loadout.WeaponSystem.InfantryWeaponState.WeaponState_FP[GetCII()];
-	float VerticalAimpointOffset = 0.0f;
-	FName AttachmentID = NAME_None;
-	if (FWeaponAttachmentState* OpticState = InfantryWeaponState.WeaponAttachmentStates.Find(EAttachmentSlot::Scope))
-	{
-		AttachmentID = OpticState->BaseAttachmentState.AttachmentID;
-	}
-	else if (FWeaponAttachmentState* RearSightState = InfantryWeaponState.WeaponAttachmentStates.Find(EAttachmentSlot::RearSight))
-	{
-		AttachmentID = RearSightState->BaseAttachmentState.AttachmentID;
-	}
-	if (!AttachmentID.IsNone())
-	{
-		VerticalAimpointOffset = UBS2FunctionLibrary::GetDataSubsystem(this)->GetWeaponAttachmentDataRow(AttachmentID)->WeaponSightData.VerticalAimpointOffset;
-		FVector NewLocation = SightTransform.GetLocation();
-		NewLocation.Z += VerticalAimpointOffset;
-		SightTransform.SetLocation(NewLocation);
-	}
-	return SightTransform;
-	**/
 }
 
 float ULoadoutManager::GetSightDistance()
@@ -2054,6 +2035,57 @@ void ULoadoutManager::GetAimSpeeds(float& AimInSpeed, float& AimOutSpeed)
 	float CurrentAimInSpeed = CalculateFinalStatValue(DefaultAimInSpeed, ADSModifiers);
 	AimInSpeed = CurrentAimInSpeed;
 	AimOutSpeed = DefaultAimOutSpeed;
+}
+
+FWeaponAnimData_ArmsReload ULoadoutManager::GetWeaponReloadData_FP(int32 WeaponIndex)
+{
+	const FInfantryWeaponData* StaticWeaponData = StaticWeaponDataCache[WeaponIndex];
+	const FWeaponAnimData_ArmsReload& StaticReloadAnimData_FP = StaticWeaponData->InfantryWeaponAnimData.FPWeaponAnimData.ReloadWeaponAnimData_FP;
+	FWeaponAnimData_ArmsReload ReloadAnimData_FP = StaticReloadAnimData_FP;
+	if (Loadout.WeaponSystem.InfantryWeaponState.WeaponState_FP[WeaponIndex].WeaponAttachmentStates.Contains(EAttachmentSlot::Magazine))
+	{
+		if (Loadout.WeaponSystem.InfantryWeaponState.WeaponState_FP[WeaponIndex].WeaponAttachmentStates.Find(EAttachmentSlot::Magazine)->BaseAttachmentState.AttachmentID != NAME_None)
+		{
+			FName& MagID = Loadout.WeaponSystem.InfantryWeaponState.WeaponState_FP[WeaponIndex].WeaponAttachmentStates.Find(EAttachmentSlot::Magazine)->BaseAttachmentState.AttachmentID;
+			//FP Anims
+			const FWeaponAnimData_ArmsReload& ReloadAnimOverrides_FP = UBS2FunctionLibrary::GetDataSubsystem(this)->GetWeaponAttachmentDataRow(MagID)->MagazineData.ReloadWeaponAnimOverrides_FP;
+			if (!ReloadAnimOverrides_FP.ReloadWeaponMontage.IsNull())
+			{
+				ReloadAnimData_FP.ReloadWeaponMontage = ReloadAnimOverrides_FP.ReloadWeaponMontage;
+			}
+			if (!ReloadAnimOverrides_FP.ReloadEmptyWeaponMontage.IsNull())
+			{
+				ReloadAnimData_FP.ReloadEmptyWeaponMontage = ReloadAnimOverrides_FP.ReloadEmptyWeaponMontage;
+			}
+		}
+	}
+	
+	return ReloadAnimData_FP;
+}
+
+FWeaponAnimData_Reload ULoadoutManager::GetWeaponReloadData(int32 WeaponIndex)
+{
+	const FInfantryWeaponData* StaticWeaponData = StaticWeaponDataCache[WeaponIndex];
+	const FWeaponAnimData_Reload& StaticWeaponReloadData = StaticWeaponData->InfantryWeaponAnimData.WeaponAnimData.WeaponReloadAnims;
+	FWeaponAnimData_Reload ReloadAnimData_Weapon = StaticWeaponReloadData;
+	
+	if (Loadout.WeaponSystem.InfantryWeaponState.WeaponState_FP[WeaponIndex].WeaponAttachmentStates.Contains(EAttachmentSlot::Magazine))
+	{
+		if (Loadout.WeaponSystem.InfantryWeaponState.WeaponState_FP[WeaponIndex].WeaponAttachmentStates.Find(EAttachmentSlot::Magazine)->BaseAttachmentState.AttachmentID != NAME_None)
+		{
+			FName& MagID = Loadout.WeaponSystem.InfantryWeaponState.WeaponState_FP[WeaponIndex].WeaponAttachmentStates.Find(EAttachmentSlot::Magazine)->BaseAttachmentState.AttachmentID;
+			const FWeaponAnimData_Reload& ReloadAnimOverrides_Weapon = UBS2FunctionLibrary::GetDataSubsystem(this)->GetWeaponAttachmentDataRow(MagID)->MagazineData.WeaponReloadAnimOverrides;
+			if (!ReloadAnimOverrides_Weapon.WeaponReload.IsNull())
+			{
+				ReloadAnimData_Weapon.WeaponReload = ReloadAnimOverrides_Weapon.WeaponReload;
+			}
+			if (!ReloadAnimOverrides_Weapon.WeaponReloadEmpty.IsNull())
+			{
+				ReloadAnimData_Weapon.WeaponReloadEmpty = ReloadAnimOverrides_Weapon.WeaponReloadEmpty;
+			}
+		}
+	}
+	return ReloadAnimData_Weapon;
 }
 
 void ULoadoutManager::GetAllAttachmentModifierDataOfTypeForWeapon(TMap<EAttachmentSlot, FWeaponAttachmentState>& WeaponAttachmentStates, EWeaponStat WeaponStatType, TArray<FWeaponStatModifierData>& OutAttachmentModifierData)
