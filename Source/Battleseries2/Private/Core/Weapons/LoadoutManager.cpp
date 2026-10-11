@@ -299,12 +299,8 @@ void ULoadoutManager::ApplyAttachments(const FPlayerLoadoutConfig_Weapon& Attach
 
 		const FAvailableAttachments* SlotData = StaticWeaponDataCache[WeaponIndex]->GunAttachmentData.AvailableAttachmentSlots.Find(AttachmentSlot);
 		if (!SlotData) { continue; }
-
-		FName DefaultAttachmentID = NAME_None;
-		if (auto It = SlotData->Attachments.CreateConstIterator())
-		{
-			DefaultAttachmentID = It.Key();
-		}
+		if (SlotData->Attachments.Num() == 0)	{ continue;}
+		FName DefaultAttachmentID = SlotData->Attachments[0];
 		if (DefaultAttachmentID == NAME_None) { continue; } // slot exists but has no attachments configured at all or no attachment is an option
 		
 		ApplyAttachment(WeaponIndex, AttachmentSlot, DefaultAttachmentID);
@@ -374,9 +370,9 @@ void ULoadoutManager::UpdateAttachment(FWeaponAttachmentState& RuntimeSlotState,
 	{
 		//update attachment mesh
 		TWeakObjectPtr<UStaticMesh> AttachmentMesh = AttachmentData.AttachmentClassification.AttachmentMesh.LoadSynchronous();
-		const FVector& AttachmentOffset = GetAttachmentDefaultOffset(WeaponID, AttachmentSlot, AttachmentID);
+		//const FVector& AttachmentOffset = GetAttachmentDefaultOffset(WeaponID, AttachmentSlot, AttachmentID);
 		RuntimeSlotState.SpawnedAttachment->SetStaticMesh(AttachmentMesh.Get());
-		RuntimeSlotState.SpawnedAttachment->SetRelativeLocation(AttachmentOffset);
+		//RuntimeSlotState.SpawnedAttachment->SetRelativeLocation(AttachmentOffset);
 	}
 	
 	switch (AttachmentSlot)
@@ -2130,7 +2126,8 @@ FInfantryWeaponState& ULoadoutManager::GetCurrentInfantryWeaponState_FP()
 FVector ULoadoutManager::GetAttachmentDefaultOffset(FName WeaponID, EAttachmentSlot Slot, FName AttachmentID)
 {
 	UE_LOG(LogTemp, Warning, TEXT("[WeaponLogicComponent::GetAttachmentDefaultOffset] WeaponID %s, AttachmentID %s"), *WeaponID.ToString(), *AttachmentID.ToString());
-	return UBS2FunctionLibrary::GetDataSubsystem(this)->GetInfantryWeaponDataRow(WeaponID)->GunAttachmentData.AvailableAttachmentSlots.Find(Slot)->Attachments.Find(AttachmentID)->LocationOffset;
+	return FVector::ZeroVector;
+	//return UBS2FunctionLibrary::GetDataSubsystem(this)->GetInfantryWeaponDataRow(WeaponID)->GunAttachmentData.AvailableAttachmentSlots.Find(Slot)->Attachments.Find(AttachmentID)->LocationOffset;
 }
 
 FWeaponState* ULoadoutManager::GetCurrentWeaponBaseState()

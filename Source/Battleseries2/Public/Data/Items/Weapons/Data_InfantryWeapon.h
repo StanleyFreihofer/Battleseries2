@@ -268,7 +268,7 @@ struct FAvailableAttachments
 
 	//attachmentID->instance
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	TMap<FName, FAttachmentOffset> Attachments;
+	TArray<FName> Attachments;
 };
 
 USTRUCT(BlueprintType)
