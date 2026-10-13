@@ -130,7 +130,7 @@ void ULoadoutManager::Init_ScopeCamera()
 	TObjectPtr<USceneCaptureComponent2D>& ScopeCamera = Loadout.WeaponSystem.ScopeCamera;
 	ScopeCamera->RegisterComponent();
 	ScopeCamera->TextureTarget = UKismetRenderingLibrary::CreateRenderTarget2D(this, 256, 256, RTF_RGBA16f);
-	ScopeCamera->HideActorComponents(GetOwner(), true);
+	//ScopeCamera->HideActorComponents(GetOwner(), true);
 	ScopeCamera->bCaptureEveryFrame = true;
 	ScopeCamera->CaptureSource = ESceneCaptureSource::SCS_SceneColorHDR;
 	UpdateScope(0);
@@ -187,10 +187,7 @@ void ULoadoutManager::Init_WAC()
 void ULoadoutManager::Init_AttachmentMesh(FWeaponAttachmentState& RuntimeSlotState, FInfantryWeaponState& WeaponToApplyTo, EAttachmentSlot AttachmentSlot)
 {
 	//Initialize/Create Attachment, attach to gun, cache
-	TWeakObjectPtr<UStaticMeshComponent> NewAttachment = NewObject<UStaticMeshComponent>(GetOwner());
-	NewAttachment->RegisterComponent();
-	NewAttachment->AttachToComponent(WeaponToApplyTo.WeaponMesh.Get(), FAttachmentTransformRules::SnapToTargetIncludingScale, GetSocketNameForSlot(AttachmentSlot));
-	RuntimeSlotState.SpawnedAttachment = NewAttachment;
+	RuntimeSlotState.SpawnedAttachment = UBS2FunctionLibrary::CreateAndAttachStaticMesh(GetOwner(), WeaponToApplyTo.WeaponMesh.Get(), nullptr, GetSocketNameForSlot(AttachmentSlot), EFirstPersonPrimitiveType::FirstPerson);;
 }
 
 void ULoadoutManager::Init_AmmoVisuals(int32 WeaponIndex, FName AttachmentID)
@@ -221,11 +218,7 @@ void ULoadoutManager::Init_AmmoVisuals(int32 WeaponIndex, FName AttachmentID)
 		UStaticMesh* Mesh = Element.Mesh.LoadSynchronous();
 		for (const FName& Socket : Sockets)
 		{
-			TWeakObjectPtr<UStaticMeshComponent> NewAttachment = NewObject<UStaticMeshComponent>(GetOwner());
-			NewAttachment->RegisterComponent();
-			NewAttachment->AttachToComponent(WeaponState.WeaponMesh.Get(), FAttachmentTransformRules::SnapToTargetIncludingScale, Socket);
-			NewAttachment->SetStaticMesh(Mesh);
-			WeaponState.AmmoVisuals[i].Instances.Add(NewAttachment);
+			WeaponState.AmmoVisuals[i].Instances.Add(UBS2FunctionLibrary::CreateAndAttachStaticMesh(GetOwner(), WeaponState.WeaponMesh.Get(), Mesh, Socket, EFirstPersonPrimitiveType::FirstPerson));
 		}
 	}
 }
@@ -340,14 +333,24 @@ void ULoadoutManager::UpdateWeaponData(int32 WeaponIndex, FName WeaponID, FInfan
 	Loadout.WeaponSystem.InfantryWeaponState.WeaponState_FP[WeaponIndex] = WeaponState;
 }
 
-void ULoadoutManager::UpdateScopeCamera()
+void ULoadoutManager::UpdateScopeCamera(EAttachmentSlot ScopeSlot)
 {
 	//called on equip weapon
-	Loadout.WeaponSystem.ScopeCamera->AttachToComponent(Loadout.WeaponSystem.InfantryWeaponState.WeaponState_FP[GetCII()].WeaponMesh.Get(), FAttachmentTransformRules(EAttachmentRule::SnapToTarget, EAttachmentRule::SnapToTarget, EAttachmentRule::SnapToTarget, true), FName("PIP"));
-
-	if (Loadout.WeaponSystem.InfantryWeaponState.WeaponState_FP[GetCII()].WeaponAttachmentStates.Find(EAttachmentSlot::Scope))
+	USceneComponent* AttachComponent = nullptr;
+	switch (ScopeSlot)
 	{
-		FWeaponAttachmentState& WeaponAttachmentState = *Loadout.WeaponSystem.InfantryWeaponState.WeaponState_FP[GetCII()].WeaponAttachmentStates.Find(EAttachmentSlot::Scope);
+		case EAttachmentSlot::ScopeAccessory:
+		//case EAttachmentSlot::Scope:
+			AttachComponent = GetCurrentAttachmentInSlot(ScopeSlot).SpawnedAttachment.Get();
+			break;
+		default:
+			AttachComponent = Loadout.WeaponSystem.InfantryWeaponState.WeaponState_FP[GetCII()].WeaponMesh.Get();
+	}
+	Loadout.WeaponSystem.ScopeCamera->AttachToComponent(AttachComponent, FAttachmentTransformRules(EAttachmentRule::SnapToTarget, EAttachmentRule::SnapToTarget, EAttachmentRule::SnapToTarget, true), FName("PIP"));
+
+	if (Loadout.WeaponSystem.InfantryWeaponState.WeaponState_FP[GetCII()].WeaponAttachmentStates.Find(ScopeSlot))
+	{
+		FWeaponAttachmentState& WeaponAttachmentState = *Loadout.WeaponSystem.InfantryWeaponState.WeaponState_FP[GetCII()].WeaponAttachmentStates.Find(ScopeSlot);
 		if (!WeaponAttachmentState.SpawnedAttachment.IsValid() || !WeaponAttachmentState.SpawnedAttachment->GetStaticMesh())	{ return; }
 		if (WeaponAttachmentState.BaseAttachmentState.AttachmentID == NAME_None)	{return;}
 		int32 PIPMatIndex = UBS2FunctionLibrary::GetDataSubsystem(this)->GetWeaponAttachmentDataRow(WeaponAttachmentState.BaseAttachmentState.AttachmentID)->WeaponSightData.PIPMaterialIndex;
@@ -1399,7 +1402,7 @@ void ULoadoutManager::EquipWeapon(int32 WeaponIndex, bool InitialEquip)
 		InfantryWeaponState_FP.WeaponMesh->HideBoneByName(StaticWeaponDataCache[WeaponIndex]->InfantryWeaponAmmoData.ProjectileBoneToHide, EPhysBodyOp::PBO_None);
 	}
 	**/
-	UpdateScopeCamera();
+	UpdateScopeCamera(EAttachmentSlot::Scope);
 	
 	FWeaponState& CurrentWeapon = GetBaseWeaponState(GetCII());
 	CurrentWeapon.isEquipped = true;
@@ -1480,23 +1483,74 @@ void ULoadoutManager::ToggleFireMode()
 void ULoadoutManager::ToggleScope()
 {
 	if (!CombatState.isAiming) { return; }
-	const FWeaponAttachmentData& WeaponAttachmentData = *UBS2FunctionLibrary::GetDataSubsystem(this)->GetWeaponAttachmentDataRow(GetCurrentAttachmentInSlot(EAttachmentSlot::Scope).BaseAttachmentState.AttachmentID);
-	int32& CurrentOpticIndex = Loadout.WeaponSystem.InfantryWeaponState.WeaponState_FP[GetCII()].CurrentOpticIndex;
-	if (WeaponAttachmentData.WeaponSightData.OpticIDs.Num() > 1)
+	const FWeaponAttachmentData* WeaponScopeAttachmentData = UBS2FunctionLibrary::GetDataSubsystem(this)->GetWeaponAttachmentDataRow(GetCurrentAttachmentInSlot(EAttachmentSlot::Scope).BaseAttachmentState.AttachmentID);
+	const FWeaponAttachmentData* WeaponScopeAccessoryData = UBS2FunctionLibrary::GetDataSubsystem(this)->GetWeaponAttachmentDataRow(GetCurrentAttachmentInSlot(EAttachmentSlot::ScopeAccessory).BaseAttachmentState.AttachmentID);
+	
+	if (WeaponScopeAccessoryData != nullptr)
 	{
-		int32 TotalOpticLevels = WeaponAttachmentData.WeaponSightData.OpticIDs.Num();
+		ToggleScopeAccessory();
+	}
+	
+	//ToggleScopeOptic            
+	int32& CurrentOpticIndex = GetCurrentInfantryWeaponState_FP().WeaponScopeState.CurrentOpticIndex;
+	if (WeaponScopeAttachmentData != nullptr && WeaponScopeAttachmentData->WeaponSightData.OpticIDs.Num() > 1)
+	{
+		//UpdateScopeOptic
+		int32 TotalOpticLevels = WeaponScopeAttachmentData->WeaponSightData.OpticIDs.Num();
 		UBS2FunctionLibrary::UpdateOpticIndex(TotalOpticLevels, CurrentOpticIndex);
 		UpdateScope(CurrentOpticIndex);
+	}
+	else
+	{
+		UpdateScope(CurrentOpticIndex);
+	}
+}
+
+void ULoadoutManager::ToggleScopeAccessory()
+{
+	const FWeaponAttachmentData* WeaponScopeAccessoryData = UBS2FunctionLibrary::GetDataSubsystem(this)->GetWeaponAttachmentDataRow(GetCurrentAttachmentInSlot(EAttachmentSlot::ScopeAccessory).BaseAttachmentState.AttachmentID);
+	FWeaponAttachmentState& ScopeAccessoryState = GetCurrentAttachmentInSlot(EAttachmentSlot::ScopeAccessory);
+	bool& isAccessoryEngaged = GetCurrentInfantryWeaponState_FP().WeaponScopeState.bScopeAccessoryEngaged;
+	isAccessoryEngaged = !isAccessoryEngaged;
+		
+	switch (WeaponScopeAccessoryData->WeaponSightData.SightType)
+	{
+		case ESightType::Flip:
+		{
+			if (isAccessoryEngaged)
+			{
+				//engagescopeaccessory_flipsight
+				ScopeAccessoryState.SpawnedAttachment->SetRelativeRotation(FRotator(0, 0, -90));
+				UpdateScopeCamera(EAttachmentSlot::ScopeAccessory);
+			}
+			else
+			{
+				//disengagescopeacessory_flipsight
+				ScopeAccessoryState.SpawnedAttachment->SetRelativeRotation(FRotator(0, 0, 0));
+				UpdateScopeCamera(EAttachmentSlot::Scope);
+			}
+		}
 	}
 }
 
 void ULoadoutManager::UpdateScope(int32 NewOpticIndex)
 {
+	//Scope Cam FOV & Post Process
 	float& DefaultFOV = UBS2FunctionLibrary::GetDataSubsystem(this)->GetWeaponDefaults()->WeaponDefaults.ScopeCameraFOV;
 	FName& ScopeID = GetCurrentAttachmentInSlot(EAttachmentSlot::Scope).BaseAttachmentState.AttachmentID;
 	if (ScopeID == NAME_None) { return; }
-	FName OpticID = UBS2FunctionLibrary::GetDataSubsystem(this)->GetWeaponAttachmentDataRow(ScopeID)->WeaponSightData.OpticIDs[NewOpticIndex];
+	const FWeaponSightData& SightData = UBS2FunctionLibrary::GetDataSubsystem(this)->GetWeaponAttachmentDataRow(ScopeID)->WeaponSightData;
+	FName OpticID = SightData.OpticIDs[NewOpticIndex];
 	const FOpticData& OpticData = *UBS2FunctionLibrary::GetDataSubsystem(this)->GetOpticDataRow(OpticID);
+	const float FinalMagnification = OpticData.ZoomMagnification * GetCurrentScopeAccessoryMagnification();
+	
+	//if this reads as true, it means the scope does not have a pip and therefore the player cam fov needs to be adjusted instead
+	//example: magnifier on red dot sight
+	//if (SightData.PIPMaterialIndex < 0)		
+	//{
+		//GetOwnerCharacter()->UpdateFOV(FinalMagnification);
+	//	return;
+	//}
 
 	//post process settings for scope camera, if any. If no post process settings are defined, set capture source to HDR scene color to avoid weirdness with the render target.
 	if (OpticData.OpticPPSettings.WeightedBlendables.Array.Num() > 0)
@@ -1511,7 +1565,7 @@ void ULoadoutManager::UpdateScope(int32 NewOpticIndex)
 		Loadout.WeaponSystem.ScopeCamera->CaptureSource = ESceneCaptureSource::SCS_SceneColorHDR;
 	}
 
-	UBS2FunctionLibrary::HandleUpdateOptic(DefaultFOV, OpticData.ZoomMagnification, Loadout.WeaponSystem.ScopeCamera->FOVAngle, OpticData.OpticPPSettings, Loadout.WeaponSystem.ScopeCamera->PostProcessSettings, Loadout.WeaponSystem.ScopeCamera->PostProcessBlendWeight);
+	UBS2FunctionLibrary::HandleUpdateOptic(DefaultFOV, FinalMagnification, Loadout.WeaponSystem.ScopeCamera->FOVAngle, OpticData.OpticPPSettings, Loadout.WeaponSystem.ScopeCamera->PostProcessSettings, Loadout.WeaponSystem.ScopeCamera->PostProcessBlendWeight);
 }
 
 #pragma endregion
@@ -1967,7 +2021,11 @@ USceneComponent* ULoadoutManager::GetActiveAimpointSource()
 	FInfantryWeaponState& WeaponState = GetCurrentInfantryWeaponState_FP();
 
 	// priority: scope > rear sight > weapon's own (integrated irons)
-	static const EAttachmentSlot SightPriority[] = { EAttachmentSlot::Scope, EAttachmentSlot::RearSight };
+	TArray<EAttachmentSlot> SightPriority = { EAttachmentSlot::Scope, EAttachmentSlot::RearSight };    
+	if (WeaponState.WeaponScopeState.bScopeAccessoryEngaged)
+	{
+		SightPriority = { EAttachmentSlot::ScopeAccessory, EAttachmentSlot::Scope, EAttachmentSlot::RearSight};
+	}
 
 	for (EAttachmentSlot Slot : SightPriority)
 	{
@@ -1980,6 +2038,16 @@ USceneComponent* ULoadoutManager::GetActiveAimpointSource()
 		}
 	}
 	return WeaponState.WeaponMesh.Get();
+}
+
+float ULoadoutManager::GetCurrentScopeAccessoryMagnification()
+{
+	if (!GetCurrentInfantryWeaponState_FP().WeaponScopeState.bScopeAccessoryEngaged) { return 1.f; }
+	const FName& AttachmentID = GetCurrentAttachmentInSlot(EAttachmentSlot::ScopeAccessory).BaseAttachmentState.AttachmentID;
+	if (AttachmentID.IsNone()) { return 1.f; }
+	
+	const FWeaponSightData& Sight = UBS2FunctionLibrary::GetDataSubsystem(this)->GetWeaponAttachmentDataRow(AttachmentID)->WeaponSightData;
+	return Sight.SightType == ESightType::Flip ? Sight.FlipSightData.Magnification : 1.f;
 }
 
 FTransform ULoadoutManager::GetSightTransform()

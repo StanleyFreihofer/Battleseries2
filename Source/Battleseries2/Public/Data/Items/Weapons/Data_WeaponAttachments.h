@@ -15,12 +15,37 @@
 * STATIC
 **/
 USTRUCT(BlueprintType)
+struct FFlipSightData
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ToolTip = "fixed base that mounts to the rail; the attachment mesh itself is the part that flips"))
+	TSoftObjectPtr<UStaticMesh> MountMesh = nullptr;
+
+	//UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ToolTip = "socket on the mount the flipping part hinges from (flipping mesh's pivot should sit on its hinge)"))
+	//FName HingeSocket = FName("Hinge");
+	
+	// FFlipSightData
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ToolTip = "multiplies the magnification of the sight it's mounted behind"))
+	float Magnification = 2.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ToolTip = "relative rotation of the flipping part when folded away; up = zero rotation"))
+	FRotator FlippedDownRotation = FRotator(0.f, 90.f, 0.f);
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	float FlipDuration = 0.25f;
+};
+
+USTRUCT(BlueprintType)
 struct FWeaponSightData 
 {
 	GENERATED_BODY()
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	ESightSlot SightSlot = ESightSlot::FrontSight;
+	ESightType SightType = ESightType::FrontSight;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (EditCondition = "SightType == ESightType::Flip", EditConditionHides))  	//used mainly for scope accessories with flip up magnifiers as they need to be able to rotate on axis without the mount rotating, therefore the mount is a separate mesh in this instance
+	FFlipSightData FlipSightData = FFlipSightData();
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ToolTip = "use to achieve black around scope effect, only added on screen when ADS"))
 	TSubclassOf<UUserWidget> ScopeHUD = nullptr;

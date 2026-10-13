@@ -186,6 +186,19 @@ UCameraComponent* UBS2FunctionLibrary::CreateAndAttachCamera(UObject* Owner, USc
 	return Cam;
 }
 
+TWeakObjectPtr<UStaticMeshComponent> UBS2FunctionLibrary::CreateAndAttachStaticMesh(UObject* Owner, USceneComponent* AttachTarget, UStaticMesh* Mesh, FName SocketName, EFirstPersonPrimitiveType FPPrimitiveType)
+{
+	TWeakObjectPtr<UStaticMeshComponent> NewSM = NewObject<UStaticMeshComponent>(Owner);                                                     
+	NewSM->FirstPersonPrimitiveType = FPPrimitiveType;                                                                     
+	NewSM->RegisterComponent();                                                                                                                   
+	NewSM->AttachToComponent(AttachTarget, FAttachmentTransformRules::SnapToTargetIncludingScale, SocketName);         
+	if (Mesh)
+	{
+		NewSM->SetStaticMesh(Mesh);   	
+	}
+	return NewSM.Get();                                                                                 
+}
+
 #pragma region WeaponFunctions
 
 UAudioComponent* UBS2FunctionLibrary::CreateWAC(const UObject* WorldContextObject, AActor* Owner, USceneComponent* AttachTarget)

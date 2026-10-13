@@ -65,6 +65,8 @@ public:
 	
 	UFUNCTION(BlueprintCallable, Category = "Battleseries")
 	static UCameraComponent* CreateAndAttachCamera(UObject* Owner, USceneComponent* AttachTarget, FName SocketName);
+	UFUNCTION(Category = "Battleseries")
+	static TWeakObjectPtr<UStaticMeshComponent> CreateAndAttachStaticMesh(UObject* Owner, USceneComponent* AttachTarget, UStaticMesh* Mesh, FName SocketName, EFirstPersonPrimitiveType FPPrimitiveType);
 	
 #pragma region WeaponFunctions
 	UFUNCTION(BlueprintCallable, Category = "Battleseries | Weapon Functions")

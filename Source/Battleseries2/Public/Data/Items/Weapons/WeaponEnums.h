@@ -53,12 +53,21 @@ enum class EWeaponAttachmentType : uint8
 };
 
 UENUM(BlueprintType)
-enum class ESightSlot : uint8
+enum class ESightType : uint8
 {
 	FrontSight		UMETA(DisplayName = "Front Sight"),
 	RearSight		UMETA(DisplayName = "Rear Sight"),
 	Scope			UMETA(DisplayName = "Optic/Scope"),
-	Canted			UMETA(DisplayName = "Canted/Flip/Hybrid")
+	Canted			UMETA(DisplayName = "Canted"),		//scope accessory, refer to EScopeAccessoryType
+	Flip			UMETA(DisplayName = "Flip")			//scope accessory, refer to EScopeAccessoryType
+};
+
+UENUM(BlueprintType)
+enum class EScopeAccessoryState : uint8
+{
+	None		UMETA(DisplayName = "None"),		//off/not in use
+	Flip		UMETA(DisplayName = "Flip Up/Magnifier in Use"),
+	Canted		UMETA(DisplayName = "Canted")
 };
 
 UENUM(BlueprintType)
@@ -99,11 +108,6 @@ enum class ETargetingCategory : uint8
 	LazedTarget			UMETA(DisplayName = "Lazed Target"),
 	MAX					UMETA(Hidden)
 };
-
-
-/**
-* STATES
-**/
 
 UENUM(BlueprintType)
 enum class EAmmoDepletionMethod : uint8

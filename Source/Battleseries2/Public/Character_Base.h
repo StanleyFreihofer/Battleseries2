@@ -173,6 +173,9 @@ public:
 	void ShowCharacterMesh();
 	UFUNCTION(BlueprintCallable)
 	void UpdateCharacterMeshVisibility(bool ShowMesh);
+	
+	UFUNCTION(BlueprintCallable)
+	void UpdateFOV(float Magnification = 1.f);
 
 
 

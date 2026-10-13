@@ -579,7 +579,11 @@ void ACharacter_Base::UpdateCharacterMeshVisibility(bool ShowMesh)
 
 #pragma endregion
 
-
+void ACharacter_Base::UpdateFOV(float Magnfication)
+{
+	float DefaultFOV = 90.f;		//<--- MAKE THIS ACTUAL DATA!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	FPCamera->SetFieldOfView(DefaultFOV / Magnfication);
+}
 
 ECharacterStance& ACharacter_Base::GetCurrentStance()
 {

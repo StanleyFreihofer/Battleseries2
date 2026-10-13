@@ -43,6 +43,18 @@ struct FWeaponAttachmentState
 };
 
 USTRUCT(BlueprintType)
+struct FWeaponScopeState
+{
+	GENERATED_BODY()
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	int32 CurrentOpticIndex = 0;
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)		//are we looking through canted sight or is magnifier flipped down?
+	bool bScopeAccessoryEngaged = false;
+};
+
+USTRUCT(BlueprintType)			
 struct FInfantryWeaponState
 {
 	GENERATED_BODY()
@@ -57,7 +69,7 @@ struct FInfantryWeaponState
 	TArray<FAmmoVisualElement_Runtime> AmmoVisuals;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
-	int32 CurrentOpticIndex = 0;
+	FWeaponScopeState WeaponScopeState = FWeaponScopeState();
 };
 
 USTRUCT(BlueprintType)
@@ -217,7 +229,7 @@ class BATTLESERIES2_API ULoadoutManager : public UActorComponent
 		UFUNCTION(BlueprintCallable)
 		void UpdateWeaponData(int32 WeaponIndex, FName WeaponID, FInfantryWeaponState WeaponState);
 		UFUNCTION(BlueprintCallable)
-		void UpdateScopeCamera();
+		void UpdateScopeCamera(EAttachmentSlot ScopeSlot);
 		UFUNCTION()
 		void UpdateAttachment(FWeaponAttachmentState& RuntimeSlotState, FName AttachmentID, FName WeaponID, EAttachmentSlot AttachmentSlot);
 		UFUNCTION(BlueprintCallable)
@@ -287,6 +299,8 @@ class BATTLESERIES2_API ULoadoutManager : public UActorComponent
 		UFUNCTION(BlueprintCallable)
 		void ToggleScope();
 		UFUNCTION(BlueprintCallable)
+		void ToggleScopeAccessory();
+		UFUNCTION(BlueprintCallable)
 		void UpdateScope(int32 NewOpticIndex);
 		UFUNCTION(BlueprintCallable)
 		void UpdateCurrentWeaponStats(int32 WeaponIndex);
@@ -334,6 +348,8 @@ class BATTLESERIES2_API ULoadoutManager : public UActorComponent
 		FName GetDecorativeSocketName(int32 Index, TWeakObjectPtr<USkeletalMeshComponent> WeaponMeshComponent,  EAttachmentSlot Slot);
 		UFUNCTION(BlueprintCallable, BlueprintPure)
 		USceneComponent* GetActiveAimpointSource();
+		UFUNCTION(BlueprintCallable, BlueprintPure)
+		float GetCurrentScopeAccessoryMagnification();
 		UFUNCTION(BlueprintCallable, BlueprintPure)
 		FTransform GetSightTransform();
 		UFUNCTION(BlueprintCallable, BlueprintPure)
