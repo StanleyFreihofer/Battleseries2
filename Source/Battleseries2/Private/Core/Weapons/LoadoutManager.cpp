@@ -1483,15 +1483,20 @@ void ULoadoutManager::ToggleFireMode()
 void ULoadoutManager::ToggleScope()
 {
 	if (!CombatState.isAiming) { return; }
-	const FWeaponAttachmentData* WeaponScopeAttachmentData = UBS2FunctionLibrary::GetDataSubsystem(this)->GetWeaponAttachmentDataRow(GetCurrentAttachmentInSlot(EAttachmentSlot::Scope).BaseAttachmentState.AttachmentID);
 	const FWeaponAttachmentData* WeaponScopeAccessoryData = UBS2FunctionLibrary::GetDataSubsystem(this)->GetWeaponAttachmentDataRow(GetCurrentAttachmentInSlot(EAttachmentSlot::ScopeAccessory).BaseAttachmentState.AttachmentID);
-	
 	if (WeaponScopeAccessoryData != nullptr)
 	{
 		ToggleScopeAccessory();
+		return;
 	}
 	
-	//ToggleScopeOptic            
+	ToggleScopeOptic();
+}
+
+void ULoadoutManager::ToggleScopeOptic()
+{
+	const FWeaponAttachmentData* WeaponScopeAttachmentData = UBS2FunctionLibrary::GetDataSubsystem(this)->GetWeaponAttachmentDataRow(GetCurrentAttachmentInSlot(EAttachmentSlot::Scope).BaseAttachmentState.AttachmentID);
+	
 	int32& CurrentOpticIndex = GetCurrentInfantryWeaponState_FP().WeaponScopeState.CurrentOpticIndex;
 	if (WeaponScopeAttachmentData != nullptr && WeaponScopeAttachmentData->WeaponSightData.OpticIDs.Num() > 1)
 	{
@@ -1509,8 +1514,10 @@ void ULoadoutManager::ToggleScope()
 void ULoadoutManager::ToggleScopeAccessory()
 {
 	const FWeaponAttachmentData* WeaponScopeAccessoryData = UBS2FunctionLibrary::GetDataSubsystem(this)->GetWeaponAttachmentDataRow(GetCurrentAttachmentInSlot(EAttachmentSlot::ScopeAccessory).BaseAttachmentState.AttachmentID);
+	if (!WeaponScopeAccessoryData)	{ return; }
 	FWeaponAttachmentState& ScopeAccessoryState = GetCurrentAttachmentInSlot(EAttachmentSlot::ScopeAccessory);
 	bool& isAccessoryEngaged = GetCurrentInfantryWeaponState_FP().WeaponScopeState.bScopeAccessoryEngaged;
+	int32& CurrentOpticIndex = GetCurrentInfantryWeaponState_FP().WeaponScopeState.CurrentOpticIndex;
 	isAccessoryEngaged = !isAccessoryEngaged;
 		
 	switch (WeaponScopeAccessoryData->WeaponSightData.SightType)
@@ -1531,6 +1538,8 @@ void ULoadoutManager::ToggleScopeAccessory()
 			}
 		}
 	}
+	
+	UpdateScope(CurrentOpticIndex);
 }
 
 void ULoadoutManager::UpdateScope(int32 NewOpticIndex)

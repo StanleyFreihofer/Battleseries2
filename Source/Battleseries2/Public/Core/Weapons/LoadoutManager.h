@@ -299,6 +299,8 @@ class BATTLESERIES2_API ULoadoutManager : public UActorComponent
 		UFUNCTION(BlueprintCallable)
 		void ToggleScope();
 		UFUNCTION(BlueprintCallable)
+		void ToggleScopeOptic();
+		UFUNCTION(BlueprintCallable)
 		void ToggleScopeAccessory();
 		UFUNCTION(BlueprintCallable)
 		void UpdateScope(int32 NewOpticIndex);
