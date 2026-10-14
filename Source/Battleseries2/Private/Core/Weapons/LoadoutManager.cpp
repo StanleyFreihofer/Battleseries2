@@ -1482,7 +1482,7 @@ void ULoadoutManager::ToggleFireMode()
 
 void ULoadoutManager::ToggleScope()
 {
-	if (!CombatState.isAiming) { return; }
+	//if (!CombatState.isAiming) { return; }
 	const FWeaponAttachmentData* WeaponScopeAccessoryData = UBS2FunctionLibrary::GetDataSubsystem(this)->GetWeaponAttachmentDataRow(GetCurrentAttachmentInSlot(EAttachmentSlot::ScopeAccessory).BaseAttachmentState.AttachmentID);
 	if (WeaponScopeAccessoryData != nullptr)
 	{
@@ -1523,20 +1523,32 @@ void ULoadoutManager::ToggleScopeAccessory()
 	switch (WeaponScopeAccessoryData->WeaponSightData.SightType)
 	{
 		case ESightType::Flip:
-		{
-			if (isAccessoryEngaged)
 			{
-				//engagescopeaccessory_flipsight
-				ScopeAccessoryState.SpawnedAttachment->SetRelativeRotation(FRotator(0, 0, -90));
-				UpdateScopeCamera(EAttachmentSlot::ScopeAccessory);
+				if (isAccessoryEngaged)
+				{
+					//engagescopeaccessory_flipsight
+					ScopeAccessoryState.SpawnedAttachment->SetRelativeRotation(FRotator(0, 0, -90));
+					UpdateScopeCamera(EAttachmentSlot::ScopeAccessory);
+				}
+				else
+				{
+					//disengagescopeacessory_flipsight
+					ScopeAccessoryState.SpawnedAttachment->SetRelativeRotation(FRotator(0, 0, 0));
+					UpdateScopeCamera(EAttachmentSlot::Scope);
+				}
 			}
-			else
+			break;
+		case ESightType::Canted:
 			{
-				//disengagescopeacessory_flipsight
-				ScopeAccessoryState.SpawnedAttachment->SetRelativeRotation(FRotator(0, 0, 0));
-				UpdateScopeCamera(EAttachmentSlot::Scope);
+				//anim blueprint handles most of the work here, updates are done while isCyclingSights is true
+				CombatState.isCyclingSights = true;
+				GetWorld()->GetTimerManager().SetTimerForNextTick([this]()
+				{
+					CombatState.isCyclingSights = false;
+				});
 			}
-		}
+			
+			break;
 	}
 	
 	UpdateScope(CurrentOpticIndex);
