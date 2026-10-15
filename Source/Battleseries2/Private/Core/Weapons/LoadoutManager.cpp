@@ -1358,21 +1358,22 @@ void ULoadoutManager::OnUnequipGadget_BlendOutToGadget(UAnimMontage* Montage, bo
 
 void ULoadoutManager::EquipWeapon(int32 WeaponIndex, bool InitialEquip)
 {
-	TWeakObjectPtr<ACharacter_Base> Character = GetOwnerCharacter();
-	TWeakObjectPtr<UAnimInstance> FPArmsAnimInstance = Character->FPArms->GetAnimInstance();
 	const FInfantryWeaponData& StaticWeaponData = *StaticWeaponDataCache[WeaponIndex];
-	const FInfantryWeaponAnimData& AnimData = StaticWeaponDataCache[WeaponIndex]->InfantryWeaponAnimData;
-	FInfantryWeaponState& InfantryWeaponState_FP = Loadout.WeaponSystem.InfantryWeaponState.WeaponState_FP[WeaponIndex];
+	//FInfantryWeaponState& InfantryWeaponState_FP = Loadout.WeaponSystem.InfantryWeaponState.WeaponState_FP[WeaponIndex];
 	TObjectPtr<USkeletalMeshComponent> NewWeaponMesh = Loadout.WeaponSystem.InfantryWeaponState.WeaponState_FP[WeaponIndex].WeaponMesh.Get();
+	
 	UpdateWeaponVisibility(WeaponIndex, false);
 	UBS2FunctionLibrary::UpdateWACData(Loadout.WeaponSystem.WeaponAudioComponent, StaticWeaponData.WeaponFirePerformanceData.RateOfFire, StaticWeaponData.InfantryWeaponAudioData.BaseWeaponAudioData);
-	TSoftObjectPtr<UAnimMontage> FPEquipWeaponMontage;
+
 	if (!GetWorld()->GetTimerManager().IsTimerActive(CombatState.RangefinderTimer))
 	{
 		GetWorld()->GetTimerManager().SetTimer(CombatState.RangefinderTimer, this, &ULoadoutManager::WeaponRangefinder, 0.05f, true);
 	}
-	//UBS2FunctionLibrary::HandleStartWAC(Loadout.WeaponSystem.WeaponAudioComponent, *GetCurrentWeaponBaseState());
-	
+
+	//EquipWeapon_Anim
+	TWeakObjectPtr<UAnimInstance> FPArmsAnimInstance = GetOwnerCharacter()->FPArms->GetAnimInstance();
+	const FInfantryWeaponAnimData& AnimData = StaticWeaponDataCache[WeaponIndex]->InfantryWeaponAnimData;
+	TSoftObjectPtr<UAnimMontage> FPEquipWeaponMontage;
 	TSoftObjectPtr<UAnimSequence> WeaponEquipAnim;
 	if (!Loadout.WeaponSystem.InfantryWeaponState.wasEquipped[WeaponIndex])
 	{
@@ -1391,7 +1392,6 @@ void ULoadoutManager::EquipWeapon(int32 WeaponIndex, bool InitialEquip)
 		WeaponEquipAnim.LoadSynchronous();
 		NewWeaponMesh->PlayAnimation(WeaponEquipAnim.Get(), false);
 	}
-
 	FPEquipWeaponMontage.LoadSynchronous();
 	FPArmsAnimInstance->Montage_Play(FPEquipWeaponMontage.Get(), 1.0f);
 	IAnims::Execute_OnEquipWeapon_FP(FPArmsAnimInstance.Get(), AnimData.FPWeaponAnimData);
@@ -1402,13 +1402,15 @@ void ULoadoutManager::EquipWeapon(int32 WeaponIndex, bool InitialEquip)
 		InfantryWeaponState_FP.WeaponMesh->HideBoneByName(StaticWeaponDataCache[WeaponIndex]->InfantryWeaponAmmoData.ProjectileBoneToHide, EPhysBodyOp::PBO_None);
 	}
 	**/
-	UpdateScopeCamera(EAttachmentSlot::Scope);
+	const bool& bMagnifierUp = Loadout.WeaponSystem.InfantryWeaponState.WeaponState_FP[WeaponIndex].WeaponScopeState.bScopeAccessoryEngaged;		/* engaged && accessory is Flip */;
+	UpdateScopeCamera(bMagnifierUp ? EAttachmentSlot::ScopeAccessory : EAttachmentSlot::Scope);
 	
 	FWeaponState& CurrentWeapon = GetBaseWeaponState(GetCII());
 	CurrentWeapon.isEquipped = true;
 	CombatState.isSwitchingItems = false;
 	if (GetOwnerCharacter()->IsLocallyControlled())
 	{
+		//EquipWeapon_Local
 		UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateStatusHUD_CAMCount(CurrentWeapon.CurrentAmmoinMag);
 		UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateStatusHUD_CRACount(CurrentWeapon.CurrentReserveAmmo);
 		TArray<bool> canFires = { StaticWeaponData.WeaponFunctionalityData.BaseWeaponFunctionality.WeaponFireModeData.canFullAuto, StaticWeaponData.WeaponFunctionalityData.BaseWeaponFunctionality.WeaponFireModeData.canBurstFire, StaticWeaponData.WeaponFunctionalityData.BaseWeaponFunctionality.WeaponFireModeData.canSingleFire };
