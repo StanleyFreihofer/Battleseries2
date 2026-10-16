@@ -52,6 +52,11 @@ struct FWeaponScopeState
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)		//are we looking through canted sight or is magnifier flipped down?
 	bool bScopeAccessoryEngaged = false;
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	FTimerHandle SightTimer = FTimerHandle();
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	float SightAlpha = 1.f;
 };
 
 USTRUCT(BlueprintType)			
@@ -266,6 +271,8 @@ class BATTLESERIES2_API ULoadoutManager : public UActorComponent
 		void HandleStartFire();
 		UFUNCTION(BlueprintCallable)
 		void StartFire();
+		UFUNCTION(BlueprintCallable)
+		void StartSingleFire();
 		UFUNCTION(BlueprintCallable)
 		void StartAutoFire();
 		UFUNCTION(BlueprintCallable)

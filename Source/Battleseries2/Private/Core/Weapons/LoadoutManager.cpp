@@ -701,26 +701,10 @@ void ULoadoutManager::HandleStartFire()
 		return;
 	}
 	
-	const float TriggerDelay = GetCurrentWeaponStaticData()->WeaponFunctionalityData.BaseWeaponFunctionality.WeaponFireModeData.TriggerDelay;
-	
   	switch (CurrentWeapon.CurrentFireMode)
 	{
 		case EFireMode::Single:
-  			//HandleStartSingleFire
-			if (CombatState.isAttemptingToFire)		{ return; }
-  			if (GetWorld()->GetTimerManager().IsTimerActive(CurrentWeapon.TimerHandle_AutoFire))
-  			{
-  				return; // still on cooldown from the last shot
-  			}
-  		
-  			CombatState.isAttemptingToFire = true;
-  		
-  			StartFire();
-  			
-  			if (TriggerDelay > 0.f)
-  			{
-  				GetWorld()->GetTimerManager().SetTimer(CurrentWeapon.TimerHandle_AutoFire, TriggerDelay, false);
-  			}
+			StartSingleFire();
 			break;
 		case EFireMode::Burst:
   			if (CombatState.isAttemptingToFire)		{ return; }
@@ -759,6 +743,27 @@ void ULoadoutManager::StartFire()
 	GetOwnerCharacter()->CharacterState.CharacterMovementState.canSprint = false;
 	
 	FireWeapon();
+}
+
+void ULoadoutManager::StartSingleFire()
+{
+	FWeaponState& CurrentWeapon = *GetCurrentWeaponBaseState();
+	const float TriggerDelay = GetCurrentWeaponStaticData()->WeaponFunctionalityData.BaseWeaponFunctionality.WeaponFireModeData.TriggerDelay;
+	
+	if (CombatState.isAttemptingToFire)		{ return; }
+	if (GetWorld()->GetTimerManager().IsTimerActive(CurrentWeapon.TimerHandle_AutoFire))
+	{
+		return; // still on cooldown from the last shot
+	}
+  		
+	CombatState.isAttemptingToFire = true;
+  		
+	StartFire();
+  			
+	if (TriggerDelay > 0.f)
+	{
+		GetWorld()->GetTimerManager().SetTimer(CurrentWeapon.TimerHandle_AutoFire, TriggerDelay, false);
+	}
 }
 
 void ULoadoutManager::StartAutoFire()
@@ -964,6 +969,7 @@ void ULoadoutManager::FireWeapon()
 	//weapon fire audio
 	//spawn casing
 	
+	//HandleBurstFire
 	if (CurrentWeapon.CurrentFireMode == EFireMode::Burst)
 	{
 		CurrentWeapon.CurrentBurstCount++;
@@ -978,6 +984,7 @@ void ULoadoutManager::FireWeapon()
 		}
 	}
 	
+	//HandleAmmoDepletion
 	switch (StaticWeaponData->InfantryWeaponAmmoData.BaseAmmoData.AmmoDepletionMethod)
 	{
 		case EAmmoDepletionMethod::Default:
@@ -1518,25 +1525,45 @@ void ULoadoutManager::ToggleScopeAccessory()
 	const FWeaponAttachmentData* WeaponScopeAccessoryData = UBS2FunctionLibrary::GetDataSubsystem(this)->GetWeaponAttachmentDataRow(GetCurrentAttachmentInSlot(EAttachmentSlot::ScopeAccessory).BaseAttachmentState.AttachmentID);
 	if (!WeaponScopeAccessoryData)	{ return; }
 	FWeaponAttachmentState& ScopeAccessoryState = GetCurrentAttachmentInSlot(EAttachmentSlot::ScopeAccessory);
-	bool& isAccessoryEngaged = GetCurrentInfantryWeaponState_FP().WeaponScopeState.bScopeAccessoryEngaged;
-	int32& CurrentOpticIndex = GetCurrentInfantryWeaponState_FP().WeaponScopeState.CurrentOpticIndex;
+	FWeaponScopeState& ScopeState = GetCurrentInfantryWeaponState_FP().WeaponScopeState;
+	bool& isAccessoryEngaged = ScopeState.bScopeAccessoryEngaged;
+	int32& CurrentOpticIndex = ScopeState.CurrentOpticIndex;
 	isAccessoryEngaged = !isAccessoryEngaged;
 		
 	switch (WeaponScopeAccessoryData->WeaponSightData.SightType)
 	{
 		case ESightType::Flip:
 			{
+				FTimerHandle CycleSightTimer;
 				if (isAccessoryEngaged)
 				{
 					//engagescopeaccessory_flipsight
 					ScopeAccessoryState.SpawnedAttachment->SetRelativeRotation(FRotator(0, 0, -90));
 					UpdateScopeCamera(EAttachmentSlot::ScopeAccessory);
+					
+					
+
+					
 				}
 				else
 				{
 					//disengagescopeacessory_flipsight
 					ScopeAccessoryState.SpawnedAttachment->SetRelativeRotation(FRotator(0, 0, 0));
 					UpdateScopeCamera(EAttachmentSlot::Scope);
+					/**
+					ScopeState.SightAlpha = 1.f;
+					GetWorld()->GetTimerManager().SetTimer(GetCurrentInfantryWeaponState_FP().WeaponScopeState.SightTimer, [this, &ScopeAccessoryState, &ScopeState]()
+					{
+											
+						ScopeAccessoryState.SpawnedAttachment->SetRelativeRotation(FRotator(0, 0, FMath::Lerp(0.f, -90.f, ScopeState.SightAlpha)));
+						if (ScopeAccessoryState.SpawnedAttachment->GetRelativeRotation().Roll <= -80.f)
+						{
+							ScopeState.bScopeAccessoryEngaged = !ScopeState.bScopeAccessoryEngaged;
+							UpdateScopeCamera(EAttachmentSlot::ScopeAccessory);
+							GetWorld()->GetTimerManager().ClearTimer(GetCurrentInfantryWeaponState_FP().WeaponScopeState.SightTimer);
+						}
+					}, GetWorld()->GetDeltaSeconds(), true);
+					**/
 				}
 			}
 			break;
@@ -2092,7 +2119,8 @@ EAttachmentSlot ULoadoutManager::GetActiveAimpointSourceType()
 
 float ULoadoutManager::GetCurrentCycleSightSpeed()
 {
-	FName& AttachmentID = GetCurrentAttachmentInSlot(GetActiveAimpointSourceType()).BaseAttachmentState.AttachmentID;
+	FName AttachmentID = GetCurrentAttachmentInSlot(GetActiveAimpointSourceType()).BaseAttachmentState.AttachmentID;
+	if (AttachmentID.IsNone()) { return 1.f; }
 	return UBS2FunctionLibrary::GetDataSubsystem(this)->GetWeaponAttachmentDataRow(AttachmentID)->WeaponSightData.FlipDuration;
 }
 
