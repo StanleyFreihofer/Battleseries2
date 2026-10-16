@@ -1543,13 +1543,15 @@ void ULoadoutManager::ToggleScopeAccessory()
 		case ESightType::Canted:
 			{
 				//anim blueprint handles most of the work here, updates are done while isCyclingSights is true
-				CombatState.isCyclingSights = true;
+				//FTimerHandle CycleSightTimer;
+				//CombatState.isCyclingSights = true;
+				/**
 				GetWorld()->GetTimerManager().SetTimerForNextTick([this]()
 				{
-					CombatState.isCyclingSights = false;
+					CombatState.isCyclingSights = false;				
 				});
+				**/
 			}
-			
 			break;
 	}
 	
@@ -2061,6 +2063,37 @@ USceneComponent* ULoadoutManager::GetActiveAimpointSource()
 		}
 	}
 	return WeaponState.WeaponMesh.Get();
+}
+
+EAttachmentSlot ULoadoutManager::GetActiveAimpointSourceType()
+{
+	FInfantryWeaponState& WeaponState = GetCurrentInfantryWeaponState_FP();
+
+	// priority: scope > rear sight > weapon's own (integrated irons)
+	TArray<EAttachmentSlot> SightPriority = { EAttachmentSlot::Scope, EAttachmentSlot::RearSight };    
+	if (WeaponState.WeaponScopeState.bScopeAccessoryEngaged)
+	{
+		SightPriority = { EAttachmentSlot::ScopeAccessory, EAttachmentSlot::Scope, EAttachmentSlot::RearSight};
+	}
+
+	for (EAttachmentSlot Slot : SightPriority)
+	{
+		if (FWeaponAttachmentState* SightState = WeaponState.WeaponAttachmentStates.Find(Slot))
+		{
+			if (SightState->SpawnedAttachment.IsValid() && SightState->SpawnedAttachment->DoesSocketExist(FName("Aimpoint")))
+			{
+				return Slot;
+			}
+		}
+	}
+	
+	return EAttachmentSlot::RearSight;
+}
+
+float ULoadoutManager::GetCurrentCycleSightSpeed()
+{
+	FName& AttachmentID = GetCurrentAttachmentInSlot(GetActiveAimpointSourceType()).BaseAttachmentState.AttachmentID;
+	return UBS2FunctionLibrary::GetDataSubsystem(this)->GetWeaponAttachmentDataRow(AttachmentID)->WeaponSightData.FlipDuration;
 }
 
 float ULoadoutManager::GetCurrentScopeAccessoryMagnification()

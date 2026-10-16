@@ -31,9 +31,6 @@ struct FFlipSightData
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ToolTip = "relative rotation of the flipping part when folded away; up = zero rotation"))
 	FRotator FlippedDownRotation = FRotator(0.f, 90.f, 0.f);
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	float FlipDuration = 0.25f;
 };
 
 USTRUCT(BlueprintType)
@@ -55,6 +52,9 @@ struct FWeaponSightData
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (tooltip = "the default number to increase/decrease the sight distance by (helps to ensure when aim, sight distance brings camera to front of sight rather than center/in it"))
 	float SightDistanceOffset = 0.0f;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ToolTip = "the speed in which swap TOO this sight, whether its a scope accessory sight or a main sight"))
+	float FlipDuration = 0.25f;
 
 	//UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (tooltip = "the number to increase/decrease the default SightTransform by, helps to ensure vertically we aim down center of sight"))
 	//float VerticalAimpointOffset = 0.0f;

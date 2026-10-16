@@ -353,6 +353,10 @@ class BATTLESERIES2_API ULoadoutManager : public UActorComponent
 		UFUNCTION(BlueprintCallable, BlueprintPure)
 		USceneComponent* GetActiveAimpointSource();
 		UFUNCTION(BlueprintCallable, BlueprintPure)
+		EAttachmentSlot GetActiveAimpointSourceType();
+		UFUNCTION(BlueprintCallable, BlueprintPure)
+		float GetCurrentCycleSightSpeed();
+		UFUNCTION(BlueprintCallable, BlueprintPure)
 		float GetCurrentScopeAccessoryMagnification();
 		UFUNCTION(BlueprintCallable, BlueprintPure)
 		FTransform GetSightTransform();
