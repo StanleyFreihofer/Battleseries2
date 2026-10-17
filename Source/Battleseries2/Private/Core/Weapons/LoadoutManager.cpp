@@ -1548,7 +1548,8 @@ void ULoadoutManager::FlipSight(bool bFlipUp)
 {
 	GetWorld()->GetTimerManager().SetTimer(CombatState.SightTimer, [this, bFlipUp]()
 	{
-		const float Step = GetWorld()->GetDeltaSeconds() / 0.25f;		//FlipDuration
+		float Duration = UBS2FunctionLibrary::GetDataSubsystem(this)->GetWeaponAttachmentDataRow(GetCurrentAttachmentInSlot(bFlipUp ? EAttachmentSlot::ScopeAccessory : EAttachmentSlot::Scope).BaseAttachmentState.AttachmentID)->WeaponSightData.FlipDuration;
+		const float Step = GetWorld()->GetDeltaSeconds() / Duration;		//FlipDuration
 		CombatState.SightAlpha = FMath::Clamp(CombatState.SightAlpha + (bFlipUp ? Step : -Step), 0.f, 1.f);
 
 		FWeaponAttachmentState& Accessory = GetCurrentAttachmentInSlot(EAttachmentSlot::ScopeAccessory);
