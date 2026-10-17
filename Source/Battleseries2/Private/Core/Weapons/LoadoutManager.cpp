@@ -1534,55 +1534,33 @@ void ULoadoutManager::ToggleScopeAccessory()
 	{
 		case ESightType::Flip:
 			{
-				FTimerHandle CycleSightTimer;
-				if (isAccessoryEngaged)
-				{
-					//engagescopeaccessory_flipsight
-					ScopeAccessoryState.SpawnedAttachment->SetRelativeRotation(FRotator(0, 0, -90));
-					UpdateScopeCamera(EAttachmentSlot::ScopeAccessory);
-					
-					
-
-					
-				}
-				else
-				{
-					//disengagescopeacessory_flipsight
-					ScopeAccessoryState.SpawnedAttachment->SetRelativeRotation(FRotator(0, 0, 0));
-					UpdateScopeCamera(EAttachmentSlot::Scope);
-					/**
-					ScopeState.SightAlpha = 1.f;
-					GetWorld()->GetTimerManager().SetTimer(GetCurrentInfantryWeaponState_FP().WeaponScopeState.SightTimer, [this, &ScopeAccessoryState, &ScopeState]()
-					{
-											
-						ScopeAccessoryState.SpawnedAttachment->SetRelativeRotation(FRotator(0, 0, FMath::Lerp(0.f, -90.f, ScopeState.SightAlpha)));
-						if (ScopeAccessoryState.SpawnedAttachment->GetRelativeRotation().Roll <= -80.f)
-						{
-							ScopeState.bScopeAccessoryEngaged = !ScopeState.bScopeAccessoryEngaged;
-							UpdateScopeCamera(EAttachmentSlot::ScopeAccessory);
-							GetWorld()->GetTimerManager().ClearTimer(GetCurrentInfantryWeaponState_FP().WeaponScopeState.SightTimer);
-						}
-					}, GetWorld()->GetDeltaSeconds(), true);
-					**/
-				}
+				FlipSight(isAccessoryEngaged);
 			}
 			break;
 		case ESightType::Canted:
-			{
-				//anim blueprint handles most of the work here, updates are done while isCyclingSights is true
-				//FTimerHandle CycleSightTimer;
-				//CombatState.isCyclingSights = true;
-				/**
-				GetWorld()->GetTimerManager().SetTimerForNextTick([this]()
-				{
-					CombatState.isCyclingSights = false;				
-				});
-				**/
-			}
 			break;
 	}
 	
 	UpdateScope(CurrentOpticIndex);
+}
+
+void ULoadoutManager::FlipSight(bool bFlipUp)
+{
+	GetWorld()->GetTimerManager().SetTimer(CombatState.SightTimer, [this, bFlipUp]()
+	{
+		const float Step = GetWorld()->GetDeltaSeconds() / 0.25f;		//FlipDuration
+		CombatState.SightAlpha = FMath::Clamp(CombatState.SightAlpha + (bFlipUp ? Step : -Step), 0.f, 1.f);
+
+		FWeaponAttachmentState& Accessory = GetCurrentAttachmentInSlot(EAttachmentSlot::ScopeAccessory);
+		Accessory.SpawnedAttachment->SetRelativeRotation(FRotator(0.f, 0.f, FMath::Lerp(0.f, -90.f, CombatState.SightAlpha)));
+
+		if (CombatState.SightAlpha == (bFlipUp ? 1.f : 0.f))
+		{
+			GetWorld()->GetTimerManager().ClearTimer(CombatState.SightTimer);
+			CombatState.SightAlpha = CombatState.SightAlpha = 0.f;
+			UpdateScopeCamera(bFlipUp ? EAttachmentSlot::ScopeAccessory : EAttachmentSlot::Scope);
+		}
+	}, 0.01f, true);
 }
 
 void ULoadoutManager::UpdateScope(int32 NewOpticIndex)

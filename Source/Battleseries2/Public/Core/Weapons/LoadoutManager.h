@@ -52,11 +52,6 @@ struct FWeaponScopeState
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)		//are we looking through canted sight or is magnifier flipped down?
 	bool bScopeAccessoryEngaged = false;
-	
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
-	FTimerHandle SightTimer = FTimerHandle();
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
-	float SightAlpha = 1.f;
 };
 
 USTRUCT(BlueprintType)			
@@ -160,8 +155,10 @@ struct FCombatState
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	bool isAttemptingToFire = false;
+	
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
-	bool isCyclingSights = false;
+	float SightAlpha = 0.f;
+	
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	bool canAim = true;
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
@@ -172,6 +169,9 @@ struct FCombatState
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	FTimerHandle RangefinderTimer = FTimerHandle();
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	FTimerHandle SightTimer = FTimerHandle();
 	
 	//recoil
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
@@ -311,6 +311,8 @@ class BATTLESERIES2_API ULoadoutManager : public UActorComponent
 		void ToggleScopeOptic();
 		UFUNCTION(BlueprintCallable)
 		void ToggleScopeAccessory();
+		UFUNCTION(BlueprintCallable)
+		void FlipSight(bool bFlipUp);
 		UFUNCTION(BlueprintCallable)
 		void UpdateScope(int32 NewOpticIndex);
 		UFUNCTION(BlueprintCallable)

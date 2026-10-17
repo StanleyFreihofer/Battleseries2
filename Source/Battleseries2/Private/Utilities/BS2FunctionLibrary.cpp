@@ -547,7 +547,6 @@ void UBS2FunctionLibrary::HandleInFlightManuallyGuidedMunitions(FWeaponState& We
 
 TWeakObjectPtr<AProjectile_Base> UBS2FunctionLibrary::ShootUnmountedProjectileActor(APawn* FiringPawn, TArray<AActor*> ActorsToIgnore, FVector AimDirection, FTransform MuzzleTransform, FName MunitionID, EHomingCapability HomingCapability, FLockOnState LockOnState, FHitResult HitResult)
 {
-	
 	TWeakObjectPtr<AProjectile_Base> FiredProjectile = GetProjectileSystem(FiringPawn)->AcquireProjectileFromPool(MunitionID);
 	//vehicle/character ignore projectile
 	Cast<UPrimitiveComponent>(FiringPawn->GetRootComponent())->IgnoreActorWhenMoving(FiredProjectile.Get(), true);
