@@ -1557,7 +1557,6 @@ void ULoadoutManager::FlipSight(bool bFlipUp)
 		if (CombatState.SightAlpha == (bFlipUp ? 1.f : 0.f))
 		{
 			GetWorld()->GetTimerManager().ClearTimer(CombatState.SightTimer);
-			CombatState.SightAlpha = CombatState.SightAlpha = 0.f;
 			UpdateScopeCamera(bFlipUp ? EAttachmentSlot::ScopeAccessory : EAttachmentSlot::Scope);
 		}
 	}, 0.01f, true);
