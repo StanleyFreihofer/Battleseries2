@@ -53,7 +53,6 @@ void AGadget_Base::Init_GadgetData()
 	GadgetData = UBS2FunctionLibrary::GetDataSubsystem(this)->GetGadgetDataRow(GadgetInstanceStartingData.GadgetID);
 	
 	Init_Gadget();
-
 }
 
 void AGadget_Base::Init_Gadget()
