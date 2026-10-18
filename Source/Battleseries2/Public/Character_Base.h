@@ -184,6 +184,10 @@ public:
 	void UpdateViewTarget_BP(AActor* ViewTarget, UCameraComponent* Cam);
 
 	
+	//true only for the human player on this machine (AI pawns are locally controlled on the server/standalone too)
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	bool IsLocalHuman() const;
+
 	UFUNCTION(BlueprintCallable, BlueprintPure, meta = (BlueprintThreadSafe))
 	ECharacterStance& GetCurrentStance();
 	UFUNCTION(BlueprintCallable, BlueprintPure, meta = (BlueprintThreadSafe))

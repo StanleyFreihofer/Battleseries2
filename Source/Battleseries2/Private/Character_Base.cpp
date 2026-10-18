@@ -87,7 +87,7 @@ void ACharacter_Base::Init_Character()
 	//how to handle different spawn contexts (spawn in vehicle for example)
 
 	Init_CharacterMovement();
-	if (IsLocallyControlled())
+	if (IsLocalHuman())
 	{
 		//Init_PlayerCharacter();
 	}
@@ -583,6 +583,11 @@ void ACharacter_Base::UpdateFOV(float Magnfication)
 {
 	float DefaultFOV = 90.f;		//<--- MAKE THIS ACTUAL DATA!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	FPCamera->SetFieldOfView(DefaultFOV / Magnfication);
+}
+
+bool ACharacter_Base::IsLocalHuman() const
+{
+	return IsLocallyControlled() && IsPlayerControlled();
 }
 
 ECharacterStance& ACharacter_Base::GetCurrentStance()

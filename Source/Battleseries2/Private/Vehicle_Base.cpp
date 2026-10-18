@@ -654,9 +654,9 @@ void AVehicle_Base::DropSeat(ACharacter_Base* Character, int32& SeatIndex)
 	}
 	const FSeatData& SeatData = VehicleData->Seats[SeatIndex];
 	Character->VehicleManager->CharacterExitSeat(SeatData.DefaultCharacterContext);
-	if (Character->IsLocallyControlled())
+	if (Character->IsLocalHuman())
 	{
-		VehicleCurrentState.SeatStates[Character->VehicleManager->GetCSI()].UpdateHUD = false;
+		VehicleCurrentState.SeatStates[SeatIndex].UpdateHUD = false;		//the seat being left (CSI is already the new seat during a seat change)
 	}
 	HandleSeatOccupationStatus(false, SeatIndex);
 	
@@ -709,7 +709,7 @@ void AVehicle_Base::SetupNewSeat(ACharacter_Base* Character)
 		IAnims::Execute_OnEnterSeat_Vehicle(VehicleMeshComponent->GetAnimInstance(), Character->VehicleManager->GetCSI());
 	}
 
-	if (Character->IsLocallyControlled())
+	if (Character->IsLocalHuman())
 	{
 		VehicleCurrentState.SeatStates[Character->VehicleManager->GetCSI()].UpdateHUD = true;
 	}
@@ -786,6 +786,7 @@ void AVehicle_Base::DropGunner(TWeakObjectPtr<ACharacter_Base> Character, int32&
 
 void AVehicle_Base::AttemptEnterVehicle(ACharacter_Base* Character)
 {
+	//move to character?
 	if (GetIsVehicleDestroyed())	{ return; }
 	bool bFoundSeat = CycleThroughSeats(Character);
 	if (bFoundSeat)
@@ -799,6 +800,7 @@ void AVehicle_Base::AttemptEnterVehicle(ACharacter_Base* Character)
 
 void AVehicle_Base::ChangeSeat(ACharacter_Base* Character)
 {
+	//move to character?
 	bool bFoundSeat = CycleThroughSeats(Character);
 	if (bFoundSeat)
 	{
@@ -966,6 +968,7 @@ void AVehicle_Base::UpdateThrottle_GV_Stop()
 	ChaosVehicleMovement->SetThrottleInput(0.0f);
 	ChaosVehicleMovement->SetBrakeInput(0.0f);
 
+	if ()
 	GetWorld()->GetTimerManager().SetTimer(SpeedTimer, [this]()
 	{
 		UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateSpeedHUD_Vehicle(GetVelocity().Size());		//block behind updatehud check?
