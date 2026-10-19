@@ -538,6 +538,7 @@ void ULoadoutManager::StopAim()
 
 void ULoadoutManager::HandleScopeHUD(bool TurnOn)
 {
+	if (!GetOwnerCharacter()->IsLocalHuman())	{ return; }
 	if (!TurnOn)
 	{
 		if (UBS2FunctionLibrary::GetHUDSubsystem(this)->ScopeWidget.Get())
