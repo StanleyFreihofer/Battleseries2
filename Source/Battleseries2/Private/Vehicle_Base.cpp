@@ -701,6 +701,7 @@ void AVehicle_Base::SetupNewSeat(ACharacter_Base* Character)
 		case E_SeatRole::Passenger:
 			break;
 	}
+	
 	Character->VehicleManager->HandleViewMethod(SeatData);
 
 	Character->VehicleManager->CharacterEnterSeat(SeatData.DefaultCharacterContext);

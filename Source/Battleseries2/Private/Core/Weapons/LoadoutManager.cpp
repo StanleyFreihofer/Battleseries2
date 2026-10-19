@@ -849,7 +849,7 @@ void ULoadoutManager::UpdateControllerRecoil()
 	const FControllerRecoilData& RecoilData = StaticWeaponData.WeaponRecoilData.ControllerRecoilData;
 	TObjectPtr<ACharacter_Base> Character = GetOwnerCharacter();
 	
-	float PitchValue, YawValue = 0.f;
+	float PitchValue = 0.f, YawValue = 0.f;
 	
 	if (RecoilData.PitchControllerRecoil)
 	{

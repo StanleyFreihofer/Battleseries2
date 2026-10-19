@@ -492,6 +492,7 @@ void UCharacterVehicleManager::UpdateRangefinder_WindowedVehicle()
 
 void UCharacterVehicleManager::HandleViewMethod(const FSeatData& SeatData)
 {
+	if (!GetOwnerCharacter()->IsLocalHuman())		{ return; }
 	if (SeatData.SeatRole != E_SeatRole::DriverGunner && SeatData.SeatRole != E_SeatRole::Gunner)
 	{
 		HandleViewMethod_Default(SeatData);

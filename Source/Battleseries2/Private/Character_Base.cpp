@@ -58,14 +58,14 @@ void ACharacter_Base::BeginPlay()
 void ACharacter_Base::PossessedBy(AController* NewController)
 {
 	Super::PossessedBy(NewController);
-	if (APlayerController* PC = Cast<APlayerController>(NewController))
+	GetWorld()->GetTimerManager().SetTimerForNextTick([this, NewController]()
 	{
-		GetWorld()->GetTimerManager().SetTimerForNextTick([this]()
+		if (APlayerController* PC = Cast<APlayerController>(NewController))
 		{
 			Init_PlayerCharacter();
-			LoadoutManager->Init_Loadout(CharacterStartingData.StartingLoadout);
-		});
-	}
+		}
+		LoadoutManager->Init_Loadout(CharacterStartingData.StartingLoadout);
+	});
 }
 
 // Called every frame
@@ -274,6 +274,7 @@ void ACharacter_Base::StartInteract()
 
 void ACharacter_Base::AttemptInteract()
 {
+	if (!CharacterState.InteractionState.HitInteractable.Get()) { return; }
 	IInteract::Execute_Interact(CharacterState.InteractionState.HitInteractable.Get(), this);
 }
 
