@@ -476,7 +476,7 @@ void ULoadoutManager::ApplyWeaponStateModifiers(const TMap<EWeaponStateType, FWe
 			}
 		}
 	}
-	if (GetOwnerCharacter()->IsLocallyControlled())
+	if (GetOwnerCharacter()->IsLocalHuman())
 	{
 		FWeaponState& CurrentWeapon = *GetCurrentWeaponBaseState();
 		UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateStatusHUD_CAMCount(CurrentWeapon.CurrentAmmoinMag);
@@ -538,6 +538,7 @@ void ULoadoutManager::StopAim()
 
 void ULoadoutManager::HandleScopeHUD(bool TurnOn)
 {
+	if (!GetOwnerCharacter()->IsLocalHuman())	{ return; }
 	if (!TurnOn)
 	{
 		if (UBS2FunctionLibrary::GetHUDSubsystem(this)->ScopeWidget.Get())
@@ -548,7 +549,7 @@ void ULoadoutManager::HandleScopeHUD(bool TurnOn)
 		return;
 	}
 
-	if (GetCurrentAttachmentInSlot(EAttachmentSlot::Scope).BaseAttachmentState.AttachmentID != NAME_None && GetOwnerCharacter()->IsLocallyControlled())
+	if (GetCurrentAttachmentInSlot(EAttachmentSlot::Scope).BaseAttachmentState.AttachmentID != NAME_None && GetOwnerCharacter()->IsLocalHuman())
 	{
 		FName& ScopeID = GetCurrentAttachmentInSlot(EAttachmentSlot::Scope).BaseAttachmentState.AttachmentID;
 		TSubclassOf<UUserWidget> ScopeHUD = UBS2FunctionLibrary::GetDataSubsystem(this)->GetWeaponAttachmentDataRow(ScopeID)->WeaponSightData.ScopeHUD;
@@ -613,7 +614,7 @@ void ULoadoutManager::HandleLockOn()
 	const FWeaponHomingData& StaticHomingData = GetCurrentWeaponStaticData()->WeaponFunctionalityData.BaseWeaponFunctionality.HomingFunctionality;
 	FHitResult& OutHit = Loadout.WeaponSystem.BaseWeaponState.EquippedWeaponState.RaycastData.RangefinderData;
 	FLockOnState& LockOnState = GetCurrentWeaponBaseState()->LockOnState;
-	bool isLocallyControlled = GetOwnerCharacter()->IsLocallyControlled();
+	bool isLocalHuman = GetOwnerCharacter()->IsLocalHuman();
 	
 	bool canLockOn = UBS2FunctionLibrary::GetCanLockOn_Final(StaticHomingData, OutHit);
 
@@ -627,7 +628,7 @@ void ULoadoutManager::HandleLockOn()
 				break;
 			case ELockOnState::IsLockingOn:
 			case ELockOnState::IsLockedOn:
-				if (isLocallyControlled)
+				if (isLocalHuman)
 				{
 					UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateLockOnIndicatorPosition(OutHit.GetActor()->GetRootComponent()->GetSocketLocation(FName("LockOn")));
 				}
@@ -648,11 +649,11 @@ void ULoadoutManager::StartLockingOn()
 	FHitResult& OutHit = Loadout.WeaponSystem.BaseWeaponState.EquippedWeaponState.RaycastData.RangefinderData;
 	const FWeaponHomingData& StaticHomingData = GetCurrentWeaponStaticData()->WeaponFunctionalityData.BaseWeaponFunctionality.HomingFunctionality;
 	FLockOnState& LockOnState = GetCurrentWeaponBaseState()->LockOnState;
-	bool isLocallyControlled = GetOwnerCharacter()->IsLocallyControlled();
+	bool isLocalHuman = GetOwnerCharacter()->IsLocalHuman();
 	
 	FTimerDelegate LockOnDelegate;
 	LockOnDelegate.BindUFunction(this, FName("LockOn"));
-	UBS2FunctionLibrary::StartLockingOn(this, LockOnDelegate, StaticHomingData.AcquireTime, OutHit.GetActor(), LockOnState, isLocallyControlled, StaticHomingData.IndicatorReticle);
+	UBS2FunctionLibrary::StartLockingOn(this, LockOnDelegate, StaticHomingData.AcquireTime, OutHit.GetActor(), LockOnState, isLocalHuman, StaticHomingData.IndicatorReticle);
 	Loadout.WeaponSystem.WeaponAudioComponent->Activate();
 	Loadout.WeaponSystem.WeaponAudioComponent->SetTriggerParameter(FName("Event_LockingOn"));
 }
@@ -660,8 +661,8 @@ void ULoadoutManager::StartLockingOn()
 void ULoadoutManager::LockOn()
 {
 	const FWeaponHomingData& StaticHomingData = GetCurrentWeaponStaticData()->WeaponFunctionalityData.BaseWeaponFunctionality.HomingFunctionality;
-	bool isLocallyControlled = GetOwnerCharacter()->IsLocallyControlled();
-	UBS2FunctionLibrary::LockOn(this, *GetCurrentWeaponBaseState(), isLocallyControlled, StaticHomingData.HomingCapability);
+	bool isLocalHuman = GetOwnerCharacter()->IsLocalHuman();
+	UBS2FunctionLibrary::LockOn(this, *GetCurrentWeaponBaseState(), isLocalHuman, StaticHomingData.HomingCapability);
 	Loadout.WeaponSystem.WeaponAudioComponent->SetTriggerParameter(FName("Event_LockOn"));
 }
 
@@ -673,14 +674,14 @@ void ULoadoutManager::StartCancelLockOn()
 	FTimerDelegate LockOnDelegate;
 	LockOnDelegate.BindUFunction(this, FName("CancelLockOn"));
 	
-	UBS2FunctionLibrary::StartCancelLockOn(this, LockOnDelegate, LockOnState, ElapsedTime, GetOwnerCharacter()->IsLocallyControlled());
+	UBS2FunctionLibrary::StartCancelLockOn(this, LockOnDelegate, LockOnState, ElapsedTime, GetOwnerCharacter()->IsLocalHuman());
 }
 
 void ULoadoutManager::CancelLockOn()
 {
 	const FWeaponHomingData& StaticHomingData = GetCurrentWeaponStaticData()->WeaponFunctionalityData.BaseWeaponFunctionality.HomingFunctionality;
 	
-	UBS2FunctionLibrary::CancelLockOn(this, *GetCurrentWeaponBaseState(), GetOwnerCharacter()->IsLocallyControlled(), StaticHomingData.HomingCapability);
+	UBS2FunctionLibrary::CancelLockOn(this, *GetCurrentWeaponBaseState(), GetOwnerCharacter()->IsLocalHuman(), StaticHomingData.HomingCapability);
 }
 
 #pragma endregion
@@ -848,7 +849,7 @@ void ULoadoutManager::UpdateControllerRecoil()
 	const FControllerRecoilData& RecoilData = StaticWeaponData.WeaponRecoilData.ControllerRecoilData;
 	TObjectPtr<ACharacter_Base> Character = GetOwnerCharacter();
 	
-	float PitchValue, YawValue = 0.f;
+	float PitchValue = 0.f, YawValue = 0.f;
 	
 	if (RecoilData.PitchControllerRecoil)
 	{
@@ -989,7 +990,7 @@ void ULoadoutManager::FireWeapon()
 	{
 		case EAmmoDepletionMethod::Default:
 			UBS2FunctionLibrary::UpdateCurrentAmmoInMag(CurrentWeapon, -1, CurrentWeapon.CurrentAmmoinMag);
-			if (GetOwnerCharacter()->IsLocallyControlled())
+			if (GetOwnerCharacter()->IsLocalHuman())
 			{
 				UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateStatusHUD_CAMCount(CurrentWeapon.CurrentAmmoinMag);
 			}
@@ -1130,7 +1131,7 @@ void ULoadoutManager::OnReloadFinished(UAnimMontage* Montage, bool bInterrupted,
 	CurrentWeapon.CurrentAmmoinMag = NewCAM;
 	CurrentWeapon.CurrentReserveAmmo = NewCRA;
 	Loadout.WeaponSystem.WeaponAudioComponent.Get()->SetIntParameter(FName("State_AvailableShots"), NewCAM);
-	if (GetOwnerCharacter()->IsLocallyControlled())
+	if (GetOwnerCharacter()->IsLocalHuman())
 	{
 		UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateStatusHUD_CAMCount(CurrentWeapon.CurrentAmmoinMag);
 		UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateStatusHUD_CRACount(CurrentWeapon.CurrentReserveAmmo);
@@ -1415,7 +1416,7 @@ void ULoadoutManager::EquipWeapon(int32 WeaponIndex, bool InitialEquip)
 	FWeaponState& CurrentWeapon = GetBaseWeaponState(GetCII());
 	CurrentWeapon.isEquipped = true;
 	CombatState.isSwitchingItems = false;
-	if (GetOwnerCharacter()->IsLocallyControlled())
+	if (GetOwnerCharacter()->IsLocalHuman())
 	{
 		//EquipWeapon_Local
 		UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateStatusHUD_CAMCount(CurrentWeapon.CurrentAmmoinMag);
@@ -1480,7 +1481,7 @@ void ULoadoutManager::ToggleFireMode()
 	if (bSwitched)
 	{
 		UGameplayStatics::PlaySound2D(GetOwner(), GetCurrentWeaponStaticData()->InfantryWeaponAudioData.SelectFireModeSFX.LoadSynchronous());
-		if (GetOwnerCharacter()->IsLocallyControlled())
+		if (GetOwnerCharacter()->IsLocalHuman())
 		{
 			UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateStatusHUD_FireMode(CurrentWeapon.CurrentFireMode);
 		}

@@ -84,7 +84,7 @@ void UCharacterVehicleManager::CharacterEnterVehicle()
 	}
 
 	GetOwnerCharacter()->ManageIMC(UBS2FunctionLibrary::GetDataSubsystem(this)->GetCharacterDefaults()->DefaultGameplayIMC.Get(), nullptr, -1);
-	if (GetOwnerCharacter()->IsLocallyControlled())
+	if (GetOwnerCharacter()->IsLocalHuman())
 	{
 		EnterVehicle_LocalPlayer();
 	}
@@ -138,7 +138,7 @@ void UCharacterVehicleManager::CharacterExitVehicle()
 
 		GetOwnerCharacter()->ManageIMC(nullptr, UBS2FunctionLibrary::GetDataSubsystem(this)->GetCharacterDefaults()->DefaultGameplayIMC.Get(), 1);
 	
-		if (GetOwnerCharacter()->LoadoutManager->GetIsCurrentSlotActuallyWeapon() && GetOwnerCharacter()->IsLocallyControlled())
+		if (GetOwnerCharacter()->LoadoutManager->GetIsCurrentSlotActuallyWeapon() && GetOwnerCharacter()->IsLocalHuman())
 		{
 			ExitVehicle_LocalPlayer();
 		}
@@ -198,12 +198,15 @@ void UCharacterVehicleManager::CharacterEnterSeat(const FCharacterSeatContext& S
 	
 	GetOwnerCharacter()->ManageIMC(nullptr, SeatContext.InputMappingContext, 1);
 
-	if (SeatContext.SeatHMD)
+	if (GetOwnerCharacter()->IsLocalHuman())
 	{
-		UpdateVehicleHUD(SeatContext.SeatHMD);
-	}
+		if (SeatContext.SeatHMD)
+		{
+			UpdateVehicleHUD(SeatContext.SeatHMD);
+		}
 
-	UpdateUI_EnterSeat();
+		UpdateUI_EnterSeat();
+	}
 }
 
 void UCharacterVehicleManager::HandleEnterSeat_Gunner(const FCharacterSeatContext& SeatContext)
@@ -234,7 +237,11 @@ void UCharacterVehicleManager::CharacterExitSeat(const FCharacterSeatContext& Se
 		}
 	}
 
-	UpdateVehicleHUD(nullptr);
+	if (GetOwnerCharacter()->IsLocalHuman())
+	{
+		UpdateVehicleHUD(nullptr);
+	}
+
 	GetOwnerCharacter()->ManageIMC(SeatContext.InputMappingContext, nullptr, 0);
 }
 
@@ -342,7 +349,7 @@ void UCharacterVehicleManager::UpdateUI_EnterSeat_Turrets()
 
 void UCharacterVehicleManager::OnVehicleHealthChanged()
 {
-	if (GetOwnerCharacter()->IsLocallyControlled())
+	if (GetOwnerCharacter()->IsLocalHuman())
 	{
 		UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateStatusHUD_VehicleHealth(GetCurrentVehicle()->GetVehicleHealth());
 	}
@@ -401,7 +408,7 @@ void UCharacterVehicleManager::UpdateRangefinder_WindowedVehicle()
 
 	VWLC->UpdateSeatRangefinder(GetCSI(), TraceTransform, IgnoreActors);
 
-	if (!GetOwnerCharacter()->IsLocallyControlled())
+	if (!GetOwnerCharacter()->IsLocalHuman())
 	{
 		return;
 	}
@@ -485,6 +492,7 @@ void UCharacterVehicleManager::UpdateRangefinder_WindowedVehicle()
 
 void UCharacterVehicleManager::HandleViewMethod(const FSeatData& SeatData)
 {
+	if (!GetOwnerCharacter()->IsLocalHuman())		{ return; }
 	if (SeatData.SeatRole != E_SeatRole::DriverGunner && SeatData.SeatRole != E_SeatRole::Gunner)
 	{
 		HandleViewMethod_Default(SeatData);

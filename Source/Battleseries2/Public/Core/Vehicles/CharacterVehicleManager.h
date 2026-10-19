@@ -65,7 +65,7 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void HandleViewMethod_Default(const FSeatData& SeatData);
 	
-	UFUNCTION(BlueprintCallable)
+	UFUNCTION(BlueprintCallable, BlueprintPure)
 	ACharacter_Base* GetOwnerCharacter();
 	
 	UFUNCTION(BlueprintCallable, BlueprintPure, meta = (BlueprintThreadSafe))

@@ -654,9 +654,9 @@ void AVehicle_Base::DropSeat(ACharacter_Base* Character, int32& SeatIndex)
 	}
 	const FSeatData& SeatData = VehicleData->Seats[SeatIndex];
 	Character->VehicleManager->CharacterExitSeat(SeatData.DefaultCharacterContext);
-	if (Character->IsLocallyControlled())
+	if (Character->IsLocalHuman())
 	{
-		VehicleCurrentState.SeatStates[Character->VehicleManager->GetCSI()].UpdateHUD = false;
+		VehicleCurrentState.SeatStates[SeatIndex].UpdateHUD = false;		//the seat being left (CSI is already the new seat during a seat change)
 	}
 	HandleSeatOccupationStatus(false, SeatIndex);
 	
@@ -701,6 +701,7 @@ void AVehicle_Base::SetupNewSeat(ACharacter_Base* Character)
 		case E_SeatRole::Passenger:
 			break;
 	}
+	
 	Character->VehicleManager->HandleViewMethod(SeatData);
 
 	Character->VehicleManager->CharacterEnterSeat(SeatData.DefaultCharacterContext);
@@ -709,7 +710,7 @@ void AVehicle_Base::SetupNewSeat(ACharacter_Base* Character)
 		IAnims::Execute_OnEnterSeat_Vehicle(VehicleMeshComponent->GetAnimInstance(), Character->VehicleManager->GetCSI());
 	}
 
-	if (Character->IsLocallyControlled())
+	if (Character->IsLocalHuman())
 	{
 		VehicleCurrentState.SeatStates[Character->VehicleManager->GetCSI()].UpdateHUD = true;
 	}
@@ -786,6 +787,7 @@ void AVehicle_Base::DropGunner(TWeakObjectPtr<ACharacter_Base> Character, int32&
 
 void AVehicle_Base::AttemptEnterVehicle(ACharacter_Base* Character)
 {
+	//move to character?
 	if (GetIsVehicleDestroyed())	{ return; }
 	bool bFoundSeat = CycleThroughSeats(Character);
 	if (bFoundSeat)
@@ -799,6 +801,7 @@ void AVehicle_Base::AttemptEnterVehicle(ACharacter_Base* Character)
 
 void AVehicle_Base::ChangeSeat(ACharacter_Base* Character)
 {
+	//move to character?
 	bool bFoundSeat = CycleThroughSeats(Character);
 	if (bFoundSeat)
 	{
@@ -902,14 +905,14 @@ void AVehicle_Base::UpdateRotorRPM()
 
 #pragma region MovementInput
 
-void AVehicle_Base::HandleApplyThrottle_GV(float RawInputValue)
+void AVehicle_Base::HandleApplyThrottle_GV(float RawInputValue, int32 SeatIndex)
 {
     const bool bInDeadzone = FMath::IsNearlyZero(RawInputValue, 0.15);		//hardcode for now but should be throttle deadzone
     const bool bGearMidShift = ChaosVehicleMovement->GetTargetGear() != ChaosVehicleMovement->GetCurrentGear();
 
     if (bInDeadzone || bGearMidShift)
     {
-        UpdateThrottle_GV_Stop();
+        UpdateThrottle_GV_Stop(SeatIndex);
         return; 
     }
 
@@ -959,21 +962,25 @@ void AVehicle_Base::UpdateThrottle_GV_Reverse(float RawInputValue)
 	ChaosVehicleMovement->SetThrottleInput(0.0f);
 }
 
-void AVehicle_Base::UpdateThrottle_GV_Stop()
+void AVehicle_Base::UpdateThrottle_GV_Stop(int32 SeatIndex)
 {
 	ChaosVehicleMovement->SetTargetGear(0, true);
 	ChaosVehicleMovement->SetHandbrakeInput(true);
 	ChaosVehicleMovement->SetThrottleInput(0.0f);
 	ChaosVehicleMovement->SetBrakeInput(0.0f);
 
-	GetWorld()->GetTimerManager().SetTimer(SpeedTimer, [this]()
+	if (VehicleCurrentState.SeatStates[SeatIndex].UpdateHUD)
 	{
-		UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateSpeedHUD_Vehicle(GetVelocity().Size());		//block behind updatehud check?
-	}, 0.05f, true);
-	if (GetVelocity().Size() <= 0.0f)
-	{
-		GetWorld()->GetTimerManager().ClearTimer(SpeedTimer);
+		GetWorld()->GetTimerManager().SetTimer(SpeedTimer, [this]()
+		{
+			UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateSpeedHUD_Vehicle(GetVelocity().Size());		//block behind updatehud check?
+		}, 0.05f, true);
+		if (GetVelocity().Size() <= 0.0f)
+		{
+			GetWorld()->GetTimerManager().ClearTimer(SpeedTimer);
+		}
 	}
+
 }
 
 void AVehicle_Base::Input_UpdateSteering_GV(float SteeringValue, int32 SeatIndex)
@@ -1007,7 +1014,7 @@ void AVehicle_Base::Input_UpdateSteering_GV(float SteeringValue, int32 SeatIndex
 	{
 		ChaosVehicleMovement->SetSteeringInput(SteeringValue);
 	}
-	if (UCameraComponent* ActiveCam = GetRemoteActiveCam(SeatIndex))
+	if (UCameraComponent* ActiveCam = GetRemoteActiveCam(SeatIndex); ActiveCam && VehicleCurrentState.SeatStates[SeatIndex].UpdateHUD)
 	{
 		UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateCompassHUD_Vehicle(ActiveCam->GetComponentRotation().Yaw);
 	}
@@ -1032,7 +1039,7 @@ void AVehicle_Base::UpdateThrottle_Heli(float InputValue)
 	VehicleMeshComponent->SetAllPhysicsLinearVelocity(UpVel, true);
 }
 
-void AVehicle_Base::UpdatePitch_Heli(float InputValue)
+void AVehicle_Base::UpdatePitch_Heli(float InputValue, int32 SeatIndex)
 {
 	float& CurrentPitchSpeed = VehicleCurrentState.AircraftState.HelicopterState.CurrentPitchSpeed;
 	const FHelicopterData& HeliData = VehicleData->Helicopter_Data;
@@ -1359,13 +1366,13 @@ void AVehicle_Base::UpdateRoll_Jet_Arcade(float InputValue)
 
 #pragma endregion
 
-void AVehicle_Base::Input_HandleApplyThrottle(float ThrottleValue)
+void AVehicle_Base::Input_HandleApplyThrottle(float ThrottleValue, int32 SeatIndex)
 {
 	const E_MovementType& MovementType = VehicleData->Movement_Type;
 	switch (MovementType)
 	{
 		case E_MovementType::GroundVehicle:
-			HandleApplyThrottle_GV(ThrottleValue);
+			HandleApplyThrottle_GV(ThrottleValue, SeatIndex);
 			break;
 		case E_MovementType::Helicopter:
 			UpdateThrottle_Heli(ThrottleValue);
@@ -1376,13 +1383,13 @@ void AVehicle_Base::Input_HandleApplyThrottle(float ThrottleValue)
 	}
 }
 
-void AVehicle_Base::Input_HandleReleaseThrottle()
+void AVehicle_Base::Input_HandleReleaseThrottle(int32 SeatIndex)
 {
 	const E_MovementType& MovementType = VehicleData->Movement_Type;
 	switch (MovementType)
 	{
 		case E_MovementType::GroundVehicle:
-			UpdateThrottle_GV_Stop();
+			UpdateThrottle_GV_Stop(SeatIndex);
 			break;
 	}
 }
