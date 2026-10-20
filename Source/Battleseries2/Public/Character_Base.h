@@ -96,7 +96,11 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void Input_Move(FVector2D InputAxisValue);
 	UFUNCTION(BlueprintCallable)
+	void Input_Crouch();
+	UFUNCTION(BlueprintCallable)
 	void Input_Sprint(bool Sprint);
+	UFUNCTION(BlueprintCallable)
+	void Input_Jump();
 	UFUNCTION(BlueprintCallable)
 	void Input_Interact();
 	UFUNCTION(BlueprintCallable)

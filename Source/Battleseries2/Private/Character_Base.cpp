@@ -162,6 +162,20 @@ void ACharacter_Base::Input_Move(FVector2D InputAxisValue)
 	}
 }
 
+void ACharacter_Base::Input_Crouch()
+{
+	switch (GetCurrentStance())
+	{
+		case ECharacterStance::Standing:
+		case ECharacterStance::Proning:
+			HandleUpdateStance(ECharacterStance::Crouching);
+			break;
+		case ECharacterStance::Crouching:
+			HandleUpdateStance(ECharacterStance::Standing);
+			break;
+	}
+}
+
 void ACharacter_Base::Input_Sprint(bool Sprint)
 {
 	//add functionality and data for sprinting in different stances (also if can sprint in those stances)
@@ -174,6 +188,22 @@ void ACharacter_Base::Input_Sprint(bool Sprint)
 	else if (CharacterMovementState.CurrentMovementMode == ECharacterMovementMode::Sprinting)
 	{
 		UpdateMovementMode(ECharacterMovementMode::Walking);
+	}
+}
+
+void ACharacter_Base::Input_Jump()
+{
+	switch (GetCurrentStance())
+	{
+		case ECharacterStance::Standing:
+			Jump();
+			break;
+		case ECharacterStance::Crouching:
+			HandleUpdateStance(ECharacterStance::Standing);
+			break;
+		case ECharacterStance::Proning:
+			HandleUpdateStance(ECharacterStance::Crouching);
+			break;
 	}
 }
 
@@ -233,11 +263,11 @@ void ACharacter_Base::InteractTrace()
 	{
 		CharacterState.InteractionState.HitInteractable = HitResults[0].GetActor();
 		if (!CharacterState.InteractionState.HitInteractable.Get()) { return; }
-		IInteract::Execute_HoverInteraction(CharacterState.InteractionState.HitInteractable.Get(), true);
+		IInteract::Execute_HoverInteraction(CharacterState.InteractionState.HitInteractable.Get(), this, true);
 	}
 	else if (CharacterState.InteractionState.HitInteractable.IsValid())
 	{
-		IInteract::Execute_HoverInteraction(CharacterState.InteractionState.HitInteractable.Get(), false);
+		IInteract::Execute_HoverInteraction(CharacterState.InteractionState.HitInteractable.Get(), this, false);
 		CharacterState.InteractionState.HitInteractable = nullptr;
 	}
 }

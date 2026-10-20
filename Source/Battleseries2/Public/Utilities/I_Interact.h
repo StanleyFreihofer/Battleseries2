@@ -30,7 +30,7 @@ class BATTLESERIES2_API IInteract
 		void Interact(ACharacter_Base* CharacterInteracting);
 
 		UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Interaction")
-		void HoverInteraction(bool isHovering);
+		void HoverInteraction(ACharacter_Base* CharacterInteracting, bool isHovering);
 
 		UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Interaction")
 		EInteractType GetInteractionType();
