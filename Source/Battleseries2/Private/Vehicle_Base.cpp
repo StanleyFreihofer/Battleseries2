@@ -616,17 +616,22 @@ void AVehicle_Base::ClearEntireLoadoutFromVehicle()
 
 bool AVehicle_Base::CycleThroughSeats(ACharacter_Base* Character)
 {
-	int32 TotalSeats = VehicleData->Seats.Num();
-	int32& StartIndex = Character->VehicleManager->GetCSI();
-	int32 Offset = (TotalSeats == 1) ? 0 : 1;
-
+	const int32 TotalSeats = VehicleData->Seats.Num();
+	const int32 CurrentSeat = Character->VehicleManager->GetCSI();
+	const bool bEntering = CurrentSeat == INDEX_NONE;
+	
+	//entering: check every seat starting at 0 (driver first)
+	//changing: check every OTHER seat, starting after the current one and wrapping around
+	const int32 FirstIndex = bEntering ? 0 : CurrentSeat + 1;
+	const int32 NumToCheck = bEntering? TotalSeats : TotalSeats - 1;
+	
 	//try each seat exactly once, skipping the current seat
-	for (; Offset < TotalSeats; ++Offset)
+	for (int32 i = 0; i < NumToCheck; ++i)
 	{
-		int32 CheckIndex = (StartIndex + Offset) % TotalSeats;		//wraps around the seat list circularly, so if youre at the last seat, it loops back to seat 0.
+		const int32 CheckIndex = (FirstIndex + i) % TotalSeats;
 		if (!VehicleCurrentState.SeatStates[CheckIndex].isOccupied)
 		{
-			Character->VehicleManager->UpdateSeatIndexes(Character->VehicleManager->GetCSI(), CheckIndex, CheckIndex);
+			Character->VehicleManager->UpdateSeatIndexes(CurrentSeat, CheckIndex, CheckIndex);
 			return true;
 		}
 	}
