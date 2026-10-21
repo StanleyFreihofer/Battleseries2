@@ -17,6 +17,7 @@
 #include "Core/UI/VehicleHUDs/UW_HUD_Vehicle_Base.h"
 #include "Core/UI/GameplayHUDs/UW_HUD_Status_Base.h"
 #include "Core/PlayerController_Base.h"
+#include "Core/Combat/HealthComponent.h"
 #include "Core/Vehicles/CharacterVehicleManager.h"
 #include "Core/Weapons/Projectiles/Projectile_Base.h"
 #include "Utilities/I_Interact.h"
@@ -37,6 +38,7 @@ ACharacter_Base::ACharacter_Base(const FObjectInitializer& ObjectInitializer) : 
 	FPLegs = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("FPLegs"));
 	LoadoutManager = CreateDefaultSubobject<ULoadoutManager>(TEXT("LoadoutManager"));
 	VehicleManager = CreateDefaultSubobject<UCharacterVehicleManager>(TEXT("VehicleManager"));
+	HealthComponent = CreateDefaultSubobject<UHealthComponent>(TEXT("HealthComponent"));
 	FPArmsSpringArm->SetupAttachment(GetCapsuleComponent());
 	FPLegsSpringArm->SetupAttachment(GetCapsuleComponent());
 	FPArms->SetupAttachment(FPArmsSpringArm);
@@ -44,8 +46,11 @@ ACharacter_Base::ACharacter_Base(const FObjectInitializer& ObjectInitializer) : 
 	FPCamera->SetupAttachment(FPArms, FName("Camera"));
 	FPCamera->bUsePawnControlRotation = true;
 	GetMesh()->bOwnerNoSee = true;
+	GetMesh()->bRenderCustomDepth = true;
 	FPArms->bOnlyOwnerSee = true;
 	FPLegs->bOnlyOwnerSee = true;
+	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_GameTraceChannel1, ECR_Ignore);
+	GetMesh()->SetCollisionResponseToChannel(ECC_GameTraceChannel1, ECR_Block);
 }
 
 // Called when the game starts or when spawned
@@ -91,8 +96,6 @@ void ACharacter_Base::Init_Character()
 	{
 		//Init_PlayerCharacter();
 	}
-
-
 }
 
 void ACharacter_Base::Init_PlayerCharacter()

@@ -121,7 +121,7 @@ void UProjectilePoolSubsystem::UpdateSimulatedProjectiles(float DeltaSeconds)
 		NewVelocity = CalculateDrop(Sim.CurrentVelocity, Sim.GravityScale, DeltaSeconds);
 		NewLocation = Sim.CurrentLocation + (NewVelocity * DeltaSeconds);
 
-		bool bDidHit = GetWorld()->LineTraceSingleByChannel(OutHit, Sim.CurrentLocation, NewLocation, ECC_Visibility, Params);
+		bool bDidHit = GetWorld()->LineTraceSingleByChannel(OutHit, Sim.CurrentLocation, NewLocation, ECC_GameTraceChannel1, Params);
 
 		// 2. Only update the struct if we AREN'T about to delete it
 		if (!bDidHit)

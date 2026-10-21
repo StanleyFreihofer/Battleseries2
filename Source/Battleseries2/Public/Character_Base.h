@@ -18,6 +18,7 @@ class AVehicle_Base;
 class UDataManagerSubsystem;
 class ULoadoutManager;
 class UCharacterVehicleManager;
+class UHealthComponent;
 struct FCharacterSeatContext;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnWeaponInputReleased_Vehicle, int32, SeatIndex);
@@ -61,6 +62,8 @@ public:
 	ULoadoutManager* LoadoutManager = nullptr;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
 	UCharacterVehicleManager* VehicleManager = nullptr;
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Components")
+	UHealthComponent* HealthComponent = nullptr;
 
 #pragma endregion
 
