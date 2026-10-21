@@ -224,6 +224,8 @@ class BATTLESERIES2_API ULoadoutManager : public UActorComponent
 		UFUNCTION(BlueprintCallable)
 		void SetupCustomWeapon(int32 WeaponIndex, FPlayerLoadoutConfig_Weapon WeaponLoadout);
 		UFUNCTION(BlueprintCallable)
+		void SetupAttachment(FInfantryWeaponState& WeaponToApplyTo, int32 WeaponIndex, EAttachmentSlot AttachmentSlot, FName AttachmentID, bool isFP);
+		UFUNCTION(BlueprintCallable)
 		void ApplyAttachment(int32 WeaponIndex, EAttachmentSlot AttachmentSlot, FName AttachmentID);
 		UFUNCTION(BlueprintCallable)
 		void ApplyAttachments(const FPlayerLoadoutConfig_Weapon& AttachmentsToApply, int32 WeaponIndex);
@@ -240,7 +242,7 @@ class BATTLESERIES2_API ULoadoutManager : public UActorComponent
 		UFUNCTION(BlueprintCallable)
 		void UpdateScopeCamera(EAttachmentSlot ScopeSlot);
 		UFUNCTION()
-		void UpdateAttachment(FWeaponAttachmentState& RuntimeSlotState, FName AttachmentID, FName WeaponID, EAttachmentSlot AttachmentSlot);
+		void UpdateAttachment(FWeaponAttachmentState& RuntimeSlotState, FName AttachmentID, FName WeaponID, EAttachmentSlot AttachmentSlot, bool isFP);
 		UFUNCTION(BlueprintCallable)
 		void UpdateWeaponCollision(ECollisionChannel CollisionChannel, ECollisionResponse CollisionResponse, int32 WeaponIndex);
 		UFUNCTION(BlueprintCallable)

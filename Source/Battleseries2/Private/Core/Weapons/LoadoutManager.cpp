@@ -6,6 +6,7 @@
 #include "Engine/TextureRenderTarget2D.h"
 #include "Kismet/KismetRenderingLibrary.h"
 #include "Materials/MaterialInstanceDynamic.h"
+#include "Core/Weapons/ScopeCaptureComponent.h"
 #include "Core/Weapons/Projectiles/Projectile_Base.h"
 #include "Core/Gadgets/Gadget_Base.h"
 #include "Data/Core/CoreTypes.h"
@@ -126,7 +127,7 @@ void ULoadoutManager::Init_GadgetLoadout(TArray<FName> Gadgets)
 
 void ULoadoutManager::Init_ScopeCamera()
 {
-	Loadout.WeaponSystem.ScopeCamera = NewObject<USceneCaptureComponent2D>(GetOwner());
+	Loadout.WeaponSystem.ScopeCamera = NewObject<UScopeCaptureComponent>(GetOwner());
 	TObjectPtr<USceneCaptureComponent2D>& ScopeCamera = Loadout.WeaponSystem.ScopeCamera;
 	ScopeCamera->RegisterComponent();
 	ScopeCamera->TextureTarget = UKismetRenderingLibrary::CreateRenderTarget2D(this, 256, 256, RTF_RGBA16f);
@@ -145,19 +146,6 @@ void ULoadoutManager::Init_Weapon(FName WeaponID, int32 WeaponIndex, FPlayerLoad
 	FInfantryWeaponState NewTPState;
 	Init_WeaponMesh(NewTPState.WeaponMesh);
 	SetupWeaponMesh(NewTPState, WeaponID, WeaponIndex, false);
-	
-	/**
-	NewFPState.WeaponMesh->SetOnlyOwnerSee(true);
-	UpdateWeaponMesh(WeaponID, NewFPState.WeaponMesh);
-	NewFPState.WeaponMesh->FirstPersonPrimitiveType = EFirstPersonPrimitiveType::FirstPerson;
-	Loadout.WeaponSystem.InfantryWeaponState.WeaponState_FP[WeaponIndex] = NewFPState;
-	**/
-	//attach weapon mesh
-	/**
-	FString SocketString = FString::Printf(TEXT("Socket_%s"), *WeaponID.ToString());
-	FName AttachSocketName = FName(*SocketString);
-	Loadout.WeaponSystem.InfantryWeaponState.WeaponState_FP[WeaponIndex].WeaponMesh->AttachToComponent(Cast<ACharacter_Base>(GetOwner())->FPArms, FAttachmentTransformRules(EAttachmentRule::SnapToTarget, EAttachmentRule::SnapToTarget, EAttachmentRule::SnapToTarget, true), AttachSocketName);
-	**/
 	
 	Loadout.WeaponSystem.BaseWeaponState.Weapons[WeaponIndex].WeaponID = WeaponID;
 	check (UBS2FunctionLibrary::GetDataSubsystem(this)->GetInfantryWeaponDataRow(WeaponID));
@@ -265,7 +253,6 @@ void ULoadoutManager::SetupWeaponMesh(FInfantryWeaponState& WeaponState, FName W
 {
 	WeaponState.WeaponMesh->SetOnlyOwnerSee(isFP);
 	UpdateWeaponMesh(WeaponID, WeaponState.WeaponMesh);
-	//WeaponState.WeaponMesh->FirstPersonPrimitiveType = EFirstPersonPrimitiveType::FirstPerson;
 	USkeletalMeshComponent* CharacterMeshTarget = nullptr;
 	TWeakObjectPtr<USkeletalMeshComponent> WeaponMesh = nullptr;
 	EFirstPersonPrimitiveType PrimitiveType = EFirstPersonPrimitiveType::None;
@@ -302,12 +289,19 @@ void ULoadoutManager::SetupCustomWeapon(int32 WeaponIndex, FPlayerLoadoutConfig_
 	UpdateCurrentWeaponStats(WeaponIndex);
 }
 
-void ULoadoutManager::ApplyAttachment(int32 WeaponIndex, EAttachmentSlot AttachmentSlot, FName AttachmentID)
+void ULoadoutManager::SetupAttachment(FInfantryWeaponState& WeaponToApplyTo, int32 WeaponIndex, EAttachmentSlot AttachmentSlot, FName AttachmentID, bool isFP)
 {
-	FInfantryWeaponState& WeaponToApplyTo = Loadout.WeaponSystem.InfantryWeaponState.WeaponState_FP[WeaponIndex];
 	FWeaponAttachmentState& RuntimeSlotState = WeaponToApplyTo.WeaponAttachmentStates.FindOrAdd(AttachmentSlot);
 	Init_AttachmentMesh(RuntimeSlotState, WeaponToApplyTo, AttachmentSlot);
-	UpdateAttachment(RuntimeSlotState, AttachmentID, GetBaseWeaponState(WeaponIndex).WeaponID, AttachmentSlot);
+	UpdateAttachment(RuntimeSlotState, AttachmentID, GetBaseWeaponState(WeaponIndex).WeaponID, AttachmentSlot, isFP);
+}
+
+void ULoadoutManager::ApplyAttachment(int32 WeaponIndex, EAttachmentSlot AttachmentSlot, FName AttachmentID)
+{
+	FInfantryWeaponState& WeaponToApplyTo_FP = Loadout.WeaponSystem.InfantryWeaponState.WeaponState_FP[WeaponIndex];
+	SetupAttachment(WeaponToApplyTo_FP, WeaponIndex, AttachmentSlot, AttachmentID, true);
+	FInfantryWeaponState& WeaponToApplyTo_TP = Loadout.WeaponSystem.InfantryWeaponState.WeaponState_TP[WeaponIndex];
+	SetupAttachment(WeaponToApplyTo_TP, WeaponIndex, AttachmentSlot, AttachmentID, false);
 	
 	switch (AttachmentSlot)
 	{
@@ -319,7 +313,12 @@ void ULoadoutManager::ApplyAttachment(int32 WeaponIndex, EAttachmentSlot Attachm
 
 void ULoadoutManager::ApplyAttachments(const FPlayerLoadoutConfig_Weapon& AttachmentsToApply, int32 WeaponIndex)
 {
-	FInfantryWeaponState& WeaponToApplyTo = Loadout.WeaponSystem.InfantryWeaponState.WeaponState_FP[WeaponIndex];
+	FInfantryWeaponState& WeaponToApplyTo_FP = Loadout.WeaponSystem.InfantryWeaponState.WeaponState_FP[WeaponIndex];
+	FInfantryWeaponState& WeaponToApplyTo_TP = Loadout.WeaponSystem.InfantryWeaponState.WeaponState_TP[WeaponIndex];
+	TArray<FInfantryWeaponState*> WeaponToApplyTo;
+	WeaponToApplyTo.Add(&WeaponToApplyTo_FP);
+	WeaponToApplyTo.Add(&WeaponToApplyTo_TP);
+	
 	for (auto& Slot : AttachmentsToApply.WeaponAttachments)
 	{
 		const EAttachmentSlot& SlotType = Slot.Key;
@@ -329,18 +328,23 @@ void ULoadoutManager::ApplyAttachments(const FPlayerLoadoutConfig_Weapon& Attach
 	}
 	
 	//any slots not explicitly configured, fall back to a default attachment
-	for (EAttachmentSlot AttachmentSlot : TEnumRange<EAttachmentSlot>())
+	for (int32 i = 0; i < WeaponToApplyTo.Num(); i++)
 	{
-		if (WeaponToApplyTo.WeaponAttachmentStates.Find(AttachmentSlot)) { continue; }
+		FInfantryWeaponState& IWS = *WeaponToApplyTo[i];
+		for (EAttachmentSlot AttachmentSlot : TEnumRange<EAttachmentSlot>())
+		{
+			if (IWS.WeaponAttachmentStates.Find(AttachmentSlot)) { continue; }
 
-		const FAvailableAttachments* SlotData = StaticWeaponDataCache[WeaponIndex]->GunAttachmentData.AvailableAttachmentSlots.Find(AttachmentSlot);
-		if (!SlotData) { continue; }
-		if (SlotData->Attachments.Num() == 0)	{ continue;}
-		FName DefaultAttachmentID = SlotData->Attachments[0];
-		if (DefaultAttachmentID == NAME_None) { continue; } // slot exists but has no attachments configured at all or no attachment is an option
+			const FAvailableAttachments* SlotData = StaticWeaponDataCache[WeaponIndex]->GunAttachmentData.AvailableAttachmentSlots.Find(AttachmentSlot);
+			if (!SlotData) { continue; }
+			if (SlotData->Attachments.Num() == 0)	{ continue;}
+			FName DefaultAttachmentID = SlotData->Attachments[0];
+			if (DefaultAttachmentID == NAME_None) { continue; } // slot exists but has no attachments configured at all or no attachment is an option
 		
-		ApplyAttachment(WeaponIndex, AttachmentSlot, DefaultAttachmentID);
+			ApplyAttachment(WeaponIndex, AttachmentSlot, DefaultAttachmentID);
+		}
 	}
+
 }
 
 void ULoadoutManager::UpdateWeaponMesh(FName WeaponID, TWeakObjectPtr<USkeletalMeshComponent>& WeaponMeshComp)
@@ -407,7 +411,7 @@ void ULoadoutManager::UpdateScopeCamera(EAttachmentSlot ScopeSlot)
 	}
 }
 
-void ULoadoutManager::UpdateAttachment(FWeaponAttachmentState& RuntimeSlotState, FName AttachmentID, FName WeaponID, EAttachmentSlot AttachmentSlot)
+void ULoadoutManager::UpdateAttachment(FWeaponAttachmentState& RuntimeSlotState, FName AttachmentID, FName WeaponID, EAttachmentSlot AttachmentSlot, bool isFP)
 {
 	//visual only function?
 	const FWeaponAttachmentData& AttachmentData = *UBS2FunctionLibrary::GetDataSubsystem(this)->GetWeaponAttachmentDataRow(AttachmentID);
@@ -419,6 +423,17 @@ void ULoadoutManager::UpdateAttachment(FWeaponAttachmentState& RuntimeSlotState,
 		//const FVector& AttachmentOffset = GetAttachmentDefaultOffset(WeaponID, AttachmentSlot, AttachmentID);
 		RuntimeSlotState.SpawnedAttachment->SetStaticMesh(AttachmentMesh.Get());
 		//RuntimeSlotState.SpawnedAttachment->SetRelativeLocation(AttachmentOffset);
+		//RuntimeSlotState.SpawnedAttachment->FirstPersonPrimitiveType = isFP ? EFirstPersonPrimitiveType::FirstPerson : EFirstPersonPrimitiveType::WorldSpaceRepresentation;
+		if (isFP)
+		{
+			RuntimeSlotState.SpawnedAttachment->FirstPersonPrimitiveType = EFirstPersonPrimitiveType::FirstPerson;
+			RuntimeSlotState.SpawnedAttachment->SetOnlyOwnerSee(true);
+		}
+		else
+		{
+			RuntimeSlotState.SpawnedAttachment->FirstPersonPrimitiveType = EFirstPersonPrimitiveType::WorldSpaceRepresentation;
+			RuntimeSlotState.SpawnedAttachment->SetOwnerNoSee(true);
+		}
 	}
 	
 	switch (AttachmentSlot)
