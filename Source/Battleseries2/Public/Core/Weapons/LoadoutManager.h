@@ -220,6 +220,8 @@ class BATTLESERIES2_API ULoadoutManager : public UActorComponent
 		UFUNCTION()
 		void Init_GadgetMesh(TWeakObjectPtr<UStaticMeshComponent>& HeldGadgetMesh);
 		UFUNCTION(BlueprintCallable)
+		void SetupWeaponMesh(FInfantryWeaponState& WeaponState, FName WeaponID, int32 WeaponIndex, bool isFP);
+		UFUNCTION(BlueprintCallable)
 		void SetupCustomWeapon(int32 WeaponIndex, FPlayerLoadoutConfig_Weapon WeaponLoadout);
 		UFUNCTION(BlueprintCallable)
 		void ApplyAttachment(int32 WeaponIndex, EAttachmentSlot AttachmentSlot, FName AttachmentID);
@@ -242,7 +244,11 @@ class BATTLESERIES2_API ULoadoutManager : public UActorComponent
 		UFUNCTION(BlueprintCallable)
 		void UpdateWeaponCollision(ECollisionChannel CollisionChannel, ECollisionResponse CollisionResponse, int32 WeaponIndex);
 		UFUNCTION(BlueprintCallable)
-		void UpdateWeaponVisibility(int32 WeaponIndex, bool Hide);
+		void UpdateWeaponVisibility(FInfantryWeaponState& InfantryWeaponState, bool Hide);
+		UFUNCTION(BlueprintCallable)
+		void UpdateWeaponSlotVisibility(int32 WeaponIndex, bool Hide);
+		UFUNCTION(BlueprintCallable)
+		void UpdateWeaponLoadoutVisibility(bool Hide);
 		UFUNCTION(BlueprintCallable)
 		void ApplyWeaponStateModifiers(const TMap<EWeaponStateType, FWeaponStatModifierData>& Modifiers);
 		UFUNCTION(BlueprintCallable)

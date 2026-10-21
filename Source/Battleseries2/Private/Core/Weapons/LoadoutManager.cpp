@@ -141,23 +141,33 @@ void ULoadoutManager::Init_Weapon(FName WeaponID, int32 WeaponIndex, FPlayerLoad
 	//Init WeaponSlot		Init Weapon
 	FInfantryWeaponState NewFPState;
 	Init_WeaponMesh(NewFPState.WeaponMesh);
+	SetupWeaponMesh(NewFPState, WeaponID, WeaponIndex, true);
+	FInfantryWeaponState NewTPState;
+	Init_WeaponMesh(NewTPState.WeaponMesh);
+	SetupWeaponMesh(NewTPState, WeaponID, WeaponIndex, false);
+	
+	/**
 	NewFPState.WeaponMesh->SetOnlyOwnerSee(true);
 	UpdateWeaponMesh(WeaponID, NewFPState.WeaponMesh);
 	NewFPState.WeaponMesh->FirstPersonPrimitiveType = EFirstPersonPrimitiveType::FirstPerson;
 	Loadout.WeaponSystem.InfantryWeaponState.WeaponState_FP[WeaponIndex] = NewFPState;
-	
+	**/
+	//attach weapon mesh
+	/**
 	FString SocketString = FString::Printf(TEXT("Socket_%s"), *WeaponID.ToString());
 	FName AttachSocketName = FName(*SocketString);
 	Loadout.WeaponSystem.InfantryWeaponState.WeaponState_FP[WeaponIndex].WeaponMesh->AttachToComponent(Cast<ACharacter_Base>(GetOwner())->FPArms, FAttachmentTransformRules(EAttachmentRule::SnapToTarget, EAttachmentRule::SnapToTarget, EAttachmentRule::SnapToTarget, true), AttachSocketName);
+	**/
 	
 	Loadout.WeaponSystem.BaseWeaponState.Weapons[WeaponIndex].WeaponID = WeaponID;
 	check (UBS2FunctionLibrary::GetDataSubsystem(this)->GetInfantryWeaponDataRow(WeaponID));
+	
 	StaticWeaponDataCache[WeaponIndex] = UBS2FunctionLibrary::GetDataSubsystem(this)->GetInfantryWeaponDataRow(WeaponID);
 	
 	SetupCustomWeapon(WeaponIndex, WeaponLoadout);
 	
 	Init_WeaponState(WeaponIndex);
-	UpdateWeaponVisibility(WeaponIndex, true);
+	UpdateWeaponSlotVisibility(WeaponIndex, true);
 }
 
 void ULoadoutManager::Init_WeaponMesh(TWeakObjectPtr<USkeletalMeshComponent>& WeaponMesh)
@@ -250,6 +260,39 @@ void ULoadoutManager::Init_GadgetMesh(TWeakObjectPtr<UStaticMeshComponent>& Held
 }
 
 #pragma endregion
+
+void ULoadoutManager::SetupWeaponMesh(FInfantryWeaponState& WeaponState, FName WeaponID, int32 WeaponIndex, bool isFP)
+{
+	WeaponState.WeaponMesh->SetOnlyOwnerSee(isFP);
+	UpdateWeaponMesh(WeaponID, WeaponState.WeaponMesh);
+	//WeaponState.WeaponMesh->FirstPersonPrimitiveType = EFirstPersonPrimitiveType::FirstPerson;
+	USkeletalMeshComponent* CharacterMeshTarget = nullptr;
+	TWeakObjectPtr<USkeletalMeshComponent> WeaponMesh = nullptr;
+	EFirstPersonPrimitiveType PrimitiveType = EFirstPersonPrimitiveType::None;
+	
+	if (isFP)
+	{
+		Loadout.WeaponSystem.InfantryWeaponState.WeaponState_FP[WeaponIndex] = WeaponState;
+		CharacterMeshTarget = GetOwnerCharacter()->FPArms;
+		WeaponMesh = Loadout.WeaponSystem.InfantryWeaponState.WeaponState_FP[WeaponIndex].WeaponMesh;
+		PrimitiveType = EFirstPersonPrimitiveType::FirstPerson;
+	}
+	else
+	{
+		Loadout.WeaponSystem.InfantryWeaponState.WeaponState_TP[WeaponIndex] = WeaponState;
+		CharacterMeshTarget = GetOwnerCharacter()->GetMesh();
+		WeaponMesh = Loadout.WeaponSystem.InfantryWeaponState.WeaponState_TP[WeaponIndex].WeaponMesh;
+		PrimitiveType = EFirstPersonPrimitiveType::WorldSpaceRepresentation;
+	}
+	
+	//attach weapon mesh to character
+	FString SocketString = FString::Printf(TEXT("Socket_%s"), *WeaponID.ToString());
+	FName AttachSocketName = FName(*SocketString);
+	WeaponMesh->FirstPersonPrimitiveType = PrimitiveType;
+	WeaponMesh->AttachToComponent(CharacterMeshTarget, FAttachmentTransformRules(EAttachmentRule::SnapToTarget, EAttachmentRule::SnapToTarget, EAttachmentRule::SnapToTarget, true), AttachSocketName);
+}
+
+
 
 void ULoadoutManager::SetupCustomWeapon(int32 WeaponIndex, FPlayerLoadoutConfig_Weapon WeaponLoadout)
 {
@@ -413,17 +456,17 @@ void ULoadoutManager::UpdateWeaponCollision(ECollisionChannel CollisionChannel, 
 	//WeaponSystem.InfantryWeaponSystem.WeaponState_TP[WeaponSystem.BaseWeaponSystem.EquippedWeaponState.CurrentWeaponIndex].WeaponMesh->SetCollisionResponseToChannel(CollisionChannel, CollisionResponse);
 }
 
-void ULoadoutManager::UpdateWeaponVisibility(int32 WeaponIndex, bool Hide)
+void ULoadoutManager::UpdateWeaponVisibility(FInfantryWeaponState& InfantryWeaponState, bool Hide)
 {
-	FInfantryWeaponState& Weapon = Loadout.WeaponSystem.InfantryWeaponState.WeaponState_FP[WeaponIndex];
-	Weapon.WeaponMesh->SetHiddenInGame(Hide);
-	for (auto& AttachmentSlot : Weapon.WeaponAttachmentStates)
+	//FInfantryWeaponState& Weapon = Loadout.WeaponSystem.InfantryWeaponState.WeaponState_FP[WeaponIndex];
+	InfantryWeaponState.WeaponMesh->SetHiddenInGame(Hide);
+	for (auto& AttachmentSlot : InfantryWeaponState.WeaponAttachmentStates)
 	{
 		if (!AttachmentSlot.Value.SpawnedAttachment.Get()) { continue;}
 		AttachmentSlot.Value.SpawnedAttachment->SetHiddenInGame(Hide);
 		if (AttachmentSlot.Key == EAttachmentSlot::Magazine)
 		{
-			for (FAmmoVisualElement_Runtime& Element : Weapon.AmmoVisuals)
+			for (FAmmoVisualElement_Runtime& Element : InfantryWeaponState.AmmoVisuals)
 			{
 				for (TWeakObjectPtr<UStaticMeshComponent> Instance : Element.Instances)
 				{
@@ -431,6 +474,39 @@ void ULoadoutManager::UpdateWeaponVisibility(int32 WeaponIndex, bool Hide)
 				}
 			}
 		}
+	}
+}
+
+void ULoadoutManager::UpdateWeaponSlotVisibility(int32 WeaponIndex, bool Hide)
+{
+	UpdateWeaponVisibility(Loadout.WeaponSystem.InfantryWeaponState.WeaponState_FP[WeaponIndex], Hide);
+	UpdateWeaponVisibility(Loadout.WeaponSystem.InfantryWeaponState.WeaponState_TP[WeaponIndex], Hide);
+	/**
+	TArray<FInfantryWeaponState> WeaponStates;
+	WeaponStates.Add(Loadout.WeaponSystem.InfantryWeaponState.WeaponState_FP[WeaponIndex]);
+	WeaponStates.Add(Loadout.WeaponSystem.InfantryWeaponState.WeaponState_TP[WeaponIndex]);
+	for (FInfantryWeaponState IWS : WeaponStates)
+	{
+		UpdateWeaponVisibility(IWS, Hide);
+	}
+	**/
+}
+
+void ULoadoutManager::UpdateWeaponLoadoutVisibility(bool Hide)
+{
+	TArray<FInfantryWeaponState> WeaponStates;
+	for (int32 F = 0; F < Loadout.WeaponSystem.InfantryWeaponState.WeaponState_FP.Num(); ++F)
+	{
+		WeaponStates.Add(Loadout.WeaponSystem.InfantryWeaponState.WeaponState_FP[F]);
+	}
+	for (int32 T = 0; T < Loadout.WeaponSystem.InfantryWeaponState.WeaponState_TP.Num(); ++T)
+	{
+		WeaponStates.Add(Loadout.WeaponSystem.InfantryWeaponState.WeaponState_TP[T]);
+	}
+	
+	for (int32 i = 0; i < WeaponStates.Num(); ++i)
+	{
+		UpdateWeaponVisibility(WeaponStates[i], Hide);
 	}
 }
 
@@ -1237,7 +1313,7 @@ void ULoadoutManager::TransitionFromItem(int32 PreviousItemIndex, ECharacterItem
 	{
 		case ECharacterItemType::Weapon:
 			Loadout.WeaponSystem.BaseWeaponState.Weapons[PreviousItemIndex].isEquipped = false;
-			UpdateWeaponVisibility(PreviousItemIndex, true);
+			UpdateWeaponSlotVisibility(PreviousItemIndex, true);
 			break;
 		case ECharacterItemType::Gadget:
 			UpdateGadgetVisibility(PreviousItemIndex, true);
@@ -1370,7 +1446,7 @@ void ULoadoutManager::EquipWeapon(int32 WeaponIndex, bool InitialEquip)
 	//FInfantryWeaponState& InfantryWeaponState_FP = Loadout.WeaponSystem.InfantryWeaponState.WeaponState_FP[WeaponIndex];
 	TObjectPtr<USkeletalMeshComponent> NewWeaponMesh = Loadout.WeaponSystem.InfantryWeaponState.WeaponState_FP[WeaponIndex].WeaponMesh.Get();
 	
-	UpdateWeaponVisibility(WeaponIndex, false);
+	UpdateWeaponSlotVisibility(WeaponIndex, false);
 	UBS2FunctionLibrary::UpdateWACData(Loadout.WeaponSystem.WeaponAudioComponent, StaticWeaponData.WeaponFirePerformanceData.RateOfFire, StaticWeaponData.InfantryWeaponAudioData.BaseWeaponAudioData);
 
 	if (!GetWorld()->GetTimerManager().IsTimerActive(CombatState.RangefinderTimer))
