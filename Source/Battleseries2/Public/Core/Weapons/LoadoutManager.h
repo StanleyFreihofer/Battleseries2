@@ -246,6 +246,8 @@ class BATTLESERIES2_API ULoadoutManager : public UActorComponent
 		UFUNCTION(BlueprintCallable)
 		void UpdateWeaponCollision(ECollisionChannel CollisionChannel, ECollisionResponse CollisionResponse, int32 WeaponIndex);
 		UFUNCTION(BlueprintCallable)
+		void UpdateAttachmentCollision(ECollisionChannel CollisionChannel, ECollisionResponse CollisionResponse, bool isFP, int32 WeaponIndex);
+		UFUNCTION(BlueprintCallable)
 		void UpdateWeaponVisibility(FInfantryWeaponState& InfantryWeaponState, bool Hide);
 		UFUNCTION(BlueprintCallable)
 		void UpdateWeaponSlotVisibility(int32 WeaponIndex, bool Hide);

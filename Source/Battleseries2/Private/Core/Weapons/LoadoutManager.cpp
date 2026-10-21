@@ -279,8 +279,6 @@ void ULoadoutManager::SetupWeaponMesh(FInfantryWeaponState& WeaponState, FName W
 	WeaponMesh->AttachToComponent(CharacterMeshTarget, FAttachmentTransformRules(EAttachmentRule::SnapToTarget, EAttachmentRule::SnapToTarget, EAttachmentRule::SnapToTarget, true), AttachSocketName);
 }
 
-
-
 void ULoadoutManager::SetupCustomWeapon(int32 WeaponIndex, FPlayerLoadoutConfig_Weapon WeaponLoadout)
 {
 	//setup custom weapon (attachments, stats, etc)
@@ -423,7 +421,7 @@ void ULoadoutManager::UpdateAttachment(FWeaponAttachmentState& RuntimeSlotState,
 		//const FVector& AttachmentOffset = GetAttachmentDefaultOffset(WeaponID, AttachmentSlot, AttachmentID);
 		RuntimeSlotState.SpawnedAttachment->SetStaticMesh(AttachmentMesh.Get());
 		//RuntimeSlotState.SpawnedAttachment->SetRelativeLocation(AttachmentOffset);
-		//RuntimeSlotState.SpawnedAttachment->FirstPersonPrimitiveType = isFP ? EFirstPersonPrimitiveType::FirstPerson : EFirstPersonPrimitiveType::WorldSpaceRepresentation;
+
 		if (isFP)
 		{
 			RuntimeSlotState.SpawnedAttachment->FirstPersonPrimitiveType = EFirstPersonPrimitiveType::FirstPerson;
@@ -453,13 +451,22 @@ void ULoadoutManager::UpdateAttachment(FWeaponAttachmentState& RuntimeSlotState,
 void ULoadoutManager::UpdateWeaponCollision(ECollisionChannel CollisionChannel, ECollisionResponse CollisionResponse, int32 WeaponIndex)
 {
 	Loadout.WeaponSystem.InfantryWeaponState.WeaponState_FP[WeaponIndex].WeaponMesh->SetCollisionResponseToChannel(CollisionChannel, CollisionResponse);
-	for (auto& Attachment : Loadout.WeaponSystem.InfantryWeaponState.WeaponState_FP[WeaponIndex].WeaponAttachmentStates)
+	Loadout.WeaponSystem.InfantryWeaponState.WeaponState_TP[WeaponIndex].WeaponMesh->SetCollisionResponseToChannel(CollisionChannel, CollisionResponse);
+
+	UpdateAttachmentCollision(CollisionChannel, CollisionResponse, true, WeaponIndex);
+	UpdateAttachmentCollision(CollisionChannel, CollisionResponse, false, WeaponIndex);
+}
+
+void ULoadoutManager::UpdateAttachmentCollision(ECollisionChannel CollisionChannel, ECollisionResponse CollisionResponse, bool isFP, int32 WeaponIndex)
+{
+	FInfantryWeaponState& WeaponState = isFP ? Loadout.WeaponSystem.InfantryWeaponState.WeaponState_FP[WeaponIndex] : Loadout.WeaponSystem.InfantryWeaponState.WeaponState_TP[WeaponIndex];
+	for (auto& Attachment : WeaponState.WeaponAttachmentStates)
 	{
 		Attachment.Value.SpawnedAttachment.Get()->SetCollisionResponseToChannel(CollisionChannel, CollisionResponse);
 		
 		if (Attachment.Key == EAttachmentSlot::Magazine)
 		{
-			for (FAmmoVisualElement_Runtime& Element : Loadout.WeaponSystem.InfantryWeaponState.WeaponState_FP[WeaponIndex].AmmoVisuals)
+			for (FAmmoVisualElement_Runtime& Element : WeaponState.AmmoVisuals)
 			{
 				for (TWeakObjectPtr<UStaticMeshComponent> Instance : Element.Instances)
 				{
@@ -468,7 +475,6 @@ void ULoadoutManager::UpdateWeaponCollision(ECollisionChannel CollisionChannel, 
 			}
 		}
 	}
-	//WeaponSystem.InfantryWeaponSystem.WeaponState_TP[WeaponSystem.BaseWeaponSystem.EquippedWeaponState.CurrentWeaponIndex].WeaponMesh->SetCollisionResponseToChannel(CollisionChannel, CollisionResponse);
 }
 
 void ULoadoutManager::UpdateWeaponVisibility(FInfantryWeaponState& InfantryWeaponState, bool Hide)
@@ -496,15 +502,6 @@ void ULoadoutManager::UpdateWeaponSlotVisibility(int32 WeaponIndex, bool Hide)
 {
 	UpdateWeaponVisibility(Loadout.WeaponSystem.InfantryWeaponState.WeaponState_FP[WeaponIndex], Hide);
 	UpdateWeaponVisibility(Loadout.WeaponSystem.InfantryWeaponState.WeaponState_TP[WeaponIndex], Hide);
-	/**
-	TArray<FInfantryWeaponState> WeaponStates;
-	WeaponStates.Add(Loadout.WeaponSystem.InfantryWeaponState.WeaponState_FP[WeaponIndex]);
-	WeaponStates.Add(Loadout.WeaponSystem.InfantryWeaponState.WeaponState_TP[WeaponIndex]);
-	for (FInfantryWeaponState IWS : WeaponStates)
-	{
-		UpdateWeaponVisibility(IWS, Hide);
-	}
-	**/
 }
 
 void ULoadoutManager::UpdateWeaponLoadoutVisibility(bool Hide)
@@ -1254,10 +1251,10 @@ void ULoadoutManager::AutoSwitchItem()
 
 void ULoadoutManager::HandleSwitchItem(ELoadoutSlot NewLoadoutSlot)
 {
-	//main switch weapon function, can be used to directly equip a given index (manual) or auto increment (via SwitchWeapon_AutoIncrement)
+	//main switch item function, can be used to directly equip a given index (manual) or auto increment (via SwitchWeapon_AutoIncrement)
 	if (NewLoadoutSlot == Loadout.CurrentSlot)		{ return;	}
 	if (CombatState.isSwitchingItems)	{ return; }
-	CombatState.isSwitchingItems = true;
+
 	ELoadoutSlot OldLoadoutSlot = Loadout.CurrentSlot;
 
 	int32 OldRawPosition = GetArrayIndex(OldLoadoutSlot);
@@ -1274,18 +1271,28 @@ void ULoadoutManager::HandleSwitchItem(ELoadoutSlot NewLoadoutSlot)
 		NewItemType = GetActualGadgetItemType(NewItemIndex);
 	}
 	
+	// NOW that OldItemType is resolved, get the TRUE resolved index 
+	Loadout.PreviousItemIndex = (OldItemType == ECharacterItemType::Weapon) ? GetWeaponIndexForSlot(OldLoadoutSlot) : GetGadgetIndexForSlot(OldLoadoutSlot);
+	
+	switch (NewItemType)
+	{
+		case ECharacterItemType::Weapon:
+			if (!Loadout.WeaponSystem.BaseWeaponState.Weapons.IsValidIndex(NewItemIndex))	{ return; }
+			break;
+		case ECharacterItemType::Gadget:
+			if (!Loadout.Gadgets.IsValidIndex(NewItemIndex))	{ return;	}
+			break;
+	}
+	
 	if (NewItemType == ECharacterItemType::Gadget)
 	{
 		if (Loadout.Gadgets[NewItemIndex].CurrentInventory == 0)
 		{
-			CombatState.isSwitchingItems = false;
 			return;
 		}
 	}
 	
-	// NOW that OldItemType is resolved, get the TRUE resolved index 
-	Loadout.PreviousItemIndex = (OldItemType == ECharacterItemType::Weapon) ? GetWeaponIndexForSlot(OldLoadoutSlot) : GetGadgetIndexForSlot(OldLoadoutSlot);
-	
+	CombatState.isSwitchingItems = true;
 	Loadout.CurrentSlot = NewLoadoutSlot;
 	
 	switch (OldItemType)
