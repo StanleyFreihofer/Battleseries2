@@ -11,6 +11,7 @@
 #include "Data/Characters/CharacterTypes.h"
 #include "Data/Core/CoreTypes.h"
 #include "Utilities/I_Anims.h"
+#include "Utilities/I_Damageable.h"
 #include "Character_Base.generated.h"
 
 class USaveSubsystem;
@@ -39,7 +40,7 @@ struct FCharacterStartingData
 };
 
 UCLASS()
-class BATTLESERIES2_API ACharacter_Base : public ACharacter
+class BATTLESERIES2_API ACharacter_Base : public ACharacter, public IDamageable
 {
 	GENERATED_BODY()
 
@@ -199,6 +200,9 @@ public:
 	ECharacterStance& GetCurrentStance();
 	UFUNCTION(BlueprintCallable, BlueprintPure, meta = (BlueprintThreadSafe))
 	ECharacterMovementMode& GetCurrentMovementMode();
+	
+	virtual EArmorType GetArmorType_Implementation() override;
+	virtual float GetHitZoneMultiplier_Implementation(FName BoneName, FVector HitLocation) override;
 
 	TMap<TObjectPtr<const UInputMappingContext>, int32> DebugCurrentIMC();
 

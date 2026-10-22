@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
+#include "Data/Core/Combat/CombatTypes.h"
 #include "HealthComponent.generated.h"
 
 /**
@@ -20,6 +21,17 @@ class BATTLESERIES2_API UHealthComponent : public UActorComponent
 public:	
 	// Sets default values for this component's properties
 	UHealthComponent();
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	FHealthState HealthState = FHealthState();
+	
+	UFUNCTION(BlueprintCallable)
+	void Init_Health(float StartingHealth);
+	UFUNCTION(BlueprintCallable)
+	void KillCharacter();
+	
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	ACharacter_Base* GetOwnerCharacter();
 
 protected:
 	// Called when the game starts

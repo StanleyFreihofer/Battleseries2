@@ -92,6 +92,7 @@ void ACharacter_Base::Init_Character()
 	//how to handle different spawn contexts (spawn in vehicle for example)
 
 	Init_CharacterMovement();
+	HealthComponent->Init_Health(CharacterStartingData.StartingHealth);
 	if (IsLocalHuman())
 	{
 		//Init_PlayerCharacter();
@@ -634,7 +635,16 @@ ECharacterMovementMode& ACharacter_Base::GetCurrentMovementMode()
 	return CharacterState.CharacterMovementState.CurrentMovementMode;
 }
 
+EArmorType ACharacter_Base::GetArmorType_Implementation()
+{
+	return EArmorType::Infantry;
+}
 
+float ACharacter_Base::GetHitZoneMultiplier_Implementation(FName BoneName, FVector HitLocation)
+{
+	return 1.0f;
+	//return IDamageable::GetHitZoneMultiplier_Implementation(BoneName, HitLocation);
+}
 
 TMap<TObjectPtr<const UInputMappingContext>, int32> ACharacter_Base::DebugCurrentIMC()
 {
