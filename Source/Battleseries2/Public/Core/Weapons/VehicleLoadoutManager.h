@@ -8,7 +8,7 @@
 #include "Data/Items/Weapons/WeaponTypes.h"
 #include "Data/Vehicles/Data_Seat.h"
 #include "Data/Core/CoreTypes.h"
-#include "VehicleWeaponLogicComponent.generated.h"
+#include "VehicleLoadoutManager.generated.h"
 
 class USpringArmComponent;
 class UCameraComponent;
@@ -115,12 +115,12 @@ struct FVehicleWeaponSystem_Runtime
 };
 
 UCLASS(Blueprintable, BlueprintType)
-class BATTLESERIES2_API UVehicleWeaponLogicComponent : public UActorComponent
+class BATTLESERIES2_API UVehicleLoadoutManager : public UActorComponent
 {
 	GENERATED_BODY()
 
 public:
-	UVehicleWeaponLogicComponent();
+	UVehicleLoadoutManager();
 	virtual void BeginPlay() override;
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 

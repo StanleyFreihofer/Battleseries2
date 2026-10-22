@@ -9,7 +9,7 @@
 #include "Vehicle_Base.h"
 #include "Character_Base.h"
 #include "Core/Weapons/LoadoutManager.h"
-#include "Core/Weapons/VehicleWeaponLogicComponent.h"
+#include "Core/Weapons/VehicleLoadoutManager.h"
 #include "Core/Weapons/Projectiles/Projectile_Base.h"
 #include "Utilities/BS2FunctionLibrary.h"
 #include "Utilities/DataManagerSubsystem.h"

@@ -1,4 +1,4 @@
-#include "Core/Weapons/VehicleWeaponLogicComponent.h"
+#include "Core/Weapons/VehicleLoadoutManager.h"
 #include "Save/SaveSubsystem.h"
 #include "Save/PlayerSave_Loadout.h"
 #include "Character_Base.h"	
@@ -23,26 +23,26 @@
 #include "Vehicle_Base.h"
 #include "Kismet/GameplayStatics.h"
 
-UVehicleWeaponLogicComponent::UVehicleWeaponLogicComponent()
+UVehicleLoadoutManager::UVehicleLoadoutManager()
 {
 	PrimaryComponentTick.bCanEverTick = true;
 	PrimaryComponentTick.bStartWithTickEnabled = true;
 }
 
-void UVehicleWeaponLogicComponent::BeginPlay()
+void UVehicleLoadoutManager::BeginPlay()
 {
 	Super::BeginPlay();
 	OwnerDataAccessor = Cast<IVehicleDataAccessor>(GetOwner());
 }
 
-void UVehicleWeaponLogicComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
+void UVehicleLoadoutManager::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 	HandleSeatRangefinders();
 }
 
 #pragma region Factory/Initialization
-void UVehicleWeaponLogicComponent::Init_VehicleWeaponSystem(TMap<int32, FSavedSeatLoadout> SeatLoadouts)
+void UVehicleLoadoutManager::Init_VehicleWeaponSystem(TMap<int32, FSavedSeatLoadout> SeatLoadouts)
 {
 	const FVehicleData& VehicleData = OwnerDataAccessor->GetVehicleData();
 	for (int32 SeatIndex = 0; SeatIndex < VehicleData.Seats.Num(); SeatIndex++)
@@ -69,7 +69,7 @@ void UVehicleWeaponLogicComponent::Init_VehicleWeaponSystem(TMap<int32, FSavedSe
 	Init_Turrets(VehicleData.Turrets.Num());
 }
 
-void UVehicleWeaponLogicComponent::Init_HUDReticleQuad(int32 SeatIndex)
+void UVehicleLoadoutManager::Init_HUDReticleQuad(int32 SeatIndex)
 {
 	if (!OwnerDataAccessor->GetVehicleData().Seats[SeatIndex].DefaultCharacterContext.SeatHUD)
 	{
@@ -93,7 +93,7 @@ void UVehicleWeaponLogicComponent::Init_HUDReticleQuad(int32 SeatIndex)
 	SWS.VehicleWeaponSystemState.ReticleQuad = NewQuad;
 }
 
-void UVehicleWeaponLogicComponent::Init_WAC(int32 SeatIndex)
+void UVehicleLoadoutManager::Init_WAC(int32 SeatIndex)
 {
 	FVehicleWeaponSystem_Runtime NewSystem;
 	TWeakObjectPtr<UAudioComponent> NewAudioComp = UBS2FunctionLibrary::CreateWAC(this, GetOwner(), OwnerDataAccessor->GetMesh());
@@ -101,7 +101,7 @@ void UVehicleWeaponLogicComponent::Init_WAC(int32 SeatIndex)
 	VehicleWeaponSystem.Add(SeatIndex, NewSystem);
 }
 
-void UVehicleWeaponLogicComponent::Init_Turrets(int32 NumOfTurrets)
+void UVehicleLoadoutManager::Init_Turrets(int32 NumOfTurrets)
 {
 	TurretStates.SetNum(NumOfTurrets);
 }
@@ -110,7 +110,7 @@ void UVehicleWeaponLogicComponent::Init_Turrets(int32 NumOfTurrets)
 
 #pragma region ApplyWeapons
 
-void UVehicleWeaponLogicComponent::ApplyVWID(int32 SeatIndex, int32 WeaponIndex, FName WeaponID)
+void UVehicleLoadoutManager::ApplyVWID(int32 SeatIndex, int32 WeaponIndex, FName WeaponID)
 {
 	UE_LOG(LogTemp, Error, TEXT("[VWLC::ApplyWeaponInstanceDataAtIndexToSeat] SI = %d, WI = %d, WeaponID = %s"), SeatIndex, WeaponIndex, *WeaponID.ToString());
 	FVehicleWeaponSystem_Runtime* WeaponSystem = VehicleWeaponSystem.Find(SeatIndex);
@@ -150,7 +150,7 @@ void UVehicleWeaponLogicComponent::ApplyVWID(int32 SeatIndex, int32 WeaponIndex,
 	HandleApplyWeaponDecoratives(SeatIndex, WeaponIndex, WeaponID);
 }
 
-void UVehicleWeaponLogicComponent::ApplyWeaponAtIndexToSeat(int32 SeatIndex, int32 WeaponIndex, FName WeaponID)
+void UVehicleLoadoutManager::ApplyWeaponAtIndexToSeat(int32 SeatIndex, int32 WeaponIndex, FName WeaponID)
 {
 	FVehicleWeaponSystem_Runtime* WeaponSystem = VehicleWeaponSystem.Find(SeatIndex);
 	FVehicleWeapon_Runtime& VehicleWeaponToFill = WeaponSystem->Weapons[WeaponIndex];
@@ -189,7 +189,7 @@ void UVehicleWeaponLogicComponent::ApplyWeaponAtIndexToSeat(int32 SeatIndex, int
 	ApplyVWID(SeatIndex, WeaponIndex, WeaponID);
 }
 
-void UVehicleWeaponLogicComponent::ApplyStaticWeaponData(int32 SeatIndex, int32 WeaponIndex, FName WeaponID)
+void UVehicleLoadoutManager::ApplyStaticWeaponData(int32 SeatIndex, int32 WeaponIndex, FName WeaponID)
 {
 	const FVehicleWeaponData& VehicleWeaponDataToUse = *UBS2FunctionLibrary::GetDataSubsystem(this)->GetVehicleWeaponDataRow(WeaponID);
 	const FBaseWeaponData* BaseWeaponData = &VehicleWeaponDataToUse.WeaponData;
@@ -201,7 +201,7 @@ void UVehicleWeaponLogicComponent::ApplyStaticWeaponData(int32 SeatIndex, int32 
 	BaseWeaponDataArray[WeaponIndex] = BaseWeaponData;
 }
 
-void UVehicleWeaponLogicComponent::HandleApplyWeaponMesh(int32 SeatIndex, int32 WeaponIndex)
+void UVehicleLoadoutManager::HandleApplyWeaponMesh(int32 SeatIndex, int32 WeaponIndex)
 {
 	FVehicleWeaponSystem_Runtime* WeaponSystem = VehicleWeaponSystem.Find(SeatIndex);
 	FVehicleWeapon_Runtime& VehicleWeaponToFill = WeaponSystem->Weapons[WeaponIndex];
@@ -232,7 +232,7 @@ void UVehicleWeaponLogicComponent::HandleApplyWeaponMesh(int32 SeatIndex, int32 
 	}
 }
 
-void UVehicleWeaponLogicComponent::MountProjectiles(int32 SeatIndex, int32 WeaponIndex)
+void UVehicleLoadoutManager::MountProjectiles(int32 SeatIndex, int32 WeaponIndex)
 {
 	TObjectPtr<USkeletalMeshComponent> VehicleMeshComponent = OwnerDataAccessor->GetMesh();
 	FVehicleWeapon_Runtime& SeatWeaponToFill = VehicleWeaponSystem.Find(SeatIndex)->Weapons[WeaponIndex];
@@ -259,7 +259,7 @@ void UVehicleWeaponLogicComponent::MountProjectiles(int32 SeatIndex, int32 Weapo
 	}
 }
 
-void UVehicleWeaponLogicComponent::ApplyWeaponDecoratives(const TArray<FDecorative>& WeaponDecoratives, FVehicleWeapon_Runtime& RuntimeWeaponData)
+void UVehicleLoadoutManager::ApplyWeaponDecoratives(const TArray<FDecorative>& WeaponDecoratives, FVehicleWeapon_Runtime& RuntimeWeaponData)
 {
 	RuntimeWeaponData.VehicleWeaponState.VehicleWeaponDecoratives.SetNum(WeaponDecoratives.Num());
 	for (int32 i = 0; i < WeaponDecoratives.Num(); i++)
@@ -288,7 +288,7 @@ void UVehicleWeaponLogicComponent::ApplyWeaponDecoratives(const TArray<FDecorati
 	}
 }
 
-void UVehicleWeaponLogicComponent::ApplyWeaponsToSeat(int32 SeatIndex, TArray<FName> WeaponIDs)
+void UVehicleLoadoutManager::ApplyWeaponsToSeat(int32 SeatIndex, TArray<FName> WeaponIDs)
 {
 	//assumes WeaponIDs are in correct order
 	int32 NumWeapons = WeaponIDs.Num();
@@ -301,7 +301,7 @@ void UVehicleWeaponLogicComponent::ApplyWeaponsToSeat(int32 SeatIndex, TArray<FN
 	}
 }
 
-void UVehicleWeaponLogicComponent::ApplySavedWeaponsToSeat(int32 SeatIndex)
+void UVehicleLoadoutManager::ApplySavedWeaponsToSeat(int32 SeatIndex)
 {
 	//apply SAVED weapons to seat (consider changing the function name)
 	const FVehicleData& VehicleData = OwnerDataAccessor->GetVehicleData();
@@ -310,7 +310,7 @@ void UVehicleWeaponLogicComponent::ApplySavedWeaponsToSeat(int32 SeatIndex)
 	ApplyWeaponsToSeat(SeatIndex, SeatLoadoutSave.Weapons);
 }
 
-USkeletalMeshComponent* UVehicleWeaponLogicComponent::ApplyWeaponMeshToVehicle(USkeletalMesh* Mesh, int32 SeatIndex, FTransform MeshTransform)
+USkeletalMeshComponent* UVehicleLoadoutManager::ApplyWeaponMeshToVehicle(USkeletalMesh* Mesh, int32 SeatIndex, FTransform MeshTransform)
 {
 	FString SocketNameString = FString::Printf(TEXT("WM_%02d"), SeatIndex);		//WM_SeatIndex	[WM_00]
 	FName SocketName = FName(*SocketNameString);
@@ -323,7 +323,7 @@ USkeletalMeshComponent* UVehicleWeaponLogicComponent::ApplyWeaponMeshToVehicle(U
 	return WeaponComp;
 }
 
-void UVehicleWeaponLogicComponent::UpdateWeaponAttachment(FVehicleWeaponSystem_Runtime& WeaponSystem, TWeakObjectPtr<USkeletalMesh> LoadedMesh, UClass* LoadedAnimClass, FTransform Transform, FName AttachmentID)
+void UVehicleLoadoutManager::UpdateWeaponAttachment(FVehicleWeaponSystem_Runtime& WeaponSystem, TWeakObjectPtr<USkeletalMesh> LoadedMesh, UClass* LoadedAnimClass, FTransform Transform, FName AttachmentID)
 {
 	WeaponSystem.VehicleWeaponSystemState.WeaponSystemMesh->SetSkeletalMesh(LoadedMesh.Get());
 	WeaponSystem.VehicleWeaponSystemState.WeaponSystemMesh->SetAnimInstanceClass(LoadedAnimClass);
@@ -331,7 +331,7 @@ void UVehicleWeaponLogicComponent::UpdateWeaponAttachment(FVehicleWeaponSystem_R
 	WeaponSystem.VehicleWeaponSystemState.WSAttachmentID = AttachmentID;
 }
 
-void UVehicleWeaponLogicComponent::HandleApplyWeaponDecoratives(int32 SeatIndex, int32 WeaponIndex, FName WeaponID)
+void UVehicleLoadoutManager::HandleApplyWeaponDecoratives(int32 SeatIndex, int32 WeaponIndex, FName WeaponID)
 {
 	FVehicleWeaponSystem_Runtime* WeaponSystem = VehicleWeaponSystem.Find(SeatIndex);
 	FVehicleWeapon_Runtime& VehicleWeaponToFill = WeaponSystem->Weapons[WeaponIndex];
@@ -345,7 +345,7 @@ void UVehicleWeaponLogicComponent::HandleApplyWeaponDecoratives(int32 SeatIndex,
 	ApplyWeaponDecoratives(VehicleWeaponToFill.VehicleWeaponInstanceData.WeaponDecoratives, VehicleWeaponToFill);
 }
 
-void UVehicleWeaponLogicComponent::ConfigureWeaponCam(int32 SeatIndex, int32 WeaponIndex, FVehicleWeaponSystem_Runtime& WeaponSystem)
+void UVehicleLoadoutManager::ConfigureWeaponCam(int32 SeatIndex, int32 WeaponIndex, FVehicleWeaponSystem_Runtime& WeaponSystem)
 {
 	//setup/initialization of the special weapon turret cam
 	//spring arm?
@@ -388,7 +388,7 @@ void UVehicleWeaponLogicComponent::ConfigureWeaponCam(int32 SeatIndex, int32 Wea
 
 #pragma region ClearWeapons
 
-void UVehicleWeaponLogicComponent::ClearWeaponDecorativesFromSlot(int32 SeatIndex, int32 WeaponIndex)
+void UVehicleLoadoutManager::ClearWeaponDecorativesFromSlot(int32 SeatIndex, int32 WeaponIndex)
 {
 	FVehicleWeaponSystem_Runtime* VWS = VehicleWeaponSystem.Find(SeatIndex);
 	FVehicleWeapon_Runtime& WeaponSlotToClear = VWS->Weapons[WeaponIndex];
@@ -410,7 +410,7 @@ void UVehicleWeaponLogicComponent::ClearWeaponDecorativesFromSlot(int32 SeatInde
 	WeaponSlotToClear.VehicleWeaponState.VehicleWeaponDecoratives.Empty();
 }
 
-void UVehicleWeaponLogicComponent::ClearWeaponSlotFromSeat(int32 SeatIndex, int32 WeaponIndex)
+void UVehicleLoadoutManager::ClearWeaponSlotFromSeat(int32 SeatIndex, int32 WeaponIndex)
 {
 	if (!VehicleWeaponSystem.Find(SeatIndex)->Weapons.IsValidIndex(WeaponIndex))
 	{
@@ -453,7 +453,7 @@ void UVehicleWeaponLogicComponent::ClearWeaponSlotFromSeat(int32 SeatIndex, int3
 	WeaponSlotToClear = FVehicleWeapon_Runtime();
 }
 
-void UVehicleWeaponLogicComponent::ClearWeaponSystemFromSeat(int32 SeatIndex, bool RemoveFromMap)
+void UVehicleLoadoutManager::ClearWeaponSystemFromSeat(int32 SeatIndex, bool RemoveFromMap)
 {
 
 	FVehicleWeaponSystem_Runtime* WeaponSystemToClear = VehicleWeaponSystem.Find(SeatIndex);
@@ -479,7 +479,7 @@ void UVehicleWeaponLogicComponent::ClearWeaponSystemFromSeat(int32 SeatIndex, bo
 	}				
 }
 
-void UVehicleWeaponLogicComponent::ClearEntireWeaponSystemFromVehicle()
+void UVehicleLoadoutManager::ClearEntireWeaponSystemFromVehicle()
 {
 	if (!OwnerDataAccessor)
 	{
@@ -505,13 +505,13 @@ void UVehicleWeaponLogicComponent::ClearEntireWeaponSystemFromVehicle()
 #pragma endregion
 
 # pragma region Turrets
-float UVehicleWeaponLogicComponent::CalculateTurret(float InputValue, float TurretSpeed, float CurrentTurretValue)
+float UVehicleLoadoutManager::CalculateTurret(float InputValue, float TurretSpeed, float CurrentTurretValue)
 {
 	float NewTurretValue = InputValue * TurretSpeed + CurrentTurretValue;
 	return NewTurretValue;
 }
 
-void UVehicleWeaponLogicComponent::ControlTurret(FVector2D InputValue, int32 SeatIndex)
+void UVehicleLoadoutManager::ControlTurret(FVector2D InputValue, int32 SeatIndex)
 {
 	const FVehicleData& VehicleData = OwnerDataAccessor->GetVehicleData();
 	if (!VehicleData.Seats[SeatIndex].AvailableItems.ControlledTurretIndexes.IsValidIndex(0))
@@ -587,7 +587,7 @@ void UVehicleWeaponLogicComponent::ControlTurret(FVector2D InputValue, int32 Sea
 	}
 }
 
-void UVehicleWeaponLogicComponent::UpdateTurretMesh(int32 SeatIndex, float TurretRotation, float TurretPitch)
+void UVehicleLoadoutManager::UpdateTurretMesh(int32 SeatIndex, float TurretRotation, float TurretPitch)
 {
 	//this should only be called if the equipped weapon for the seat is a separate mesh
 	int32& CWI = GetCWIForSeat(SeatIndex); 
@@ -601,7 +601,7 @@ void UVehicleWeaponLogicComponent::UpdateTurretMesh(int32 SeatIndex, float Turre
 	}
 }
 
-void UVehicleWeaponLogicComponent::UpdateTurretCam(int32 SeatIndex, float TurretRotation, float TurretPitch)
+void UVehicleLoadoutManager::UpdateTurretCam(int32 SeatIndex, float TurretRotation, float TurretPitch)
 {
 	int32& CWI = GetCWIForSeat(SeatIndex);
 	FVehicleWeapon_Runtime& CurrentVehicleWeapon = GetEquippedWeaponInSeat(SeatIndex);
@@ -621,7 +621,7 @@ void UVehicleWeaponLogicComponent::UpdateTurretCam(int32 SeatIndex, float Turret
 
 #pragma region Rangefinder&AimDirection&LineOfConvergence
 
-void UVehicleWeaponLogicComponent::HandleSeatRangefinders()
+void UVehicleLoadoutManager::HandleSeatRangefinders()
 {
 	const FVehicleData& VehicleData = OwnerDataAccessor->GetVehicleData();
 	TArray<AActor*> IgnoredActors;
@@ -671,7 +671,7 @@ void UVehicleWeaponLogicComponent::HandleSeatRangefinders()
 	}
 }
 
-void UVehicleWeaponLogicComponent::UpdateSeatRangefinder(int32 SeatIndex, FTransform TraceTransform, TArray<AActor*> ActorsToIgnore)
+void UVehicleLoadoutManager::UpdateSeatRangefinder(int32 SeatIndex, FTransform TraceTransform, TArray<AActor*> ActorsToIgnore)
 {
 	const FSeatState& CurrentSeatState = OwnerDataAccessor->GetVehicleState().SeatStates[SeatIndex];
 	const FSeatData& SeatData = OwnerDataAccessor->GetVehicleData().Seats[SeatIndex];
@@ -698,7 +698,7 @@ void UVehicleWeaponLogicComponent::UpdateSeatRangefinder(int32 SeatIndex, FTrans
 	}
 }
 
-void UVehicleWeaponLogicComponent::CalculateAimDirection(TWeakObjectPtr<USkeletalMeshComponent> Mesh, FHitResult HitResult, int32 WeaponIndex, int32 SeatIndex)
+void UVehicleLoadoutManager::CalculateAimDirection(TWeakObjectPtr<USkeletalMeshComponent> Mesh, FHitResult HitResult, int32 WeaponIndex, int32 SeatIndex)
 {
 	FVehicleWeaponSystem_Runtime& SeatWeaponSystem = *VehicleWeaponSystem.Find(SeatIndex);
 	int32& CWI = GetCWIForSeat(SeatIndex);
@@ -762,7 +762,7 @@ void UVehicleWeaponLogicComponent::CalculateAimDirection(TWeakObjectPtr<USkeleta
 
 #pragma region Homing&LockOn
 
-void UVehicleWeaponLogicComponent::HandleHoming(int32 SeatIndex, FTransform TraceTransform, TArray<AActor*> ActorsToIgnore)
+void UVehicleLoadoutManager::HandleHoming(int32 SeatIndex, FTransform TraceTransform, TArray<AActor*> ActorsToIgnore)
 {
 	//remember, this gets called on tick by the rangefinder
 	FVehicleWeaponSystem_Runtime* SystemPtr = VehicleWeaponSystem.Find(SeatIndex);
@@ -789,7 +789,7 @@ void UVehicleWeaponLogicComponent::HandleHoming(int32 SeatIndex, FTransform Trac
 
 #pragma region LockOn
 
-void UVehicleWeaponLogicComponent::HandleLockOn(int32 SeatIndex, int32 WeaponIndex)
+void UVehicleLoadoutManager::HandleLockOn(int32 SeatIndex, int32 WeaponIndex)
 {
 	FVehicleWeaponSystem_Runtime& SeatWeaponSystem = *VehicleWeaponSystem.Find(SeatIndex);
 	FVehicleWeapon_Runtime& CurrentWeapon = GetEquippedWeaponInSeat(SeatIndex);
@@ -823,7 +823,7 @@ void UVehicleWeaponLogicComponent::HandleLockOn(int32 SeatIndex, int32 WeaponInd
 	}
 }
 
-void UVehicleWeaponLogicComponent::StartLockingOn(int32& SeatIndex, FVehicleWeapon_Runtime& CurrentWeapon, const FWeaponHomingData& HomingData, const FHitResult& HitResult)
+void UVehicleLoadoutManager::StartLockingOn(int32& SeatIndex, FVehicleWeapon_Runtime& CurrentWeapon, const FWeaponHomingData& HomingData, const FHitResult& HitResult)
 {
 	UE_LOG(LogTemp, Warning, TEXT("[VWLC::StartLockingOn]"));
 	FLockOnState& LockOnState = CurrentWeapon.VehicleWeaponState.BaseWeaponRuntimeData.LockOnState;
@@ -837,7 +837,7 @@ void UVehicleWeaponLogicComponent::StartLockingOn(int32& SeatIndex, FVehicleWeap
 	GetWAC(SeatIndex)->SetTriggerParameter(FName("Event_LockingOn"));
 }
 
-void UVehicleWeaponLogicComponent::LockOn(int32 SeatIndex, const FWeaponHomingData HomingData, const FHitResult HitResult)
+void UVehicleLoadoutManager::LockOn(int32 SeatIndex, const FWeaponHomingData HomingData, const FHitResult HitResult)
 {
 	UE_LOG(LogTemp, Warning, TEXT("[VWLC::LockOn]"));
 	FVehicleWeapon_Runtime& CurrentWeapon = GetEquippedWeaponInSeat(SeatIndex);
@@ -854,7 +854,7 @@ void UVehicleWeaponLogicComponent::LockOn(int32 SeatIndex, const FWeaponHomingDa
 	}
 }
 
-void UVehicleWeaponLogicComponent::StartCancelLockOn(int32& SeatIndex, FLockOnState& LockOnState)
+void UVehicleLoadoutManager::StartCancelLockOn(int32& SeatIndex, FLockOnState& LockOnState)
 {
 	float ElapsedTime = 1.0f;			//<---make actual data 
 	FTimerDelegate LockOnDelegate;
@@ -865,7 +865,7 @@ void UVehicleWeaponLogicComponent::StartCancelLockOn(int32& SeatIndex, FLockOnSt
 	UE_LOG(LogTemp, Warning, TEXT("[VWLC::IsLosingLock]"));
 }
 
-void UVehicleWeaponLogicComponent::CancelLockOn(int32 SeatIndex, int32 WeaponIndex)
+void UVehicleLoadoutManager::CancelLockOn(int32 SeatIndex, int32 WeaponIndex)
 {
 	FWeaponState& WeaponState = VehicleWeaponSystem.Find(SeatIndex)->Weapons[WeaponIndex].VehicleWeaponState.BaseWeaponRuntimeData;
 	const FWeaponHomingData& HomingData = GetBaseWeaponDataInSlot(SeatIndex, WeaponIndex).WeaponFunctionality.HomingFunctionality;
@@ -880,7 +880,7 @@ void UVehicleWeaponLogicComponent::CancelLockOn(int32 SeatIndex, int32 WeaponInd
 	}
 }
 
-void UVehicleWeaponLogicComponent::DemoteLockOnStatus(int32 SeatIndex, FLockOnState& LockOnState)
+void UVehicleLoadoutManager::DemoteLockOnStatus(int32 SeatIndex, FLockOnState& LockOnState)
 {
 	//null actor or an actor that cant be locked on to
 	//anything from here on can be seen as a "demotion" of lock status
@@ -896,7 +896,7 @@ void UVehicleWeaponLogicComponent::DemoteLockOnStatus(int32 SeatIndex, FLockOnSt
 	}
 }
 
-void UVehicleWeaponLogicComponent::UpdateLockOnIndicator(bool UpdateHUD, FHitResult& HitResult, FLockOnState& LockOnState)
+void UVehicleLoadoutManager::UpdateLockOnIndicator(bool UpdateHUD, FHitResult& HitResult, FLockOnState& LockOnState)
 {
 	if (HitResult.GetActor()->GetRootComponent() != LockOnState.AcquiredTargetComp)
 	{
@@ -914,7 +914,7 @@ void UVehicleWeaponLogicComponent::UpdateLockOnIndicator(bool UpdateHUD, FHitRes
 
 #pragma region Muzzles
 
-FName UVehicleWeaponLogicComponent::BuildMuzzleName(FName SeatName, int32 WeaponIndex, EMuzzleType MuzzleType, int32 MuzzleIndex)
+FName UVehicleLoadoutManager::BuildMuzzleName(FName SeatName, int32 WeaponIndex, EMuzzleType MuzzleType, int32 MuzzleIndex)
 {
 	//MS_SeatName_WIName_MuzzleType_MuzzleIndex
 	const UEnum* EnumPtr = StaticEnum<EMuzzleType>();
@@ -925,7 +925,7 @@ FName UVehicleWeaponLogicComponent::BuildMuzzleName(FName SeatName, int32 Weapon
 	return FinalSocketName;
 }
 
-void UVehicleWeaponLogicComponent::SetupMuzzleSockets(TWeakObjectPtr<USkeletalMeshComponent> Mesh, int32 SeatIndex, int32 WeaponIndex, FName SeatName)
+void UVehicleLoadoutManager::SetupMuzzleSockets(TWeakObjectPtr<USkeletalMeshComponent> Mesh, int32 SeatIndex, int32 WeaponIndex, FName SeatName)
 {
 	FVehicleWeaponSystem_Runtime* WeaponSystem = VehicleWeaponSystem.Find(SeatIndex);
 	FVehicleWeapon_Runtime& VehicleWeaponToFill = WeaponSystem->Weapons[WeaponIndex];
@@ -959,7 +959,7 @@ void UVehicleWeaponLogicComponent::SetupMuzzleSockets(TWeakObjectPtr<USkeletalMe
 	}
 }
 
-TArray<FName> UVehicleWeaponLogicComponent::GetMuzzleSocketsInOrder(TWeakObjectPtr<USkeletalMeshComponent> Mesh, FName SeatName, int32 WeaponIndex, EMuzzleType MuzzleType)
+TArray<FName> UVehicleLoadoutManager::GetMuzzleSocketsInOrder(TWeakObjectPtr<USkeletalMeshComponent> Mesh, FName SeatName, int32 WeaponIndex, EMuzzleType MuzzleType)
 {
 	TArray<FName> FoundSockets;
 	for (int32 i = 0; i < 32; i++)
@@ -982,7 +982,7 @@ TArray<FName> UVehicleWeaponLogicComponent::GetMuzzleSocketsInOrder(TWeakObjectP
 #pragma region WeaponFire
 
 #pragma region StartFire
-TWeakObjectPtr<AProjectile_Base> UVehicleWeaponLogicComponent::HandleStartFire(int32 SeatIndex)
+TWeakObjectPtr<AProjectile_Base> UVehicleLoadoutManager::HandleStartFire(int32 SeatIndex)
 {
 	//UE_LOG(LogTemp, Warning, TEXT("[VWLC::HandleStartFire"));
 	FVehicleWeaponSystem_Runtime& SeatWeaponSystem = *VehicleWeaponSystem.Find(SeatIndex);
@@ -1030,7 +1030,7 @@ TWeakObjectPtr<AProjectile_Base> UVehicleWeaponLogicComponent::HandleStartFire(i
 	return FiredProjectile;
 }
 
-TWeakObjectPtr<AProjectile_Base> UVehicleWeaponLogicComponent::StartFire(int32 SeatIndex)
+TWeakObjectPtr<AProjectile_Base> UVehicleLoadoutManager::StartFire(int32 SeatIndex)
 {
 	//fires exactly one time
 	//assumes canFire is true
@@ -1050,7 +1050,7 @@ TWeakObjectPtr<AProjectile_Base> UVehicleWeaponLogicComponent::StartFire(int32 S
 
 #pragma endregion
 
-TWeakObjectPtr<AProjectile_Base> UVehicleWeaponLogicComponent::FireVehicleWeapon(int32 SeatIndex)
+TWeakObjectPtr<AProjectile_Base> UVehicleLoadoutManager::FireVehicleWeapon(int32 SeatIndex)
 {
 	FVehicleWeaponSystem_Runtime& SeatWeaponSystem = *VehicleWeaponSystem.Find(SeatIndex);
 	int32& CWI = GetCWIForSeat(SeatIndex);
@@ -1107,7 +1107,7 @@ TWeakObjectPtr<AProjectile_Base> UVehicleWeaponLogicComponent::FireVehicleWeapon
 
 #pragma region HandleShootProjectiles
 
-void UVehicleWeaponLogicComponent::HandleShootSimProjectile(FVehicleWeaponState& VehicleWeaponState, const FBaseWeaponData& StaticWeaponData, FVehicleWeaponSystem_Runtime& SeatWeaponSystem)
+void UVehicleLoadoutManager::HandleShootSimProjectile(FVehicleWeaponState& VehicleWeaponState, const FBaseWeaponData& StaticWeaponData, FVehicleWeaponSystem_Runtime& SeatWeaponSystem)
 {
 	for (int32& MuzzleIndex : VehicleWeaponState.CurrentMuzzleIndexes)
 	{
@@ -1128,7 +1128,7 @@ void UVehicleWeaponLogicComponent::HandleShootSimProjectile(FVehicleWeaponState&
 	}
 }
 
-TWeakObjectPtr<AProjectile_Base> UVehicleWeaponLogicComponent::HandleShootProjectileActor(int32 SeatIndex, int32 WeaponIndex)
+TWeakObjectPtr<AProjectile_Base> UVehicleLoadoutManager::HandleShootProjectileActor(int32 SeatIndex, int32 WeaponIndex)
 {
 	//not called on tick
 	FVehicleWeaponSystem_Runtime& SeatWeaponSystem = *VehicleWeaponSystem.Find(SeatIndex);
@@ -1175,7 +1175,7 @@ TWeakObjectPtr<AProjectile_Base> UVehicleWeaponLogicComponent::HandleShootProjec
 
 #pragma region Ammo
 
-void UVehicleWeaponLogicComponent::HandleAmmoDepletion(int32 SeatIndex, int32 WeaponIndex)
+void UVehicleLoadoutManager::HandleAmmoDepletion(int32 SeatIndex, int32 WeaponIndex)
 {
 	const FBaseWeaponData& StaticWeaponData = GetBaseWeaponDataInSlot(SeatIndex, WeaponIndex);
 	FVehicleWeapon_Runtime& CurrentVehicleWeapon = GetEquippedWeaponInSeat(SeatIndex);
@@ -1215,7 +1215,7 @@ void UVehicleWeaponLogicComponent::HandleAmmoDepletion(int32 SeatIndex, int32 We
 	}
 }
 
-void UVehicleWeaponLogicComponent::HandleStartAutoload(int32 SeatIndex)
+void UVehicleLoadoutManager::HandleStartAutoload(int32 SeatIndex)
 {
 	int32& CWI = GetCWIForSeat(SeatIndex);
 	const FBaseWeaponData& StaticWeaponData = GetBaseWeaponDataInSlot(SeatIndex, CWI);
@@ -1231,7 +1231,7 @@ void UVehicleWeaponLogicComponent::HandleStartAutoload(int32 SeatIndex)
 	}
 }
 
-void UVehicleWeaponLogicComponent::StartAutoload(int32 SeatIndex, int32 WeaponIndex)
+void UVehicleLoadoutManager::StartAutoload(int32 SeatIndex, int32 WeaponIndex)
 {
 	FTimerHandle& TimerHandle_Reload = VehicleWeaponSystem.Find(SeatIndex)->Weapons[WeaponIndex].VehicleWeaponState.BaseWeaponRuntimeData.TimerHandle_Reload;
 	const FBaseWeaponData& StaticWeaponData = GetBaseWeaponDataInSlot(SeatIndex, WeaponIndex);
@@ -1260,7 +1260,7 @@ void UVehicleWeaponLogicComponent::StartAutoload(int32 SeatIndex, int32 WeaponIn
 		//set another timer to track previous timers progress for ui purposes
 }
 
-void UVehicleWeaponLogicComponent::AutoloadNewMag(int32 SeatIndex, int32 WeaponIndex, int32 MagSize)
+void UVehicleLoadoutManager::AutoloadNewMag(int32 SeatIndex, int32 WeaponIndex, int32 MagSize)
 {
 	FVehicleWeaponSystem_Runtime& SeatWeaponSystem = *VehicleWeaponSystem.Find(SeatIndex);
 	FWeaponState& CurrentWeapon = SeatWeaponSystem.Weapons[WeaponIndex].VehicleWeaponState.BaseWeaponRuntimeData;
@@ -1301,7 +1301,7 @@ void UVehicleWeaponLogicComponent::AutoloadNewMag(int32 SeatIndex, int32 WeaponI
 
 #pragma endregion
 
-void UVehicleWeaponLogicComponent::ApplyWeaponRecoilJostle(int32 SeatIndex, int32 WeaponIndex)
+void UVehicleLoadoutManager::ApplyWeaponRecoilJostle(int32 SeatIndex, int32 WeaponIndex)
 {
 	FVehicleWeaponSystem_Runtime& SeatWeaponSystem = *VehicleWeaponSystem.Find(SeatIndex);
 	float RecoilMultiplier = SeatWeaponSystem.Weapons[WeaponIndex].VehicleWeaponInstanceData.RecoilMultiplier;
@@ -1340,7 +1340,7 @@ void UVehicleWeaponLogicComponent::ApplyWeaponRecoilJostle(int32 SeatIndex, int3
 
 #pragma region StopFiring
 
-void UVehicleWeaponLogicComponent::StopFire(int32 SeatIndex)
+void UVehicleLoadoutManager::StopFire(int32 SeatIndex)
 {
 	FVehicleWeaponSystem_Runtime* SeatWeaponSystemPtr = VehicleWeaponSystem.Find(SeatIndex);
 	if (!SeatWeaponSystemPtr)
@@ -1353,7 +1353,7 @@ void UVehicleWeaponLogicComponent::StopFire(int32 SeatIndex)
 	StopWeaponSlotFire(SeatIndex, SeatWeaponSystem.VehicleWeaponSystemState.EquippedWeaponState.CurrentWeaponIndex);
 }
 
-void UVehicleWeaponLogicComponent::StopWeaponSlotFire(int32 SeatIndex, int32 WeaponIndex)
+void UVehicleLoadoutManager::StopWeaponSlotFire(int32 SeatIndex, int32 WeaponIndex)
 {
 	FVehicleWeaponSystem_Runtime& SeatWeaponSystem = *VehicleWeaponSystem.Find(SeatIndex);
 	FVehicleWeaponState& VehicleWeaponState = SeatWeaponSystem.Weapons[WeaponIndex].VehicleWeaponState;
@@ -1385,7 +1385,7 @@ void UVehicleWeaponLogicComponent::StopWeaponSlotFire(int32 SeatIndex, int32 Wea
 
 #pragma region WeaponManagement
 
-bool UVehicleWeaponLogicComponent::SwitchWeapon(int32 SeatIndex)
+bool UVehicleLoadoutManager::SwitchWeapon(int32 SeatIndex)
 {
 	FVehicleWeaponSystem_Runtime& SeatWeaponSystem = *VehicleWeaponSystem.Find(SeatIndex);
 	int32& CWI = SeatWeaponSystem.VehicleWeaponSystemState.EquippedWeaponState.CurrentWeaponIndex;
@@ -1405,7 +1405,7 @@ bool UVehicleWeaponLogicComponent::SwitchWeapon(int32 SeatIndex)
 	}
 }
 
-void UVehicleWeaponLogicComponent::EquipWeapon(int32 SeatIndex, int32 WeaponIndex)
+void UVehicleLoadoutManager::EquipWeapon(int32 SeatIndex, int32 WeaponIndex)
 {
 	//assumes weapon index in array is valid
 	FVehicleWeaponSystem_Runtime& SeatWeaponSystem = *VehicleWeaponSystem.Find(SeatIndex);
@@ -1442,7 +1442,7 @@ void UVehicleWeaponLogicComponent::EquipWeapon(int32 SeatIndex, int32 WeaponInde
 	//equip weapon animation
 }
 
-void UVehicleWeaponLogicComponent::EquipWeapon_UpdateUI(int32 SeatIndex, int32 WeaponIndex)
+void UVehicleLoadoutManager::EquipWeapon_UpdateUI(int32 SeatIndex, int32 WeaponIndex)
 {
 	FVehicleWeaponSystem_Runtime& SWS = *VehicleWeaponSystem.Find(SeatIndex);
 	FWeaponState& NewWeapon = SWS.Weapons[WeaponIndex].VehicleWeaponState.BaseWeaponRuntimeData;
@@ -1488,7 +1488,7 @@ void UVehicleWeaponLogicComponent::EquipWeapon_UpdateUI(int32 SeatIndex, int32 W
 	//how handle that without the hud system switchboard
 }
 
-void UVehicleWeaponLogicComponent::UnequipWeapon(int32& SeatIndex, int32& WeaponIndex, bool& bWasFiring)
+void UVehicleLoadoutManager::UnequipWeapon(int32& SeatIndex, int32& WeaponIndex, bool& bWasFiring)
 {
 	FVehicleWeaponSystem_Runtime& SeatWeaponSystem = *VehicleWeaponSystem.Find(SeatIndex);
 	FWeaponState& WeaponState = SeatWeaponSystem.Weapons[WeaponIndex].VehicleWeaponState.BaseWeaponRuntimeData;
@@ -1503,7 +1503,7 @@ void UVehicleWeaponLogicComponent::UnequipWeapon(int32& SeatIndex, int32& Weapon
 	}
 }
 
-void UVehicleWeaponLogicComponent::UpdateSeatWACData(int32 SeatIndex, int32 WeaponIndex)
+void UVehicleLoadoutManager::UpdateSeatWACData(int32 SeatIndex, int32 WeaponIndex)
 {
 	FVehicleWeaponSystem_Runtime& SeatWeaponSystem = *VehicleWeaponSystem.Find(SeatIndex);
 	const FBaseWeaponData& StaticData = GetBaseWeaponDataInSlot(SeatIndex, WeaponIndex);
@@ -1512,7 +1512,7 @@ void UVehicleWeaponLogicComponent::UpdateSeatWACData(int32 SeatIndex, int32 Weap
 	UBS2FunctionLibrary::UpdateWACData(WAC, StaticData.WeaponFirePerformance.RateOfFire, StaticData.WeaponAudio);
 }
 
-void UVehicleWeaponLogicComponent::UpdateWeaponStatusUI(int32& SeatIndex, bool& canFire)
+void UVehicleLoadoutManager::UpdateWeaponStatusUI(int32& SeatIndex, bool& canFire)
 {
 	if (!OwnerDataAccessor->GetVehicleState().SeatStates[SeatIndex].UpdateHUD) { return;}
 	//HMD
@@ -1529,7 +1529,7 @@ void UVehicleWeaponLogicComponent::UpdateWeaponStatusUI(int32& SeatIndex, bool& 
 
 #pragma region Getters
 
-FTransform UVehicleWeaponLogicComponent::GetMuzzleTransform(FVehicleWeaponState& VehicleWeaponState, FVehicleWeaponSystem_Runtime& SeatWeaponSystem, int32 MuzzleIndex)
+FTransform UVehicleLoadoutManager::GetMuzzleTransform(FVehicleWeaponState& VehicleWeaponState, FVehicleWeaponSystem_Runtime& SeatWeaponSystem, int32 MuzzleIndex)
 {
 	FTransform MuzzleTransform;
 	MuzzleTransform.SetLocation(FVector::ForwardVector);
@@ -1544,14 +1544,14 @@ FTransform UVehicleWeaponLogicComponent::GetMuzzleTransform(FVehicleWeaponState&
 	return MuzzleTransform;
 }
 
-const FBaseWeaponData& UVehicleWeaponLogicComponent::GetBaseWeaponDataInSlot(int32 SeatIndex, int32 WeaponIndex)
+const FBaseWeaponData& UVehicleLoadoutManager::GetBaseWeaponDataInSlot(int32 SeatIndex, int32 WeaponIndex)
 {
 	TArray<const FBaseWeaponData*>* WeaponArray = CurrentVehicleBaseWeaponData.Find(SeatIndex);
 	const FBaseWeaponData& WeaponData = *(*WeaponArray)[WeaponIndex];
 	return WeaponData;
 }
 
-const FVehicleWeaponInstanceData& UVehicleWeaponLogicComponent::GetVWID(int32 SeatIndex, int32 WeaponIndex, FName WeaponID)
+const FVehicleWeaponInstanceData& UVehicleLoadoutManager::GetVWID(int32 SeatIndex, int32 WeaponIndex, FName WeaponID)
 {
 	const TMap<FName, FVehicleWeaponInstanceData>& WeaponChoices = OwnerDataAccessor->GetVehicleData().Seats[SeatIndex].AvailableItems.AvailableWeaponSlots[WeaponIndex].WeaponChoices;
 	const FVehicleWeaponInstanceData* WeaponDefPtr = WeaponChoices.Find(WeaponID);
@@ -1559,7 +1559,7 @@ const FVehicleWeaponInstanceData& UVehicleWeaponLogicComponent::GetVWID(int32 Se
 	return VehicleWeaponDefinition;
 }
 
-TWeakObjectPtr<AActor> UVehicleWeaponLogicComponent::GetCurrentViewTargetAtSeatIndex(int32 SeatIndex)
+TWeakObjectPtr<AActor> UVehicleLoadoutManager::GetCurrentViewTargetAtSeatIndex(int32 SeatIndex)
 {
 	//current meaning currently equipped weapon (what is the view context of the currently equipped weapon)
 	TWeakObjectPtr<AActor> NewViewTarget = nullptr;
@@ -1585,7 +1585,7 @@ TWeakObjectPtr<AActor> UVehicleWeaponLogicComponent::GetCurrentViewTargetAtSeatI
 	}
 }
 
-float UVehicleWeaponLogicComponent::GetTurretWorldYaw(int32 TurretIndex)
+float UVehicleLoadoutManager::GetTurretWorldYaw(int32 TurretIndex)
 {
 	UE_LOG(LogTemp, Warning, TEXT("[VWLC::GetTurretWorldYaw] TurretIndex = %d"), TurretIndex);
 	const FTurretState& TurretState = TurretStates[TurretIndex];
@@ -1624,7 +1624,7 @@ float UVehicleWeaponLogicComponent::GetTurretWorldYaw(int32 TurretIndex)
 
 }
 
-int32 UVehicleWeaponLogicComponent::GetSeatIndexForTurret(int32 TurretIndex)
+int32 UVehicleLoadoutManager::GetSeatIndexForTurret(int32 TurretIndex)
 {
 	int32 CTI = -1;
 	int32 SI = -1;
@@ -1643,17 +1643,17 @@ int32 UVehicleWeaponLogicComponent::GetSeatIndexForTurret(int32 TurretIndex)
 	return SI;
 }
 
-int32& UVehicleWeaponLogicComponent::GetCWIForSeat(int32 SeatIndex)
+int32& UVehicleLoadoutManager::GetCWIForSeat(int32 SeatIndex)
 {
 	return VehicleWeaponSystem.Find(SeatIndex)->VehicleWeaponSystemState.EquippedWeaponState.CurrentWeaponIndex;
 }
 
-FVehicleWeapon_Runtime& UVehicleWeaponLogicComponent::GetEquippedWeaponInSeat(int32 SeatIndex)
+FVehicleWeapon_Runtime& UVehicleLoadoutManager::GetEquippedWeaponInSeat(int32 SeatIndex)
 {
 	return VehicleWeaponSystem.Find(SeatIndex)->Weapons[GetCWIForSeat(SeatIndex)];
 }
 
-UNiagaraComponent* UVehicleWeaponLogicComponent::DebugMuzzleVFXPool(int32 SeatIndex, int32 WeaponIndex)
+UNiagaraComponent* UVehicleLoadoutManager::DebugMuzzleVFXPool(int32 SeatIndex, int32 WeaponIndex)
 {
 	if (VehicleWeaponSystem.Find(SeatIndex)->Weapons[WeaponIndex].VehicleWeaponState.MuzzleVFXPool.IsValidIndex(0))
 	{
@@ -1662,7 +1662,7 @@ UNiagaraComponent* UVehicleWeaponLogicComponent::DebugMuzzleVFXPool(int32 SeatIn
 	return nullptr;
 }
 
-TWeakObjectPtr<UAudioComponent> UVehicleWeaponLogicComponent::GetWAC(int32& SeatIndex)
+TWeakObjectPtr<UAudioComponent> UVehicleLoadoutManager::GetWAC(int32& SeatIndex)
 {
 	UE_LOG(LogTemp, Warning, TEXT("[VWLC::GetWAC] SeatIndex =  %d"), SeatIndex);
 	FVehicleWeaponSystem_Runtime& SeatWeaponSystem = *VehicleWeaponSystem.Find(SeatIndex);
@@ -1670,7 +1670,7 @@ TWeakObjectPtr<UAudioComponent> UVehicleWeaponLogicComponent::GetWAC(int32& Seat
 	return WAC;
 }
 
-FName UVehicleWeaponLogicComponent::GetEquippedWeaponIDInSeat(int32 SeatIndex) 
+FName UVehicleLoadoutManager::GetEquippedWeaponIDInSeat(int32 SeatIndex) 
 {
 	return GetEquippedWeaponInSeat(SeatIndex).VehicleWeaponState.BaseWeaponRuntimeData.WeaponID;
 }

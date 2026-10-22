@@ -12,7 +12,7 @@
 #include "Data/Characters/CharacterDefaults.h"
 #include "Data/Items/Weapons/Data_Weapon.h"
 #include "Data/Items/Weapons/WeaponTypes.h"
-#include "Core/Weapons/VehicleWeaponLogicComponent.h"
+#include "Core/Weapons/VehicleLoadoutManager.h"
 #include "Core/Weapons/LoadoutManager.h"
 #include "Core/UI/VehicleHUDs/UW_HUD_Vehicle_Base.h"
 #include "Core/UI/GameplayHUDs/UW_HUD_Status_Base.h"

@@ -9,7 +9,7 @@
 #include "Data/Data_Optics.h"
 #include "Data/Vehicles/VehicleDefaults.h"
 #include "Core/Weapons/Projectiles/Projectile_Base.h"
-#include "Core/Weapons/VehicleWeaponLogicComponent.h"
+#include "Core/Weapons/VehicleLoadoutManager.h"
 #include "Core/Vehicles/ChaosWheel_Base.h"
 #include "Core/PlayerController_Base.h"
 #include "Core/UI/VehicleHUDs/UW_HUD_Vehicle_Base.h"
@@ -45,7 +45,7 @@ AVehicle_Base::AVehicle_Base()
 	ChaosVehicleMovement->bAutoActivate = false;	
 	ChaosVehicleMovement->SetUpdatedComponent(VehicleMeshComponent);
 	InteractionWidgetComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("Interaction Widget"));
-	VehicleWeaponLogicComponent = CreateDefaultSubobject<UVehicleWeaponLogicComponent>(TEXT("Vehicle Weapon Logic Component"));
+	VehicleWeaponLogicComponent = CreateDefaultSubobject<UVehicleLoadoutManager>(TEXT("Vehicle Weapon Logic Component"));
 	VehicleHealthComponent = CreateDefaultSubobject<UVehicleHealthComponent>("Vehicle Health Component");
 	SpawnComponent = CreateDefaultSubobject<USpawnComponent>(TEXT("Spawn Component"));
 	SpawnComponent->SetupAttachment(GetRootComponent());

@@ -22,7 +22,7 @@ class UChaosWheeledVehicleMovementComponent;
 class UWidgetComponent;
 class UCameraComponent;
 class USpawnComponent;
-class UVehicleWeaponLogicComponent;
+class UVehicleLoadoutManager;
 class UVehicleHealthComponent;
 class USkeletalMeshComponent;
 class USkeletalMesh;
@@ -91,7 +91,7 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Components")
 	UChaosWheeledVehicleMovementComponent* ChaosVehicleMovement;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
-	UVehicleWeaponLogicComponent* VehicleWeaponLogicComponent;
+	UVehicleLoadoutManager* VehicleWeaponLogicComponent;
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Components")
 	UVehicleHealthComponent* VehicleHealthComponent;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")

@@ -211,7 +211,7 @@ void UCharacterVehicleManager::CharacterEnterSeat(const FCharacterSeatContext& S
 
 void UCharacterVehicleManager::HandleEnterSeat_Gunner(const FCharacterSeatContext& SeatContext)
 {
-	TObjectPtr<UVehicleWeaponLogicComponent> VWLC = GetCurrentVehicle()->VehicleWeaponLogicComponent;
+	TObjectPtr<UVehicleLoadoutManager> VWLC = GetCurrentVehicle()->VehicleWeaponLogicComponent;
 	const FVehicleWeaponInstanceData& VWID = VWLC->GetVWID(GetCSI(), VWLC->GetCWIForSeat(GetCSI()), VWLC->GetEquippedWeaponIDInSeat(GetCSI()));
 	if (VWID.AttachmentInstanceData.bAttachCharacter)
 	{
@@ -369,7 +369,7 @@ void UCharacterVehicleManager::UpdateRangefinder_WindowedVehicle()
 		return;
 	}
 
-	TWeakObjectPtr<UVehicleWeaponLogicComponent> VWLC = GetCurrentVehicle()->VehicleWeaponLogicComponent;
+	TWeakObjectPtr<UVehicleLoadoutManager> VWLC = GetCurrentVehicle()->VehicleWeaponLogicComponent;
 	FVehicleWeapon_Runtime& CurrentWeapon = VWLC->GetEquippedWeaponInSeat(GetCSI());
 	TArray<AActor*> IgnoreActors = {GetCurrentVehicle(), GetOwner() };
 	FTransform TraceTransform;

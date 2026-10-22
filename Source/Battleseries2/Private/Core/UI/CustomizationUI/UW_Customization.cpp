@@ -24,7 +24,7 @@
 #include "Math/UnrealMathUtility.h"
 #include "Utilities/BS2FunctionLibrary.h"
 #include "Data/Core/CoreTypes.h"
-#include "Core/Weapons/VehicleWeaponLogicComponent.h"
+#include "Core/Weapons/VehicleLoadoutManager.h"
 #include "Core/PlayerController_Base.h"
 #include "Data/Items/Weapons/WeaponEnums.h"
 #include "Data/Items/Weapons/Data_VehicleWeapon.h"
