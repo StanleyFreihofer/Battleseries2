@@ -1009,7 +1009,6 @@ void ULoadoutManager::DryFire()
 void ULoadoutManager::FireWeapon()
 {
 	const FInfantryWeaponData* StaticWeaponData = GetCurrentWeaponStaticData();
-	
 	FWeaponState& CurrentWeapon = *GetCurrentWeaponBaseState();	
 	FInfantryWeaponState& IWS_FP = GetCurrentInfantryWeaponState_FP();
 
@@ -1073,7 +1072,14 @@ void ULoadoutManager::FireWeapon()
 		}
 	}
 	
-	//HandleAmmoDepletion
+	HandleAmmoDepletion();
+}
+
+void ULoadoutManager::HandleAmmoDepletion()
+{
+	const FInfantryWeaponData* StaticWeaponData = GetCurrentWeaponStaticData();
+	FWeaponState& CurrentWeapon = *GetCurrentWeaponBaseState();	
+	
 	switch (StaticWeaponData->InfantryWeaponAmmoData.BaseAmmoData.AmmoDepletionMethod)
 	{
 		case EAmmoDepletionMethod::Default:

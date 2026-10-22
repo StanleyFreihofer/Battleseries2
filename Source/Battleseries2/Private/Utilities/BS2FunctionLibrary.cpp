@@ -351,6 +351,8 @@ void UBS2FunctionLibrary::CalculateReload(int32 MagSize, int32 CAM, int32 CRA, i
 int32 UBS2FunctionLibrary::UpdateCurrentAmmoInMag(FWeaponState& CurrentWeapon, int32 AmmoDelta, int32 MagSize)
 {
 	//can be used for firing or resupplying logic
+	return CurrentWeapon.UpdateCurrentAmmoinMag(AmmoDelta, MagSize);
+	/**
 	CurrentWeapon.CurrentAmmoinMag = FMath::Clamp(CurrentWeapon.CurrentAmmoinMag + AmmoDelta, 0, MagSize);
 	if (CurrentWeapon.CurrentAmmoinMag == 0)
 	{
@@ -358,28 +360,33 @@ int32 UBS2FunctionLibrary::UpdateCurrentAmmoInMag(FWeaponState& CurrentWeapon, i
 	}
 	UE_LOG(LogTemp, Warning, TEXT("[BS2FunctionLibrary::UpdateCurrentAmmoInMag] CAM = %d"), CurrentWeapon.CurrentAmmoinMag);
 	return CurrentWeapon.CurrentAmmoinMag;
+	**/
 }
 
 int32 UBS2FunctionLibrary::UpdateCurrentReserveAmmo(FWeaponState& CurrentWeapon, int32 CRADelta, int32 MRA)
 {
-	CurrentWeapon.CurrentReserveAmmo = FMath::Clamp(CurrentWeapon.CurrentReserveAmmo + CRADelta, 0, MRA);
-	return CurrentWeapon.CurrentReserveAmmo;
+	return CurrentWeapon.UpdateCurrentReserveAmmo(CRADelta, MRA);
+	//CurrentWeapon.CurrentReserveAmmo = FMath::Clamp(CurrentWeapon.CurrentReserveAmmo + CRADelta, 0, MRA);
+	//return CurrentWeapon.CurrentReserveAmmo;
 }
 
 bool UBS2FunctionLibrary::GetIfWeaponShouldBeAbleToFire(FWeaponState& WeaponState)
 {
 	//doesnt update can fire and doesnt check canFire
 	//can be used to update canFire
+	return WeaponState.CanWeaponFire();
+	/**
 	if (WeaponState.CurrentAmmoinMag <= 0 || !WeaponState.isEquipped || WeaponState.isReloading)
 	{
 		return false;
 	}
 	return true;
+	**/
 }
 
 void UBS2FunctionLibrary::HandleIfWeaponCanFire(FWeaponState& CurrentWeapon)
 {
-	CurrentWeapon.canFire = GetIfWeaponShouldBeAbleToFire(CurrentWeapon);
+	CurrentWeapon.HandleCanWeaponFire();
 }
 
 void UBS2FunctionLibrary::UpdateWeaponIndex(TArray<FWeaponState> Weapons, int32 InCurrentWeaponIndex, int32& OutNewWeaponIndex)
@@ -434,11 +441,14 @@ int32 UBS2FunctionLibrary::GetMaxMagSize(bool canRoundbeChambered, int32 BaseMag
 
 bool UBS2FunctionLibrary::GetIfWeaponCanReload(FWeaponState Weapon, bool canRoundbeChambered, int32 BaseMagSize)
 {
+	return Weapon.CanWeaponReload(canRoundbeChambered, BaseMagSize);
+	/**
 	if (Weapon.CurrentReserveAmmo > 0 && Weapon.CurrentAmmoinMag < GetMaxMagSize(canRoundbeChambered, BaseMagSize) && !Weapon.isReloading)
 	{
 		return true;
 	}
 	return false;
+	**/
 }
 
 void UBS2FunctionLibrary::StartLockingOn(UObject* WorldContextObject, FTimerDelegate& LockOnDelegate, float AcquireTime, AActor* HitActor, FLockOnState& LockOnState, bool UpdateHUD, TSubclassOf<UUserWidget> IndicatorReticle)

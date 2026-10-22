@@ -300,6 +300,8 @@ class BATTLESERIES2_API ULoadoutManager : public UActorComponent
 		UFUNCTION(BlueprintCallable)
 		void FireWeapon();
 		UFUNCTION(BlueprintCallable)
+		void HandleAmmoDepletion();
+		UFUNCTION(BlueprintCallable)
 		void ReloadWeapon();
 		UFUNCTION(BlueprintCallable)
 		void AutoSwitchItem();

@@ -62,6 +62,46 @@ struct FWeaponState
 	TArray<TWeakObjectPtr<AProjectile_Base>> InFlightProjectiles;
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
 	FLockOnState LockOnState = FLockOnState();
+	
+	int32 UpdateCurrentAmmoinMag(int32 AmmoDelta, int32 MagSize) 
+	{
+		CurrentAmmoinMag = FMath::Clamp(CurrentAmmoinMag + AmmoDelta, 0, MagSize);
+		if (CurrentAmmoinMag == 0)
+		{
+			canFire = false;
+		}
+		return CurrentAmmoinMag;
+	}
+	
+	int32 UpdateCurrentReserveAmmo(int32 CRADelta, int32 MRA)
+	{
+		CurrentReserveAmmo = FMath::Clamp(CurrentReserveAmmo + CRADelta, 0, MRA);
+		return CurrentReserveAmmo;
+	}
+	
+	bool CanWeaponFire() const
+	{
+		if (CurrentAmmoinMag <= 0 || !isEquipped || isReloading)
+		{
+			return false;
+		}
+		return true;
+	}
+	
+	void HandleCanWeaponFire()
+	{
+		canFire = CanWeaponFire();
+	}
+	
+	bool CanWeaponReload(bool canRoundBeChambered, int32 BaseMagSize) const
+	{
+		int32 MagSize = canRoundBeChambered ? BaseMagSize + 1 : BaseMagSize;
+		if (CurrentReserveAmmo > 0 && CurrentAmmoinMag < MagSize && !isReloading)
+		{
+			return true;
+		}
+		return false;
+	}
 };
 
 USTRUCT(BlueprintType)
