@@ -129,7 +129,7 @@ struct FEquippedWeaponState
 	GENERATED_BODY()
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
-	int32 CurrentWeaponIndex = 0;
+	int32 CurrentWeaponIndex = 0;		//NOT USED BY INFANTRY, CONSIDER MOVING TO VEHICLE SIDE
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FWeaponRaycastData_Runtime RaycastData = FWeaponRaycastData_Runtime();
 };

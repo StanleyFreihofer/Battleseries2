@@ -108,8 +108,6 @@ struct FOnFootWeaponSystem_Runtime
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	TObjectPtr<USceneCaptureComponent2D> ScopeCamera = nullptr;
-	
-
 };
 
 USTRUCT(BlueprintType)
