@@ -5,6 +5,7 @@
 #include "Character_Base.h"
 #include "Utilities/BS2FunctionLibrary.h"
 #include "Components/CapsuleComponent.h"
+#include "Core/Vehicles/CharacterVehicleManager.h"
 #include "GameFramework/Actor.h"
 
 // Sets default values for this component's properties
@@ -44,6 +45,11 @@ void UHealthComponent::KillCharacter()
 {
 	USkeletalMeshComponent* TPMesh = GetOwnerCharacter()->GetMesh();
 	UCapsuleComponent* Capsule = GetOwnerCharacter()->GetCapsuleComponent();
+	
+	if (GetOwnerCharacter()->VehicleManager->GetInVehicle())
+	{
+		GetOwnerCharacter()->VehicleManager->CharacterExitVehicle();
+	}
 	
 	TPMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 	TPMesh->SetSimulatePhysics(true);

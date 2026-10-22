@@ -70,6 +70,8 @@ public:
 	
 	UFUNCTION(BlueprintCallable, BlueprintPure, meta = (BlueprintThreadSafe))
 	int32& GetCSI();
+	UFUNCTION(BlueprintCallable, BlueprintPure, meta = (BlueprintThreadSafe))
+	int32& GetLSI();
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	bool& GetInVehicle();
 	

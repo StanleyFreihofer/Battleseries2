@@ -381,12 +381,14 @@ struct FGroundVehicleData
 	FVehicleSetup VehicleSetup = FVehicleSetup();
 
 	//Vehicle Input
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	FVehicleInput VehicleInput = FVehicleInput();
 	//CHANGE TO FULL VEHICLE INPUT STRUCT!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	//Yaw
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	float Yaw_Input_Rise_Rate = 0.0f;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	float Yaw_Input_Fall_Rate = 0.0f;
+	//UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	//float Yaw_Input_Rise_Rate = 0.0f;
+	//UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	//float Yaw_Input_Fall_Rate = 0.0f;
 
 	//other
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)

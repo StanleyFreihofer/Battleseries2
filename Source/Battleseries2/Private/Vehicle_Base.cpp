@@ -126,8 +126,8 @@ void AVehicle_Base::Init_GroundVehicle()
 
 	//Vehicle Input
 	//Yaw Input Rate
-	ChaosVehicleMovement->YawInputRate.RiseRate = VehicleData->GroundVehicle_Data.Yaw_Input_Rise_Rate;
-	ChaosVehicleMovement->YawInputRate.FallRate = VehicleData->GroundVehicle_Data.Yaw_Input_Fall_Rate;
+	ChaosVehicleMovement->YawInputRate.RiseRate = VehicleData->GroundVehicle_Data.VehicleInput.YawInputRate.RiseRate;
+	ChaosVehicleMovement->YawInputRate.FallRate = VehicleData->GroundVehicle_Data.VehicleInput.YawInputRate.FallRate;
 
 	//allows the vehicle/chaos vehicle to actual simulate physics properly
 	HandleChaosMovement(true);

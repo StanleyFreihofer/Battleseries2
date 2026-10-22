@@ -531,11 +531,6 @@ void UCharacterVehicleManager::HandleViewMethod_Default(const FSeatData& SeatDat
 	}
 }
 
-ACharacter_Base* UCharacterVehicleManager::GetOwnerCharacter()
-{
-	return Cast<ACharacter_Base>(GetOwner());
-}
-
 AVehicle_Base* UCharacterVehicleManager::GetCurrentVehicle()
 {
 	if (CharacterVehicleState.CurrentVehicle)
@@ -553,9 +548,19 @@ int32& UCharacterVehicleManager::GetCSI()
 	return CharacterVehicleState.CSI;
 }
 
+int32& UCharacterVehicleManager::GetLSI()
+{
+	return CharacterVehicleState.LSI;
+}
+
 bool& UCharacterVehicleManager::GetInVehicle()
 {
 	return CharacterVehicleState.inVehicle;
+}
+
+ACharacter_Base* UCharacterVehicleManager::GetOwnerCharacter()
+{
+	return Cast<ACharacter_Base>(GetOwner());
 }
 
 
