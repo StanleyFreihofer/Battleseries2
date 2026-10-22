@@ -41,7 +41,8 @@ void UVehicleLoadoutManager::TickComponent(float DeltaTime, ELevelTick TickType,
 	HandleSeatRangefinders();
 }
 
-#pragma region Factory/Initialization
+#pragma region WeaponFunctions
+#pragma region WeaponFactory/Initialization
 void UVehicleLoadoutManager::Init_VehicleWeaponSystem(TMap<int32, FSavedSeatLoadout> SeatLoadouts)
 {
 	const FVehicleData& VehicleData = OwnerDataAccessor->GetVehicleData();
@@ -1526,6 +1527,93 @@ void UVehicleLoadoutManager::UpdateWeaponStatusUI(int32& SeatIndex, bool& canFir
 }
 
 #pragma endregion
+#pragma endregion
+
+#pragma region OpticFunctions
+
+void UVehicleLoadoutManager::Init_Optic(int32 SeatIndex)
+{
+	FVehicleStartingData& VehicleStartingData = GetOwnerVehicle()->VehicleStartingData;
+	const FVehicleData* VehicleData = &GetOwnerVehicle()->GetVehicleData();
+	
+	VehicleOpticSystem.Add(SeatIndex, FVehicleOpticState());
+	
+	if (VehicleStartingData.StartingVehicleLoadout.SeatLoadout.Find(SeatIndex) && !VehicleStartingData.StartingVehicleLoadout.SeatLoadout.Find(SeatIndex)->Optic.IsNone())
+	{
+		VehicleOpticSystem.Find(SeatIndex)->CurrentAvailableOptics.Init(VehicleStartingData.StartingVehicleLoadout.SeatLoadout.Find(SeatIndex)->Optic, 1);
+	}
+	else
+	{
+		VehicleOpticSystem.Find(SeatIndex)->CurrentAvailableOptics.Init(VehicleData->Seats[SeatIndex].DefaultOptic, 1);
+	}
+}
+
+void UVehicleLoadoutManager::ToggleOptic(int32 SeatIndex)
+{
+	FVehicleOpticState& SeatOpticSystem = *VehicleOpticSystem.Find(SeatIndex);
+	int32 POI = SeatOpticSystem.CurrentOpticIndex;
+	int32& NOI = SeatOpticSystem.CurrentOpticIndex; 
+	UBS2FunctionLibrary::UpdateOpticIndex(SeatOpticSystem.CurrentAvailableOptics.Num(), NOI);
+	if (POI == NOI) { return;  }
+	
+	const FOpticData* CurrentOpticData = UBS2FunctionLibrary::GetDataSubsystem(this)->GetOpticDataRow(SeatOpticSystem.CurrentAvailableOptics[NOI]);
+	const FOpticData& PreviousOpticData = *UBS2FunctionLibrary::GetDataSubsystem(this)->GetOpticDataRow(SeatOpticSystem.CurrentAvailableOptics[POI]);
+	if (!CurrentOpticData)
+	{
+		return;
+	}
+	
+	const bool NewOpticHasPP = CurrentOpticData->OpticPPSettings.WeightedBlendables.Array.Num() > 0;
+	const bool OldOpticHasPP = PreviousOpticData.OpticPPSettings.WeightedBlendables.Array.Num() > 0;
+	bool NewOpticisMagnified = CurrentOpticData->ZoomMagnification != 1.f;
+	bool OldOpticisMagnified = PreviousOpticData.ZoomMagnification != 1.f;
+	bool EqualMagnification = CurrentOpticData->ZoomMagnification == PreviousOpticData.ZoomMagnification;
+	const bool& UpdateHUD = GetOwnerVehicle()->VehicleCurrentState.SeatStates[SeatIndex].UpdateHUD;
+	UCameraComponent* Cam = GetOwnerVehicle()->GetRemoteActiveCam(SeatIndex);
+	float& CurrentFOV = Cam->FieldOfView;
+	FPostProcessSettings& CurrentPPSettings = Cam->PostProcessSettings;
+	float& CurrentPPBlendWeight = Cam->PostProcessBlendWeight;
+	const float ReticleScale = GetVWID(SeatIndex, GetCWIForSeat(SeatIndex), GetEquippedWeaponInSeat(SeatIndex).VehicleWeaponState.BaseWeaponRuntimeData.WeaponID).WeaponUIInstanceData.ReticleScale;
+	
+	UBS2FunctionLibrary::HandleUpdateOptic(90.f, CurrentOpticData->ZoomMagnification, CurrentFOV, CurrentOpticData->OpticPPSettings, CurrentPPSettings, CurrentPPBlendWeight);
+	
+	if (NewOpticHasPP || !EqualMagnification)
+	{
+		//power on
+		UGameplayStatics::PlaySound2D(GetWorld(), CurrentOpticData->PowerOnSound);
+	}
+	else if (OldOpticHasPP)
+	{
+		UGameplayStatics::PlaySound2D(GetWorld(), PreviousOpticData.PowerOffSound);
+	}
+	if (UpdateHUD)
+	{
+		if (!EqualMagnification)
+		{
+			//zoom optic
+			UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateOpticMagnificationHUD_Vehicle(CurrentOpticData->ZoomMagnification);
+			UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateWeaponReticleSize_Vehicle(CurrentOpticData->ZoomMagnification * ReticleScale * 0.75f);
+		}
+		else
+		{
+			//unzoom ptic
+			UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateOpticMagnificationHUD_Vehicle(CurrentOpticData->ZoomMagnification);
+			UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateWeaponReticleSize_Vehicle(ReticleScale);
+		}
+		if (NewOpticHasPP)
+		{
+			UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateVehicleHUD_Color(CurrentOpticData->InverseUIColor);
+		}
+		else if (OldOpticHasPP)
+		{
+			UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateVehicleHUD_Color(FLinearColor(0.0f, 1.0f, 0.036889f, 1.0f));		//HARD CODED FOR NOW, CHANGE TO BE TAKEN FROM HUD/UI SETTINGS
+		}
+		
+		UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateOpticNameHUD_Vehicle(CurrentOpticData->OpticDisplayNameAbrev);
+	}
+}
+
+#pragma endregion
 
 #pragma region Getters
 
@@ -1673,6 +1761,11 @@ TWeakObjectPtr<UAudioComponent> UVehicleLoadoutManager::GetWAC(int32& SeatIndex)
 FName UVehicleLoadoutManager::GetEquippedWeaponIDInSeat(int32 SeatIndex) 
 {
 	return GetEquippedWeaponInSeat(SeatIndex).VehicleWeaponState.BaseWeaponRuntimeData.WeaponID;
+}
+
+AVehicle_Base* UVehicleLoadoutManager::GetOwnerVehicle()
+{
+	return Cast<AVehicle_Base>(GetOwner());
 }
 
 #pragma endregion

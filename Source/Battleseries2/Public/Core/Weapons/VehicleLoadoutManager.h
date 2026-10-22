@@ -114,6 +114,18 @@ struct FSeatWeaponSystem_Runtime
 	FSeatWeaponSystemState SeatWeaponSystemState = FSeatWeaponSystemState();
 };
 
+USTRUCT(BlueprintType)
+struct FVehicleOpticState
+{
+	GENERATED_BODY()
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)		//the optics available to cycle through (first option is default) (OpticIDs)
+	TArray<FName> CurrentAvailableOptics = { FName("NAME_None") };
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	int32 CurrentOpticIndex = 0;
+};
+
 UCLASS(Blueprintable, BlueprintType)
 class BATTLESERIES2_API UVehicleLoadoutManager : public UActorComponent
 {
@@ -127,8 +139,13 @@ public:
 	//key = seatindex
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	TMap<int32, FSeatWeaponSystem_Runtime> VehicleWeaponSystem;
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	TMap<int32, FVehicleOpticState> VehicleOpticSystem;
+	//countermeasures
+	//upgrades
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)		//either the rotation of the bone on the vehicle or the separate mesh here
 	TArray<FTurretState> TurretStates;
+
 
 	UPROPERTY(BlueprintAssignable, Category = "Event Dispatchers")
 	FOnVehicleWeaponSystemCleared OnVWSCleared;
@@ -136,7 +153,8 @@ public:
 	UPROPERTY(BlueprintAssignable, Category = "Event Dispatchers")
 	FWindowedRangefinder WindowedRangefinder;
 
-
+#pragma region WeaponFunctions
+#pragma region WeaponFactory
 	UFUNCTION(BlueprintCallable)
 	void Init_VehicleWeaponSystem(TMap<int32, FSavedSeatLoadout> SeatLoadouts);
 	UFUNCTION(BlueprintCallable)
@@ -145,6 +163,7 @@ public:
 	void Init_WAC(int32 SeatIndex);
 	UFUNCTION(BlueprintCallable)
 	void Init_Turrets(int32 NumOfTurrets);
+#pragma endregion
 
 	UFUNCTION(BlueprintCallable)
 	void ApplyVWID(int32 SeatIndex, int32 WeaponIndex, FName WeaponID);
@@ -234,8 +253,6 @@ public:
 	void HandleShootSimProjectile(FVehicleWeaponState& VehicleWeaponState, const FBaseWeaponData& StaticWeaponData, FSeatWeaponSystem_Runtime& SeatWeaponSystem);
 	UFUNCTION()
 	TWeakObjectPtr<AProjectile_Base> HandleShootProjectileActor(int32 SeatIndex, int32 WeaponIndex);
-	//UFUNCTION()
-	//void SetupProjectileGuidance(TWeakObjectPtr<AProjectile_Base> FiredProjectile, EHomingCapability HomingCapability, FLockOnState& LockOnState, FHitResult& HitResult);
 	UFUNCTION(BlueprintCallable)
 	void HandleAmmoDepletion(int32 SeatIndex, int32 WeaponIndex);
 	UFUNCTION(BlueprintCallable)
@@ -262,8 +279,17 @@ public:
 	void UpdateSeatWACData(int32 SeatIndex, int32 WeaponIndex);
 	UFUNCTION(BlueprintCallable)
 	void UpdateWeaponStatusUI(int32& SeatIndex, bool& canFire);
-
-	//GETTERS
+#pragma endregion 
+	
+#pragma region OpticFunctions
+	UFUNCTION(BlueprintCallable)
+	void Init_Optic(int32 SeatIndex);
+	UFUNCTION(BlueprintCallable)
+	void ToggleOptic(int32 SeatIndex);
+#pragma endregion 
+	
+#pragma region Getters
+#pragma region WeaponGetters
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	FTransform GetMuzzleTransform(FVehicleWeaponState& VehicleWeaponState, FSeatWeaponSystem_Runtime& SeatWeaponSystem, int32 MuzzleIndex);
 	UFUNCTION(BlueprintCallable, BlueprintPure)
@@ -280,11 +306,14 @@ public:
 	UNiagaraComponent* DebugMuzzleVFXPool(int32 SeatIndex, int32 WeaponIndex);
 	UFUNCTION()
 	TWeakObjectPtr<UAudioComponent> GetWAC(int32& SeatIndex);
+#pragma endregion
+	UFUNCTION(BlueprintCallable)
+	AVehicle_Base* GetOwnerVehicle();
+#pragma endregion 
 	
 	FName GetEquippedWeaponIDInSeat(int32 SeatIndex);
 
 protected:
-	//(SeatIndex, [WeaponIndex] BaseWeaponData)
 	TMap<int32, TArray<const FBaseWeaponData*>> CurrentVehicleBaseWeaponData;		//the static base weapon data of each weapon slot in each seat 
 	//current VehicleInstanceWeaponData?
 

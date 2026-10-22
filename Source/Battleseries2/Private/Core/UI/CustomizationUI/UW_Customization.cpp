@@ -730,8 +730,8 @@ void UUW_Customization::HandleSlotSelectionChanged(int32 SeatIndex, FCustomizati
 		{
 			EVehicleType CurrentVehicleType = static_cast<EVehicleType>(CustomizationUIState.TypeEnumIndex);
 			SaveSubsystem->SetLoadoutWeaponChoice_Vehicle(CurrentVehicleType, SeatIndex, SlotConfig.ItemSlot, SelectedItemID);
-			PC->PreviewStageActor->PreviewStageState.CurrentVehicle->VehicleWeaponLogicComponent->ClearWeaponSlotFromSeat(SeatIndex, SlotConfig.ItemSlot);
-			PC->PreviewStageActor->PreviewStageState.CurrentVehicle->VehicleWeaponLogicComponent->ApplyWeaponAtIndexToSeat(SeatIndex, SlotConfig.ItemSlot, SelectedItemID);
+			PC->PreviewStageActor->PreviewStageState.CurrentVehicle->VehicleLoadoutManager->ClearWeaponSlotFromSeat(SeatIndex, SlotConfig.ItemSlot);
+			PC->PreviewStageActor->PreviewStageState.CurrentVehicle->VehicleLoadoutManager->ApplyWeaponAtIndexToSeat(SeatIndex, SlotConfig.ItemSlot, SelectedItemID);
 			break;
 		}
 		case ECoreItemType::VehicleOptic:

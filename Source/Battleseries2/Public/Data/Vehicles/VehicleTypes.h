@@ -7,26 +7,6 @@
 #include "VehicleTypes.generated.h"
 
 USTRUCT(BlueprintType)
-struct FOpticState
-{
-	GENERATED_BODY()
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)		//the optics available to cycle through (first option is default) (OpticIDs)
-	TArray<FName> CurrentAvailableOptics = { FName("NAME_None") };
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	int32 CurrentOpticIndex = 0;
-
-	//current magnfication index?
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	bool isOn = false;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	bool isMagnified = false;
-};
-
-USTRUCT(BlueprintType)
 struct FSeatState
 {
 	GENERATED_BODY()
@@ -43,9 +23,6 @@ struct FSeatState
 	USpringArmComponent* DefaultSpringArm = nullptr;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
 	UCameraComponent* DefaultCamera = nullptr;		//the safety, the camera that should be there no matter what weapon or whatever is equipped
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	FOpticState OpticState = FOpticState();
-
 	//current POV mode?
 
 };

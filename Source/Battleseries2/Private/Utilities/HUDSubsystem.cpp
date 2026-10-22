@@ -199,9 +199,9 @@ void UHUDSubsystem::UpdateTurretLinesHUD_Vehicle()
 	AVehicle_Base* Vehicle = Character->VehicleManager->GetCurrentVehicle();
 	if (CurrentVehicleHMD && CurrentVehicleHMD->TurretLines)
 	{
-		for (int32 i = 0; i < Vehicle->VehicleWeaponLogicComponent->TurretStates.Num(); i++)
+		for (int32 i = 0; i < Vehicle->VehicleLoadoutManager->TurretStates.Num(); i++)
 		{
-			float RelativeYaw = Vehicle->VehicleWeaponLogicComponent->GetTurretWorldYaw(i);
+			float RelativeYaw = Vehicle->VehicleLoadoutManager->GetTurretWorldYaw(i);
 			CurrentVehicleHMD->TurretLines->UpdateTurretLinePosition(i, RelativeYaw);
 		}
 	}

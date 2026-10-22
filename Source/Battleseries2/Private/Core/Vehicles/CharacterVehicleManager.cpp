@@ -7,7 +7,7 @@
 #include "Character_Base.h"
 #include "Vehicle_Base.h"
 #include "Core/Weapons/LoadoutManager.h"
-#include "Core/Weapons/VehicleWeaponLogicComponent.h"
+#include "Core/Weapons/VehicleLoadoutManager.h"
 #include "Core/UI/VehicleHUDs/UW_HUD_Vehicle_Base.h"
 #include "Utilities/HUDSubsystem.h"
 #include "Utilities/DataManagerSubsystem.h"
@@ -211,11 +211,11 @@ void UCharacterVehicleManager::CharacterEnterSeat(const FCharacterSeatContext& S
 
 void UCharacterVehicleManager::HandleEnterSeat_Gunner(const FCharacterSeatContext& SeatContext)
 {
-	TObjectPtr<UVehicleLoadoutManager> VWLC = GetCurrentVehicle()->VehicleWeaponLogicComponent;
+	TObjectPtr<UVehicleLoadoutManager> VWLC = GetCurrentVehicle()->VehicleLoadoutManager;
 	const FVehicleWeaponInstanceData& VWID = VWLC->GetVWID(GetCSI(), VWLC->GetCWIForSeat(GetCSI()), VWLC->GetEquippedWeaponIDInSeat(GetCSI()));
 	if (VWID.AttachmentInstanceData.bAttachCharacter)
 	{
-		TWeakObjectPtr<USkeletalMeshComponent> WeaponMesh = VWLC->VehicleWeaponSystem.Find(GetCSI())->VehicleWeaponSystemState.WeaponSystemMesh;
+		TWeakObjectPtr<USkeletalMeshComponent> WeaponMesh = VWLC->VehicleWeaponSystem.Find(GetCSI())->SeatWeaponSystemState.WeaponSystemMesh;
 		FAttachmentTransformRules AttachmentRules(EAttachmentRule::SnapToTarget, false);
 		GetOwnerCharacter()->GetRootComponent()->AttachToComponent(WeaponMesh.Get(), AttachmentRules, FName("Test"));
 		GetOwnerCharacter()->SetActorRelativeTransform(VWID.AttachmentInstanceData.CharacterTransform);
@@ -369,7 +369,7 @@ void UCharacterVehicleManager::UpdateRangefinder_WindowedVehicle()
 		return;
 	}
 
-	TWeakObjectPtr<UVehicleLoadoutManager> VWLC = GetCurrentVehicle()->VehicleWeaponLogicComponent;
+	TWeakObjectPtr<UVehicleLoadoutManager> VWLC = GetCurrentVehicle()->VehicleLoadoutManager;
 	FVehicleWeapon_Runtime& CurrentWeapon = VWLC->GetEquippedWeaponInSeat(GetCSI());
 	TArray<AActor*> IgnoreActors = {GetCurrentVehicle(), GetOwner() };
 	FTransform TraceTransform;
@@ -422,8 +422,8 @@ void UCharacterVehicleManager::UpdateRangefinder_WindowedVehicle()
 	// Retrieve Hit and Component Data
 	auto* WeaponSystem = VWLC->VehicleWeaponSystem.Find(GetCSI());
 
-	FHitResult& HitResult = WeaponSystem->VehicleWeaponSystemState.EquippedWeaponState.RaycastData.RangefinderData;
-	TObjectPtr<UStaticMeshComponent> Quad = WeaponSystem->VehicleWeaponSystemState.ReticleQuad.Get();
+	FHitResult& HitResult = WeaponSystem->SeatWeaponSystemState.EquippedWeaponState.RaycastData.RangefinderData;
+	TObjectPtr<UStaticMeshComponent> Quad = WeaponSystem->SeatWeaponSystemState.ReticleQuad.Get();
 
 	FString SocketString = FString::Printf(TEXT("SC_%02d"), GetCSI());
 	FName SocketName = FName(*SocketString);
@@ -510,7 +510,7 @@ void UCharacterVehicleManager::HandleViewMethod(const FSeatData& SeatData)
 		return;
 	}
 	
-	TWeakObjectPtr<AActor> ViewTarget = GetCurrentVehicle()->VehicleWeaponLogicComponent->GetCurrentViewTargetAtSeatIndex(SeatIndex);
+	TWeakObjectPtr<AActor> ViewTarget = GetCurrentVehicle()->VehicleLoadoutManager->GetCurrentViewTargetAtSeatIndex(SeatIndex);
 	GetOwnerCharacter()->UpdateViewTarget(ViewTarget, WeaponCam);
 }
 

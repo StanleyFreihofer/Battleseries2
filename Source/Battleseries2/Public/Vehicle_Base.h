@@ -94,7 +94,7 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Components")
 	UChaosWheeledVehicleMovementComponent* ChaosVehicleMovement;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
-	UVehicleLoadoutManager* VehicleWeaponLogicComponent;
+	UVehicleLoadoutManager* VehicleLoadoutManager;
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Components")
 	UVehicleHealthComponent* VehicleHealthComponent;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
@@ -145,8 +145,7 @@ public:
 	void Init_Helicopter();
 	UFUNCTION(BlueprintCallable)
 	void Init_Jet_Chaos();
-	UFUNCTION(BlueprintCallable)
-	void Init_Optic(int32 SeatIndex);
+
 	UFUNCTION(BlueprintCallable)
 	void Init_DefaultSeatRemoteCamera(int32 SeatIndex);
 	UFUNCTION(BlueprintCallable)
@@ -301,15 +300,6 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void UpdateRoll_Jet_Arcade(float InputValue);
 #pragma endregion
-
-	UFUNCTION(BlueprintCallable)
-	void ToggleOptic(int32 SeatIndex);
-	UFUNCTION(BlueprintCallable)
-	void TurnOnPPOptic(int32 SeatIndex);
-	UFUNCTION(BlueprintCallable)
-	void TurnOffPPOptic(int32 SeatIndex, int32 PreviousOpticIndex);
-	UFUNCTION(BlueprintCallable)
-	void ToggleMagnificationOptic(int32 SeatIndex, float ZoomMagnification);
 
 	//Applying
 

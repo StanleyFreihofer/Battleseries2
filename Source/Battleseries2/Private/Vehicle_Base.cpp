@@ -45,7 +45,7 @@ AVehicle_Base::AVehicle_Base()
 	ChaosVehicleMovement->bAutoActivate = false;	
 	ChaosVehicleMovement->SetUpdatedComponent(VehicleMeshComponent);
 	InteractionWidgetComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("Interaction Widget"));
-	VehicleWeaponLogicComponent = CreateDefaultSubobject<UVehicleLoadoutManager>(TEXT("Vehicle Weapon Logic Component"));
+	VehicleLoadoutManager = CreateDefaultSubobject<UVehicleLoadoutManager>(TEXT("Vehicle Weapon Logic Component"));
 	VehicleHealthComponent = CreateDefaultSubobject<UVehicleHealthComponent>("Vehicle Health Component");
 	SpawnComponent = CreateDefaultSubobject<USpawnComponent>(TEXT("Spawn Component"));
 	SpawnComponent->SetupAttachment(GetRootComponent());
@@ -212,18 +212,6 @@ void AVehicle_Base::Init_Jet_Chaos()
 	VehicleMeshComponent->InitAnim(true);
 }
 
-void AVehicle_Base::Init_Optic(int32 SeatIndex)
-{
-	if (VehicleStartingData.StartingVehicleLoadout.SeatLoadout.Find(SeatIndex) && !VehicleStartingData.StartingVehicleLoadout.SeatLoadout.Find(SeatIndex)->Optic.IsNone())
-	{
-		VehicleCurrentState.SeatStates[SeatIndex].OpticState.CurrentAvailableOptics.Init(VehicleStartingData.StartingVehicleLoadout.SeatLoadout.Find(SeatIndex)->Optic, 1);
-	}
-	else
-	{
-		VehicleCurrentState.SeatStates[SeatIndex].OpticState.CurrentAvailableOptics.Init(VehicleData->Seats[SeatIndex].DefaultOptic, 1);
-	}
-}
-
 #pragma region SeatInitialization
 
 void AVehicle_Base::Init_DefaultSeatRemoteCamera(int32 SeatIndex)
@@ -241,7 +229,7 @@ void AVehicle_Base::Init_DefaultSeatRemoteCamera(int32 SeatIndex)
 			VehicleCurrentState.SeatStates[SeatIndex].DefaultCamera = NewCamera;
 			//UpdateSeatActiveCamera(SeatIndex, NewCamera);
 
-			UpdateRemoteActiveCamPP(SeatIndex, UBS2FunctionLibrary::GetDataSubsystem(this)->GetOpticDataRow(VehicleCurrentState.SeatStates[SeatIndex].OpticState.CurrentAvailableOptics[VehicleCurrentState.SeatStates[SeatIndex].OpticState.CurrentOpticIndex])->OpticPPSettings, 1.0f, GetRemoteActiveCam(SeatIndex));
+			UpdateRemoteActiveCamPP(SeatIndex, UBS2FunctionLibrary::GetDataSubsystem(this)->GetOpticDataRow(VehicleLoadoutManager->VehicleOpticSystem.Find(SeatIndex)->CurrentAvailableOptics[VehicleLoadoutManager->VehicleOpticSystem.Find(SeatIndex)->CurrentOpticIndex])->OpticPPSettings, 1.0f, GetRemoteActiveCam(SeatIndex));
 			break;
 	}
 }
@@ -267,7 +255,7 @@ void AVehicle_Base::Init_Seats()
 	{
 		const FSeatData& SeatInfo = VehicleData->Seats[SI];
 
-		Init_Optic(SI);
+		VehicleLoadoutManager->Init_Optic(SI);
 		Init_DefaultSeatRemoteCamera(SI);	
 
 		if (SeatInfo.DefaultCharacterContext.SeatHUD)
@@ -357,7 +345,7 @@ void AVehicle_Base::Init_Vehicle()
 	Init_VehicleMesh(VehicleData->Vehicle_Mesh.Get());
 	Init_EngineAudio();
 	Init_Seats();
-	VehicleWeaponLogicComponent->Init_VehicleWeaponSystem(VehicleStartingData.StartingVehicleLoadout.SeatLoadout);		//weapons and turrets
+	VehicleLoadoutManager->Init_VehicleWeaponSystem(VehicleStartingData.StartingVehicleLoadout.SeatLoadout);		//weapons and turrets
 	switch (VehicleData->Movement_Type)
 	{
 		case E_MovementType::GroundVehicle:
@@ -412,8 +400,8 @@ void AVehicle_Base::Init_Vehicle_Preview()
 {
 	Init_VehicleMesh_Preview(VehicleData->Vehicle_Mesh.Get());
 	Init_Seats();
-	VehicleWeaponLogicComponent->SetComponentTickEnabled(false);
-	VehicleWeaponLogicComponent->Init_VehicleWeaponSystem(VehicleStartingData.StartingVehicleLoadout.SeatLoadout);		//weapons and turrets
+	VehicleLoadoutManager->SetComponentTickEnabled(false);
+	VehicleLoadoutManager->Init_VehicleWeaponSystem(VehicleStartingData.StartingVehicleLoadout.SeatLoadout);		//weapons and turrets
 	ApplyCamoToVehicle(VehicleStartingData.StartingVehicleLoadout.VehicleCamo);
 	
 	Init_Vehicle_Finalize();
@@ -492,7 +480,7 @@ void AVehicle_Base::ApplyLoadoutToSeat(int32 SeatIndex)		//this functions applie
 	{
 		case E_SeatRole::DriverGunner:
 		case E_SeatRole::Gunner:
-			VehicleWeaponLogicComponent->ApplySavedWeaponsToSeat(SeatIndex);
+			VehicleLoadoutManager->ApplySavedWeaponsToSeat(SeatIndex);
 			ApplySavedOpticToSeat(SeatIndex);
 			break;
 	}
@@ -502,7 +490,7 @@ void AVehicle_Base::ApplySavedOpticToSeat(int32 SeatIndex)
 {
 	const FSavedSeatLoadout& SeatLoadoutSave = UBS2FunctionLibrary::GetSaveSubsystem(this)->GetSeatLoadout(VehicleData->Vehicle_Type, SeatIndex);
 
-	VehicleCurrentState.SeatStates[SeatIndex].OpticState.CurrentAvailableOptics.Add(SeatLoadoutSave.Optic);
+	VehicleLoadoutManager->VehicleOpticSystem.Find(SeatIndex)->CurrentAvailableOptics.Add(SeatLoadoutSave.Optic);
 }
 
 void AVehicle_Base::ApplyLoadoutToVehicle()
@@ -551,7 +539,7 @@ void AVehicle_Base::ApplyCamoToVehicle(FName CamoID)
 	}
 	
 	//apply camo to WEAPON attachments (main weapon mesh + decorative attachments)
-	for (auto& SeatWeaponSystem : VehicleWeaponLogicComponent->VehicleWeaponSystem)
+	for (auto& SeatWeaponSystem : VehicleLoadoutManager->VehicleWeaponSystem)
 	{
 		FSeatWeaponSystem_Runtime& WeaponSystem = SeatWeaponSystem.Value;
 		//main weapon mesh attachment
@@ -595,7 +583,7 @@ void AVehicle_Base::ApplyCamoToAttachment(TWeakObjectPtr<UMeshComponent> Mesh, F
 
 void AVehicle_Base::ClearLoadoutFromSeat(int32 SeatIndex)
 {
-	VehicleWeaponLogicComponent->ClearWeaponSystemFromSeat(SeatIndex, true);
+	VehicleLoadoutManager->ClearWeaponSystemFromSeat(SeatIndex, true);
 	//countermeasures
 	//optics
 	//upgrades
@@ -603,7 +591,7 @@ void AVehicle_Base::ClearLoadoutFromSeat(int32 SeatIndex)
 
 void AVehicle_Base::ClearEntireLoadoutFromVehicle()
 {
-	VehicleWeaponLogicComponent->ClearEntireWeaponSystemFromVehicle();
+	VehicleLoadoutManager->ClearEntireWeaponSystemFromVehicle();
 	//clear camo
 	VehicleCurrentState.GenericVehicleState.CurrentCamo = NAME_None;
 }
@@ -774,18 +762,18 @@ void AVehicle_Base::SetupGunner(ACharacter_Base* Character)
 	const FSeatData& SeatData = VehicleData->Seats[Character->VehicleManager->GetCSI()];
 	if (SeatData.ViewMethod == E_ViewMethod::Windowed)
 	{
-		VehicleWeaponLogicComponent->WindowedRangefinder.AddDynamic(Character->VehicleManager, &UCharacterVehicleManager::UpdateRangefinder_WindowedVehicle);
+		VehicleLoadoutManager->WindowedRangefinder.AddDynamic(Character->VehicleManager, &UCharacterVehicleManager::UpdateRangefinder_WindowedVehicle);
 	}
 
-	VehicleWeaponLogicComponent->EquipWeapon(Character->VehicleManager->GetCSI(), 0);
-	VehicleWeaponLogicComponent->GetWAC(Character->VehicleManager->GetCSI())->Activate();
+	VehicleLoadoutManager->EquipWeapon(Character->VehicleManager->GetCSI(), 0);
+	VehicleLoadoutManager->GetWAC(Character->VehicleManager->GetCSI())->Activate();
 }
 
 void AVehicle_Base::DropGunner(TWeakObjectPtr<ACharacter_Base> Character, int32& SeatIndex)
 {
-	VehicleWeaponLogicComponent->WindowedRangefinder.RemoveDynamic(Character.Get()->VehicleManager, &UCharacterVehicleManager::UpdateRangefinder_WindowedVehicle);
-	VehicleWeaponLogicComponent->UnequipWeapon(SeatIndex, VehicleWeaponLogicComponent->GetCWIForSeat(SeatIndex), VehicleWeaponLogicComponent->GetEquippedWeaponInSeat(SeatIndex).VehicleWeaponState.BaseWeaponRuntimeData.isFiring);
-	VehicleWeaponLogicComponent->GetWAC(SeatIndex)->Deactivate();
+	VehicleLoadoutManager->WindowedRangefinder.RemoveDynamic(Character.Get()->VehicleManager, &UCharacterVehicleManager::UpdateRangefinder_WindowedVehicle);
+	VehicleLoadoutManager->UnequipWeapon(SeatIndex, VehicleLoadoutManager->GetCWIForSeat(SeatIndex), VehicleLoadoutManager->GetEquippedWeaponInSeat(SeatIndex).VehicleWeaponState.BaseWeaponRuntimeData.isFiring);
+	VehicleLoadoutManager->GetWAC(SeatIndex)->Deactivate();
 }
 
 #pragma endregion
@@ -1401,125 +1389,12 @@ void AVehicle_Base::Input_HandleReleaseThrottle(int32 SeatIndex)
 
 #pragma endregion
 
-#pragma region Optics
-
-void AVehicle_Base::ToggleOptic(int32 SeatIndex)
-{
-	FOpticState& OpticState = VehicleCurrentState.SeatStates[SeatIndex].OpticState;
-	int32 PreviousOpticIndex = OpticState.CurrentOpticIndex;
-	UBS2FunctionLibrary::UpdateOpticIndex(OpticState.CurrentAvailableOptics.Num(), OpticState.CurrentOpticIndex);
-	if (PreviousOpticIndex == OpticState.CurrentOpticIndex) { return;  }
-
-	const FOpticData* CurrentOpticData = UBS2FunctionLibrary::GetDataSubsystem(this)->GetOpticDataRow(OpticState.CurrentAvailableOptics[OpticState.CurrentOpticIndex]);
-	const FOpticData& PreviousOpticData = *UBS2FunctionLibrary::GetDataSubsystem(this)->GetOpticDataRow(OpticState.CurrentAvailableOptics[PreviousOpticIndex]);
-	if (!CurrentOpticData)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("[Vehicle_Base::ToggleOptic] - Invalid Optic Data for Optic ID: %s"), *OpticState.CurrentAvailableOptics[OpticState.CurrentOpticIndex].ToString());
-		return;
-	}
-	//HandleTogglePPOptic
-	if (CurrentOpticData->OpticPPSettings.WeightedBlendables.Array.Num() > 0)
-	{
-		TurnOnPPOptic(SeatIndex);
-	}
-	else if (OpticState.isOn)
-	{
-		TurnOffPPOptic(SeatIndex, PreviousOpticIndex);
-	}
-
-	ToggleMagnificationOptic(SeatIndex, CurrentOpticData->ZoomMagnification);
-}
-
-void AVehicle_Base::TurnOnPPOptic(int32 SeatIndex)
-{
-	FOpticState& OpticState = VehicleCurrentState.SeatStates[SeatIndex].OpticState;
-	const FOpticData& CurrentOpticData = *UBS2FunctionLibrary::GetDataSubsystem(this)->GetOpticDataRow(OpticState.CurrentAvailableOptics[OpticState.CurrentOpticIndex]);
-	UpdateRemoteActiveCamPP(SeatIndex, UBS2FunctionLibrary::GetDataSubsystem(this)->GetOpticDataRow(OpticState.CurrentAvailableOptics[OpticState.CurrentOpticIndex])->OpticPPSettings, 1.0f, GetRemoteActiveCam(SeatIndex));
-	OpticState.isOn = true;
-	UGameplayStatics::PlaySound2D(GetWorld(), CurrentOpticData.PowerOnSound);
-	if (VehicleCurrentState.SeatStates[SeatIndex].UpdateHUD)
-	{
-		UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateOpticNameHUD_Vehicle(CurrentOpticData.OpticDisplayNameAbrev);
-		if (CurrentOpticData.InverseUIColor.A > 0)
-		{
-			UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateVehicleHUD_Color(CurrentOpticData.InverseUIColor);
-		}
-	}
-}
-
-void AVehicle_Base::TurnOffPPOptic(int32 SeatIndex, int32 PreviousOpticIndex)
-{
-	FOpticState& OpticState = VehicleCurrentState.SeatStates[SeatIndex].OpticState;
-	const FOpticData& CurrentOpticData = *UBS2FunctionLibrary::GetDataSubsystem(this)->GetOpticDataRow(OpticState.CurrentAvailableOptics[OpticState.CurrentOpticIndex]);
-	const FOpticData& PreviousOpticData = *UBS2FunctionLibrary::GetDataSubsystem(this)->GetOpticDataRow(OpticState.CurrentAvailableOptics[PreviousOpticIndex]);
-	UpdateRemoteActiveCamPP(SeatIndex, FPostProcessSettings(), 0.0f, GetRemoteActiveCam(SeatIndex));
-	OpticState.isOn = false;
-	UGameplayStatics::PlaySound2D(GetWorld(), PreviousOpticData.PowerOffSound);
-	if (VehicleCurrentState.SeatStates[SeatIndex].UpdateHUD)
-	{
-		UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateOpticNameHUD_Vehicle(CurrentOpticData.OpticDisplayNameAbrev);
-		if (PreviousOpticData.InverseUIColor.A > 0)
-		{
-
-		}
-		if (CurrentOpticData.InverseUIColor.A == 0)
-		{
-			UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateVehicleHUD_Color(FLinearColor(0.0f, 1.0f, 0.036889f, 1.0f));		//HARD CODED FOR NOW, CHANGE TO BE TAKEN FROM HUD/UI SETTINGS
-		}
-	}
-}
-
-void AVehicle_Base::ToggleMagnificationOptic(int32 SeatIndex, float ZoomMagnification)
-{
-	//when change 90 to default data, put it behind an if to see if cam's current fov = default fov
-	FOpticState& OpticState = VehicleCurrentState.SeatStates[SeatIndex].OpticState;
-	float& CurrentFOV = GetRemoteActiveCam(SeatIndex)->FieldOfView;
-	float ReticleScale = VehicleWeaponLogicComponent->GetVWID(SeatIndex, VehicleWeaponLogicComponent->GetCWIForSeat(SeatIndex), VehicleWeaponLogicComponent->GetEquippedWeaponInSeat(SeatIndex).VehicleWeaponState.BaseWeaponRuntimeData.WeaponID).WeaponUIInstanceData.ReticleScale;
-
-	if (ZoomMagnification != 1.0f)
-	{
-		//zoom optic
-		float NewFOV = CurrentFOV / ZoomMagnification;			//CHANGE TO DEFAULT DATA 	
-		if (!OpticState.isMagnified)
-		{
-			const FOpticData& CurrentOpticData = *UBS2FunctionLibrary::GetDataSubsystem(this)->GetOpticDataRow(OpticState.CurrentAvailableOptics[OpticState.CurrentOpticIndex]);
-			CurrentFOV = NewFOV;
-			OpticState.isMagnified = true;
-			UGameplayStatics::PlaySound2D(GetWorld(), CurrentOpticData.PowerOnSound);
-			if (VehicleCurrentState.SeatStates[SeatIndex].UpdateHUD)
-			{
-				
-				UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateOpticMagnificationHUD_Vehicle(ZoomMagnification);
-				UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateWeaponReticleSize_Vehicle(ZoomMagnification * ReticleScale * 0.75f);
-			}
-		}
-	}
-	//unzoom optic
-	else if (OpticState.isMagnified)
-	{
-		//WORK ON THIS
-		if (!OpticState.isOn)
-		{
-			const FOpticData& CurrentOpticData = *UBS2FunctionLibrary::GetDataSubsystem(this)->GetOpticDataRow(OpticState.CurrentAvailableOptics[OpticState.CurrentOpticIndex]);
-			CurrentFOV = 90.0f;
-			OpticState.isMagnified = false;
-			UGameplayStatics::PlaySound2D(GetWorld(), CurrentOpticData.PowerOnSound);
-			if (VehicleCurrentState.SeatStates[SeatIndex].UpdateHUD)
-			{
-				UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateOpticMagnificationHUD_Vehicle(ZoomMagnification);
-				UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateWeaponReticleSize_Vehicle(ReticleScale);
-			}
-		}
-	}
-}
 
 void AVehicle_Base::UpdateRemoteActiveCamPP(int32 SeatIndex, FPostProcessSettings PPSettings, float BlendWeight, UCameraComponent* Cam)
 {
 	Cam->PostProcessSettings = PPSettings;
 	Cam->PostProcessBlendWeight = BlendWeight;
 }
-
-#pragma endregion
 
 int32 AVehicle_Base::GetControlledTurret(int32 SeatIndex)
 {
@@ -1530,7 +1405,7 @@ void AVehicle_Base::GetTurretPitchRange(int32 TurretIndex, float& OutMin, float&
 {
 	OutMin = VehicleData->Turrets[TurretIndex].TurretPitch.TurretMinMax.GetLowerBoundValue();
 	OutMax = VehicleData->Turrets[TurretIndex].TurretPitch.TurretMinMax.GetUpperBoundValue();
-	OutCurrent = VehicleWeaponLogicComponent->TurretStates[TurretIndex].CurrentTurretPitch;
+	OutCurrent = VehicleLoadoutManager->TurretStates[TurretIndex].CurrentTurretPitch;
 }
 
 UCameraComponent* AVehicle_Base::GetSeatWeaponCam(int32 SeatIndex)
@@ -1540,20 +1415,20 @@ UCameraComponent* AVehicle_Base::GetSeatWeaponCam(int32 SeatIndex)
 	{
 		return nullptr;
 	}
-	FSeatWeaponSystem_Runtime* WeaponSystem = VehicleWeaponLogicComponent->VehicleWeaponSystem.Find(SeatIndex);
+	FSeatWeaponSystem_Runtime* WeaponSystem = VehicleLoadoutManager->VehicleWeaponSystem.Find(SeatIndex);
 	if (!WeaponSystem)
 	{
 		return nullptr;   // weapon system for this seat hasn't been set up yet
 	}
 
-	int32 CWI = VehicleWeaponLogicComponent->GetCWIForSeat(SeatIndex);
+	int32 CWI = VehicleLoadoutManager->GetCWIForSeat(SeatIndex);
 	if (!WeaponSystem->Weapons.IsValidIndex(CWI))
 	{
 		return nullptr;
 	}
 
-	FVehicleWeapon_Runtime& CurrentWeapon = VehicleWeaponLogicComponent->VehicleWeaponSystem.Find(SeatIndex)->Weapons[CWI];
-	const FVehicleWeaponInstanceData& VWID = VehicleWeaponLogicComponent->GetVWID(SeatIndex, CWI, CurrentWeapon.VehicleWeaponState.BaseWeaponRuntimeData.WeaponID);
+	FVehicleWeapon_Runtime& CurrentWeapon = VehicleLoadoutManager->VehicleWeaponSystem.Find(SeatIndex)->Weapons[CWI];
+	const FVehicleWeaponInstanceData& VWID = VehicleLoadoutManager->GetVWID(SeatIndex, CWI, CurrentWeapon.VehicleWeaponState.BaseWeaponRuntimeData.WeaponID);
 	return VWID.bHasSpecialCam ? CurrentWeapon.VehicleWeaponState.WeaponTurretCamera : nullptr;
 }
 

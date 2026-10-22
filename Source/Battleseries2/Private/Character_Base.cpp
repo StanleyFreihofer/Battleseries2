@@ -224,7 +224,7 @@ void ACharacter_Base::Input_ShootWeapon_Vehicle()
 	{
 		case E_SeatRole::DriverGunner:
 		case E_SeatRole::Gunner:
-			FiredProjectile = VehicleManager->GetCurrentVehicle()->VehicleWeaponLogicComponent->HandleStartFire(VehicleManager->GetCSI());
+			FiredProjectile = VehicleManager->GetCurrentVehicle()->VehicleLoadoutManager->HandleStartFire(VehicleManager->GetCSI());
 			break;
 	}
 
@@ -237,7 +237,7 @@ void ACharacter_Base::Input_ShootWeapon_Vehicle()
 
 void ACharacter_Base::Input_SwitchWeapon_Vehicle()
 {
-	bool bSwitched = VehicleManager->GetCurrentVehicle()->VehicleWeaponLogicComponent->SwitchWeapon(VehicleManager->GetCSI());
+	bool bSwitched = VehicleManager->GetCurrentVehicle()->VehicleLoadoutManager->SwitchWeapon(VehicleManager->GetCSI());
 	if (!bSwitched)
 	{
 		return;
