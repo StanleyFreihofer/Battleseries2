@@ -441,29 +441,6 @@ void AVehicle_Base::StopHorn()
 
 #pragma endregion
 
-void AVehicle_Base::UpdateSeatList_AllOccupants()
-{
-	//update seat list/call update seat list function on character side for each character in vehicle
-	TArray<AActor*> AttachedActors;
-	GetAttachedActors(AttachedActors);
-	TArray<ACharacter_Base*> Characters;
-	for (AActor* Actor : AttachedActors)
-	{
-		if (ACharacter_Base* CastedChar = Cast<ACharacter_Base>(Actor))
-		{
-			Characters.Add(CastedChar);
-		}
-	}
-	for (ACharacter_Base* Character : Characters)
-	{
-		Character->VehicleManager->UpdateSeatList(Characters);
-		//call update seat list function on charcter side
-		//has ref to vehicle, which means it can pull its state and see if its occupied
-		//if need be character side function can even have an input of character array to get characters names, etc
-		//this avoids hard coupling characters and vehicles
-	}
-}
-
 void AVehicle_Base::Interact_Implementation(ACharacter_Base* CharacterInteracting)
 {
 	if (VehicleData->bCanRemoteControl)		{ return; }		//cant enter an RC Vehicle via in person interaction
@@ -674,8 +651,6 @@ void AVehicle_Base::SetupNewSeat(ACharacter_Base* Character)
 {
 	const FSeatData& SeatData = VehicleData->Seats[Character->VehicleManager->GetCSI()];
 	HandleSeatOccupationStatus(true, Character->VehicleManager->GetCSI());
-
-	UpdateSeatList_AllOccupants();
 
 	switch (SeatData.SeatRole)
 	{

@@ -307,9 +307,6 @@ public:
 	void SetVehicleAndInit(FVehicleStartingData InputVehicleStartingData);		//used to hook in during runtime i guess? (also calls init/kicks off vehicle setup)
 
 	UFUNCTION(BlueprintCallable)
-	void UpdateSeatList_AllOccupants();
-
-	UFUNCTION(BlueprintCallable)
 	virtual void Interact_Implementation(ACharacter_Base* CharacterInteracting);
 	
 
