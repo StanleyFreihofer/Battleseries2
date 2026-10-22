@@ -80,7 +80,7 @@ struct FTurretState
 };
 
 USTRUCT(BlueprintType)
-struct FVehicleWeaponSystemState
+struct FSeatWeaponSystemState
 {
 	GENERATED_BODY()
 
@@ -103,7 +103,7 @@ struct FVehicleWeaponSystemState
 };
 
 USTRUCT(BlueprintType)
-struct FVehicleWeaponSystem_Runtime
+struct FSeatWeaponSystem_Runtime
 {
 	GENERATED_BODY()
 
@@ -111,7 +111,7 @@ struct FVehicleWeaponSystem_Runtime
 	TArray<FVehicleWeapon_Runtime> Weapons;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
-	FVehicleWeaponSystemState VehicleWeaponSystemState = FVehicleWeaponSystemState();
+	FSeatWeaponSystemState SeatWeaponSystemState = FSeatWeaponSystemState();
 };
 
 UCLASS(Blueprintable, BlueprintType)
@@ -125,10 +125,9 @@ public:
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
 	//key = seatindex
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	TMap<int32, FVehicleWeaponSystem_Runtime> VehicleWeaponSystem;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)		//either the rotation of the bone on the vehicle or the separate mesh here
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	TMap<int32, FSeatWeaponSystem_Runtime> VehicleWeaponSystem;
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)		//either the rotation of the bone on the vehicle or the separate mesh here
 	TArray<FTurretState> TurretStates;
 
 	UPROPERTY(BlueprintAssignable, Category = "Event Dispatchers")
@@ -162,13 +161,13 @@ public:
 	UFUNCTION(BlueprintCallable)
 	USkeletalMeshComponent* ApplyWeaponMeshToVehicle(USkeletalMesh* Mesh, int32 SeatIndex, FTransform MeshTransform);
 	UFUNCTION()
-	void UpdateWeaponAttachment(FVehicleWeaponSystem_Runtime& WeaponSystem, TWeakObjectPtr<USkeletalMesh> LoadedMesh, UClass* LoadedAnimClass, FTransform Transform, FName AttachmentID);
+	void UpdateWeaponAttachment(FSeatWeaponSystem_Runtime& WeaponSystem, TWeakObjectPtr<USkeletalMesh> LoadedMesh, UClass* LoadedAnimClass, FTransform Transform, FName AttachmentID);
 	UFUNCTION(BlueprintCallable)
 	void HandleApplyWeaponDecoratives(int32 SeatIndex, int32 WeaponIndex, FName WeaponID);
 	UFUNCTION(BlueprintCallable)
 	void ApplyWeaponDecoratives(const TArray<FDecorative>& WeaponDecoratives, FVehicleWeapon_Runtime& RuntimeWeaponData);
 	UFUNCTION(BlueprintCallable)
-	void ConfigureWeaponCam(int32 SeatIndex, int32 WeaponIndex, FVehicleWeaponSystem_Runtime& WeaponSystem);
+	void ConfigureWeaponCam(int32 SeatIndex, int32 WeaponIndex, FSeatWeaponSystem_Runtime& WeaponSystem);
 	UFUNCTION(BlueprintCallable)
 	void MountProjectiles(int32 SeatIndex, int32 WeaponIndex);
 
@@ -232,7 +231,7 @@ public:
 	UFUNCTION()
 	TWeakObjectPtr<AProjectile_Base> FireVehicleWeapon(int32 SeatIndex);
 	UFUNCTION(BlueprintCallable)
-	void HandleShootSimProjectile(FVehicleWeaponState& VehicleWeaponState, const FBaseWeaponData& StaticWeaponData, FVehicleWeaponSystem_Runtime& SeatWeaponSystem);
+	void HandleShootSimProjectile(FVehicleWeaponState& VehicleWeaponState, const FBaseWeaponData& StaticWeaponData, FSeatWeaponSystem_Runtime& SeatWeaponSystem);
 	UFUNCTION()
 	TWeakObjectPtr<AProjectile_Base> HandleShootProjectileActor(int32 SeatIndex, int32 WeaponIndex);
 	//UFUNCTION()
@@ -266,7 +265,7 @@ public:
 
 	//GETTERS
 	UFUNCTION(BlueprintCallable, BlueprintPure)
-	FTransform GetMuzzleTransform(FVehicleWeaponState& VehicleWeaponState, FVehicleWeaponSystem_Runtime& SeatWeaponSystem, int32 MuzzleIndex);
+	FTransform GetMuzzleTransform(FVehicleWeaponState& VehicleWeaponState, FSeatWeaponSystem_Runtime& SeatWeaponSystem, int32 MuzzleIndex);
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	const FBaseWeaponData& GetBaseWeaponDataInSlot(int32 SeatIndex, int32 WeaponIndex);
 	UFUNCTION(BlueprintCallable, BlueprintPure)

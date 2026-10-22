@@ -553,11 +553,11 @@ void AVehicle_Base::ApplyCamoToVehicle(FName CamoID)
 	//apply camo to WEAPON attachments (main weapon mesh + decorative attachments)
 	for (auto& SeatWeaponSystem : VehicleWeaponLogicComponent->VehicleWeaponSystem)
 	{
-		FVehicleWeaponSystem_Runtime& WeaponSystem = SeatWeaponSystem.Value;
+		FSeatWeaponSystem_Runtime& WeaponSystem = SeatWeaponSystem.Value;
 		//main weapon mesh attachment
-		if (SeatWeaponSystem.Value.VehicleWeaponSystemState.WeaponSystemMesh.IsValid())
+		if (SeatWeaponSystem.Value.SeatWeaponSystemState.WeaponSystemMesh.IsValid())
 		{
-			ApplyCamoToAttachment(WeaponSystem.VehicleWeaponSystemState.WeaponSystemMesh.Get(), WeaponSystem.VehicleWeaponSystemState.WSAttachmentID, CamoID);
+			ApplyCamoToAttachment(WeaponSystem.SeatWeaponSystemState.WeaponSystemMesh.Get(), WeaponSystem.SeatWeaponSystemState.WSAttachmentID, CamoID);
 		}
 
 		//weapon decorative attachments
@@ -1540,7 +1540,7 @@ UCameraComponent* AVehicle_Base::GetSeatWeaponCam(int32 SeatIndex)
 	{
 		return nullptr;
 	}
-	FVehicleWeaponSystem_Runtime* WeaponSystem = VehicleWeaponLogicComponent->VehicleWeaponSystem.Find(SeatIndex);
+	FSeatWeaponSystem_Runtime* WeaponSystem = VehicleWeaponLogicComponent->VehicleWeaponSystem.Find(SeatIndex);
 	if (!WeaponSystem)
 	{
 		return nullptr;   // weapon system for this seat hasn't been set up yet

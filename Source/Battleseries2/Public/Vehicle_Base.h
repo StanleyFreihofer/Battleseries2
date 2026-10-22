@@ -61,6 +61,9 @@ struct FVehicleStartingData
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Instance", meta = (tooltip = "use to permanently occupy certain seats for lifetime of vehicle"))			
 	TArray<int32> OccupiedSeats;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Instance", meta = (tooltip = "use to lock characters in seats, don't let them leave"))	
+	TArray<int32> LockedSeats;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Instance")
 	FPlayerLoadoutConfig_Vehicle StartingVehicleLoadout = FPlayerLoadoutConfig_Vehicle();
