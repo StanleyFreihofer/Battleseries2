@@ -207,7 +207,7 @@ public:
 	void ClearEntireLoadoutFromVehicle();
 
 	UFUNCTION(BlueprintCallable)
-	void DropSeat(ACharacter_Base* Character, int32& SeatIndex);
+	void DropSeat(int32 SeatIndex);
 
 	UFUNCTION(BlueprintCallable)
 	void SetupNewSeat(int32 SeatIndex, bool isLocalHuman);
@@ -217,8 +217,8 @@ public:
 	void DropDriver();
 	UFUNCTION(BlueprintCallable)
 	void SetupGunner(int32 SeatIndex);
-	UFUNCTION()
-	void DropGunner(TWeakObjectPtr<ACharacter_Base> Character, int32& SeatIndex);
+	UFUNCTION(BlueprintCallable)
+	void DropGunner(int32 SeatIndex);
 
 	UFUNCTION(BlueprintCallable)
 	void AttemptEnterVehicle(ACharacter_Base* Character);
@@ -231,7 +231,7 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void UpdateSeatActiveCamera(int32 SeatIndex, UCameraComponent* NewActiveCamera);
 	UFUNCTION(BlueprintCallable)
-	void DeactiveSeatCameras(int32 SeatIndex);
+	void DeactivateSeatCameras(int32 SeatIndex);
 	UFUNCTION(BlueprintCallable)
 	void UpdateRemoteActiveCamPP(int32 SeatIndex, FPostProcessSettings PPSettings, float BlendWeight, UCameraComponent* Cam);
 	UFUNCTION(BlueprintCallable)

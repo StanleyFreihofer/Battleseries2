@@ -634,7 +634,7 @@ void AVehicle_Base::HandleOccupySeat(bool Occupy, bool LocalHuman, int32 SeatInd
 	VehicleCurrentState.SeatStates[SeatIndex].UpdateHUD = LocalHuman;
 }
 
-void AVehicle_Base::DropSeat(ACharacter_Base* Character, int32& SeatIndex)
+void AVehicle_Base::DropSeat(int32 SeatIndex)
 {
 	//should usually be LSI
 	if (SeatIndex == -1)
@@ -642,11 +642,10 @@ void AVehicle_Base::DropSeat(ACharacter_Base* Character, int32& SeatIndex)
 		SeatIndex = 0;
 	}
 	const FSeatData& SeatData = VehicleData->Seats[SeatIndex];
-	Character->VehicleManager->CharacterExitSeat(SeatData.DefaultCharacterContext);
+	//Character->VehicleManager->CharacterExitSeat(SeatData.DefaultCharacterContext);
 
 	HandleOccupySeat(false, false, SeatIndex);
-	
-	DeactiveSeatCameras(SeatIndex);
+	DeactivateSeatCameras(SeatIndex);
 
 	switch (SeatData.SeatRole)
 	{
@@ -654,11 +653,11 @@ void AVehicle_Base::DropSeat(ACharacter_Base* Character, int32& SeatIndex)
 			DropDriver();
 			break;
 		case E_SeatRole::Gunner:
-			DropGunner(Character, SeatIndex);
+			DropGunner(SeatIndex);
 			break;
 		case E_SeatRole::DriverGunner:
 			DropDriver();
-			DropGunner(Character, SeatIndex);
+			DropGunner(SeatIndex);
 			break;
 	}
 }
@@ -746,22 +745,13 @@ void AVehicle_Base::DropDriver()
 
 void AVehicle_Base::SetupGunner(int32 SeatIndex)
 {
-	//called once on enter of a gunner seat, seat hud should already be on viewport
-	//const FSeatData& SeatData = VehicleData->Seats[SeatIndex];
-	/**
-	if (SeatData.ViewMethod == E_ViewMethod::Windowed)
-	{
-		VehicleLoadoutManager->WindowedRangefinder.AddDynamic(Character->VehicleManager, &UCharacterVehicleManager::UpdateRangefinder_WindowedVehicle);
-	}
-	**/
-
 	VehicleLoadoutManager->EquipWeapon(SeatIndex, 0);
 	VehicleLoadoutManager->GetWAC(SeatIndex)->Activate();
 }
 
-void AVehicle_Base::DropGunner(TWeakObjectPtr<ACharacter_Base> Character, int32& SeatIndex)
+void AVehicle_Base::DropGunner(int32 SeatIndex)
 {
-	VehicleLoadoutManager->WindowedRangefinder.RemoveDynamic(Character.Get()->VehicleManager, &UCharacterVehicleManager::UpdateRangefinder_WindowedVehicle);
+	//VehicleLoadoutManager->WindowedRangefinder.RemoveDynamic(Character.Get()->VehicleManager, &UCharacterVehicleManager::UpdateRangefinder_WindowedVehicle);
 	VehicleLoadoutManager->UnequipWeapon(SeatIndex, VehicleLoadoutManager->GetCWIForSeat(SeatIndex), VehicleLoadoutManager->GetEquippedWeaponInSeat(SeatIndex).VehicleWeaponState.BaseWeaponRuntimeData.isFiring);
 	VehicleLoadoutManager->GetWAC(SeatIndex)->Deactivate();
 }
@@ -788,7 +778,7 @@ void AVehicle_Base::ChangeSeat(ACharacter_Base* Character)
 	bool bFoundSeat = CycleThroughSeats(Character);
 	if (bFoundSeat)
 	{
-		DropSeat(Character, Character->VehicleManager->CharacterVehicleState.LSI);
+		DropSeat(Character->VehicleManager->GetLSI());
 		SetupNewSeat(Character->VehicleManager->GetCSI(), Character->IsLocalHuman());
 	}
 }
@@ -827,7 +817,7 @@ void AVehicle_Base::UpdateSeatActiveCamera(int32 SeatIndex, UCameraComponent* Ne
 	NewActiveCamera->SetActive(true);
 }
 
-void AVehicle_Base::DeactiveSeatCameras(int32 SeatIndex)
+void AVehicle_Base::DeactivateSeatCameras(int32 SeatIndex)
 {
 	FSeatState& SeatState = VehicleCurrentState.SeatStates[SeatIndex];
 	if (SeatState.DefaultCamera)

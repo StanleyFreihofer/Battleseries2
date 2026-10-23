@@ -30,6 +30,8 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void AttemptEnterVehicle(AVehicle_Base* Vehicle);
 	UFUNCTION(BlueprintCallable)
+	void StartEnterVehicle(AVehicle_Base* Vehicle, int32 SeatIndex);
+	UFUNCTION(BlueprintCallable)
 	void CharacterEnterVehicle();
 	UFUNCTION(BlueprintCallable)
 	void EnterVehicle_LocalPlayer();
@@ -42,6 +44,12 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void PhysicallyExitVehicle();
 	UFUNCTION(BlueprintCallable)
+	void StartEnterSeat();
+	UFUNCTION(BlueprintCallable)
+	void StartExitSeat(int32 SeatIndex);
+	UFUNCTION(BlueprintCallable)
+	void ChangeSeat(int32 SeatIndex);
+	UFUNCTION(BlueprintCallable)
 	void CharacterEnterSeat(const FCharacterSeatContext& SeatContext);
 	UFUNCTION(BlueprintCallable)
 	void HandleEnterSeat_Gunner(const FCharacterSeatContext& SeatContext);
@@ -49,6 +57,9 @@ public:
 	void CharacterExitSeat(const FCharacterSeatContext& SeatContext);
 	UFUNCTION(BlueprintCallable)
 	FVector CalculateSafeExitLocation(AActor* Vehicle);
+	
+	UFUNCTION(BlueprintCallable)
+	void AttemptChangeSeat();
 #pragma endregion	
 	UFUNCTION(BlueprintCallable)
 	void UpdateSeatIndexes(int32 NewLSI, int32 NewCSI, int32 NewNSI);

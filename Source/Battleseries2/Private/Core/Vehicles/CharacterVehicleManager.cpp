@@ -85,27 +85,16 @@ void UCharacterVehicleManager::AttemptEnterVehicle(AVehicle_Base* Vehicle)
 	int32 SI = Vehicle->FindNextEmptySeat(GetCSI());
 	if (SI != INDEX_NONE)
 	{
-		//StartEnterVehicle
-		const FSeatData& SeatData = Vehicle->GetVehicleData().Seats[SI];
-		UpdateSeatIndexes(GetCSI(), SI, SI);
-		ManageinVehicleStatus(Vehicle, true);
-		
-		//StartEnterSeat
-		Vehicle->SetupNewSeat(SI, GetOwnerCharacter()->IsLocalHuman());
-		switch (SeatData.SeatRole)
-		{
-			case E_SeatRole::DriverGunner:
-			case E_SeatRole::Gunner:
-				if (SeatData.ViewMethod == E_ViewMethod::Windowed)
-				{
-					Vehicle->VehicleLoadoutManager->WindowedRangefinder.AddDynamic(this, &UCharacterVehicleManager::UpdateRangefinder_WindowedVehicle);
-				}
-				//Vehicle->SetupGunner(SI);
-				break;
-		}
-		HandleViewMethod(SeatData);
-		CharacterEnterSeat(SeatData.DefaultCharacterContext);
+		StartEnterVehicle(Vehicle, SI);
 	}
+}
+
+void UCharacterVehicleManager::StartEnterVehicle(AVehicle_Base* Vehicle, int32 SeatIndex)
+{
+	//const FSeatData& SeatData = Vehicle->GetVehicleData().Seats[SeatIndex];
+	UpdateSeatIndexes(GetCSI(), SeatIndex, SeatIndex);
+	ManageinVehicleStatus(Vehicle, true);
+	StartEnterSeat();
 }
 
 void UCharacterVehicleManager::CharacterEnterVehicle()
@@ -163,8 +152,7 @@ void UCharacterVehicleManager::CharacterExitVehicle()
 {
 	if (GetCurrentVehicle())
 	{
-		//CharacterExitSeat(GetCurrentVehicle()->VehicleData->Seats[GetCSI()].DefaultCharacterContext);
-		GetCurrentVehicle()->DropSeat(GetOwnerCharacter(), GetCSI());
+		StartExitSeat(GetCSI());
 		
 		if (!GetCurrentVehicle()->VehicleData->bCanRemoteControl)
 		{
@@ -210,6 +198,51 @@ void UCharacterVehicleManager::PhysicallyExitVehicle()
 	GetOwnerCharacter()->FPArmsSpringArm->bUsePawnControlRotation = true;
 	GetOwnerCharacter()->FPArmsSpringArm->bInheritRoll = false;
 	GetOwnerCharacter()->FPArmsSpringArm->bEnableCameraLag = true;
+}
+
+void UCharacterVehicleManager::StartEnterSeat()
+{
+	AVehicle_Base* Vehicle = GetCurrentVehicle();
+	const FSeatData& SeatData = Vehicle->GetVehicleData().Seats[GetCSI()];
+	
+	Vehicle->SetupNewSeat(GetCSI(), GetOwnerCharacter()->IsLocalHuman());
+	switch (SeatData.SeatRole)
+	{
+		case E_SeatRole::DriverGunner:
+		case E_SeatRole::Gunner:
+			if (SeatData.ViewMethod == E_ViewMethod::Windowed)
+			{
+				Vehicle->VehicleLoadoutManager->WindowedRangefinder.AddDynamic(this, &UCharacterVehicleManager::UpdateRangefinder_WindowedVehicle);
+			}
+			break;
+	}
+	HandleViewMethod(SeatData);
+	CharacterEnterSeat(SeatData.DefaultCharacterContext);
+}
+
+void UCharacterVehicleManager::StartExitSeat(int32 SeatIndex)
+{
+	const FSeatData& SeatData = GetCurrentVehicle()->GetVehicleData().Seats[SeatIndex];
+	CharacterExitSeat(SeatData.DefaultCharacterContext);
+	GetCurrentVehicle()->DropSeat(SeatIndex);
+	switch (SeatData.SeatRole)
+	{
+		case E_SeatRole::DriverGunner:
+		case E_SeatRole::Gunner:
+			if (SeatData.ViewMethod == E_ViewMethod::Windowed)
+			{
+				GetCurrentVehicle()->VehicleLoadoutManager->WindowedRangefinder.RemoveDynamic(this, &UCharacterVehicleManager::UpdateRangefinder_WindowedVehicle);
+			}
+			break;
+	}
+}
+
+void UCharacterVehicleManager::ChangeSeat(int32 SeatIndex)
+{
+	int32 LSI = GetCSI();
+	UpdateSeatIndexes(GetCSI(), SeatIndex, SeatIndex);
+	StartExitSeat(LSI);
+	StartEnterSeat();
 }
 
 #pragma endregion
@@ -323,6 +356,16 @@ FVector UCharacterVehicleManager::CalculateSafeExitLocation(AActor* Vehicle)
 
 	// Fallback: If all else fails, try a point slightly further away or above
 	return Vehicle->GetActorLocation() + (Vehicle->GetActorUpVector() * 250.0f);
+}
+
+void UCharacterVehicleManager::AttemptChangeSeat()
+{
+	if (!GetInVehicle())		{ return;}
+	int32 SI = GetCurrentVehicle()->FindNextEmptySeat(GetCSI());
+	if (SI != INDEX_NONE)
+	{
+		ChangeSeat(SI);
+	}
 }
 #pragma endregion
 
