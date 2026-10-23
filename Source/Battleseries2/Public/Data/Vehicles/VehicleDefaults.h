@@ -3,10 +3,14 @@
 #include "CoreMinimal.h"
 #include "Engine/DataAsset.h"
 #include "NiagaraSystem.h"
+#include "InputMappingContext.h"
 #include "Data/Core/Combat/Data_Combat.h"
+#include "Data/Vehicles/VehicleEnums.h"
 #include "VehicleDefaults.generated.h"
 
 enum class EVehicleType : uint8;
+enum class E_MovementType : uint8;
+enum class E_SeatRole : uint8;
 
 //defines traits of a vehicle type
 
@@ -50,7 +54,58 @@ struct FVehicleCombatDefinition
 };
 
 USTRUCT(BlueprintType)
-struct FVehicleTypeDefintion        //entity type definition (store in core instead?)
+struct FSeatWeaponSlot
+{
+    GENERATED_BODY()
+    
+    UPROPERTY(EditAnywhere, BlueprintReadOnly)
+    FText WeaponSlotDisplayName = FText::GetEmpty();
+    
+    UPROPERTY(EditAnywhere, BlueprintReadOnly)
+    TArray<FName> WeaponOptions;
+};
+
+USTRUCT(BlueprintType)
+struct FSeatLoadoutOptions
+{
+    GENERATED_BODY()
+    
+    UPROPERTY(EditAnywhere, BlueprintReadOnly)
+    TArray<FSeatWeaponSlot> AvailableWeaponSlots;
+    
+    UPROPERTY(EditAnywhere, BlueprintReadOnly)
+    TArray<FName> AvailableOptics;
+    
+    UPROPERTY(EditAnywhere, BlueprintReadOnly)
+    TArray<FName> AvailableCountermeasures;
+    
+    UPROPERTY(EditAnywhere, BlueprintReadOnly)
+    TArray<FName> AvailableUpgrades;
+};
+
+USTRUCT(BlueprintType)
+struct FVehicleTypeSeatDefinition
+{
+    GENERATED_BODY()
+    
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (tooltip = "also used for the attaching of player character to socket on vehicle mesh"))
+    FText SeatName = FText::GetEmpty();
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly)
+    E_SeatRole SeatRole = E_SeatRole::Driver;
+    
+    UPROPERTY(EditAnywhere, BlueprintReadOnly)
+    TObjectPtr<UInputMappingContext> InputMappingContext = nullptr;
+    
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (tooltip = "The Array Indexes of the turret(s) this seat controls"))
+    TArray<int32> ControlledTurretIndexes;
+    
+    UPROPERTY(EditAnywhere, BlueprintReadOnly)
+    FSeatLoadoutOptions SeatLoadoutOptions = FSeatLoadoutOptions();
+};
+
+USTRUCT(BlueprintType)
+struct FVehicleTypeDefinition        //entity type definition (store in core instead?)
 {
 	GENERATED_BODY()
 
@@ -64,13 +119,16 @@ struct FVehicleTypeDefintion        //entity type definition (store in core inst
     TSoftObjectPtr<UTexture2D> TypeIcon = nullptr;               //minimap?
     
     UPROPERTY(EditAnywhere, BlueprintReadOnly)
+    E_MovementType Movement_Type = E_MovementType::GroundVehicle;
+    
+    UPROPERTY(EditAnywhere, BlueprintReadOnly)
+    TArray<FVehicleTypeSeatDefinition> SeatDefinitions;
+    
+    UPROPERTY(EditAnywhere, BlueprintReadOnly)
     FVehicleTypeHealthDefinition VehicleHealthDefinition = FVehicleTypeHealthDefinition();
     
     UPROPERTY(EditAnywhere, BlueprintReadOnly)
     FVehicleCombatDefinition VehicleCombatDefinition = FVehicleCombatDefinition();
-
-    //default seat count?
-    //default turrets, weapons, etc?
 };
 
 
@@ -88,5 +146,5 @@ public:
     TArray<TSoftObjectPtr<UNiagaraSystem>> FireFX;
 
     UPROPERTY(EditAnywhere, BlueprintReadOnly)
-    TMap<EVehicleType, FVehicleTypeDefintion> VehicleTypeDefintions;
+    TMap<EVehicleType, FVehicleTypeDefinition> VehicleTypeDefintions;
 };

@@ -216,7 +216,6 @@ void AVehicle_Base::Init_Jet_Chaos()
 
 void AVehicle_Base::Init_DefaultSeatRemoteCamera(int32 SeatIndex)
 {
-	//init default seat camera
 	//every seat that is remote should do this
 	E_ViewMethod ViewMethod = VehicleData->Seats[SeatIndex].ViewMethod;
 	FString CameraSocketString = FString::Printf(TEXT("SC_%02d"), SeatIndex);		//SeatCam_SeatIndex		[SC_00]
@@ -318,6 +317,7 @@ void AVehicle_Base::Init_VehicleData()			//(load vehicle data)
 {
 	//1. load base vehicle data row
 	VehicleData = UBS2FunctionLibrary::GetDataSubsystem(this)->GetVehicleDataRow(VehicleStartingData.VehicleID);
+	VehicleTypeDefintion = UBS2FunctionLibrary::GetDataSubsystem(this)->GetVehicleDefaults()->VehicleTypeDefintions.Find(VehicleData->Vehicle_Type);
 
 	//2. Asynchronously load assets (mesh, anim class)
 	TArray<FSoftObjectPath> AssetsToLoad;
@@ -346,7 +346,7 @@ void AVehicle_Base::Init_Vehicle()
 	Init_EngineAudio();
 	Init_Seats();
 	VehicleLoadoutManager->Init_VehicleWeaponSystem(VehicleStartingData.StartingVehicleLoadout.SeatLoadout);		//weapons and turrets
-	switch (VehicleData->Movement_Type)
+	switch (VehicleTypeDefintion->Movement_Type)
 	{
 		case E_MovementType::GroundVehicle:
 			UE_LOG(LogTemp, Log, TEXT("GROUND VEHICLE SETUP STARTED"));
@@ -446,7 +446,7 @@ void AVehicle_Base::StopHorn()
 void AVehicle_Base::ApplyLoadoutToSeat(int32 SeatIndex)		//this functions applies everything in the loadout (weapons, optics, upgrades, camos (if applicable), etc)
 {
 	//now only called by ApplyLoadoutToVehicle when enter main seat (driver/drivergunner) and is then applied TO EVERY SEAT
-	switch (VehicleData->Seats[SeatIndex].SeatRole)
+	switch (VehicleTypeDefintion->SeatDefinitions[SeatIndex].SeatRole)
 	{
 		case E_SeatRole::DriverGunner:
 		case E_SeatRole::Gunner:
@@ -614,7 +614,7 @@ void AVehicle_Base::DropSeat(int32 SeatIndex)
 	{
 		SeatIndex = 0;
 	}
-	const FSeatData& SeatData = VehicleData->Seats[SeatIndex];
+	const FVehicleTypeSeatDefinition& SeatData = VehicleTypeDefintion->SeatDefinitions[SeatIndex];
 
 	HandleOccupySeat(false, false, SeatIndex);
 	DeactivateSeatCameras(SeatIndex);
@@ -637,7 +637,7 @@ void AVehicle_Base::DropSeat(int32 SeatIndex)
 void AVehicle_Base::SetupNewSeat(int32 SeatIndex, bool isLocalHuman)
 {
 	//split last part into finish setupnewseat (rename this to StartSetupSeat maybe)?
-	const FSeatData& SeatData = VehicleData->Seats[SeatIndex];
+	const FVehicleTypeSeatDefinition& SeatData = VehicleTypeDefintion->SeatDefinitions[SeatIndex];
 	
 	HandleOccupySeat(true, isLocalHuman, SeatIndex);
 
@@ -659,9 +659,6 @@ void AVehicle_Base::SetupNewSeat(int32 SeatIndex, bool isLocalHuman)
 			break;
 	}
 	
-	//Character->VehicleManager->HandleViewMethod(SeatData);
-	//Character->VehicleManager->CharacterEnterSeat(SeatData.DefaultCharacterContext);
-	
 	if (VehicleMeshComponent->GetAnimInstance()->GetClass()->ImplementsInterface(UAnims::StaticClass()))
 	{
 		IAnims::Execute_OnEnterSeat_Vehicle(VehicleMeshComponent->GetAnimInstance(), SeatIndex);
@@ -681,7 +678,7 @@ void AVehicle_Base::SetupDriver()
 	VehicleCurrentState.GenericVehicleState.EngineAudioComponent->Play();
 	//engine/whatever else start up audio
 
-	switch (VehicleData->Movement_Type)
+	switch (VehicleTypeDefintion->Movement_Type)
 	{
 		case E_MovementType::GroundVehicle:
 			break;
@@ -703,7 +700,7 @@ void AVehicle_Base::DropDriver()
 	GetWorldTimerManager().ClearTimer(TimerHandle_AudioUpdate_Engine);
 	UGameplayStatics::PlaySoundAtLocation(this, Cast<USoundBase>(VehicleData->GenericVehicleAudio.EngineShutdownAudio), GetActorLocation(), FRotator::ZeroRotator, 1.0f, 1.0f, 0.0f);
 
-	switch (VehicleData->Movement_Type)
+	switch (VehicleTypeDefintion->Movement_Type)
 	{
 		case E_MovementType::Helicopter:
 			GetWorldTimerManager().ClearTimer(VehicleMovementTimer);
@@ -733,8 +730,9 @@ void AVehicle_Base::DropGunner(int32 SeatIndex)
 
 void AVehicle_Base::SyncActiveCameraForSeat(int32 SeatIndex)
 {
+	const FVehicleTypeSeatDefinition& SeatTypeData = VehicleTypeDefintion->SeatDefinitions[SeatIndex];
 	const FSeatData& SeatData = VehicleData->Seats[SeatIndex];
-	if (SeatData.SeatRole == E_SeatRole::Gunner || SeatData.SeatRole == E_SeatRole::DriverGunner)
+	if (SeatTypeData.SeatRole == E_SeatRole::Gunner || SeatTypeData.SeatRole == E_SeatRole::DriverGunner)
 	{
 		if (UCameraComponent* WeaponCam = GetSeatWeaponCam(SeatIndex))
 		{
@@ -782,7 +780,7 @@ void AVehicle_Base::DeactivateSeatCameras(int32 SeatIndex)
 
 void AVehicle_Base::UpdateEngineAudio()
 {
-	switch (VehicleData->Movement_Type)
+	switch (VehicleTypeDefintion->Movement_Type)
 	{
 		case E_MovementType::GroundVehicle:
 			VehicleCurrentState.GenericVehicleState.EngineAudioComponent->SetFloatParameter(FName("RPM"), FMath::Abs(ChaosVehicleMovement->GetEngineRotationSpeed()));
@@ -1287,7 +1285,7 @@ void AVehicle_Base::UpdateRoll_Jet_Arcade(float InputValue)
 
 void AVehicle_Base::Input_HandleApplyThrottle(float ThrottleValue, int32 SeatIndex)
 {
-	const E_MovementType& MovementType = VehicleData->Movement_Type;
+	const E_MovementType& MovementType = VehicleTypeDefintion->Movement_Type;
 	switch (MovementType)
 	{
 		case E_MovementType::GroundVehicle:
@@ -1304,7 +1302,7 @@ void AVehicle_Base::Input_HandleApplyThrottle(float ThrottleValue, int32 SeatInd
 
 void AVehicle_Base::Input_HandleReleaseThrottle(int32 SeatIndex)
 {
-	const E_MovementType& MovementType = VehicleData->Movement_Type;
+	const E_MovementType& MovementType = VehicleTypeDefintion->Movement_Type;
 	switch (MovementType)
 	{
 		case E_MovementType::GroundVehicle:
@@ -1323,7 +1321,7 @@ void AVehicle_Base::UpdateRemoteActiveCamPP(int32 SeatIndex, FPostProcessSetting
 
 int32 AVehicle_Base::GetControlledTurret(int32 SeatIndex)
 {
-	return VehicleData->Seats[SeatIndex].AvailableItems.ControlledTurretIndexes[0];
+	return VehicleTypeDefintion->SeatDefinitions[SeatIndex].ControlledTurretIndexes[0];
 }
 
 void AVehicle_Base::GetTurretPitchRange(int32 TurretIndex, float& OutMin, float& OutMax, float& OutCurrent)
@@ -1335,8 +1333,8 @@ void AVehicle_Base::GetTurretPitchRange(int32 TurretIndex, float& OutMin, float&
 
 UCameraComponent* AVehicle_Base::GetSeatWeaponCam(int32 SeatIndex)
 {
-	const FSeatData& SeatData = VehicleData->Seats[SeatIndex];
-	if (SeatData.SeatRole != E_SeatRole::Gunner && SeatData.SeatRole != E_SeatRole::DriverGunner)
+	const FVehicleTypeSeatDefinition& SeatTypeData = VehicleTypeDefintion->SeatDefinitions[SeatIndex];
+	if (SeatTypeData.SeatRole != E_SeatRole::Gunner && SeatTypeData.SeatRole != E_SeatRole::DriverGunner)
 	{
 		return nullptr;
 	}
@@ -1423,13 +1421,13 @@ bool AVehicle_Base::GetIfCanLockOn_Implementation(const TArray<ETargetingCategor
 				switch (TargetingCategory)
 				{
 					case ETargetingCategory::GroundVehicle:
-						if (VehicleData->Movement_Type == E_MovementType::GroundVehicle || VehicleData->Movement_Type == E_MovementType::Boat)
+						if (VehicleTypeDefintion->Movement_Type == E_MovementType::GroundVehicle || VehicleTypeDefintion->Movement_Type == E_MovementType::Boat)
 						{
 							return true;
 						}
 						break;
 					case ETargetingCategory::Aircraft:
-						if (VehicleData->Movement_Type == E_MovementType::Helicopter || VehicleData->Movement_Type == E_MovementType::Jet)
+						if (VehicleTypeDefintion->Movement_Type == E_MovementType::Helicopter || VehicleTypeDefintion->Movement_Type == E_MovementType::Jet)
 						{
 							return true;
 						}

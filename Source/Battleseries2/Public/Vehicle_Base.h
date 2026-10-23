@@ -11,6 +11,7 @@
 #include "Core/Weapons/I_LockOnTarget.h"
 // Structs used by VALUE must be included
 #include "Data/Vehicles/Data_Vehicle.h" 
+#include "Data/Vehicles/VehicleDefaults.h"
 #include "Data/Core/CoreTypes.h"
 #include "Data/Vehicles/VehicleTypes.h"
 // UBT/UHT requirements
@@ -110,6 +111,7 @@ public:
 
 	//Static Data
 	const FVehicleData* VehicleData;			
+	const FVehicleTypeDefinition* VehicleTypeDefintion;
 
 	UPROPERTY(BlueprintAssignable, Category = "Event Dispatchers")
 	FOnSeatsInitialized OnSeatsInitialized;

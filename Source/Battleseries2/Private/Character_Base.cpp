@@ -220,7 +220,7 @@ void ACharacter_Base::Input_Interact()
 void ACharacter_Base::Input_ShootWeapon_Vehicle()
 {
 	TWeakObjectPtr<AProjectile_Base> FiredProjectile;
-	switch (VehicleManager->GetCurrentVehicle()->VehicleData->Seats[VehicleManager->GetCSI()].SeatRole)
+	switch (VehicleManager->GetCurrentVehicle()->VehicleTypeDefintion->SeatDefinitions[VehicleManager->GetCSI()].SeatRole)
 	{
 		case E_SeatRole::DriverGunner:
 		case E_SeatRole::Gunner:
@@ -242,8 +242,7 @@ void ACharacter_Base::Input_SwitchWeapon_Vehicle()
 	{
 		return;
 	}
-	const FSeatData& SeatData = VehicleManager->GetCurrentVehicle()->VehicleData->Seats[VehicleManager->GetCSI()];
-	VehicleManager->HandleViewMethod(SeatData);
+	VehicleManager->HandleViewMethod(VehicleManager->GetCSI());
 }
 
 #pragma endregion

@@ -10,7 +10,7 @@ struct FInfantryWeaponData;
 struct FWeaponAttachmentData;
 struct FGadgetData;
 struct FVehicleData;
-struct FVehicleTypeDefintion;
+struct FVehicleTypeDefinition;
 struct FVehicleWeaponData;
 struct FVehicleAttachmentData;
 struct FOpticData;

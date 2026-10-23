@@ -45,10 +45,12 @@ void UVehicleLoadoutManager::TickComponent(float DeltaTime, ELevelTick TickType,
 #pragma region WeaponFactory/Initialization
 void UVehicleLoadoutManager::Init_VehicleWeaponSystem(TMap<int32, FSavedSeatLoadout> SeatLoadouts)
 {
-	const FVehicleData& VehicleData = OwnerDataAccessor->GetVehicleData();
-	for (int32 SeatIndex = 0; SeatIndex < VehicleData.Seats.Num(); SeatIndex++)
+	const FVehicleData& VehicleData = GetOwnerVehicle()->GetVehicleData();
+	const FVehicleTypeDefinition* VehicleTypeDefintion = GetOwnerVehicle()->VehicleTypeDefintion;
+	
+	for (int32 SeatIndex = 0; SeatIndex < VehicleTypeDefintion->SeatDefinitions.Num(); SeatIndex++)
 	{
-		if (VehicleData.Seats[SeatIndex].SeatRole == E_SeatRole::DriverGunner || VehicleData.Seats[SeatIndex].SeatRole == E_SeatRole::Gunner)
+		if (VehicleTypeDefintion->SeatDefinitions[SeatIndex].SeatRole == E_SeatRole::DriverGunner || VehicleTypeDefintion->SeatDefinitions[SeatIndex].SeatRole == E_SeatRole::Gunner)
 		{
 			Init_WAC(SeatIndex);
 			Init_HUDReticleQuad(SeatIndex);
@@ -114,6 +116,7 @@ void UVehicleLoadoutManager::Init_Turrets(int32 NumOfTurrets)
 void UVehicleLoadoutManager::ApplyVWID(int32 SeatIndex, int32 WeaponIndex, FName WeaponID)
 {
 	UE_LOG(LogTemp, Error, TEXT("[VWLC::ApplyWeaponInstanceDataAtIndexToSeat] SI = %d, WI = %d, WeaponID = %s"), SeatIndex, WeaponIndex, *WeaponID.ToString());
+	const FVehicleTypeSeatDefinition& SeatDefinition = GetOwnerVehicle()->VehicleTypeDefintion->SeatDefinitions[SeatIndex];
 	FSeatWeaponSystem_Runtime* WeaponSystem = VehicleWeaponSystem.Find(SeatIndex);
 	FVehicleWeapon_Runtime& VehicleWeaponToFill = WeaponSystem->Weapons[WeaponIndex];
 	VehicleWeaponToFill.VehicleWeaponInstanceData = GetVWID(SeatIndex, WeaponIndex, WeaponID);
@@ -130,7 +133,7 @@ void UVehicleLoadoutManager::ApplyVWID(int32 SeatIndex, int32 WeaponIndex, FName
 	else
 	{
 		const FVehicleData& VehicleData = OwnerDataAccessor->GetVehicleData();
-		FName SeatName = (*VehicleData.Seats[SeatIndex].SeatName.ToString());
+		FName SeatName = (*SeatDefinition.SeatName.ToString());
 		if (VehicleWeaponToFill.VehicleWeaponInstanceData.bHasSeparateMesh)
 		{
 			SetupMuzzleSockets(WeaponSystem->SeatWeaponSystemState.WeaponSystemMesh, SeatIndex, WeaponIndex, SeatName);
@@ -515,11 +518,12 @@ float UVehicleLoadoutManager::CalculateTurret(float InputValue, float TurretSpee
 void UVehicleLoadoutManager::ControlTurret(FVector2D InputValue, int32 SeatIndex)
 {
 	const FVehicleData& VehicleData = OwnerDataAccessor->GetVehicleData();
-	if (!VehicleData.Seats[SeatIndex].AvailableItems.ControlledTurretIndexes.IsValidIndex(0))
+	const FVehicleTypeSeatDefinition& VehicleTypeSeatDefinition = GetOwnerVehicle()->VehicleTypeDefintion->SeatDefinitions[SeatIndex];
+	if (!VehicleTypeSeatDefinition.ControlledTurretIndexes.IsValidIndex(0))
 	{
 		return;
 	}
-	const int32 ControlledTurretIndex = VehicleData.Seats[SeatIndex].AvailableItems.ControlledTurretIndexes[0];
+	const int32 ControlledTurretIndex = VehicleTypeSeatDefinition.ControlledTurretIndexes[0];
 	const FTurretData& TurretData = VehicleData.Turrets[ControlledTurretIndex];
 	FTurretState& TurretState = TurretStates[ControlledTurretIndex];
 	float PreviousTurretRotation = TurretState.CurrentTurretRotation;
@@ -1316,12 +1320,12 @@ void UVehicleLoadoutManager::ApplyWeaponRecoilJostle(int32 SeatIndex, int32 Weap
 
 	//jostle 
 	//if mesh has simulate physics
-	AVehicle_Base& Vehicle = OwnerDataAccessor->GetVehicle();
+	AVehicle_Base& Vehicle = *GetOwnerVehicle();
 	UPrimitiveComponent* RootBody = Cast<UPrimitiveComponent>(Vehicle.GetRootComponent());
 	float RelativeYaw;
-	if (OwnerDataAccessor->GetVehicleData().Seats[SeatIndex].AvailableItems.ControlledTurretIndexes.Num() > 0)
+	if (Vehicle.VehicleTypeDefintion->SeatDefinitions[SeatIndex].ControlledTurretIndexes.Num() > 0)
 	{
-		int32 TurretIndex = OwnerDataAccessor->GetVehicleData().Seats[SeatIndex].AvailableItems.ControlledTurretIndexes[0];
+		int32 TurretIndex = Vehicle.VehicleTypeDefintion->SeatDefinitions[SeatIndex].ControlledTurretIndexes[0];
 		UE_LOG(LogTemp, Error, TEXT("[VWLC::ApplyWeaponRecoilJostle] TurretIndex = %d"), TurretIndex);
 		RelativeYaw = GetTurretWorldYaw(TurretIndex);
 	}
@@ -1718,9 +1722,9 @@ int32 UVehicleLoadoutManager::GetSeatIndexForTurret(int32 TurretIndex)
 	int32 SI = -1;
 	for (int32 i = 0; i < OwnerDataAccessor->GetVehicleData().Seats.Num(); i++)
 	{
-		if (OwnerDataAccessor->GetVehicleData().Seats[i].AvailableItems.ControlledTurretIndexes.Num() > 0)
+		if (GetOwnerVehicle()->VehicleTypeDefintion->SeatDefinitions[i].ControlledTurretIndexes.Num() > 0)
 		{
-			CTI = OwnerDataAccessor->GetVehicleData().Seats[i].AvailableItems.ControlledTurretIndexes[0];
+			CTI = GetOwnerVehicle()->VehicleTypeDefintion->SeatDefinitions[i].ControlledTurretIndexes[0];
 			if (CTI == TurretIndex)
 			{
 				SI = i;

@@ -4,6 +4,7 @@
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
 #include "Components/Button.h"
+#include "Data/Vehicles/VehicleDefaults.h"
 #include "Data/Vehicles/Data_Vehicle.h"
 #include "Data/Core/CoreTypes.h"
 #include "UW_Customization.generated.h"
@@ -141,9 +142,9 @@ public:
 	UFUNCTION(BlueprintCallable)
 	FCustomizationSlotConfig Build_LoadoutSlotData(TArray<FName> ItemIDs, ECoreItemType ItemType, int32 ItemSlot, FText Context);
 	UFUNCTION(BlueprintCallable)
-	void Build_VehicleLoadoutData_Weapon(const FSeatData& SeatData, int32 TypeEnumIndex, int32 SeatIndex);
+	void Build_VehicleLoadoutData_Weapon(const FVehicleTypeSeatDefinition& SeatTypeData, int32 TypeEnumIndex, int32 SeatIndex);
 	UFUNCTION(BlueprintCallable)
-	void Build_VehicleLoadoutData_Optic(const FSeatData& SeatData, int32 TypeEnumIndex, int32 SeatIndex);
+	void Build_VehicleLoadoutData_Optic(const FVehicleTypeSeatDefinition& SeatTypeData, int32 TypeEnumIndex, int32 SeatIndex);
 	UFUNCTION(BlueprintCallable)
 	void Build_VehicleLoadoutData_Camo(const FVehicleData& VehicleData, int32 TypeEnumIndex);
 	UFUNCTION(BlueprintCallable)

@@ -657,8 +657,8 @@ struct FVehicleData : public FTableRowBase
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	FText Vehicle_DisplayName = FText();
 	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	E_MovementType Movement_Type = E_MovementType::GroundVehicle;
+	//UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	//E_MovementType Movement_Type = E_MovementType::GroundVehicle;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	EVehicleType Vehicle_Type = EVehicleType::Tank;
@@ -687,27 +687,25 @@ struct FVehicleData : public FTableRowBase
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	FGenericVehicleAudio GenericVehicleAudio = FGenericVehicleAudio();
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	TArray<FSeatData> Seats;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	TMap<FName, FVehicleCamoData> AvailableCamos;		//CamoID, MI for that vehicle
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	TArray<FTurretData> Turrets;
-
-	//GROUND VEHICLE SPECIFIC STUFF
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (EditCondition = "Movement_Type == E_MovementType::GroundVehicle", EditConditionHides))
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	FGroundVehicleData GroundVehicle_Data = FGroundVehicleData();
-
-	//HELICOPTER SPECIFIC STUFF
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (EditCondition = "Movement_Type == E_MovementType::Helicopter", EditConditionHides))
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	FHelicopterData Helicopter_Data = FHelicopterData();
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (EditCondition = "Movement_Type == E_MovementType::Jet", EditConditionHides))
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	FJetData Jet_Data = FJetData();
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (EditCondition = "Movement_Type == E_MovementType::Helicopter || Movement_Type == E_MovementType::Jet", EditConditionHides))
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	FAircraftData Aircraft_Data = FAircraftData();
 
 	// --- Static helper function to get row names by vehicle type ---

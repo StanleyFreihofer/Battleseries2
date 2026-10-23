@@ -334,15 +334,16 @@ void UUW_Customization::Build_VehicleLoadoutPanel(int32 TypeEnumIndex)
 	EVehicleType VehicleType = static_cast<EVehicleType>(TypeEnumIndex);
 	FName VehicleID = UBS2FunctionLibrary::GetDataSubsystem(this)->GetFirstVehicleIDOfType(VehicleType);
 	const FVehicleData& VehicleData = *UBS2FunctionLibrary::GetDataSubsystem(this)->GetVehicleDataRow(VehicleID);
+	const FVehicleTypeDefinition& VehicleTypeDefinition = *UBS2FunctionLibrary::GetDataSubsystem(this)->GetVehicleDefaults()->VehicleTypeDefintions.Find(VehicleType);
 
 	//TMap<int32, FAvailableItems*> CustomizableSeatOptions;			//option list to be built out
-	for (int32 SI = 0; SI < VehicleData.Seats.Num(); SI++)
+	for (int32 SI = 0; SI < VehicleTypeDefinition.SeatDefinitions.Num(); SI++)
 	{
-		const FSeatData& SeatData = VehicleData.Seats[SI];
-		if (SeatData.SeatRole == E_SeatRole::DriverGunner || SeatData.SeatRole == E_SeatRole::Gunner)
+		const FVehicleTypeSeatDefinition& SeatTypeData = VehicleTypeDefinition.SeatDefinitions[SI];
+		if (SeatTypeData.SeatRole == E_SeatRole::DriverGunner || SeatTypeData.SeatRole == E_SeatRole::Gunner)
 		{
-			Build_VehicleLoadoutData_Weapon(SeatData, TypeEnumIndex, SI);
-			Build_VehicleLoadoutData_Optic(SeatData, TypeEnumIndex, SI);
+			Build_VehicleLoadoutData_Weapon(SeatTypeData, TypeEnumIndex, SI);
+			Build_VehicleLoadoutData_Optic(SeatTypeData, TypeEnumIndex, SI);
 			//countermeasure
 			//upgrade
 		}
@@ -361,17 +362,16 @@ FCustomizationSlotConfig UUW_Customization::Build_LoadoutSlotData(TArray<FName> 
 	return NewSlotData;
 }
 
-void UUW_Customization::Build_VehicleLoadoutData_Weapon(const FSeatData& SeatData, int32 TypeEnumIndex, int32 SeatIndex)
+void UUW_Customization::Build_VehicleLoadoutData_Weapon(const FVehicleTypeSeatDefinition& SeatTypeData, int32 TypeEnumIndex, int32 SeatIndex)
 {
 	//weapons (weapon slots)	
-	for (int32 i = 0; i < SeatData.AvailableItems.AvailableWeaponSlots.Num(); i++)
+	for (int32 i = 0; i < SeatTypeData.SeatLoadoutOptions.AvailableWeaponSlots.Num(); i++)
 	{
-		const FVehicleWeaponSlotChoices& WeaponSlot = SeatData.AvailableItems.AvailableWeaponSlots[i];
-		if (WeaponSlot.WeaponChoices.Num() > 1)			//if weapon choices > 1, we have multiple options/customization
+		const FSeatWeaponSlot& WeaponSlot = SeatTypeData.SeatLoadoutOptions.AvailableWeaponSlots[i];
+		if (WeaponSlot.WeaponOptions.Num() > 1)			//if weapon choices > 1, we have multiple options/customization
 		{
-			TArray<FName> Weapons;
-			WeaponSlot.WeaponChoices.GetKeys(Weapons);
-			FCustomizationSlotConfig NewSlotData = Build_LoadoutSlotData(Weapons, ECoreItemType::VehicleWeapon, i, SeatData.SeatName);
+			TArray<FName> Weapons = WeaponSlot.WeaponOptions;
+			FCustomizationSlotConfig NewSlotData = Build_LoadoutSlotData(Weapons, ECoreItemType::VehicleWeapon, i, SeatTypeData.SeatName);
 			UUW_LoadoutSlot* NewSlotWidget = CreateNewLoadoutSlot();
 			NewSlotWidget->Init_LoadoutSlot_Vehicle(NewSlotData, SeatIndex);
 			LoadCurrentSave_VehicleWeaponSlot(NewSlotWidget, SeatIndex, i, TypeEnumIndex);
@@ -379,16 +379,16 @@ void UUW_Customization::Build_VehicleLoadoutData_Weapon(const FSeatData& SeatDat
 	}
 }
 
-void UUW_Customization::Build_VehicleLoadoutData_Optic(const FSeatData& SeatData, int32 TypeEnumIndex, int32 SeatIndex)
+void UUW_Customization::Build_VehicleLoadoutData_Optic(const FVehicleTypeSeatDefinition& SeatTypeData, int32 TypeEnumIndex, int32 SeatIndex)
 {
-	if (SeatData.AvailableItems.AvailableOptics.Num() > 1)
+	if (SeatTypeData.SeatLoadoutOptions.AvailableOptics.Num() > 1)
 	{
 		TArray<FName> Optics;
-		for (const FName& Optic : SeatData.AvailableItems.AvailableOptics)
+		for (const FName& Optic : SeatTypeData.SeatLoadoutOptions.AvailableOptics)
 		{
 			Optics.Add(Optic);
 		}
-		FCustomizationSlotConfig NewSlotData = Build_LoadoutSlotData(Optics, ECoreItemType::VehicleOptic, -1, SeatData.SeatName);
+		FCustomizationSlotConfig NewSlotData = Build_LoadoutSlotData(Optics, ECoreItemType::VehicleOptic, -1, SeatTypeData.SeatName);
 		UUW_LoadoutSlot* NewSlotWidget = CreateNewLoadoutSlot();
 		NewSlotWidget->Init_LoadoutSlot_Vehicle(NewSlotData, SeatIndex);
 		LoadCurrentSave_VehicleOptic(NewSlotWidget, SeatIndex, TypeEnumIndex);

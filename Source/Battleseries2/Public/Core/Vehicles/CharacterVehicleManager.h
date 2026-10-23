@@ -53,7 +53,7 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void HandleEnterSeat_Gunner(const FCharacterSeatContext& SeatContext);
 	UFUNCTION(BlueprintCallable)
-	void CharacterExitSeat(const FCharacterSeatContext& SeatContext);
+	void CharacterExitSeat(int32 SeatIndex);
 	UFUNCTION(BlueprintCallable)
 	FVector CalculateSafeExitLocation(AActor* Vehicle);
 	
@@ -74,10 +74,10 @@ public:
 	void UpdateRangefinder_WindowedVehicle();
 	
 	UFUNCTION(BlueprintCallable)
-	void HandleViewMethod(const FSeatData& SeatData);
+	void HandleViewMethod(int32 SeatIndex);
 
 	UFUNCTION(BlueprintCallable)
-	void HandleViewMethod_Default(const FSeatData& SeatData);
+	void HandleViewMethod_Default(int32 SeatIndex);
 	
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	ACharacter_Base* GetOwnerCharacter();

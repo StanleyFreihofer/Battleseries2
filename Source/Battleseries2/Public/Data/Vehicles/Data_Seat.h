@@ -3,7 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "InputMappingContext.h"
+
 #include "Components/SpotLightComponent.h"
 #include "Data/Characters/CharacterEnums.h"
 #include "Data/Items/Weapons/WeaponEnums.h"
@@ -176,8 +176,8 @@ struct FAvailableItems
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	TArray<FVehicleWeaponSlotChoices> AvailableWeaponSlots; //index 0 is primary, 1 is secondary
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (tooltip = "The Array Indexes of the turret(s) this seat controls"))
-	TArray<int32> ControlledTurretIndexes;
+	//UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (tooltip = "The Array Indexes of the turret(s) this seat controls"))
+	//TArray<int32> ControlledTurretIndexes;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	TArray<FCountermeasureDefinition> AvailableCountermeasures;
@@ -229,8 +229,8 @@ struct FCharacterSeatContext
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (EditCondition = "SeatHUD != nullptr", EditConditionHides = true))
 	FVector2D SeatHUDDrawSize = FVector2D();
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	class UInputMappingContext* InputMappingContext = nullptr;
+	//UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	//class UInputMappingContext* InputMappingContext = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FTransform SeatTransform = FTransform();
@@ -247,11 +247,11 @@ struct FSeatData
 {
 	GENERATED_BODY()
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (tooltip = "also used for the attaching of player character to socket on vehicle mesh"))
-	FText SeatName = FText::GetEmpty();
+	//UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (tooltip = "also used for the attaching of player character to socket on vehicle mesh"))
+	//FText SeatName = FText::GetEmpty();
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	E_SeatRole SeatRole = E_SeatRole::Driver;
+	//UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	//E_SeatRole SeatRole = E_SeatRole::Driver;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	E_ViewMethod ViewMethod = E_ViewMethod::Windowed;
@@ -262,6 +262,6 @@ struct FSeatData
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	FName DefaultOptic = FName("O_60hz");
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (EditCondition = "SeatRole == E_SeatRole::DriverGunner || SeatRole == E_SeatRole::Gunner", EditConditionHides))
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	FAvailableItems AvailableItems;
 };
