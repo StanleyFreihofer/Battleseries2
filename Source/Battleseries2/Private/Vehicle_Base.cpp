@@ -582,30 +582,6 @@ void AVehicle_Base::Interact_Implementation(ACharacter_Base* CharacterInteractin
 	InteractionWidgetComponent->SetVisibility(false, false);
 }
 
-bool AVehicle_Base::CycleThroughSeats(ACharacter_Base* Character)
-{
-	const int32 TotalSeats = VehicleData->Seats.Num();
-	const int32 CurrentSeat = Character->VehicleManager->GetCSI();
-	const bool bEntering = CurrentSeat == INDEX_NONE;
-	
-	//entering: check every seat starting at 0 (driver first)
-	//changing: check every OTHER seat, starting after the current one and wrapping around
-	const int32 FirstIndex = bEntering ? 0 : CurrentSeat + 1;
-	const int32 NumToCheck = bEntering? TotalSeats : TotalSeats - 1;
-	
-	//try each seat exactly once, skipping the current seat
-	for (int32 i = 0; i < NumToCheck; ++i)
-	{
-		const int32 CheckIndex = (FirstIndex + i) % TotalSeats;
-		if (!VehicleCurrentState.SeatStates[CheckIndex].isOccupied)
-		{
-			Character->VehicleManager->UpdateCSI(CheckIndex);
-			return true;
-		}
-	}
-	return false;
-}
-
 int32 AVehicle_Base::FindNextEmptySeat(int32 CSI)
 {
 	const int32 TotalSeats = VehicleData->Seats.Num();
@@ -756,31 +732,6 @@ void AVehicle_Base::DropGunner(int32 SeatIndex)
 }
 
 #pragma endregion
-
-void AVehicle_Base::AttemptEnterVehicle(ACharacter_Base* Character)
-{
-	//move to character?
-	if (GetIsVehicleDestroyed())	{ return; }
-	bool bFoundSeat = CycleThroughSeats(Character);
-	if (bFoundSeat)
-	{
-		//Enter Vehicle
-		Character->VehicleManager->ManageinVehicleStatus(this, true);
-		//SetupNewSeat(Character);
-		//do any "enter vehicle" specific stuff (open/close door/ "entering" animation, etc?
-	}
-}
-
-void AVehicle_Base::ChangeSeat(ACharacter_Base* Character)
-{
-	//move to character?
-	bool bFoundSeat = CycleThroughSeats(Character);
-	if (bFoundSeat)
-	{
-		//DropSeat(Character->VehicleManager->GetLSI());
-		SetupNewSeat(Character->VehicleManager->GetCSI(), Character->IsLocalHuman());
-	}
-}
 
 void AVehicle_Base::SyncActiveCameraForSeat(int32 SeatIndex)
 {

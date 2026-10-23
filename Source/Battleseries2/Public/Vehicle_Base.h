@@ -179,14 +179,8 @@ public:
 
 	//RUNTIME FUNCTIONS
 	//Seats RUNTIME
-	UFUNCTION(BlueprintCallable, Category = "Seats", meta = (DisplayName = "Cycle Through Seats", ReturnDisplayName = "Found Seat"))
-	bool CycleThroughSeats(ACharacter_Base* Character);
-	
 	UFUNCTION(BlueprintCallable)
 	int32 FindNextEmptySeat(int32 CSI);
-
-
-
 	UFUNCTION(BlueprintCallable)
 	void HandleOccupySeat(bool Occupy, bool LocalPlayer, int32 SeatIndex);
 
@@ -219,12 +213,6 @@ public:
 	void SetupGunner(int32 SeatIndex);
 	UFUNCTION(BlueprintCallable)
 	void DropGunner(int32 SeatIndex);
-
-	UFUNCTION(BlueprintCallable)
-	void AttemptEnterVehicle(ACharacter_Base* Character);
-
-	UFUNCTION(BlueprintCallable)
-	void ChangeSeat(ACharacter_Base* Character);
 
 	UFUNCTION(BlueprintCallable)
 	void SyncActiveCameraForSeat(int32 SeatIndex);
