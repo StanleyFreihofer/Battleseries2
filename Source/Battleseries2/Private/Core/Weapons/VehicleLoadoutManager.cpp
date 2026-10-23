@@ -1596,7 +1596,7 @@ void UVehicleLoadoutManager::ToggleOptic(int32 SeatIndex)
 		}
 		else
 		{
-			//unzoom ptic
+			//unzoom optic
 			UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateOpticMagnificationHUD_Vehicle(CurrentOpticData->ZoomMagnification);
 			UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateWeaponReticleSize_Vehicle(ReticleScale);
 		}

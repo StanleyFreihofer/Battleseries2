@@ -24,8 +24,7 @@ public:
 	
 	UFUNCTION(BlueprintCallable)
 	void ManageinVehicleStatus(AVehicle_Base* Vehicle, bool In_Vehicle);
-	UFUNCTION(BlueprintCallable)
-	void UpdateSeatList(TArray<ACharacter_Base*> Characters);
+	
 #pragma region EnterExitVehicle
 	UFUNCTION(BlueprintCallable)
 	void AttemptEnterVehicle(AVehicle_Base* Vehicle);

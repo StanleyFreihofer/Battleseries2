@@ -441,8 +441,6 @@ void AVehicle_Base::StopHorn()
 
 #pragma endregion
 
-
-
 #pragma region LoadoutUpdates
 
 void AVehicle_Base::ApplyLoadoutToSeat(int32 SeatIndex)		//this functions applies everything in the loadout (weapons, optics, upgrades, camos (if applicable), etc)
@@ -577,7 +575,6 @@ void AVehicle_Base::ClearEntireLoadoutFromVehicle()
 void AVehicle_Base::Interact_Implementation(ACharacter_Base* CharacterInteracting)
 {
 	if (VehicleData->bCanRemoteControl)		{ return; }		//cant enter an RC Vehicle via in person interaction
-	//AttemptEnterVehicle(CharacterInteracting);
 	CharacterInteracting->VehicleManager->AttemptEnterVehicle(this);
 	InteractionWidgetComponent->SetVisibility(false, false);
 }
@@ -726,12 +723,13 @@ void AVehicle_Base::SetupGunner(int32 SeatIndex)
 
 void AVehicle_Base::DropGunner(int32 SeatIndex)
 {
-	//VehicleLoadoutManager->WindowedRangefinder.RemoveDynamic(Character.Get()->VehicleManager, &UCharacterVehicleManager::UpdateRangefinder_WindowedVehicle);
 	VehicleLoadoutManager->UnequipWeapon(SeatIndex, VehicleLoadoutManager->GetCWIForSeat(SeatIndex), VehicleLoadoutManager->GetEquippedWeaponInSeat(SeatIndex).VehicleWeaponState.BaseWeaponRuntimeData.isFiring);
 	VehicleLoadoutManager->GetWAC(SeatIndex)->Deactivate();
 }
 
 #pragma endregion
+
+#pragma region SeatCameraManagement
 
 void AVehicle_Base::SyncActiveCameraForSeat(int32 SeatIndex)
 {
@@ -750,8 +748,6 @@ void AVehicle_Base::SyncActiveCameraForSeat(int32 SeatIndex)
 	}
 	// Windowed with no special cam: nothing to activate — FPCamera already handles it, and there's no vehicle-side default to fall back to.
 }
-
-#pragma region SeatCameraManagement
 
 void AVehicle_Base::UpdateSeatActiveCamera(int32 SeatIndex, UCameraComponent* NewActiveCamera)
 {
@@ -779,6 +775,8 @@ void AVehicle_Base::DeactivateSeatCameras(int32 SeatIndex)
 		WeaponCam->SetActive(false);
 	}
 }
+
+#pragma endregion
 
 #pragma endregion
 
@@ -1316,7 +1314,6 @@ void AVehicle_Base::Input_HandleReleaseThrottle(int32 SeatIndex)
 }
 
 #pragma endregion
-
 
 void AVehicle_Base::UpdateRemoteActiveCamPP(int32 SeatIndex, FPostProcessSettings PPSettings, float BlendWeight, UCameraComponent* Cam)
 {

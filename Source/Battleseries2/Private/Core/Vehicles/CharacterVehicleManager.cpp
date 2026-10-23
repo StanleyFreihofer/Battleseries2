@@ -59,22 +59,6 @@ void UCharacterVehicleManager::ManageinVehicleStatus(AVehicle_Base* Vehicle, boo
 	}
 }
 
-void UCharacterVehicleManager::UpdateSeatList(TArray<ACharacter_Base*> Characters)
-{
-	TArray<FSeatState> Seats = CharacterVehicleState.CurrentVehicle->VehicleCurrentState.SeatStates;
-	for (int32 SI = 0; SI < Seats.Num(); SI++)
-	{
-		for (ACharacter_Base* Character : Characters)
-		{
-			if (CharacterVehicleState.CSI == SI)
-			{
-				//do something UI here (show seat as occupied, that characters name, etc)
-				continue;
-			}
-		}
-	}
-}
-
 #pragma region EnterExitVehicle
 
 #pragma region EnterVehicle
@@ -199,6 +183,10 @@ void UCharacterVehicleManager::PhysicallyExitVehicle()
 	GetOwnerCharacter()->FPArmsSpringArm->bEnableCameraLag = true;
 }
 
+#pragma endregion
+
+#pragma region EnterSeat
+
 void UCharacterVehicleManager::StartEnterSeat()
 {
 	AVehicle_Base* Vehicle = GetCurrentVehicle();
@@ -207,44 +195,18 @@ void UCharacterVehicleManager::StartEnterSeat()
 	Vehicle->SetupNewSeat(GetCSI(), GetOwnerCharacter()->IsLocalHuman());
 	switch (SeatData.SeatRole)
 	{
-		case E_SeatRole::DriverGunner:
-		case E_SeatRole::Gunner:
-			if (SeatData.ViewMethod == E_ViewMethod::Windowed)
-			{
-				Vehicle->VehicleLoadoutManager->WindowedRangefinder.AddDynamic(this, &UCharacterVehicleManager::UpdateRangefinder_WindowedVehicle);
-			}
-			break;
+	case E_SeatRole::DriverGunner:
+	case E_SeatRole::Gunner:
+		if (SeatData.ViewMethod == E_ViewMethod::Windowed)
+		{
+			Vehicle->VehicleLoadoutManager->WindowedRangefinder.AddDynamic(this, &UCharacterVehicleManager::UpdateRangefinder_WindowedVehicle);
+		}
+		break;
 	}
 	HandleViewMethod(SeatData);
 	CharacterEnterSeat(SeatData.DefaultCharacterContext);
 }
 
-void UCharacterVehicleManager::StartExitSeat(int32 SeatIndex)
-{
-	const FSeatData& SeatData = GetCurrentVehicle()->GetVehicleData().Seats[SeatIndex];
-	CharacterExitSeat(SeatData.DefaultCharacterContext);
-	GetCurrentVehicle()->DropSeat(SeatIndex);
-	switch (SeatData.SeatRole)
-	{
-		case E_SeatRole::DriverGunner:
-		case E_SeatRole::Gunner:
-			if (SeatData.ViewMethod == E_ViewMethod::Windowed)
-			{
-				GetCurrentVehicle()->VehicleLoadoutManager->WindowedRangefinder.RemoveDynamic(this, &UCharacterVehicleManager::UpdateRangefinder_WindowedVehicle);
-			}
-			break;
-	}
-}
-
-void UCharacterVehicleManager::ChangeSeat(int32 SeatIndex)
-{
-	int32 LSI = GetCSI();
-	UpdateCSI(SeatIndex);
-	StartExitSeat(LSI);
-	StartEnterSeat();
-}
-
-#pragma endregion
 
 void UCharacterVehicleManager::CharacterEnterSeat(const FCharacterSeatContext& SeatContext)
 {
@@ -294,6 +256,25 @@ void UCharacterVehicleManager::HandleEnterSeat_Gunner(const FCharacterSeatContex
 	else
 	{
 		GetOwnerCharacter()->SetActorRelativeTransform(SeatContext.SeatTransform);
+	}
+}
+
+#pragma endregion
+
+void UCharacterVehicleManager::StartExitSeat(int32 SeatIndex)
+{
+	const FSeatData& SeatData = GetCurrentVehicle()->GetVehicleData().Seats[SeatIndex];
+	CharacterExitSeat(SeatData.DefaultCharacterContext);
+	GetCurrentVehicle()->DropSeat(SeatIndex);
+	switch (SeatData.SeatRole)
+	{
+	case E_SeatRole::DriverGunner:
+	case E_SeatRole::Gunner:
+		if (SeatData.ViewMethod == E_ViewMethod::Windowed)
+		{
+			GetCurrentVehicle()->VehicleLoadoutManager->WindowedRangefinder.RemoveDynamic(this, &UCharacterVehicleManager::UpdateRangefinder_WindowedVehicle);
+		}
+		break;
 	}
 }
 
@@ -366,6 +347,15 @@ void UCharacterVehicleManager::AttemptChangeSeat()
 		ChangeSeat(SI);
 	}
 }
+
+void UCharacterVehicleManager::ChangeSeat(int32 SeatIndex)
+{
+	int32 LSI = GetCSI();
+	UpdateCSI(SeatIndex);
+	StartExitSeat(LSI);
+	StartEnterSeat();
+}
+
 #pragma endregion
 
 void UCharacterVehicleManager::UpdateCSI(int32 NewCSI)
