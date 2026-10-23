@@ -81,6 +81,7 @@ void UCharacterVehicleManager::UpdateSeatList(TArray<ACharacter_Base*> Character
 
 void UCharacterVehicleManager::AttemptEnterVehicle(AVehicle_Base* Vehicle)
 {
+	if (!Vehicle)	{ return; }
 	if (Vehicle->GetIsVehicleDestroyed())	{return; }
 	int32 SI = Vehicle->FindNextEmptySeat(GetCSI());
 	if (SI != INDEX_NONE)
