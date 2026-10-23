@@ -267,7 +267,7 @@ void AVehicle_Base::Init_Seats()
 		{
 			if (VehicleStartingData.OccupiedSeats[i] == SI)
 			{
-				HandleSeatOccupationStatus(true, SI);
+				HandleOccupySeat(true, false, SI);
 				//VehicleCurrentState.SeatStates[SI].isOccupied = true;
 				break;
 			}
@@ -577,7 +577,8 @@ void AVehicle_Base::ClearEntireLoadoutFromVehicle()
 void AVehicle_Base::Interact_Implementation(ACharacter_Base* CharacterInteracting)
 {
 	if (VehicleData->bCanRemoteControl)		{ return; }		//cant enter an RC Vehicle via in person interaction
-	AttemptEnterVehicle(CharacterInteracting);
+	//AttemptEnterVehicle(CharacterInteracting);
+	CharacterInteracting->VehicleManager->AttemptEnterVehicle(this);
 	InteractionWidgetComponent->SetVisibility(false, false);
 }
 
@@ -627,16 +628,10 @@ int32 AVehicle_Base::FindNextEmptySeat(int32 CSI)
 	return -1;	//<--didn't find seat
 }
 
-void AVehicle_Base::HandleSeatOccupationStatus(bool Occupy, int32 SeatIndex)
+void AVehicle_Base::HandleOccupySeat(bool Occupy, bool LocalHuman, int32 SeatIndex)
 {
-	if (Occupy)
-	{
-		VehicleCurrentState.SeatStates[SeatIndex].isOccupied = true;
-	}
-	else
-	{
-		VehicleCurrentState.SeatStates[SeatIndex].isOccupied = false;
-	}
+	VehicleCurrentState.SeatStates[SeatIndex].isOccupied = Occupy;
+	VehicleCurrentState.SeatStates[SeatIndex].UpdateHUD = LocalHuman;
 }
 
 void AVehicle_Base::DropSeat(ACharacter_Base* Character, int32& SeatIndex)
@@ -648,11 +643,8 @@ void AVehicle_Base::DropSeat(ACharacter_Base* Character, int32& SeatIndex)
 	}
 	const FSeatData& SeatData = VehicleData->Seats[SeatIndex];
 	Character->VehicleManager->CharacterExitSeat(SeatData.DefaultCharacterContext);
-	if (Character->IsLocalHuman())
-	{
-		VehicleCurrentState.SeatStates[SeatIndex].UpdateHUD = false;		//the seat being left (CSI is already the new seat during a seat change)
-	}
-	HandleSeatOccupationStatus(false, SeatIndex);
+
+	HandleOccupySeat(false, false, SeatIndex);
 	
 	DeactiveSeatCameras(SeatIndex);
 
@@ -671,46 +663,43 @@ void AVehicle_Base::DropSeat(ACharacter_Base* Character, int32& SeatIndex)
 	}
 }
 
-void AVehicle_Base::SetupNewSeat(ACharacter_Base* Character)
+void AVehicle_Base::SetupNewSeat(int32 SeatIndex, bool isLocalHuman)
 {
-	const FSeatData& SeatData = VehicleData->Seats[Character->VehicleManager->GetCSI()];
-	HandleSeatOccupationStatus(true, Character->VehicleManager->GetCSI());
+	//split last part into finish setupnewseat (rename this to StartSetupSeat maybe)?
+	const FSeatData& SeatData = VehicleData->Seats[SeatIndex];
+	
+	HandleOccupySeat(true, isLocalHuman, SeatIndex);
 
 	switch (SeatData.SeatRole)
 	{
 		case E_SeatRole::Driver:
 			ApplyLoadoutToVehicle();
-			SetupDriver(Character);
+			SetupDriver();
 			break;
 		case E_SeatRole::Gunner:
-			SetupGunner(Character);
+			SetupGunner(SeatIndex);
 			break;
 		case E_SeatRole::DriverGunner:
 			ApplyLoadoutToVehicle();
-			SetupDriver(Character);
-			SetupGunner(Character);
+			SetupDriver();
+			SetupGunner(SeatIndex);
 			break;
 		case E_SeatRole::Passenger:
 			break;
 	}
 	
-	Character->VehicleManager->HandleViewMethod(SeatData);
-
-	Character->VehicleManager->CharacterEnterSeat(SeatData.DefaultCharacterContext);
+	//Character->VehicleManager->HandleViewMethod(SeatData);
+	//Character->VehicleManager->CharacterEnterSeat(SeatData.DefaultCharacterContext);
+	
 	if (VehicleMeshComponent->GetAnimInstance()->GetClass()->ImplementsInterface(UAnims::StaticClass()))
 	{
-		IAnims::Execute_OnEnterSeat_Vehicle(VehicleMeshComponent->GetAnimInstance(), Character->VehicleManager->GetCSI());
-	}
-
-	if (Character->IsLocalHuman())
-	{
-		VehicleCurrentState.SeatStates[Character->VehicleManager->GetCSI()].UpdateHUD = true;
+		IAnims::Execute_OnEnterSeat_Vehicle(VehicleMeshComponent->GetAnimInstance(), SeatIndex);
 	}
 }
 
 #pragma region DriverSeats
 
-void AVehicle_Base::SetupDriver(ACharacter_Base* Character)
+void AVehicle_Base::SetupDriver()
 {
 	//start engine
 	UGameplayStatics::PlaySoundAtLocation(this, Cast<USoundBase>(VehicleData->GenericVehicleAudio.EngineStartupAudio), GetActorLocation(), FRotator::ZeroRotator, 1.0f, 1.0f, 0.0f);
@@ -755,17 +744,19 @@ void AVehicle_Base::DropDriver()
 
 #pragma region GunnerSeats
 
-void AVehicle_Base::SetupGunner(ACharacter_Base* Character)
+void AVehicle_Base::SetupGunner(int32 SeatIndex)
 {
 	//called once on enter of a gunner seat, seat hud should already be on viewport
-	const FSeatData& SeatData = VehicleData->Seats[Character->VehicleManager->GetCSI()];
+	//const FSeatData& SeatData = VehicleData->Seats[SeatIndex];
+	/**
 	if (SeatData.ViewMethod == E_ViewMethod::Windowed)
 	{
 		VehicleLoadoutManager->WindowedRangefinder.AddDynamic(Character->VehicleManager, &UCharacterVehicleManager::UpdateRangefinder_WindowedVehicle);
 	}
+	**/
 
-	VehicleLoadoutManager->EquipWeapon(Character->VehicleManager->GetCSI(), 0);
-	VehicleLoadoutManager->GetWAC(Character->VehicleManager->GetCSI())->Activate();
+	VehicleLoadoutManager->EquipWeapon(SeatIndex, 0);
+	VehicleLoadoutManager->GetWAC(SeatIndex)->Activate();
 }
 
 void AVehicle_Base::DropGunner(TWeakObjectPtr<ACharacter_Base> Character, int32& SeatIndex)
@@ -786,7 +777,7 @@ void AVehicle_Base::AttemptEnterVehicle(ACharacter_Base* Character)
 	{
 		//Enter Vehicle
 		Character->VehicleManager->ManageinVehicleStatus(this, true);
-		SetupNewSeat(Character);
+		//SetupNewSeat(Character);
 		//do any "enter vehicle" specific stuff (open/close door/ "entering" animation, etc?
 	}
 }
@@ -798,7 +789,7 @@ void AVehicle_Base::ChangeSeat(ACharacter_Base* Character)
 	if (bFoundSeat)
 	{
 		DropSeat(Character, Character->VehicleManager->CharacterVehicleState.LSI);
-		SetupNewSeat(Character);
+		SetupNewSeat(Character->VehicleManager->GetCSI(), Character->IsLocalHuman());
 	}
 }
 
@@ -819,8 +810,6 @@ void AVehicle_Base::SyncActiveCameraForSeat(int32 SeatIndex)
 	}
 	// Windowed with no special cam: nothing to activate — FPCamera already handles it, and there's no vehicle-side default to fall back to.
 }
-
-#pragma 
 
 #pragma region SeatCameraManagement
 

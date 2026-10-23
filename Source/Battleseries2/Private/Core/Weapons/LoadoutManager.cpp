@@ -6,6 +6,7 @@
 #include "Engine/TextureRenderTarget2D.h"
 #include "Kismet/KismetRenderingLibrary.h"
 #include "Materials/MaterialInstanceDynamic.h"
+#include "Core/Vehicles/CharacterVehicleManager.h"
 #include "Core/Weapons/ScopeCaptureComponent.h"
 #include "Core/Weapons/Projectiles/Projectile_Base.h"
 #include "Core/Gadgets/Gadget_Base.h"
@@ -1973,7 +1974,7 @@ void ULoadoutManager::UseGadget()
 			TObjectPtr<AVehicle_Base> VehicleGadget = Cast<AVehicle_Base>(GadgetState.ActivePlacedInstances[0]);
 			if (VehicleGadget->IsInitialized())
 			{
-				VehicleGadget->AttemptEnterVehicle(GetOwnerCharacter());
+				GetOwnerCharacter()->VehicleManager->AttemptEnterVehicle(VehicleGadget);
 			}
 			else
 			{
@@ -1991,7 +1992,7 @@ void ULoadoutManager::OnDeployedVehicleGadgetReady()
 	TObjectPtr<AVehicle_Base> VehicleGadget = Cast<AVehicle_Base>(GadgetState.ActivePlacedInstances[0]);
 	check (VehicleGadget);
 	VehicleGadget->OnVehicleInitialized.RemoveDynamic(this, &ULoadoutManager::OnDeployedVehicleGadgetReady);
-	VehicleGadget->AttemptEnterVehicle(GetOwnerCharacter());
+	GetOwnerCharacter()->VehicleManager->AttemptEnterVehicle(VehicleGadget);
 }
 
 int32 ULoadoutManager::GetNumWeapons()

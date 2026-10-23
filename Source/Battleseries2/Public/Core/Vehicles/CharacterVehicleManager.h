@@ -26,6 +26,9 @@ public:
 	void ManageinVehicleStatus(AVehicle_Base* Vehicle, bool In_Vehicle);
 	UFUNCTION(BlueprintCallable)
 	void UpdateSeatList(TArray<ACharacter_Base*> Characters);
+#pragma region EnterExitVehicle
+	UFUNCTION(BlueprintCallable)
+	void AttemptEnterVehicle(AVehicle_Base* Vehicle);
 	UFUNCTION(BlueprintCallable)
 	void CharacterEnterVehicle();
 	UFUNCTION(BlueprintCallable)
@@ -46,6 +49,7 @@ public:
 	void CharacterExitSeat(const FCharacterSeatContext& SeatContext);
 	UFUNCTION(BlueprintCallable)
 	FVector CalculateSafeExitLocation(AActor* Vehicle);
+#pragma endregion	
 	UFUNCTION(BlueprintCallable)
 	void UpdateSeatIndexes(int32 NewLSI, int32 NewCSI, int32 NewNSI);
 	UFUNCTION(BlueprintCallable)

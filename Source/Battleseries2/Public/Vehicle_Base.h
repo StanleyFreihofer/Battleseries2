@@ -188,7 +188,7 @@ public:
 
 
 	UFUNCTION(BlueprintCallable)
-	void HandleSeatOccupationStatus(bool Occupy, int32 SeatIndex);
+	void HandleOccupySeat(bool Occupy, bool LocalPlayer, int32 SeatIndex);
 
 	UFUNCTION(BlueprintCallable)
 	void ApplyLoadoutToSeat(int32 SeatIndex);
@@ -210,13 +210,13 @@ public:
 	void DropSeat(ACharacter_Base* Character, int32& SeatIndex);
 
 	UFUNCTION(BlueprintCallable)
-	void SetupNewSeat(ACharacter_Base* Character);
+	void SetupNewSeat(int32 SeatIndex, bool isLocalHuman);
 	UFUNCTION(BlueprintCallable)
-	void SetupDriver(ACharacter_Base* Character);
+	void SetupDriver();
 	UFUNCTION()
 	void DropDriver();
 	UFUNCTION(BlueprintCallable)
-	void SetupGunner(ACharacter_Base* Character);
+	void SetupGunner(int32 SeatIndex);
 	UFUNCTION()
 	void DropGunner(TWeakObjectPtr<ACharacter_Base> Character, int32& SeatIndex);
 

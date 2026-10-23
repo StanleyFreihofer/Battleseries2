@@ -75,6 +75,39 @@ void UCharacterVehicleManager::UpdateSeatList(TArray<ACharacter_Base*> Character
 	}
 }
 
+#pragma region EnterExitVehicle
+
+#pragma region EnterVehicle
+
+void UCharacterVehicleManager::AttemptEnterVehicle(AVehicle_Base* Vehicle)
+{
+	if (Vehicle->GetIsVehicleDestroyed())	{return; }
+	int32 SI = Vehicle->FindNextEmptySeat(GetCSI());
+	if (SI != INDEX_NONE)
+	{
+		//StartEnterVehicle
+		const FSeatData& SeatData = Vehicle->GetVehicleData().Seats[SI];
+		UpdateSeatIndexes(GetCSI(), SI, SI);
+		ManageinVehicleStatus(Vehicle, true);
+		
+		//StartEnterSeat
+		Vehicle->SetupNewSeat(SI, GetOwnerCharacter()->IsLocalHuman());
+		switch (SeatData.SeatRole)
+		{
+			case E_SeatRole::DriverGunner:
+			case E_SeatRole::Gunner:
+				if (SeatData.ViewMethod == E_ViewMethod::Windowed)
+				{
+					Vehicle->VehicleLoadoutManager->WindowedRangefinder.AddDynamic(this, &UCharacterVehicleManager::UpdateRangefinder_WindowedVehicle);
+				}
+				//Vehicle->SetupGunner(SI);
+				break;
+		}
+		HandleViewMethod(SeatData);
+		CharacterEnterSeat(SeatData.DefaultCharacterContext);
+	}
+}
+
 void UCharacterVehicleManager::CharacterEnterVehicle()
 {
 	//if Vehicle RC Data does actually become a thing, certain things here need to be blocked based on that new property's value
@@ -121,6 +154,10 @@ void UCharacterVehicleManager::PhysicallyEnterVehicle()
 	GetOwnerCharacter()->FPCamera->SetRelativeRotation(FRotator());
 	GetOwnerCharacter()->bUseControllerRotationYaw = false;
 }
+
+#pragma endregion
+
+#pragma region ExitVehicle
 
 void UCharacterVehicleManager::CharacterExitVehicle()
 {
@@ -174,6 +211,8 @@ void UCharacterVehicleManager::PhysicallyExitVehicle()
 	GetOwnerCharacter()->FPArmsSpringArm->bInheritRoll = false;
 	GetOwnerCharacter()->FPArmsSpringArm->bEnableCameraLag = true;
 }
+
+#pragma endregion
 
 void UCharacterVehicleManager::CharacterEnterSeat(const FCharacterSeatContext& SeatContext)
 {
@@ -285,6 +324,7 @@ FVector UCharacterVehicleManager::CalculateSafeExitLocation(AActor* Vehicle)
 	// Fallback: If all else fails, try a point slightly further away or above
 	return Vehicle->GetActorLocation() + (Vehicle->GetActorUpVector() * 250.0f);
 }
+#pragma endregion
 
 void UCharacterVehicleManager::UpdateSeatIndexes(int32 NewLSI, int32 NewCSI, int32 NewNSI)
 {
@@ -531,6 +571,8 @@ void UCharacterVehicleManager::HandleViewMethod_Default(const FSeatData& SeatDat
 	}
 }
 
+#pragma region Getters
+
 AVehicle_Base* UCharacterVehicleManager::GetCurrentVehicle()
 {
 	if (CharacterVehicleState.CurrentVehicle)
@@ -562,5 +604,7 @@ ACharacter_Base* UCharacterVehicleManager::GetOwnerCharacter()
 {
 	return Cast<ACharacter_Base>(GetOwner());
 }
+
+#pragma endregion
 
 
