@@ -11,18 +11,14 @@ struct FCharacterVehicleState
 {
 	GENERATED_BODY()
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "State")
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "State")
 	bool inVehicle = false;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "State")
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "State")
 	TObjectPtr<AVehicle_Base> CurrentVehicle = nullptr;		
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "State")
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "State")
 	bool isFreeLooking = false;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "State")
-	int32 LSI = -1;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "State")
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "State")
 	int32 CSI = -1;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "State")
-	int32 NSI = -1;
 };
 
 USTRUCT(BlueprintType)
@@ -30,7 +26,7 @@ struct FInteractionState
 {
 	GENERATED_BODY()
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "State")
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "State")
 	TWeakObjectPtr<AActor> HitInteractable = nullptr;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "State")

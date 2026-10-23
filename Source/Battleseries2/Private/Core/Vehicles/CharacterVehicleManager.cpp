@@ -91,8 +91,7 @@ void UCharacterVehicleManager::AttemptEnterVehicle(AVehicle_Base* Vehicle)
 
 void UCharacterVehicleManager::StartEnterVehicle(AVehicle_Base* Vehicle, int32 SeatIndex)
 {
-	//const FSeatData& SeatData = Vehicle->GetVehicleData().Seats[SeatIndex];
-	UpdateSeatIndexes(GetCSI(), SeatIndex, SeatIndex);
+	UpdateCSI(SeatIndex);
 	ManageinVehicleStatus(Vehicle, true);
 	StartEnterSeat();
 }
@@ -150,26 +149,25 @@ void UCharacterVehicleManager::PhysicallyEnterVehicle()
 
 void UCharacterVehicleManager::CharacterExitVehicle()
 {
-	if (GetCurrentVehicle())
-	{
-		StartExitSeat(GetCSI());
-		
-		if (!GetCurrentVehicle()->VehicleData->bCanRemoteControl)
-		{
-			PhysicallyExitVehicle();
-		}
-
-		GetOwnerCharacter()->UpdateViewTarget(GetOwnerCharacter(), GetOwnerCharacter()->FPCamera);
-
-		GetOwnerCharacter()->ManageIMC(nullptr, UBS2FunctionLibrary::GetDataSubsystem(this)->GetCharacterDefaults()->DefaultGameplayIMC.Get(), 1);
+	if (!GetCurrentVehicle())	{ return; }
 	
-		if (GetOwnerCharacter()->LoadoutManager->GetIsCurrentSlotActuallyWeapon() && GetOwnerCharacter()->IsLocalHuman())
-		{
-			ExitVehicle_LocalPlayer();
-		}
-		
-		CharacterVehicleState = FCharacterVehicleState();
+	StartExitSeat(GetCSI());
+	
+	if (!GetCurrentVehicle()->VehicleData->bCanRemoteControl)
+	{
+		PhysicallyExitVehicle();
 	}
+
+	GetOwnerCharacter()->UpdateViewTarget(GetOwnerCharacter(), GetOwnerCharacter()->FPCamera);
+
+	GetOwnerCharacter()->ManageIMC(nullptr, UBS2FunctionLibrary::GetDataSubsystem(this)->GetCharacterDefaults()->DefaultGameplayIMC.Get(), 1);
+
+	if (GetOwnerCharacter()->LoadoutManager->GetIsCurrentSlotActuallyWeapon() && GetOwnerCharacter()->IsLocalHuman())
+	{
+		ExitVehicle_LocalPlayer();
+	}
+	
+	CharacterVehicleState = FCharacterVehicleState();
 }
 
 void UCharacterVehicleManager::ExitVehicle_LocalPlayer()
@@ -240,7 +238,7 @@ void UCharacterVehicleManager::StartExitSeat(int32 SeatIndex)
 void UCharacterVehicleManager::ChangeSeat(int32 SeatIndex)
 {
 	int32 LSI = GetCSI();
-	UpdateSeatIndexes(GetCSI(), SeatIndex, SeatIndex);
+	UpdateCSI(SeatIndex);
 	StartExitSeat(LSI);
 	StartEnterSeat();
 }
@@ -369,11 +367,9 @@ void UCharacterVehicleManager::AttemptChangeSeat()
 }
 #pragma endregion
 
-void UCharacterVehicleManager::UpdateSeatIndexes(int32 NewLSI, int32 NewCSI, int32 NewNSI)
+void UCharacterVehicleManager::UpdateCSI(int32 NewCSI)
 {
-	CharacterVehicleState.LSI = NewLSI;
 	CharacterVehicleState.CSI = NewCSI;
-	CharacterVehicleState.NSI = NewNSI;
 }
 
 void UCharacterVehicleManager::UpdateVehicleHUD(TSubclassOf<UUserWidget> HUDClass)
@@ -631,11 +627,6 @@ AVehicle_Base* UCharacterVehicleManager::GetCurrentVehicle()
 int32& UCharacterVehicleManager::GetCSI()
 {
 	return CharacterVehicleState.CSI;
-}
-
-int32& UCharacterVehicleManager::GetLSI()
-{
-	return CharacterVehicleState.LSI;
 }
 
 bool& UCharacterVehicleManager::GetInVehicle()

@@ -599,7 +599,7 @@ bool AVehicle_Base::CycleThroughSeats(ACharacter_Base* Character)
 		const int32 CheckIndex = (FirstIndex + i) % TotalSeats;
 		if (!VehicleCurrentState.SeatStates[CheckIndex].isOccupied)
 		{
-			Character->VehicleManager->UpdateSeatIndexes(CurrentSeat, CheckIndex, CheckIndex);
+			Character->VehicleManager->UpdateCSI(CheckIndex);
 			return true;
 		}
 	}
@@ -642,7 +642,6 @@ void AVehicle_Base::DropSeat(int32 SeatIndex)
 		SeatIndex = 0;
 	}
 	const FSeatData& SeatData = VehicleData->Seats[SeatIndex];
-	//Character->VehicleManager->CharacterExitSeat(SeatData.DefaultCharacterContext);
 
 	HandleOccupySeat(false, false, SeatIndex);
 	DeactivateSeatCameras(SeatIndex);
@@ -778,7 +777,7 @@ void AVehicle_Base::ChangeSeat(ACharacter_Base* Character)
 	bool bFoundSeat = CycleThroughSeats(Character);
 	if (bFoundSeat)
 	{
-		DropSeat(Character->VehicleManager->GetLSI());
+		//DropSeat(Character->VehicleManager->GetLSI());
 		SetupNewSeat(Character->VehicleManager->GetCSI(), Character->IsLocalHuman());
 	}
 }

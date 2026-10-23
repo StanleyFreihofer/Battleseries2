@@ -62,7 +62,7 @@ public:
 	void AttemptChangeSeat();
 #pragma endregion	
 	UFUNCTION(BlueprintCallable)
-	void UpdateSeatIndexes(int32 NewLSI, int32 NewCSI, int32 NewNSI);
+	void UpdateCSI(int32 NewCSI);
 	UFUNCTION(BlueprintCallable)
 	void UpdateVehicleHUD(TSubclassOf<UUserWidget> HUDClass);
 	UFUNCTION(BlueprintCallable)
@@ -85,8 +85,6 @@ public:
 	
 	UFUNCTION(BlueprintCallable, BlueprintPure, meta = (BlueprintThreadSafe))
 	int32& GetCSI();
-	UFUNCTION(BlueprintCallable, BlueprintPure, meta = (BlueprintThreadSafe))
-	int32& GetLSI();
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	bool& GetInVehicle();
 	
