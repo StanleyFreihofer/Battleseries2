@@ -441,12 +441,7 @@ void AVehicle_Base::StopHorn()
 
 #pragma endregion
 
-void AVehicle_Base::Interact_Implementation(ACharacter_Base* CharacterInteracting)
-{
-	if (VehicleData->bCanRemoteControl)		{ return; }		//cant enter an RC Vehicle via in person interaction
-	AttemptEnterVehicle(CharacterInteracting);
-	InteractionWidgetComponent->SetVisibility(false, false);
-}
+
 
 #pragma region LoadoutUpdates
 
@@ -579,6 +574,13 @@ void AVehicle_Base::ClearEntireLoadoutFromVehicle()
 
 #pragma region SeatManagement
 
+void AVehicle_Base::Interact_Implementation(ACharacter_Base* CharacterInteracting)
+{
+	if (VehicleData->bCanRemoteControl)		{ return; }		//cant enter an RC Vehicle via in person interaction
+	AttemptEnterVehicle(CharacterInteracting);
+	InteractionWidgetComponent->SetVisibility(false, false);
+}
+
 bool AVehicle_Base::CycleThroughSeats(ACharacter_Base* Character)
 {
 	const int32 TotalSeats = VehicleData->Seats.Num();
@@ -601,6 +603,28 @@ bool AVehicle_Base::CycleThroughSeats(ACharacter_Base* Character)
 		}
 	}
 	return false;
+}
+
+int32 AVehicle_Base::FindNextEmptySeat(int32 CSI)
+{
+	const int32 TotalSeats = VehicleData->Seats.Num();
+	const int32 CurrentSeat = CSI;
+	const bool bEntering = CurrentSeat == INDEX_NONE;		//<--if index = -1, means wasn't in a seat which means entering for the first time
+	
+	//entering: check every seat starting at 0 
+	//changing: check every OTHER seat, starting after the current one and wrapping around
+	const int32 FirstIndex = bEntering ? 0 : CurrentSeat + 1;
+	const int32 NumToCheck = bEntering? TotalSeats : TotalSeats - 1;
+	
+	for (int32 i = 0; i < NumToCheck; ++i)
+	{
+		const int32 CheckIndex = (FirstIndex + i) % TotalSeats;
+		if (!VehicleCurrentState.SeatStates[CheckIndex].isOccupied)
+		{
+			return CheckIndex;
+		}
+	}
+	return -1;	//<--didn't find seat
 }
 
 void AVehicle_Base::HandleSeatOccupationStatus(bool Occupy, int32 SeatIndex)

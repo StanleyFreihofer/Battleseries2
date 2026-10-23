@@ -181,6 +181,9 @@ public:
 	//Seats RUNTIME
 	UFUNCTION(BlueprintCallable, Category = "Seats", meta = (DisplayName = "Cycle Through Seats", ReturnDisplayName = "Found Seat"))
 	bool CycleThroughSeats(ACharacter_Base* Character);
+	
+	UFUNCTION(BlueprintCallable)
+	int32 FindNextEmptySeat(int32 CSI);
 
 
 
