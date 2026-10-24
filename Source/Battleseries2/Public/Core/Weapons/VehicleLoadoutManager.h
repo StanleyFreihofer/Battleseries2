@@ -236,11 +236,11 @@ public:
 	void UpdateLockOnIndicator(bool UpdateHUD, FHitResult& HitResult, FLockOnState& LockOnState);
 
 	UFUNCTION(BlueprintCallable)
-	FName BuildMuzzleName(FName SeatName, int32 WeaponIndex, EMuzzleType MuzzleType, int32 MuzzleIndex);
+	FName BuildMuzzleName(int32 SeatIndex, int32 WeaponIndex, EMuzzleType MuzzleType, int32 MuzzleIndex);
 	UFUNCTION()
 	void SetupMuzzleSockets(TWeakObjectPtr<USkeletalMeshComponent> Mesh, int32 SeatIndex, int32 WeaponIndex, FName SeatName);
 	UFUNCTION()
-	TArray<FName> GetMuzzleSocketsInOrder(TWeakObjectPtr<USkeletalMeshComponent> Mesh, FName SeatName, int32 WeaponIndex, EMuzzleType MuzzleType);
+	TArray<FName> GetMuzzleSocketsInOrder(TWeakObjectPtr<USkeletalMeshComponent> Mesh, int32 SeatIndex, int32 WeaponIndex, EMuzzleType MuzzleType);
 	UFUNCTION()
 	void CalculateAimDirection(TWeakObjectPtr<USkeletalMeshComponent> Mesh, FHitResult HitResult, int32 WeaponIndex, int32 SeatIndex);
 	UFUNCTION()

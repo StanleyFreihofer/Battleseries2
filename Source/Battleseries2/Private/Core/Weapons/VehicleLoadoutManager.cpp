@@ -919,13 +919,13 @@ void UVehicleLoadoutManager::UpdateLockOnIndicator(bool UpdateHUD, FHitResult& H
 
 #pragma region Muzzles
 
-FName UVehicleLoadoutManager::BuildMuzzleName(FName SeatName, int32 WeaponIndex, EMuzzleType MuzzleType, int32 MuzzleIndex)
+FName UVehicleLoadoutManager::BuildMuzzleName(int32 SeatIndex, int32 WeaponIndex, EMuzzleType MuzzleType, int32 MuzzleIndex)
 {
-	//MS_SeatName_WIName_MuzzleType_MuzzleIndex
+	//MS_SeatIndex_WIName_MuzzleType_MuzzleIndex
 	const UEnum* EnumPtr = StaticEnum<EMuzzleType>();
 	FString TypeString = EnumPtr ? EnumPtr->GetDisplayNameTextByValue((int64)MuzzleType).ToString() : TEXT("Unknown");
 	FString WeaponSlotString = (WeaponIndex == 0) ? TEXT("Primary") : TEXT("Secondary");
-	FString FormattedString = FString::Printf(TEXT("MS_%s_%s_%s_%02d"), *SeatName.ToString(), *WeaponSlotString, *TypeString, MuzzleIndex);
+	FString FormattedString = FString::Printf(TEXT("MS_%d_%s_%s_%02d"), SeatIndex, *WeaponSlotString, *TypeString, MuzzleIndex);
 	FName FinalSocketName = FName(*FormattedString);
 	return FinalSocketName;
 }
@@ -935,7 +935,7 @@ void UVehicleLoadoutManager::SetupMuzzleSockets(TWeakObjectPtr<USkeletalMeshComp
 	FSeatWeaponSystem_Runtime* WeaponSystem = VehicleWeaponSystem.Find(SeatIndex);
 	FVehicleWeapon_Runtime& VehicleWeaponToFill = WeaponSystem->Weapons[WeaponIndex];
 	const FBaseWeaponData& StaticWeaponData = GetBaseWeaponDataInSlot(SeatIndex, WeaponIndex);
-	VehicleWeaponToFill.VehicleWeaponState.MuzzleSockets = GetMuzzleSocketsInOrder(Mesh, SeatName, WeaponIndex, VehicleWeaponToFill.VehicleWeaponInstanceData.MuzzleType);
+	VehicleWeaponToFill.VehicleWeaponState.MuzzleSockets = GetMuzzleSocketsInOrder(Mesh, SeatIndex, WeaponIndex, VehicleWeaponToFill.VehicleWeaponInstanceData.MuzzleType);
 
 	for (const FName& SocketName : VehicleWeaponToFill.VehicleWeaponState.MuzzleSockets)
 	{
@@ -964,12 +964,12 @@ void UVehicleLoadoutManager::SetupMuzzleSockets(TWeakObjectPtr<USkeletalMeshComp
 	}
 }
 
-TArray<FName> UVehicleLoadoutManager::GetMuzzleSocketsInOrder(TWeakObjectPtr<USkeletalMeshComponent> Mesh, FName SeatName, int32 WeaponIndex, EMuzzleType MuzzleType)
+TArray<FName> UVehicleLoadoutManager::GetMuzzleSocketsInOrder(TWeakObjectPtr<USkeletalMeshComponent> Mesh, int32 SeatIndex, int32 WeaponIndex, EMuzzleType MuzzleType)
 {
 	TArray<FName> FoundSockets;
 	for (int32 i = 0; i < 32; i++)
 	{
-		FName TargetName = BuildMuzzleName(SeatName, WeaponIndex, MuzzleType, i);
+		FName TargetName = BuildMuzzleName(SeatIndex, WeaponIndex, MuzzleType, i);
 		if (Mesh->DoesSocketExist(TargetName))
 		{
 			FoundSockets.Add(TargetName);
