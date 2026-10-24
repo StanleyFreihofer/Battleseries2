@@ -85,7 +85,7 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintPure, meta = (BlueprintThreadSafe))
 	int32& GetCSI();
 	UFUNCTION(BlueprintCallable, BlueprintPure)
-	bool& GetInVehicle();
+	bool GetInVehicle();
 	
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	AVehicle_Base* GetCurrentVehicle();

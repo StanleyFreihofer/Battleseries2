@@ -10,9 +10,7 @@ USTRUCT(BlueprintType)
 struct FCharacterVehicleState
 {
 	GENERATED_BODY()
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "State")
-	bool inVehicle = false;
+	
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "State")
 	TObjectPtr<AVehicle_Base> CurrentVehicle = nullptr;		
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "State")

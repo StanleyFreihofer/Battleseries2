@@ -47,9 +47,8 @@ void UCharacterVehicleManager::TickComponent(float DeltaTime, ELevelTick TickTyp
 
 void UCharacterVehicleManager::ManageinVehicleStatus(AVehicle_Base* Vehicle, bool In_Vehicle)
 {
-	CharacterVehicleState.inVehicle = In_Vehicle;
 	CharacterVehicleState.CurrentVehicle = Vehicle;
-	if (CharacterVehicleState.inVehicle)
+	if (CharacterVehicleState.CurrentVehicle)
 	{
 		CharacterEnterVehicle();
 	}
@@ -620,9 +619,10 @@ int32& UCharacterVehicleManager::GetCSI()
 	return CharacterVehicleState.CSI;
 }
 
-bool& UCharacterVehicleManager::GetInVehicle()
+bool UCharacterVehicleManager::GetInVehicle()
 {
-	return CharacterVehicleState.inVehicle;
+	bool inVehicle = GetCurrentVehicle() != nullptr;
+	return inVehicle;
 }
 
 ACharacter_Base* UCharacterVehicleManager::GetOwnerCharacter()
