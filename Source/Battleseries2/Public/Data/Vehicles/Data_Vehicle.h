@@ -696,17 +696,43 @@ struct FVehicleData : public FTableRowBase
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	TArray<FTurretData> Turrets;
 	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (EditCondition = "GetMovementTypeForVehicleType() == E_MovementType::GroundVehicle", EditConditionHides))
 	FGroundVehicleData GroundVehicle_Data = FGroundVehicleData();
 	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (EditCondition = "GetMovementTypeForVehicleType() == E_MovementType::Helicopter", EditConditionHides))
 	FHelicopterData Helicopter_Data = FHelicopterData();
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (EditCondition = "GetMovementTypeForVehicleType() == E_MovementType::Jet", EditConditionHides))
 	FJetData Jet_Data = FJetData();
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	FAircraftData Aircraft_Data = FAircraftData();
+	
+	E_MovementType GetMovementTypeForVehicleType() const
+	{
+		switch (Vehicle_Type)
+		{
+			case EVehicleType::Tank:
+			case EVehicleType::TankDestroyer:
+			case EVehicleType::IFV:
+			case EVehicleType::MobileAA:
+			case EVehicleType::APC:
+			case EVehicleType::LTV:
+			case EVehicleType::ATV:
+			case EVehicleType::MobileArtillery:
+				return E_MovementType::GroundVehicle;
+			case EVehicleType::AttackHeli:
+			case EVehicleType::TransportHeli:
+			case EVehicleType::ScoutHeli:
+				return E_MovementType::Helicopter;
+			case EVehicleType::AttackJet:
+			case EVehicleType::CASJet:
+			case EVehicleType::FighterJet:
+				return E_MovementType::Jet;
+			case EVehicleType::RHIB:
+				return E_MovementType::Boat;
+		}
+	}
 
 	// --- Static helper function to get row names by vehicle type ---
 	static TArray<FName> GetRowNamesOfType(UDataTable* VehicleDataTable, EVehicleType TypeToFilter)

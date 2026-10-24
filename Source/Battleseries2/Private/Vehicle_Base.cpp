@@ -459,6 +459,12 @@ void AVehicle_Base::ApplyLoadoutToSeat(int32 SeatIndex)		//this functions applie
 void AVehicle_Base::ApplySavedOpticToSeat(int32 SeatIndex)
 {
 	const FSavedSeatLoadout& SeatLoadoutSave = UBS2FunctionLibrary::GetSaveSubsystem(this)->GetSeatLoadout(VehicleData->Vehicle_Type, SeatIndex);
+	TArray<FName>& CurrentAvailableOptics = VehicleLoadoutManager->VehicleOpticSystem.Find(SeatIndex)->CurrentAvailableOptics;
+	for (FName Optic : CurrentAvailableOptics)
+	{
+		//don't hold duplicates of the same optic
+		if (Optic == SeatLoadoutSave.Optic)	{ return; }
+	}
 
 	VehicleLoadoutManager->VehicleOpticSystem.Find(SeatIndex)->CurrentAvailableOptics.Add(SeatLoadoutSave.Optic);
 }
