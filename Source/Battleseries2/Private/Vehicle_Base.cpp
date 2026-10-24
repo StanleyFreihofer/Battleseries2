@@ -247,6 +247,21 @@ void AVehicle_Base::Init_SeatHUDComp(int32& SeatIndex)
 	VehicleCurrentState.SeatStates[SeatIndex].SeatHUDComponent = CockpitHUDComponent;
 }
 
+void AVehicle_Base::Init_ThirdPerson(int32 SeatIndex)
+{
+	if (!VehicleTypeDefintion->SeatDefinitions[SeatIndex].ThrdPersonDefinition.canEnterTP)		{ return; }
+	FSeatState& SeatState = VehicleCurrentState.SeatStates[SeatIndex];
+	
+	TObjectPtr<USpringArmComponent> NewSpringArmComponent = NewObject<USpringArmComponent>(this);
+	FString FormattedString = FString::Printf(TEXT("TP_%02d"), SeatIndex);		//TP_SeatIndex
+	NewSpringArmComponent->SetupAttachment(VehicleMeshComponent, FName(*FormattedString));
+	NewSpringArmComponent->TargetArmLength = VehicleTypeDefintion->SeatDefinitions[SeatIndex].ThrdPersonDefinition.SpringArmLength;
+	NewSpringArmComponent.Get()->RegisterComponent();
+	SeatState.TPSpringArm = NewSpringArmComponent;
+	
+	SeatState.TPCamera = UBS2FunctionLibrary::CreateAndAttachCamera(this, SeatState.TPSpringArm, FName("SpringEndpoint"));
+}
+
 void AVehicle_Base::Init_Seats()
 {
 	int32 NumSeats = VehicleTypeDefintion->GetNumSeats();
@@ -255,6 +270,7 @@ void AVehicle_Base::Init_Seats()
 	{
 		VehicleLoadoutManager->Init_Optic(SI);
 		Init_DefaultSeatRemoteCamera(SI);	
+		Init_ThirdPerson(SI);
 
 		const FSeatData& SeatInfo = VehicleData->Seats[SI];
 		if (SeatInfo.DefaultCharacterContext.SeatHUD)
@@ -623,7 +639,7 @@ void AVehicle_Base::DropSeat(int32 SeatIndex)
 	const FVehicleTypeSeatDefinition& SeatData = VehicleTypeDefintion->SeatDefinitions[SeatIndex];
 
 	HandleOccupySeat(false, false, SeatIndex);
-	DeactivateSeatCameras(SeatIndex);
+	DeactivateSeatCameras(SeatIndex, 2);
 
 	switch (SeatData.SeatRole)
 	{
@@ -760,19 +776,61 @@ void AVehicle_Base::UpdateSeatActiveCamera(int32 SeatIndex, UCameraComponent* Ne
 	{
 		SeatState.DefaultCamera->SetActive(false);
 	}
+	if (SeatState.TPCamera && SeatState.TPCamera != NewActiveCamera)
+	{
+		SeatState.TPCamera->SetActive(false);
+	}
 	if (UCameraComponent* WeaponCam = GetSeatWeaponCam(SeatIndex); WeaponCam && WeaponCam != NewActiveCamera)
 	{
 		WeaponCam->SetActive(false);
 	}
-	NewActiveCamera->SetActive(true);
+	if (NewActiveCamera)
+	{
+		NewActiveCamera->SetActive(true);
+	}
 }
 
-void AVehicle_Base::DeactivateSeatCameras(int32 SeatIndex)
+void AVehicle_Base::DeactivateSeatCameras(int32 SeatIndex, int32 DeactivateCamMode)
 {
+	//0 = deactivate default cam		1 = deactivate TPCAm		//2 = deactivate both
+	//weapon cam gets deactivated regardless
 	FSeatState& SeatState = VehicleCurrentState.SeatStates[SeatIndex];
-	if (SeatState.DefaultCamera)
+	TArray<UCameraComponent*> CamsToDeactivate;
+	
+	switch (DeactivateCamMode)
 	{
-		SeatState.DefaultCamera->SetActive(false);
+		case 0:
+		{
+			if (SeatState.DefaultCamera)
+			{
+				CamsToDeactivate.Add(SeatState.DefaultCamera);
+			}
+			break;
+		}
+		case 1:
+		{
+			if (SeatState.TPCamera)
+			{
+				CamsToDeactivate.Add(SeatState.TPCamera);
+			}
+			break;
+		}
+		case 2:
+		{
+			if (SeatState.DefaultCamera)
+			{
+				CamsToDeactivate.Add(SeatState.DefaultCamera);
+			}				
+			if (SeatState.TPCamera)
+			{
+				CamsToDeactivate.Add(SeatState.TPCamera);
+			}
+		}
+	}
+	
+	for (UCameraComponent* Cam : CamsToDeactivate)
+	{
+		Cam->SetActive(false);
 	}
 	if (UCameraComponent* WeaponCam = GetSeatWeaponCam(SeatIndex))
 	{
@@ -1314,6 +1372,23 @@ void AVehicle_Base::Input_HandleReleaseThrottle(int32 SeatIndex)
 		case EMovementType::GroundVehicle:
 			UpdateThrottle_GV_Stop(SeatIndex);
 			break;
+	}
+}
+
+void AVehicle_Base::ToggleRemoteViewMode(int32 SeatIndex)
+{
+	//ITS ASSUMED IF THIS IS CALLED THE THING CALLING IT IS A LOCALHUMAN
+	if (VehicleData->Seats[SeatIndex].ViewMethod != E_ViewMethod::Remote)	{return; }
+	FSeatState& SeatState = VehicleCurrentState.SeatStates[SeatIndex];
+	if (SeatState.DefaultCamera && SeatState.DefaultCamera->IsActive())
+	{
+		UpdateSeatActiveCamera(SeatIndex, SeatState.TPCamera);
+		UBS2FunctionLibrary::GetHUDSubsystem(this)->CurrentVehicleHMD.Get()->SetVisibility(ESlateVisibility::Hidden);
+	}
+	else if (SeatState.TPCamera && SeatState.TPCamera->IsActive())
+	{
+		UpdateSeatActiveCamera(SeatIndex, SeatState.DefaultCamera);
+		UBS2FunctionLibrary::GetHUDSubsystem(this)->CurrentVehicleHMD.Get()->SetVisibility(ESlateVisibility::Visible);
 	}
 }
 

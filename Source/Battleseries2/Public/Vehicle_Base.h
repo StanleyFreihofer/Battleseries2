@@ -101,8 +101,6 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
 	USpawnComponent* SpawnComponent;
 
-
-
 	//VARIABLES
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (ExposeOnSpawn = "true"), Category = "__Instance")
 	FVehicleStartingData VehicleStartingData = FVehicleStartingData();
@@ -152,6 +150,8 @@ public:
 	void Init_DefaultSeatRemoteCamera(int32 SeatIndex);
 	UFUNCTION(BlueprintCallable)
 	void Init_SeatHUDComp(int32& SeatIndex);
+	UFUNCTION(BlueprintCallable)
+	void Init_ThirdPerson(int32 SeatIndex);
 	UFUNCTION(BlueprintCallable)
 	void Init_Seats();
 	UFUNCTION(BlueprintCallable)
@@ -221,7 +221,7 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void UpdateSeatActiveCamera(int32 SeatIndex, UCameraComponent* NewActiveCamera);
 	UFUNCTION(BlueprintCallable)
-	void DeactivateSeatCameras(int32 SeatIndex);
+	void DeactivateSeatCameras(int32 SeatIndex, int32 DeactivateCamMode);
 	UFUNCTION(BlueprintCallable)
 	void UpdateRemoteActiveCamPP(int32 SeatIndex, FPostProcessSettings PPSettings, float BlendWeight, UCameraComponent* Cam);
 	UFUNCTION(BlueprintCallable)
@@ -238,6 +238,8 @@ public:
 	void Input_HandleApplyThrottle(float ThrottleValue, int32 SeatIndex);		//called from seat
 	UFUNCTION(BlueprintCallable)
 	void Input_HandleReleaseThrottle(int32 SeatIndex);
+	UFUNCTION(BlueprintCallable)
+	void ToggleRemoteViewMode(int32 SeatIndex);
 	//Movement, Ground Vehicle
 	UFUNCTION(BlueprintCallable)
 	void HandleApplyThrottle_GV(float InputValue, int32 SeatIndex);

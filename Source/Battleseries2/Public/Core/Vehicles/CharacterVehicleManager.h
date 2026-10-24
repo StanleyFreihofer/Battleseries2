@@ -75,9 +75,10 @@ public:
 	
 	UFUNCTION(BlueprintCallable)
 	void HandleViewMethod(int32 SeatIndex);
-
 	UFUNCTION(BlueprintCallable)
 	void HandleViewMethod_Default(int32 SeatIndex);
+	UFUNCTION(BlueprintCallable)
+	void ToggleCurrentViewMode();
 	
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	ACharacter_Base* GetOwnerCharacter();

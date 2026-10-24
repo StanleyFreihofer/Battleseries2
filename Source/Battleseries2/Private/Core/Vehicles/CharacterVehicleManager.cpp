@@ -600,6 +600,30 @@ void UCharacterVehicleManager::HandleViewMethod_Default(int32 SeatIndex)
 	}
 }
 
+void UCharacterVehicleManager::ToggleCurrentViewMode()
+{
+	//it is assumed that if this is called this is a local human
+	if (!GetInVehicle())	{ return; }
+	if (!GetCurrentVehicle()->VehicleTypeDefintion->SeatDefinitions[GetCSI()].ThrdPersonDefinition.canEnterTP)	{ return; }
+	switch (GetCurrentVehicle()->VehicleData->Seats[GetCSI()].ViewMethod)
+	{
+		case E_ViewMethod::Windowed:
+			if (GetOwnerCharacter()->FPCamera->IsActive())
+			{
+				GetOwnerCharacter()->FPCamera->Deactivate();
+				GetOwnerCharacter()->UpdateViewTarget(GetOwnerCharacter(), GetOwnerCharacter()->TPCamera);
+			}
+			else
+			{
+				GetOwnerCharacter()->UpdateViewTarget(GetOwnerCharacter(), GetOwnerCharacter()->FPCamera);
+			}
+			break;
+		case E_ViewMethod::Remote:
+			GetCurrentVehicle()->ToggleRemoteViewMode(GetCSI());	
+			break;
+	}
+}
+
 #pragma region Getters
 
 AVehicle_Base* UCharacterVehicleManager::GetCurrentVehicle()
@@ -621,7 +645,7 @@ int32& UCharacterVehicleManager::GetCSI()
 
 bool UCharacterVehicleManager::GetInVehicle()
 {
-	bool inVehicle = GetCurrentVehicle() != nullptr;
+	bool inVehicle = GetCurrentVehicle() != nullptr && GetCSI() != INDEX_NONE;
 	return inVehicle;
 }
 

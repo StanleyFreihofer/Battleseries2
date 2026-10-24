@@ -100,6 +100,21 @@ struct FSeatLoadoutOptions
 };
 
 USTRUCT(BlueprintType)
+struct FSeat3PDefinition
+{
+    GENERATED_BODY()
+    
+    UPROPERTY(EditAnywhere, BlueprintReadOnly)
+    bool canEnterTP = false;
+    
+    UPROPERTY(EditAnywhere, BlueprintReadOnly)
+    float SpringArmLength = 300.f;
+    
+    UPROPERTY(EditAnywhere, BlueprintReadOnly)
+    float BlendTime = 0.f;
+};
+
+USTRUCT(BlueprintType)
 struct FVehicleTypeSeatDefinition
 {
     GENERATED_BODY()
@@ -112,6 +127,9 @@ struct FVehicleTypeSeatDefinition
     
     UPROPERTY(EditAnywhere, BlueprintReadOnly)
     TObjectPtr<UInputMappingContext> InputMappingContext = nullptr;
+    
+    UPROPERTY(EditAnywhere, BlueprintReadOnly)
+    struct FSeat3PDefinition ThrdPersonDefinition = FSeat3PDefinition();
     
     UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (tooltip = "The Array Indexes of the turret(s) this seat controls"))
     TArray<int32> ControlledTurretIndexes;
