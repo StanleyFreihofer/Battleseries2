@@ -222,8 +222,8 @@ void ACharacter_Base::Input_ShootWeapon_Vehicle()
 	TWeakObjectPtr<AProjectile_Base> FiredProjectile;
 	switch (VehicleManager->GetCurrentVehicle()->VehicleTypeDefintion->SeatDefinitions[VehicleManager->GetCSI()].SeatRole)
 	{
-		case E_SeatRole::DriverGunner:
-		case E_SeatRole::Gunner:
+		case ESeatRole::DriverGunner:
+		case ESeatRole::Gunner:
 			FiredProjectile = VehicleManager->GetCurrentVehicle()->VehicleLoadoutManager->HandleStartFire(VehicleManager->GetCSI());
 			break;
 	}

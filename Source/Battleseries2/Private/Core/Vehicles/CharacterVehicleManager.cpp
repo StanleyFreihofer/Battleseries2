@@ -195,8 +195,8 @@ void UCharacterVehicleManager::StartEnterSeat()
 	Vehicle->SetupNewSeat(GetCSI(), GetOwnerCharacter()->IsLocalHuman());
 	switch (GetCurrentVehicle()->VehicleTypeDefintion->SeatDefinitions[GetCSI()].SeatRole)
 	{
-		case E_SeatRole::DriverGunner:
-		case E_SeatRole::Gunner:
+		case ESeatRole::DriverGunner:
+		case ESeatRole::Gunner:
 			if (SeatData.ViewMethod == E_ViewMethod::Windowed)
 			{
 				Vehicle->VehicleLoadoutManager->WindowedRangefinder.AddDynamic(this, &UCharacterVehicleManager::UpdateRangefinder_WindowedVehicle);
@@ -216,12 +216,12 @@ void UCharacterVehicleManager::CharacterEnterSeat(const FCharacterSeatContext& S
 	{
 		switch (GetCurrentVehicle()->VehicleTypeDefintion->SeatDefinitions[GetCSI()].SeatRole)
 		{
-			case E_SeatRole::Driver:
-			case E_SeatRole::Passenger:
+			case ESeatRole::Driver:
+			case ESeatRole::Passenger:
 				GetOwnerCharacter()->SetActorRelativeTransform(SeatContext.SeatTransform);
 				break;
-			case E_SeatRole::DriverGunner:
-			case E_SeatRole::Gunner:
+			case ESeatRole::DriverGunner:
+			case ESeatRole::Gunner:
 				HandleEnterSeat_Gunner(SeatContext);
 				break;
 		}
@@ -269,8 +269,8 @@ void UCharacterVehicleManager::StartExitSeat(int32 SeatIndex)
 	GetCurrentVehicle()->DropSeat(SeatIndex);
 	switch (GetCurrentVehicle()->VehicleTypeDefintion->SeatDefinitions[SeatIndex].SeatRole)
 	{
-		case E_SeatRole::DriverGunner:
-		case E_SeatRole::Gunner:
+		case ESeatRole::DriverGunner:
+		case ESeatRole::Gunner:
 			if (SeatData.ViewMethod == E_ViewMethod::Windowed)
 			{
 				GetCurrentVehicle()->VehicleLoadoutManager->WindowedRangefinder.RemoveDynamic(this, &UCharacterVehicleManager::UpdateRangefinder_WindowedVehicle);
@@ -385,13 +385,13 @@ void UCharacterVehicleManager::UpdateUI_EnterSeat()
 	//sync vehicle states for hud
 	switch (GetCurrentVehicle()->VehicleTypeDefintion->SeatDefinitions[GetCSI()].SeatRole)
 	{
-		case E_SeatRole::Driver:
+		case ESeatRole::Driver:
 			UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateSpeedHUD_Vehicle(GetCurrentVehicle()->GetCurrentSpeed());
 			break;
-		case E_SeatRole::Gunner:
+		case ESeatRole::Gunner:
 			UpdateUI_EnterSeat_Turrets();
 			break;
-		case E_SeatRole::DriverGunner:
+		case ESeatRole::DriverGunner:
 			//HUD
 			UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateSpeedHUD_Vehicle(GetCurrentVehicle()->GetCurrentSpeed());
 			UpdateUI_EnterSeat_Turrets();
@@ -565,7 +565,7 @@ void UCharacterVehicleManager::HandleViewMethod(int32 SeatIndex)
 {
 	if (!GetOwnerCharacter()->IsLocalHuman())		{ return; }
 	const FVehicleTypeSeatDefinition& SeatTypeData = GetCurrentVehicle()->VehicleTypeDefintion->SeatDefinitions[SeatIndex];
-	if (SeatTypeData.SeatRole != E_SeatRole::DriverGunner && SeatTypeData.SeatRole != E_SeatRole::Gunner)
+	if (SeatTypeData.SeatRole != ESeatRole::DriverGunner && SeatTypeData.SeatRole != ESeatRole::Gunner)
 	{
 		HandleViewMethod_Default(SeatIndex);
 		return;

@@ -9,8 +9,8 @@
 #include "VehicleDefaults.generated.h"
 
 enum class EVehicleType : uint8;
-enum class E_MovementType : uint8;
-enum class E_SeatRole : uint8;
+enum class EMovementType : uint8;
+enum class ESeatRole : uint8;
 
 //defines traits of a vehicle type
 
@@ -108,7 +108,7 @@ struct FVehicleTypeSeatDefinition
     FText SeatName = FText::GetEmpty();
 
     UPROPERTY(EditAnywhere, BlueprintReadOnly)
-    E_SeatRole SeatRole = E_SeatRole::Driver;
+    ESeatRole SeatRole = ESeatRole::Driver;
     
     UPROPERTY(EditAnywhere, BlueprintReadOnly)
     TObjectPtr<UInputMappingContext> InputMappingContext = nullptr;
@@ -133,9 +133,6 @@ struct FVehicleTypeDefinition        //entity type definition (store in core ins
 
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
     TSoftObjectPtr<UTexture2D> TypeIcon = nullptr;               //minimap?
-    
-    UPROPERTY(EditAnywhere, BlueprintReadOnly)
-    E_MovementType Movement_Type = E_MovementType::GroundVehicle;
     
     UPROPERTY(EditAnywhere, BlueprintReadOnly)
     TArray<FVehicleTypeSeatDefinition> SeatDefinitions;

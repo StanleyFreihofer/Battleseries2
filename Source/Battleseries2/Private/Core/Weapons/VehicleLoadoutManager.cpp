@@ -50,7 +50,7 @@ void UVehicleLoadoutManager::Init_VehicleWeaponSystem(TMap<int32, FSavedSeatLoad
 	
 	for (int32 SeatIndex = 0; SeatIndex < VehicleTypeDefintion.SeatDefinitions.Num(); SeatIndex++)
 	{
-		if (VehicleTypeDefintion.SeatDefinitions[SeatIndex].SeatRole == E_SeatRole::DriverGunner || VehicleTypeDefintion.SeatDefinitions[SeatIndex].SeatRole == E_SeatRole::Gunner)
+		if (VehicleTypeDefintion.SeatDefinitions[SeatIndex].SeatRole == ESeatRole::DriverGunner || VehicleTypeDefintion.SeatDefinitions[SeatIndex].SeatRole == ESeatRole::Gunner)
 		{
 			Init_WAC(SeatIndex);
 			Init_HUDReticleQuad(SeatIndex);

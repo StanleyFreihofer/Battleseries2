@@ -4,7 +4,7 @@
 #include "VehicleEnums.generated.h"
 
 UENUM(BlueprintType)
-enum class E_MovementType : uint8
+enum class EMovementType : uint8
 {
 	GroundVehicle	UMETA(DisplayName = "Ground Vehicle"),
 	Helicopter		UMETA(DisplayName = "Helicopter"),
@@ -52,7 +52,7 @@ enum class EFlightModelType : uint8
 };
 
 UENUM(BlueprintType)
-enum class E_SeatRole : uint8
+enum class ESeatRole : uint8
 {
 	Driver			UMETA(DisplayName = "Driver"),
 	Gunner			UMETA(DisplayName = "Gunner"),

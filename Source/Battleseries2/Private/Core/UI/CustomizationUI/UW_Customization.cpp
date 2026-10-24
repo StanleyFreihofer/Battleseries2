@@ -340,7 +340,7 @@ void UUW_Customization::Build_VehicleLoadoutPanel(int32 TypeEnumIndex)
 	for (int32 SI = 0; SI < VehicleTypeDefinition.SeatDefinitions.Num(); SI++)
 	{
 		const FVehicleTypeSeatDefinition& SeatTypeData = VehicleTypeDefinition.SeatDefinitions[SI];
-		if (SeatTypeData.SeatRole == E_SeatRole::DriverGunner || SeatTypeData.SeatRole == E_SeatRole::Gunner)
+		if (SeatTypeData.SeatRole == ESeatRole::DriverGunner || SeatTypeData.SeatRole == ESeatRole::Gunner)
 		{
 			Build_VehicleLoadoutData_Weapon(SeatTypeData, TypeEnumIndex, SI);
 			Build_VehicleLoadoutData_Optic(SeatTypeData, TypeEnumIndex, SI);
