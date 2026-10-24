@@ -46,11 +46,11 @@ void UVehicleLoadoutManager::TickComponent(float DeltaTime, ELevelTick TickType,
 void UVehicleLoadoutManager::Init_VehicleWeaponSystem(TMap<int32, FSavedSeatLoadout> SeatLoadouts)
 {
 	const FVehicleData& VehicleData = GetOwnerVehicle()->GetVehicleData();
-	const FVehicleTypeDefinition* VehicleTypeDefintion = GetOwnerVehicle()->VehicleTypeDefintion;
+	const FVehicleTypeDefinition& VehicleTypeDefintion = *GetOwnerVehicle()->VehicleTypeDefintion;
 	
-	for (int32 SeatIndex = 0; SeatIndex < VehicleTypeDefintion->SeatDefinitions.Num(); SeatIndex++)
+	for (int32 SeatIndex = 0; SeatIndex < VehicleTypeDefintion.SeatDefinitions.Num(); SeatIndex++)
 	{
-		if (VehicleTypeDefintion->SeatDefinitions[SeatIndex].SeatRole == E_SeatRole::DriverGunner || VehicleTypeDefintion->SeatDefinitions[SeatIndex].SeatRole == E_SeatRole::Gunner)
+		if (VehicleTypeDefintion.SeatDefinitions[SeatIndex].SeatRole == E_SeatRole::DriverGunner || VehicleTypeDefintion.SeatDefinitions[SeatIndex].SeatRole == E_SeatRole::Gunner)
 		{
 			Init_WAC(SeatIndex);
 			Init_HUDReticleQuad(SeatIndex);
@@ -64,7 +64,7 @@ void UVehicleLoadoutManager::Init_VehicleWeaponSystem(TMap<int32, FSavedSeatLoad
 			else
 			{
 				//iterates over every seat in the map and sets up USING DEFAULTS
-				TArray<FName> DefaultWeaponIDs = VehicleData.Seats[SeatIndex].AvailableItems.GetDefaultWeaponIDs();
+				const TArray<FName> DefaultWeaponIDs = VehicleTypeDefintion.SeatDefinitions[SeatIndex].SeatLoadoutOptions.GetDefaultSeatWeapons();
 				ApplyWeaponsToSeat(SeatIndex, DefaultWeaponIDs);
 			}
 		}
@@ -1538,7 +1538,7 @@ void UVehicleLoadoutManager::UpdateWeaponStatusUI(int32& SeatIndex, bool& canFir
 void UVehicleLoadoutManager::Init_Optic(int32 SeatIndex)
 {
 	FVehicleStartingData& VehicleStartingData = GetOwnerVehicle()->VehicleStartingData;
-	const FVehicleData* VehicleData = &GetOwnerVehicle()->GetVehicleData();
+	const FVehicleTypeDefinition* VehicleTypeData = GetOwnerVehicle()->VehicleTypeDefintion;
 	
 	VehicleOpticSystem.Add(SeatIndex, FVehicleOpticState());
 	
@@ -1548,7 +1548,7 @@ void UVehicleLoadoutManager::Init_Optic(int32 SeatIndex)
 	}
 	else
 	{
-		VehicleOpticSystem.Find(SeatIndex)->CurrentAvailableOptics.Init(VehicleData->Seats[SeatIndex].DefaultOptic, 1);
+		VehicleOpticSystem.Find(SeatIndex)->CurrentAvailableOptics.Init(VehicleTypeData->SeatDefinitions[SeatIndex].SeatLoadoutOptions.AvailableOptics[0], 1);
 	}
 }
 
@@ -1720,7 +1720,7 @@ int32 UVehicleLoadoutManager::GetSeatIndexForTurret(int32 TurretIndex)
 {
 	int32 CTI = -1;
 	int32 SI = -1;
-	for (int32 i = 0; i < OwnerDataAccessor->GetVehicleData().Seats.Num(); i++)
+	for (int32 i = 0; i < GetOwnerVehicle()->VehicleTypeDefintion->GetNumSeats(); i++)
 	{
 		if (GetOwnerVehicle()->VehicleTypeDefintion->SeatDefinitions[i].ControlledTurretIndexes.Num() > 0)
 		{

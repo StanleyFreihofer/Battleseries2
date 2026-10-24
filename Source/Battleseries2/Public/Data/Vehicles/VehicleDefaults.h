@@ -74,13 +74,29 @@ struct FSeatLoadoutOptions
     TArray<FSeatWeaponSlot> AvailableWeaponSlots;
     
     UPROPERTY(EditAnywhere, BlueprintReadOnly)
-    TArray<FName> AvailableOptics;
+    TArray<FName> AvailableOptics = { "O_60hz"};
     
     UPROPERTY(EditAnywhere, BlueprintReadOnly)
     TArray<FName> AvailableCountermeasures;
     
     UPROPERTY(EditAnywhere, BlueprintReadOnly)
     TArray<FName> AvailableUpgrades;
+    
+    TArray<FName> GetDefaultSeatWeapons() const 
+    {
+        TArray<FName> DefaultSeatWeapons;
+        for (const FSeatWeaponSlot& WeaponSlot : AvailableWeaponSlots)
+        {
+            if (WeaponSlot.WeaponOptions.IsEmpty()) { continue; }
+            DefaultSeatWeapons.Add(WeaponSlot.WeaponOptions[0]);
+        }
+        return DefaultSeatWeapons;
+    }
+    
+    int32 GetNumWeaponSlots() const
+    {
+        return AvailableWeaponSlots.Num();
+    }
 };
 
 USTRUCT(BlueprintType)
@@ -129,6 +145,11 @@ struct FVehicleTypeDefinition        //entity type definition (store in core ins
     
     UPROPERTY(EditAnywhere, BlueprintReadOnly)
     FVehicleCombatDefinition VehicleCombatDefinition = FVehicleCombatDefinition();
+    
+    int32 GetNumSeats() const
+    {
+        return SeatDefinitions.Num();
+    }
 };
 
 

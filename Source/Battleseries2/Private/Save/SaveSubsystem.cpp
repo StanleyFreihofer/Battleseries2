@@ -1,6 +1,8 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "Save/SaveSubsystem.h"
+
+#include "Data/Vehicles/VehicleDefaults.h"
 #include "Kismet/GameplayStatics.h"
 #include "Save/PlayerSave_Loadout.h"
 #include "Utilities/DataManagerSubsystem.h"
@@ -140,21 +142,9 @@ void USaveSubsystem::SetLoadoutCamoChoice_Vehicle(EVehicleType VehicleType, FNam
 void USaveSubsystem::EnsureSeatDefaults(EVehicleType VehicleType, int32 SeatIndex)
 {
 	UDataManagerSubsystem* DataSubsystem = GetGameInstance()->GetSubsystem<UDataManagerSubsystem>();
-	UDataTable* VehicleDataTable = DataSubsystem->GetVehicleDataTable();
-	TArray<FName> AllVehicleIDsOfType = FVehicleData::GetRowNamesOfType(VehicleDataTable, VehicleType);
-	const FVehicleData* VehicleData = DataSubsystem->GetVehicleDataRow(AllVehicleIDsOfType[0]);
-	const FSeatData* SeatData = &VehicleData->Seats[SeatIndex];
-	int32 NumOfWeaponSlots = SeatData->AvailableItems.AvailableWeaponSlots.Num();
-	TArray<FName> Weapons;
-	Weapons.SetNum(NumOfWeaponSlots);
-
-	for (int32 i = 0; i < NumOfWeaponSlots; i++)
-	{
-		const TMap<FName, FVehicleWeaponInstanceData>& WeaponChoiceMap = SeatData->AvailableItems.AvailableWeaponSlots[i].WeaponChoices;
-		auto It = WeaponChoiceMap.CreateConstIterator();
-		Weapons[i] = It.Key();
-	}
-
+	FVehicleTypeSeatDefinition& SeatData = DataSubsystem->GetVehicleDefaults()->VehicleTypeDefintions.Find(VehicleType)->SeatDefinitions[SeatIndex];
+	TArray<FName> Weapons = SeatData.SeatLoadoutOptions.GetDefaultSeatWeapons();
+	
 	// Apply to the save
 	FPlayerLoadoutConfig_Vehicle& VehicleConfig = LoadoutSave->VehicleLoadoutConfigs.FindOrAdd(VehicleType);
 	FSavedSeatLoadout& SeatConfig = VehicleConfig.SeatLoadout.FindOrAdd(SeatIndex);

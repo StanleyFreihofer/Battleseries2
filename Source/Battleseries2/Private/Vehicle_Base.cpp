@@ -249,25 +249,25 @@ void AVehicle_Base::Init_SeatHUDComp(int32& SeatIndex)
 
 void AVehicle_Base::Init_Seats()
 {
-	VehicleCurrentState.SeatStates.SetNum(VehicleData->Seats.Num());
-	for (int32 SI = 0; SI < VehicleData->Seats.Num(); ++SI)
+	int32 NumSeats = VehicleTypeDefintion->GetNumSeats();
+	VehicleCurrentState.SeatStates.SetNum(NumSeats);
+	for (int32 SI = 0; SI < NumSeats; ++SI)
 	{
-		const FSeatData& SeatInfo = VehicleData->Seats[SI];
-
 		VehicleLoadoutManager->Init_Optic(SI);
 		Init_DefaultSeatRemoteCamera(SI);	
 
+		const FSeatData& SeatInfo = VehicleData->Seats[SI];
 		if (SeatInfo.DefaultCharacterContext.SeatHUD)
 		{
 			Init_SeatHUDComp(SI);
 		}
 
+		//auto occupy seats/starting data occupy
 		for (int32 i = 0; i < VehicleStartingData.OccupiedSeats.Num(); ++i)
 		{
 			if (VehicleStartingData.OccupiedSeats[i] == SI)
 			{
 				HandleOccupySeat(true, false, SI);
-				//VehicleCurrentState.SeatStates[SI].isOccupied = true;
 				break;
 			}
 		}
@@ -472,7 +472,7 @@ void AVehicle_Base::ApplyLoadoutToVehicle()
 
 	if (!VehicleCurrentState.GenericVehicleState.LoadoutApplied)
 	{
-		for (int32 i = 0; i < VehicleData->Seats.Num(); i++)
+		for (int32 i = 0; i < VehicleTypeDefintion->GetNumSeats(); i++)
 		{
 			ApplyLoadoutToSeat(i);
 		}
@@ -581,7 +581,7 @@ void AVehicle_Base::Interact_Implementation(ACharacter_Base* CharacterInteractin
 
 int32 AVehicle_Base::FindNextEmptySeat(int32 CSI)
 {
-	const int32 TotalSeats = VehicleData->Seats.Num();
+	const int32 TotalSeats = VehicleTypeDefintion->GetNumSeats();
 	const int32 CurrentSeat = CSI;
 	const bool bEntering = CurrentSeat == INDEX_NONE;		//<--if index = -1, means wasn't in a seat which means entering for the first time
 	
