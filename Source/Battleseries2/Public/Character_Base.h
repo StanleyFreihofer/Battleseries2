@@ -52,10 +52,6 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
 	UCameraComponent* FPCamera = nullptr;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
-	UCameraComponent* TPCamera = nullptr;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
-	USpringArmComponent* TPSpringArm = nullptr;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
 	USpringArmComponent* FPArmsSpringArm = nullptr;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
 	USpringArmComponent* FPLegsSpringArm = nullptr;

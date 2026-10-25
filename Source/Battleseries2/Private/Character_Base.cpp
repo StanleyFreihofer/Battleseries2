@@ -32,8 +32,6 @@ ACharacter_Base::ACharacter_Base(const FObjectInitializer& ObjectInitializer) : 
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 	FPCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("CameraComponent"));
-	TPCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("TPCamera"));
-	TPSpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("TPSpringArm"));
 	FPArmsSpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
 	FPLegsSpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("LegsSpringArm"));
 	FPArms = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("FPArms"));
@@ -47,10 +45,6 @@ ACharacter_Base::ACharacter_Base(const FObjectInitializer& ObjectInitializer) : 
 	FPLegs->SetupAttachment(FPLegsSpringArm);
 	FPCamera->SetupAttachment(FPArms, FName("Camera"));
 	FPCamera->bUsePawnControlRotation = true;
-	TPSpringArm->SetupAttachment(GetMesh(), FName("TPSpringArm"));
-	TPSpringArm->TargetArmLength = 300.f;
-	TPCamera->SetAutoActivate(false);
-	TPCamera->SetupAttachment(TPSpringArm, FName("SpringEndpoint"));
 	GetMesh()->bOwnerNoSee = true;
 	GetMesh()->bRenderCustomDepth = true;
 	FPArms->bOnlyOwnerSee = true;
@@ -148,7 +142,7 @@ void ACharacter_Base::Input_Look(FVector2D InputAxisValue)
 	}
 	else
 	{
-		switch (VehicleManager->GetCurrentVehicle()->VehicleData->Seats[VehicleManager->GetCSI()].DefaultCharacterContext.CharacterRotationMethod)
+		switch (VehicleManager->GetCurrentSeatData().DefaultCharacterContext.CharacterRotationMethod)
 		{
 			case EControlRotationMethod::Freelook:
 				Freelook(InputAxisValue);
@@ -226,7 +220,7 @@ void ACharacter_Base::Input_Interact()
 void ACharacter_Base::Input_ShootWeapon_Vehicle()
 {
 	TWeakObjectPtr<AProjectile_Base> FiredProjectile;
-	switch (VehicleManager->GetCurrentVehicle()->VehicleTypeDefintion->SeatDefinitions[VehicleManager->GetCSI()].SeatRole)
+	switch (VehicleManager->GetCurrentSeatDefinition().SeatRole)
 	{
 		case ESeatRole::DriverGunner:
 		case ESeatRole::Gunner:

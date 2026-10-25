@@ -249,13 +249,14 @@ void AVehicle_Base::Init_SeatHUDComp(int32& SeatIndex)
 
 void AVehicle_Base::Init_ThirdPerson(int32 SeatIndex)
 {
-	if (!VehicleTypeDefintion->SeatDefinitions[SeatIndex].ThrdPersonDefinition.canEnterTP)		{ return; }
+	if (!GetVehicleTypeSeatDefinition(SeatIndex).ThrdPersonDefinition.canEnterTP)		{ return; }
 	FSeatState& SeatState = VehicleCurrentState.SeatStates[SeatIndex];
 	
 	TObjectPtr<USpringArmComponent> NewSpringArmComponent = NewObject<USpringArmComponent>(this);
 	FString FormattedString = FString::Printf(TEXT("TP_%02d"), SeatIndex);		//TP_SeatIndex
 	NewSpringArmComponent->SetupAttachment(VehicleMeshComponent, FName(*FormattedString));
-	NewSpringArmComponent->TargetArmLength = VehicleTypeDefintion->SeatDefinitions[SeatIndex].ThrdPersonDefinition.SpringArmLength;
+	NewSpringArmComponent->bDoCollisionTest = false;
+	NewSpringArmComponent->TargetArmLength = GetVehicleTypeSeatDefinition(SeatIndex).ThrdPersonDefinition.SpringArmLength;
 	NewSpringArmComponent.Get()->RegisterComponent();
 	SeatState.TPSpringArm = NewSpringArmComponent;
 	

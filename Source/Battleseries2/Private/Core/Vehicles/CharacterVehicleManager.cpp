@@ -189,7 +189,7 @@ void UCharacterVehicleManager::PhysicallyExitVehicle()
 void UCharacterVehicleManager::StartEnterSeat()
 {
 	AVehicle_Base* Vehicle = GetCurrentVehicle();
-	const FSeatData& SeatData = Vehicle->GetVehicleData().Seats[GetCSI()];
+	const FSeatData& SeatData = GetCurrentSeatData();
 	
 	Vehicle->SetupNewSeat(GetCSI(), GetOwnerCharacter()->IsLocalHuman());
 	switch (GetCurrentSeatDefinition().SeatRole)
@@ -611,7 +611,7 @@ void UCharacterVehicleManager::ToggleCurrentViewMode()
 			if (GetOwnerCharacter()->FPCamera->IsActive())
 			{
 				GetOwnerCharacter()->FPCamera->Deactivate();
-				GetOwnerCharacter()->UpdateViewTarget(GetOwnerCharacter(), GetOwnerCharacter()->TPCamera);
+				GetOwnerCharacter()->UpdateViewTarget(GetCurrentVehicle(), GetCurrentVehicle()->VehicleCurrentState.SeatStates[GetCSI()].TPCamera);
 			}
 			else
 			{
