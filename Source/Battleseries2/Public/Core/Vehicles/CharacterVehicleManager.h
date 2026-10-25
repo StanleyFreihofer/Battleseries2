@@ -87,6 +87,10 @@ public:
 	int32& GetCSI();
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	bool GetInVehicle();
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	const FVehicleTypeSeatDefinition& GetCurrentSeatDefinition();
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	const FSeatData& GetCurrentSeatData();
 	
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	AVehicle_Base* GetCurrentVehicle();

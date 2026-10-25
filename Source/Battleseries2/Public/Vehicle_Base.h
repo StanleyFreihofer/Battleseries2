@@ -315,6 +315,10 @@ public:
 	UCameraComponent* GetSeatWeaponCam(int32 SeatIndex);
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	UCameraComponent* GetRemoteActiveCam(int32 SeatIndex);
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	const FVehicleTypeSeatDefinition& GetVehicleTypeSeatDefinition(int32 SeatIndex);
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	const FSeatData& GetSeatData(int32 SeatIndex);
 	UFUNCTION(BlueprintCallable)
 	float GetCurrentSpeed();
 	UFUNCTION(BlueprintCallable, BlueprintPure)

@@ -192,7 +192,7 @@ void UCharacterVehicleManager::StartEnterSeat()
 	const FSeatData& SeatData = Vehicle->GetVehicleData().Seats[GetCSI()];
 	
 	Vehicle->SetupNewSeat(GetCSI(), GetOwnerCharacter()->IsLocalHuman());
-	switch (GetCurrentVehicle()->VehicleTypeDefintion->SeatDefinitions[GetCSI()].SeatRole)
+	switch (GetCurrentSeatDefinition().SeatRole)
 	{
 		case ESeatRole::DriverGunner:
 		case ESeatRole::Gunner:
@@ -213,7 +213,7 @@ void UCharacterVehicleManager::CharacterEnterSeat(const FCharacterSeatContext& S
 	
 	if (!GetCurrentVehicle()->VehicleData->bCanRemoteControl)
 	{
-		switch (GetCurrentVehicle()->VehicleTypeDefintion->SeatDefinitions[GetCSI()].SeatRole)
+		switch (GetCurrentSeatDefinition().SeatRole)
 		{
 			case ESeatRole::Driver:
 			case ESeatRole::Passenger:
@@ -229,7 +229,7 @@ void UCharacterVehicleManager::CharacterEnterSeat(const FCharacterSeatContext& S
 		GetOwnerCharacter()->UpdateCharacterMeshVisibility(SeatContext.bIsCharacterVisible);
 	}
 	
-	GetOwnerCharacter()->ManageIMC(nullptr, GetCurrentVehicle()->VehicleTypeDefintion->SeatDefinitions[GetCSI()].InputMappingContext, 1);
+	GetOwnerCharacter()->ManageIMC(nullptr, GetCurrentSeatDefinition().InputMappingContext, 1);
 
 	if (GetOwnerCharacter()->IsLocalHuman())
 	{
@@ -263,10 +263,10 @@ void UCharacterVehicleManager::HandleEnterSeat_Gunner(const FCharacterSeatContex
 
 void UCharacterVehicleManager::StartExitSeat(int32 SeatIndex)
 {
-	const FSeatData& SeatData = GetCurrentVehicle()->GetVehicleData().Seats[SeatIndex];
+	const FSeatData& SeatData = GetCurrentVehicle()->GetSeatData(SeatIndex);
 	CharacterExitSeat(SeatIndex);
 	GetCurrentVehicle()->DropSeat(SeatIndex);
-	switch (GetCurrentVehicle()->VehicleTypeDefintion->SeatDefinitions[SeatIndex].SeatRole)
+	switch (GetCurrentVehicle()->GetVehicleTypeSeatDefinition(SeatIndex).SeatRole)
 	{
 		case ESeatRole::DriverGunner:
 		case ESeatRole::Gunner:
@@ -406,7 +406,7 @@ void UCharacterVehicleManager::UpdateUI_EnterSeat_Turrets()
 		UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateCompassHUD_Vehicle(ActiveCam->GetComponentRotation().Yaw);
 		UBS2FunctionLibrary::GetHUDSubsystem(this)->HandleTurretRotationUpdate(ActiveCam->GetComponentRotation().Yaw);
 	}
-	if (GetCurrentVehicle()->VehicleTypeDefintion->SeatDefinitions[GetCSI()].ControlledTurretIndexes.Num())
+	if (GetCurrentSeatDefinition().ControlledTurretIndexes.Num())
 	{
 		const int32& CTI = GetCurrentVehicle()->GetControlledTurret(GetCSI());
 				
@@ -433,7 +433,7 @@ void UCharacterVehicleManager::UpdateRangefinder_WindowedVehicle()
 		return;
 	}
 
-	const FSeatData& OccupiedSeatData = GetCurrentVehicle()->VehicleData->Seats[GetCSI()];
+	const FSeatData& OccupiedSeatData = GetCurrentSeatData();
 	if (OccupiedSeatData.ViewMethod != E_ViewMethod::Windowed)
 	{
 		return;
@@ -563,7 +563,7 @@ void UCharacterVehicleManager::UpdateRangefinder_WindowedVehicle()
 void UCharacterVehicleManager::HandleViewMethod(int32 SeatIndex)
 {
 	if (!GetOwnerCharacter()->IsLocalHuman())		{ return; }
-	const FVehicleTypeSeatDefinition& SeatTypeData = GetCurrentVehicle()->VehicleTypeDefintion->SeatDefinitions[SeatIndex];
+	const FVehicleTypeSeatDefinition& SeatTypeData = GetCurrentVehicle()->GetVehicleTypeSeatDefinition(SeatIndex);
 	if (SeatTypeData.SeatRole != ESeatRole::DriverGunner && SeatTypeData.SeatRole != ESeatRole::Gunner)
 	{
 		HandleViewMethod_Default(SeatIndex);
@@ -604,8 +604,8 @@ void UCharacterVehicleManager::ToggleCurrentViewMode()
 {
 	//it is assumed that if this is called this is a local human
 	if (!GetInVehicle())	{ return; }
-	if (!GetCurrentVehicle()->VehicleTypeDefintion->SeatDefinitions[GetCSI()].ThrdPersonDefinition.canEnterTP)	{ return; }
-	switch (GetCurrentVehicle()->VehicleData->Seats[GetCSI()].ViewMethod)
+	if (!GetCurrentSeatDefinition().ThrdPersonDefinition.canEnterTP)	{ return; }
+	switch (GetCurrentSeatData().ViewMethod)
 	{
 		case E_ViewMethod::Windowed:
 			if (GetOwnerCharacter()->FPCamera->IsActive())
@@ -647,6 +647,16 @@ bool UCharacterVehicleManager::GetInVehicle()
 {
 	bool inVehicle = GetCurrentVehicle() != nullptr && GetCSI() != INDEX_NONE;
 	return inVehicle;
+}
+
+const FVehicleTypeSeatDefinition& UCharacterVehicleManager::GetCurrentSeatDefinition()
+{
+	return GetCurrentVehicle()->GetVehicleTypeSeatDefinition(GetCSI());
+}
+
+const FSeatData& UCharacterVehicleManager::GetCurrentSeatData()
+{
+	return GetCurrentVehicle()->GetSeatData(GetCSI());
 }
 
 ACharacter_Base* UCharacterVehicleManager::GetOwnerCharacter()

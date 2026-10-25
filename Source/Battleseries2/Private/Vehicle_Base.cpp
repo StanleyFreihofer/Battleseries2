@@ -1442,6 +1442,16 @@ UCameraComponent* AVehicle_Base::GetRemoteActiveCam(int32 SeatIndex)
 	return WeaponCam ? WeaponCam : VehicleCurrentState.SeatStates[SeatIndex].DefaultCamera;
 }
 
+const FVehicleTypeSeatDefinition& AVehicle_Base::GetVehicleTypeSeatDefinition(int32 SeatIndex)
+{
+	return VehicleTypeDefintion->SeatDefinitions[SeatIndex];
+}
+
+const FSeatData& AVehicle_Base::GetSeatData(int32 SeatIndex)
+{
+	return VehicleData->Seats[SeatIndex];
+}
+
 float AVehicle_Base::GetCurrentSpeed()
 {
 	return GetVelocity().Size();
