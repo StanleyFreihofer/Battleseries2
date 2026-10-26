@@ -12,6 +12,7 @@
 #include "Utilities/HUDSubsystem.h"
 #include "Utilities/DataManagerSubsystem.h"
 #include "Utilities/BS2FunctionLibrary.h"
+#include "Animation/AnimInstance.h"
 #include "Components/CapsuleComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 
@@ -104,27 +105,33 @@ void UCharacterVehicleManager::EnterVehicle_LocalPlayer()
 
 void UCharacterVehicleManager::PhysicallyEnterVehicle()
 {
-	GetOwnerCharacter()->GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Vehicle, ECR_Ignore);
-	GetOwnerCharacter()->GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Vehicle, ECollisionResponse::ECR_Ignore);
-	GetOwnerCharacter()->FPArms->SetCollisionResponseToChannel(ECC_Vehicle, ECR_Ignore);
-	GetOwnerCharacter()->FPLegs->SetCollisionResponseToChannel(ECC_Vehicle, ECR_Ignore);
+	ACharacter_Base* Character = GetOwnerCharacter();
+	Character->GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Vehicle, ECR_Ignore);
+	Character->GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Vehicle, ECollisionResponse::ECR_Ignore);
+	Character->FPArms->SetCollisionResponseToChannel(ECC_Vehicle, ECR_Ignore);
+	Character->FPLegs->SetCollisionResponseToChannel(ECC_Vehicle, ECR_Ignore);
 	for (int32 i = 0; i < GetOwnerCharacter()->LoadoutManager->GetNumWeapons(); i++)
 	{
-		GetOwnerCharacter()->LoadoutManager->UpdateWeaponCollision(ECC_Vehicle, ECR_Ignore, i);
+		Character->LoadoutManager->UpdateWeaponCollision(ECC_Vehicle, ECR_Ignore, i);
 	}
 	for (int32 G = 0; G < GetOwnerCharacter()->LoadoutManager->GetNumGadgets(); G++)
 	{
-		GetOwnerCharacter()->LoadoutManager->UpdateGadgetCollision(ECC_Vehicle, ECR_Ignore, G);
+		Character->LoadoutManager->UpdateGadgetCollision(ECC_Vehicle, ECR_Ignore, G);
 	}
-	GetOwnerCharacter()->GetCharacterMovement()->SetMovementMode(MOVE_None);
-	GetOwnerCharacter()->AttachToActor(GetCurrentVehicle(), FAttachmentTransformRules::KeepRelativeTransform);
+	Character->GetCharacterMovement()->SetMovementMode(MOVE_None);
+	Character->AttachToActor(GetCurrentVehicle(), FAttachmentTransformRules::KeepRelativeTransform);
 		
-	GetOwnerCharacter()->FPArmsSpringArm->bUsePawnControlRotation = false;
-	GetOwnerCharacter()->FPArmsSpringArm->bInheritRoll = true;
-	GetOwnerCharacter()->FPArmsSpringArm->bEnableCameraLag = false;
-	GetOwnerCharacter()->FPCamera->bUsePawnControlRotation = false;
-	GetOwnerCharacter()->FPCamera->SetRelativeRotation(FRotator());
-	GetOwnerCharacter()->bUseControllerRotationYaw = false;
+	Character->FPArmsSpringArm->bUsePawnControlRotation = false;
+	Character->FPArmsSpringArm->bInheritRoll = true;
+	Character->FPArmsSpringArm->bEnableCameraLag = false;
+	Character->FPCamera->bUsePawnControlRotation = false;
+	Character->FPCamera->SetRelativeRotation(FRotator());
+	Character->bUseControllerRotationYaw = false;
+	
+	if (GetCurrentSeatData().DefaultCharacterContext.SeatABP)
+	{
+		Character->GetMesh()->GetAnimInstance()->LinkAnimClassLayers(GetCurrentSeatData().DefaultCharacterContext.SeatABP);
+	}
 }
 
 #pragma endregion

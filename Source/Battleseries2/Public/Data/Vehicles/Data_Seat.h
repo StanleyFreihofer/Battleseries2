@@ -52,10 +52,10 @@ struct FAttachmentInstanceData
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FTransform AttachmentTransform = FTransform::Identity;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (Tooltip = "whether or not to attach the character to a socket on this mesh, would allow the character to move with mesh, like a turret for example"))
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (Tooltip = "whether or not to attach the character to a socket on this mesh, would allow the character to move with mesh, like a turret for example"))
 	bool bAttachCharacter = false;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (Tooltip = "relative transform of character on this mesh if attached", EditCondition = "bAttachCharacter", EditConditionHides = true))
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (Tooltip = "relative transform of character on this mesh if attached", EditCondition = "bAttachCharacter", EditConditionHides = true))
 	FTransform CharacterTransform = FTransform::Identity;
 };
 
@@ -234,6 +234,9 @@ struct FCharacterSeatContext
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FTransform SeatTransform = FTransform();
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TSubclassOf<UAnimInstance> SeatABP = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	ECharacterStance SeatStance = ECharacterStance::Sitting;
