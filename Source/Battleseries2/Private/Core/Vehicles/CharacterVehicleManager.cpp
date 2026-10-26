@@ -114,6 +114,7 @@ void UCharacterVehicleManager::PhysicallyEnterVehicle()
 	{
 		Character->LoadoutManager->UpdateWeaponCollision(ECC_Vehicle, ECR_Ignore, i);
 	}
+	Character->LoadoutManager->UpdateWeaponSlotVisibility(Character->LoadoutManager->GetCII(), true);
 	for (int32 G = 0; G < GetOwnerCharacter()->LoadoutManager->GetNumGadgets(); G++)
 	{
 		Character->LoadoutManager->UpdateGadgetCollision(ECC_Vehicle, ECR_Ignore, G);
@@ -172,21 +173,27 @@ void UCharacterVehicleManager::ExitVehicle_LocalPlayer()
 
 void UCharacterVehicleManager::PhysicallyExitVehicle()
 {
-	GetOwnerCharacter()->DetachFromActor(FDetachmentTransformRules::KeepRelativeTransform);
+	ACharacter_Base* Character = GetOwnerCharacter();
+	Character->DetachFromActor(FDetachmentTransformRules::KeepRelativeTransform);
 
 	FVector ExitLocation = CalculateSafeExitLocation(GetCurrentVehicle());
-	GetOwnerCharacter()->SetActorLocation(ExitLocation);
+	Character->SetActorLocation(ExitLocation);
 
-	GetOwnerCharacter()->HandleUpdateStance(ECharacterStance::Standing);
-	GetOwnerCharacter()->GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Vehicle, ECR_Block);
-	GetOwnerCharacter()->GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Vehicle, ECollisionResponse::ECR_Block);
-	GetOwnerCharacter()->GetCharacterMovement()->SetMovementMode(MOVE_Walking);		//make this more dynamic (are we falling out of ejecting from a jet for example)
-
-	GetOwnerCharacter()->FPCamera->bUsePawnControlRotation = true;
-	GetOwnerCharacter()->bUseControllerRotationYaw = true;
-	GetOwnerCharacter()->FPArmsSpringArm->bUsePawnControlRotation = true;
-	GetOwnerCharacter()->FPArmsSpringArm->bInheritRoll = false;
-	GetOwnerCharacter()->FPArmsSpringArm->bEnableCameraLag = true;
+	Character->HandleUpdateStance(ECharacterStance::Standing);
+	Character->GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Vehicle, ECR_Block);
+	Character->GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Vehicle, ECollisionResponse::ECR_Block);
+	Character->GetCharacterMovement()->SetMovementMode(MOVE_Walking);		//make this more dynamic (are we falling out of ejecting from a jet for example)
+	Character->LoadoutManager->UpdateWeaponSlotVisibility(Character->LoadoutManager->GetCII(), false);
+	Character->FPCamera->bUsePawnControlRotation = true;
+	Character->bUseControllerRotationYaw = true;
+	Character->FPArmsSpringArm->bUsePawnControlRotation = true;
+	Character->FPArmsSpringArm->bInheritRoll = false;
+	Character->FPArmsSpringArm->bEnableCameraLag = true;
+	
+	if (GetCurrentSeatData().DefaultCharacterContext.SeatABP)
+	{
+		Character->GetMesh()->GetAnimInstance()->LinkAnimClassLayers(nullptr);
+	}
 }
 
 #pragma endregion
