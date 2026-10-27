@@ -129,10 +129,7 @@ void UCharacterVehicleManager::PhysicallyEnterVehicle()
 	Character->FPCamera->SetRelativeRotation(FRotator());
 	Character->bUseControllerRotationYaw = false;
 	
-	if (GetCurrentSeatData().DefaultCharacterContext.SeatABP)
-	{
-		Character->GetMesh()->GetAnimInstance()->LinkAnimClassLayers(GetCurrentSeatData().DefaultCharacterContext.SeatABP);
-	}
+
 }
 
 #pragma endregion
@@ -189,11 +186,6 @@ void UCharacterVehicleManager::PhysicallyExitVehicle()
 	Character->FPArmsSpringArm->bUsePawnControlRotation = true;
 	Character->FPArmsSpringArm->bInheritRoll = false;
 	Character->FPArmsSpringArm->bEnableCameraLag = true;
-	
-	if (GetCurrentSeatData().DefaultCharacterContext.SeatABP)
-	{
-		Character->GetMesh()->GetAnimInstance()->LinkAnimClassLayers(nullptr);
-	}
 }
 
 #pragma endregion
@@ -239,7 +231,10 @@ void UCharacterVehicleManager::CharacterEnterSeat(const FCharacterSeatContext& S
 				break;
 		}
 
-		GetOwnerCharacter()->HandleUpdateStance(SeatContext.SeatStance);
+		if (GetCurrentSeatData().DefaultCharacterContext.SeatABP)
+		{
+			GetOwnerCharacter()->GetMesh()->GetAnimInstance()->LinkAnimClassLayers(GetCurrentSeatData().DefaultCharacterContext.SeatABP);
+		}
 		GetOwnerCharacter()->UpdateCharacterMeshVisibility(SeatContext.bIsCharacterVisible);
 	}
 	
@@ -301,6 +296,11 @@ void UCharacterVehicleManager::CharacterExitSeat(int32 SeatIndex)
 			GetOwnerCharacter()->GetRootComponent()->DetachFromComponent(FDetachmentTransformRules::KeepRelativeTransform);
 			GetOwnerCharacter()->AttachToActor(GetCurrentVehicle(), FAttachmentTransformRules::KeepRelativeTransform);
 		}
+	}
+	
+	if (GetCurrentSeatData().DefaultCharacterContext.SeatABP)
+	{
+		GetOwnerCharacter()->GetMesh()->GetAnimInstance()->LinkAnimClassLayers(nullptr);
 	}
 
 	if (GetOwnerCharacter()->IsLocalHuman())
