@@ -110,6 +110,7 @@ void UCharacterVehicleManager::PhysicallyEnterVehicle()
 	Character->GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Vehicle, ECollisionResponse::ECR_Ignore);
 	Character->FPArms->SetCollisionResponseToChannel(ECC_Vehicle, ECR_Ignore);
 	Character->FPLegs->SetCollisionResponseToChannel(ECC_Vehicle, ECR_Ignore);
+	Character->FPLegs->SetHiddenInGame(true);
 	for (int32 i = 0; i < GetOwnerCharacter()->LoadoutManager->GetNumWeapons(); i++)
 	{
 		Character->LoadoutManager->UpdateWeaponCollision(ECC_Vehicle, ECR_Ignore, i);
@@ -179,6 +180,7 @@ void UCharacterVehicleManager::PhysicallyExitVehicle()
 	Character->HandleUpdateStance(ECharacterStance::Standing);
 	Character->GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Vehicle, ECR_Block);
 	Character->GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Vehicle, ECollisionResponse::ECR_Block);
+	Character->FPLegs->SetHiddenInGame(false);
 	Character->GetCharacterMovement()->SetMovementMode(MOVE_Walking);		//make this more dynamic (are we falling out of ejecting from a jet for example)
 	Character->LoadoutManager->UpdateWeaponSlotVisibility(Character->LoadoutManager->GetCII(), false);
 	Character->FPCamera->bUsePawnControlRotation = true;
@@ -234,6 +236,7 @@ void UCharacterVehicleManager::CharacterEnterSeat(const FCharacterSeatContext& S
 		if (GetCurrentSeatData().DefaultCharacterContext.SeatABP)
 		{
 			GetOwnerCharacter()->GetMesh()->GetAnimInstance()->LinkAnimClassLayers(GetCurrentSeatData().DefaultCharacterContext.SeatABP);
+			GetOwnerCharacter()->FPArms->GetAnimInstance()->LinkAnimClassLayers(GetCurrentSeatData().DefaultCharacterContext.SeatABP);
 		}
 		GetOwnerCharacter()->UpdateCharacterMeshVisibility(SeatContext.bIsCharacterVisible);
 	}
@@ -301,6 +304,7 @@ void UCharacterVehicleManager::CharacterExitSeat(int32 SeatIndex)
 	if (GetCurrentSeatData().DefaultCharacterContext.SeatABP)
 	{
 		GetOwnerCharacter()->GetMesh()->GetAnimInstance()->LinkAnimClassLayers(nullptr);
+		GetOwnerCharacter()->FPArms->GetAnimInstance()->LinkAnimClassLayers(nullptr);
 	}
 
 	if (GetOwnerCharacter()->IsLocalHuman())
