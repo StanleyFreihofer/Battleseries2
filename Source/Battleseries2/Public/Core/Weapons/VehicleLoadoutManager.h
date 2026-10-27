@@ -184,7 +184,7 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void HandleApplyWeaponDecoratives(int32 SeatIndex, int32 WeaponIndex, FName WeaponID);
 	UFUNCTION(BlueprintCallable)
-	void ApplyWeaponDecoratives(const TArray<FDecorative>& WeaponDecoratives, FVehicleWeapon_Runtime& RuntimeWeaponData);
+	void ApplyWeaponDecoratives(const TArray<FVehicleDecorative>& WeaponDecoratives, FVehicleWeapon_Runtime& RuntimeWeaponData);
 	UFUNCTION(BlueprintCallable)
 	void ConfigureWeaponCam(int32 SeatIndex, int32 WeaponIndex, FSeatWeaponSystem_Runtime& WeaponSystem);
 	UFUNCTION(BlueprintCallable)

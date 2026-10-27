@@ -129,7 +129,7 @@ struct FVehicleTypeSeatDefinition
     TObjectPtr<UInputMappingContext> InputMappingContext = nullptr;
     
     UPROPERTY(EditAnywhere, BlueprintReadOnly)
-    struct FSeat3PDefinition ThrdPersonDefinition = FSeat3PDefinition();
+    FSeat3PDefinition ThirdPersonDefinition = FSeat3PDefinition();
     
     UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (tooltip = "The Array Indexes of the turret(s) this seat controls"))
     TArray<int32> ControlledTurretIndexes;

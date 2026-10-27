@@ -177,7 +177,7 @@ void UCharacterVehicleManager::PhysicallyExitVehicle()
 	FVector ExitLocation = CalculateSafeExitLocation(GetCurrentVehicle());
 	Character->SetActorLocation(ExitLocation);
 
-	Character->HandleUpdateStance(ECharacterStance::Standing);
+	//Character->HandleUpdateStance(ECharacterStance::Standing);
 	Character->GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Vehicle, ECR_Block);
 	Character->GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Vehicle, ECollisionResponse::ECR_Block);
 	Character->FPLegs->SetHiddenInGame(false);
@@ -233,10 +233,13 @@ void UCharacterVehicleManager::CharacterEnterSeat(const FCharacterSeatContext& S
 				break;
 		}
 
-		if (GetCurrentSeatData().DefaultCharacterContext.SeatABP)
+		if (GetCurrentSeatData().DefaultCharacterContext.SeatABP_3P)
 		{
-			GetOwnerCharacter()->GetMesh()->GetAnimInstance()->LinkAnimClassLayers(GetCurrentSeatData().DefaultCharacterContext.SeatABP);
-			GetOwnerCharacter()->FPArms->GetAnimInstance()->LinkAnimClassLayers(GetCurrentSeatData().DefaultCharacterContext.SeatABP);
+			GetOwnerCharacter()->GetMesh()->GetAnimInstance()->LinkAnimClassLayers(GetCurrentSeatData().DefaultCharacterContext.SeatABP_3P);
+		}
+		if (GetCurrentSeatData().DefaultCharacterContext.SeatABP_FP)
+		{
+			GetOwnerCharacter()->FPArms->GetAnimInstance()->LinkAnimClassLayers(GetCurrentSeatData().DefaultCharacterContext.SeatABP_FP);
 		}
 		GetOwnerCharacter()->UpdateCharacterMeshVisibility(SeatContext.bIsCharacterVisible);
 	}
@@ -301,11 +304,8 @@ void UCharacterVehicleManager::CharacterExitSeat(int32 SeatIndex)
 		}
 	}
 	
-	if (GetCurrentSeatData().DefaultCharacterContext.SeatABP)
-	{
-		GetOwnerCharacter()->GetMesh()->GetAnimInstance()->LinkAnimClassLayers(nullptr);
-		GetOwnerCharacter()->FPArms->GetAnimInstance()->LinkAnimClassLayers(nullptr);
-	}
+	GetOwnerCharacter()->GetMesh()->GetAnimInstance()->LinkAnimClassLayers(nullptr);
+	GetOwnerCharacter()->FPArms->GetAnimInstance()->LinkAnimClassLayers(nullptr);
 
 	if (GetOwnerCharacter()->IsLocalHuman())
 	{
@@ -622,7 +622,7 @@ void UCharacterVehicleManager::ToggleCurrentViewMode()
 {
 	//it is assumed that if this is called this is a local human
 	if (!GetInVehicle())	{ return; }
-	if (!GetCurrentSeatDefinition().ThrdPersonDefinition.canEnterTP)	{ return; }
+	if (!GetCurrentSeatDefinition().ThirdPersonDefinition.canEnterTP)	{ return; }
 	switch (GetCurrentSeatData().ViewMethod)
 	{
 		case E_ViewMethod::Windowed:

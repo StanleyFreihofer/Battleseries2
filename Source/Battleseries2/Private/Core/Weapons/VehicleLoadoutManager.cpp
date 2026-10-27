@@ -263,12 +263,12 @@ void UVehicleLoadoutManager::MountProjectiles(int32 SeatIndex, int32 WeaponIndex
 	}
 }
 
-void UVehicleLoadoutManager::ApplyWeaponDecoratives(const TArray<FDecorative>& WeaponDecoratives, FVehicleWeapon_Runtime& RuntimeWeaponData)
+void UVehicleLoadoutManager::ApplyWeaponDecoratives(const TArray<FVehicleDecorative>& WeaponDecoratives, FVehicleWeapon_Runtime& RuntimeWeaponData)
 {
 	RuntimeWeaponData.VehicleWeaponState.VehicleWeaponDecoratives.SetNum(WeaponDecoratives.Num());
 	for (int32 i = 0; i < WeaponDecoratives.Num(); i++)
 	{
-		const FDecorative& WeaponDecorative = WeaponDecoratives[i];
+		const FVehicleDecorative& WeaponDecorative = WeaponDecoratives[i];
 		if (WeaponDecorative.AttachmentID != NAME_None)
 		{
 			const FVehicleAttachmentData& AttachmentData = *UBS2FunctionLibrary::GetDataSubsystem(this)->GetVehicleAttachmentDataRow(WeaponDecorative.AttachmentID);

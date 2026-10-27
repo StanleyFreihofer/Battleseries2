@@ -12,7 +12,7 @@
 
 
 USTRUCT(BlueprintType)
-struct FWeaponCamBehavior
+struct FVehicleWeaponCamBehavior
 {
 	GENERATED_BODY()
 
@@ -27,7 +27,7 @@ struct FWeaponCamBehavior
 };
 
 USTRUCT(BlueprintType)
-struct FDecorative
+struct FVehicleDecorative
 {
 	GENERATED_BODY()
 
@@ -42,7 +42,7 @@ struct FDecorative
 };
 
 USTRUCT(BlueprintType)
-struct FAttachmentInstanceData
+struct FVehicleAttachmentInstanceData
 {
 	GENERATED_BODY()
 
@@ -60,7 +60,7 @@ struct FAttachmentInstanceData
 };
 
 USTRUCT(BlueprintType)
-struct FWeaponUIInstanceData
+struct FVehicleWeaponUIInstanceData
 {
 	GENERATED_BODY()
 
@@ -103,19 +103,19 @@ struct FVehicleWeaponInstanceData
 	bool bHasSeparateMesh = false;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (EditCondition = "bHasSeparateMesh", EditConditionHides = true))
-	FAttachmentInstanceData AttachmentInstanceData = FAttachmentInstanceData();
+	FVehicleAttachmentInstanceData AttachmentInstanceData = FVehicleAttachmentInstanceData();
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	bool bHasSpecialCam = false;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (EditCondition = "bHasSpecialCam", EditConditionHides = true))
-	FWeaponCamBehavior WeaponCamBehavior = FWeaponCamBehavior();
+	FVehicleWeaponCamBehavior WeaponCamBehavior = FVehicleWeaponCamBehavior();
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	FWeaponUIInstanceData WeaponUIInstanceData = FWeaponUIInstanceData();
+	FVehicleWeaponUIInstanceData WeaponUIInstanceData = FVehicleWeaponUIInstanceData();
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	TArray<FDecorative> WeaponDecoratives;
+	TArray<FVehicleDecorative> WeaponDecoratives;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	TArray<FName> BonesToHide;
@@ -236,10 +236,13 @@ struct FCharacterSeatContext
 	FTransform SeatTransform = FTransform();
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	TSubclassOf<UAnimInstance> SeatABP = nullptr;
+	TSubclassOf<UAnimInstance> SeatABP_FP = nullptr;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TSubclassOf<UAnimInstance> SeatABP_3P = nullptr;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	ECharacterStance SeatStance = ECharacterStance::Sitting;
+	//UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	//ECharacterStance SeatStance = ECharacterStance::Sitting;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	EControlRotationMethod CharacterRotationMethod = EControlRotationMethod::None;
