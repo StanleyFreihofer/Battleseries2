@@ -408,8 +408,9 @@ void AVehicle_Base::Init_Horn(USoundBase* HornAudio)
 	}
 
 	VehicleCurrentState.GenericVehicleState.HornAudioComponent = NewObject<UAudioComponent>(this, UAudioComponent::StaticClass());
+	VehicleCurrentState.GenericVehicleState.HornAudioComponent->SetupAttachment(GetRootComponent());
 	VehicleCurrentState.GenericVehicleState.HornAudioComponent->RegisterComponent();
-	VehicleCurrentState.GenericVehicleState.HornAudioComponent->AttachToComponent(GetRootComponent(), FAttachmentTransformRules::KeepRelativeTransform);
+	//VehicleCurrentState.GenericVehicleState.HornAudioComponent->AttachToComponent(GetRootComponent(), FAttachmentTransformRules::KeepRelativeTransform);
 	VehicleCurrentState.GenericVehicleState.HornAudioComponent->SetSound(Cast<USoundBase>(HornAudio));
 }
 
@@ -445,9 +446,7 @@ void AVehicle_Base::SetVehicleAndInit(FVehicleStartingData InputVehicleStartingD
 void AVehicle_Base::PlayHorn()
 {
 	if (!VehicleCurrentState.GenericVehicleState.HornAudioComponent)	{return;}
-	VehicleCurrentState.GenericVehicleState.HornAudioComponent->Play(0.0f);
-	FTimerHandle TimerHandle;
-	GetWorldTimerManager().SetTimer(TimerHandle, this, &AVehicle_Base::StopHorn, 4.0f, false);
+	VehicleCurrentState.GenericVehicleState.HornAudioComponent = UGameplayStatics::SpawnSoundAttached(VehicleData->GroundVehicle_Data.HornAudio, GetRootComponent());
 }
 
 void AVehicle_Base::StopHorn()
@@ -969,27 +968,16 @@ void AVehicle_Base::Input_UpdateSteering_GV(float SteeringValue, int32 SeatIndex
 {
 	if (VehicleData->GroundVehicle_Data.IdleTurnData.canIdleTurn)
 	{
-		// 1. Get the current turning speed of the vehicle mesh (radians per second)
 		FVector CurrentAngularVelocity = VehicleMeshComponent->GetPhysicsAngularVelocityInRadians();
 		float CurrentYawSpeed = CurrentAngularVelocity.Z;
-
-		// 2. Tune these two parameters (ideally expose these to your VehicleData asset)
+		
 		const float& TargetTorqueScale = VehicleData->GroundVehicle_Data.IdleTurnData.TargetTorqueScale;  // Power of the turn (increased since drag will fight it)
 		const float& AngularDragScale = VehicleData->GroundVehicle_Data.IdleTurnData.AngularDragScale;   // How hard the tank fights its own rotation speed
-
-		// 3. Calculate the forces
-		// The driver wants to accelerate rotation:
-		float DrivingTorque = SteeringValue * TargetTorqueScale;
-
-		// The counter-force that grows stronger the faster the tank is already spinning:
+		
+		float DrivingTorque = SteeringValue * TargetTorqueScale;ng:
 		float DampingTorque = -CurrentYawSpeed * AngularDragScale;
-
-		// Combine them so they fight each other
 		float FinalYawTorque = DrivingTorque + DampingTorque;
-
 		FVector TorqueVector = FVector(0.0f, 0.0f, FinalYawTorque);
-
-		// Inject the balanced torque onto the mesh
 		VehicleMeshComponent->AddTorqueInRadians(TorqueVector, NAME_None, true);
 	}
 	else
