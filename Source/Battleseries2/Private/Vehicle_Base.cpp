@@ -475,6 +475,7 @@ void AVehicle_Base::ApplyLoadoutToSeat(int32 SeatIndex)		//this functions applie
 void AVehicle_Base::ApplySavedOpticToSeat(int32 SeatIndex)
 {
 	const FSavedSeatLoadout& SeatLoadoutSave = UBS2FunctionLibrary::GetSaveSubsystem(this)->GetSeatLoadout(VehicleData->Vehicle_Type, SeatIndex);
+	if (SeatLoadoutSave.Optic.IsNone())		{ return; }
 	TArray<FName>& CurrentAvailableOptics = VehicleLoadoutManager->VehicleOpticSystem.Find(SeatIndex)->CurrentAvailableOptics;
 	for (FName Optic : CurrentAvailableOptics)
 	{
@@ -699,17 +700,15 @@ void AVehicle_Base::SetupDriver()
 	GetWorldTimerManager().SetTimer(TimerHandle_AudioUpdate_Engine, this, &AVehicle_Base::UpdateEngineAudio, 0.05f, true);
 	VehicleCurrentState.GenericVehicleState.EngineAudioComponent->Play();
 	//engine/whatever else start up audio
+;
 
 	switch (VehicleData->MovementType)
 	{
 		case EMovementType::GroundVehicle:
 			break;
 		case EMovementType::Helicopter:
-		{
-			GetWorldTimerManager().SetTimer(RotorUpdateTimer, this, &AVehicle_Base::UpdateRotorRPM, 0.016f, true);
-			GetWorldTimerManager().SetTimer(VehicleMovementTimer, this, &AVehicle_Base::UpdateMovement_Heli, 0.05f, true);
+			StartupShutdownHeli(true);
 			break;
-		}
 		case EMovementType::Jet:
 			break;
 	}
@@ -725,6 +724,7 @@ void AVehicle_Base::DropDriver()
 	switch (VehicleData->MovementType)
 	{
 		case EMovementType::Helicopter:
+			StartupShutdownHeli(false);
 			GetWorldTimerManager().ClearTimer(VehicleMovementTimer);
 			break;
 	}
@@ -858,24 +858,41 @@ void AVehicle_Base::UpdateEngineAudio()
 	}
 }
 
-void AVehicle_Base::UpdateRotorRPM()
+void AVehicle_Base::StartupShutdownHeli(bool Spinup)
+{
+	FTimerDelegate RotorDelegate;
+	RotorDelegate.BindWeakLambda(this, [this, Spinup]()
+	{
+		this->UpdateRotorRPM(Spinup);
+	});
+	GetWorldTimerManager().SetTimer(RotorUpdateTimer, RotorDelegate, 0.016f, true);
+	if (Spinup)
+	{
+		GetWorldTimerManager().SetTimer(VehicleMovementTimer, this, &AVehicle_Base::UpdateMovement_Heli, 0.05f, true);
+	}
+}
+
+void AVehicle_Base::UpdateRotorRPM(bool SpinUp)
 {
 	const FHelicopterData& HeliData = VehicleData->Helicopter_Data;
+	const FRotorData& RotorData = HeliData.RotorData;
+	float CurrentTarget = SpinUp ? HeliData.RotorData.TargetRPM : 0;
 
 	float& RPM = VehicleCurrentState.AircraftState.HelicopterState.RotorRPMs[0];
-	float Alpha = FMath::Clamp(RPM / HeliData.RotorData.TargetRPM, 0.0f, 1.0f);
+	float Alpha = FMath::Clamp(RPM / RotorData.TargetRPM, 0.0f, 1.0f);
 
 	float SpeedMult = FMath::InterpEaseIn(
-		HeliData.RotorData.MinMaxAccelerationSpeed.GetLowerBoundValue(),
-		HeliData.RotorData.MinMaxAccelerationSpeed.GetUpperBoundValue(),
+		RotorData.MinMaxAccelerationSpeed.GetLowerBoundValue(),
+		RotorData.MinMaxAccelerationSpeed.GetUpperBoundValue(),
 		Alpha,
-		HeliData.RotorData.AccelerationCurve
+		RotorData.AccelerationCurve
 	);
 
-	RPM = FMath::FInterpConstantTo(RPM, HeliData.RotorData.TargetRPM, 0.016f, SpeedMult);
+	RPM = FMath::FInterpConstantTo(RPM, CurrentTarget, 0.016f, SpeedMult);
 
-	if (FMath::IsNearlyEqual(RPM, HeliData.RotorData.TargetRPM, 0.1f))
+	if (FMath::IsNearlyEqual(RPM, CurrentTarget, 0.1f))
 	{
+		VehicleCurrentState.AircraftState.canFly = !VehicleCurrentState.AircraftState.canFly;
 		GetWorld()->GetTimerManager().ClearTimer(RotorUpdateTimer);
 	}
 
@@ -885,6 +902,8 @@ void AVehicle_Base::UpdateRotorRPM()
 }
 
 #pragma region MovementInput
+
+#pragma region GroundVehicleInput
 
 void AVehicle_Base::HandleApplyThrottle_GV(float RawInputValue, int32 SeatIndex)
 {
@@ -974,7 +993,7 @@ void AVehicle_Base::Input_UpdateSteering_GV(float SteeringValue, int32 SeatIndex
 		const float& TargetTorqueScale = VehicleData->GroundVehicle_Data.IdleTurnData.TargetTorqueScale;  // Power of the turn (increased since drag will fight it)
 		const float& AngularDragScale = VehicleData->GroundVehicle_Data.IdleTurnData.AngularDragScale;   // How hard the tank fights its own rotation speed
 		
-		float DrivingTorque = SteeringValue * TargetTorqueScale;ng:
+		float DrivingTorque = SteeringValue * TargetTorqueScale;
 		float DampingTorque = -CurrentYawSpeed * AngularDragScale;
 		float FinalYawTorque = DrivingTorque + DampingTorque;
 		FVector TorqueVector = FVector(0.0f, 0.0f, FinalYawTorque);
@@ -990,10 +1009,13 @@ void AVehicle_Base::Input_UpdateSteering_GV(float SteeringValue, int32 SeatIndex
 	}
 }
 
+#pragma endregion
+
 #pragma region HeliInput
 
 void AVehicle_Base::UpdateThrottle_Heli(float InputValue)
 {
+	if (!VehicleCurrentState.AircraftState.canFly)	{ return; }
 	float& CurrentHoverVelocity = VehicleCurrentState.AircraftState.HelicopterState.CurrentHoverVelocity;
 	const FHelicopterData& HeliData = VehicleData->Helicopter_Data;
 	if (InputValue != 0.0f)

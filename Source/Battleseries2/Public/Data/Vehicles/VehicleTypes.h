@@ -110,8 +110,11 @@ struct FAircraftState
 {
 	GENERATED_BODY()
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	bool bLandingGearIsDown = true;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	bool canFly = false;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	FHelicopterState HelicopterState = FHelicopterState();
@@ -125,13 +128,13 @@ struct FGenericVehicleState
 {
 	GENERATED_BODY()
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Audio")
-	class UAudioComponent* EngineAudioComponent = nullptr;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Audio")
-	class UAudioComponent* InteriorAudioComponent = nullptr;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Audio")
-	class UAudioComponent* HornAudioComponent = nullptr;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Audio")
+	TObjectPtr<UAudioComponent> EngineAudioComponent = nullptr;
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Audio")
+	TObjectPtr<UAudioComponent> InteriorAudioComponent = nullptr;
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Audio")
+	TObjectPtr<UAudioComponent> HornAudioComponent = nullptr;
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	FName CurrentCamo = NAME_None;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)

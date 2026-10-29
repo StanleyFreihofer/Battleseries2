@@ -589,6 +589,39 @@ void UBS2FunctionLibrary::SetupMunitionGuidance(TWeakObjectPtr<AProjectile_Base>
 	}
 }
 
+float UBS2FunctionLibrary::UpdateRotorOffset(float DeltaTime, float RotorRPM, float CurrentOffset)
+{
+	float A = (DeltaTime * RotorRPM) + CurrentOffset;
+	return FMath::Modulo(A, 360);
+}
+
+float UBS2FunctionLibrary::UpdateIKAlphaInVehicle(float DeltaTime, float CurrentIKAlpha, TArray<FName> HandSockets, USkeletalMeshComponent* VehicleMesh)
+{
+	TArray<FName> Sockets;
+	if (HandSockets.IsValidIndex(0))	{ Sockets.Add(HandSockets[0]); }
+	if (HandSockets.IsValidIndex(1))	{ Sockets.Add(HandSockets[1]); }
+	bool PickA = true;
+	for (FName Socket : HandSockets)
+	{
+		if (!VehicleMesh->DoesSocketExist(Socket))
+		{
+			PickA = false;
+		}
+	}
+	
+	float Target = FMath::FloatSelect(PickA, 1.f, 0.f);
+	
+	float NewIKAlpha = FMath::FInterpTo(CurrentIKAlpha, Target, DeltaTime, 8.f);
+	return NewIKAlpha;
+}
+
+FTransform UBS2FunctionLibrary::CalculateIKTargetInVehicle(FName SocketName, USkeletalMeshComponent* VehicleMesh, USkeletalMeshComponent* CharacterMesh)
+{
+	const FTransform SocketWorld = VehicleMesh->GetSocketTransform(SocketName, RTS_World);
+	FTransform SocketRelative = SocketWorld.GetRelativeTransform(CharacterMesh->GetComponentTransform());
+	return FTransform (SocketRelative.GetRotation(), SocketWorld.GetLocation(), SocketWorld.GetScale3D());
+}
+
 #pragma endregion 
 
 void UBS2FunctionLibrary::UpdateGadgetInventory(FGadgetState& Gadget, int32 InventoryDelta, int32 MaxInventoryCount)

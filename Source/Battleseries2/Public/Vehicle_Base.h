@@ -227,7 +227,9 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void UpdateEngineAudio();
 	UFUNCTION(BlueprintCallable)
-	void UpdateRotorRPM();
+	void StartupShutdownHeli(bool Spinup);
+	UFUNCTION(BlueprintCallable)
+	void UpdateRotorRPM(bool SpinUp);
 
 	//Vehicle RUNTIME
 	

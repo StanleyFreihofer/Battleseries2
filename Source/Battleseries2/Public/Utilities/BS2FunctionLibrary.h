@@ -136,6 +136,13 @@ public:
 	
 #pragma endregion
 	
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	static float UpdateRotorOffset(float DeltaTime, float RotorRPM, float CurrentOffset);
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	static float UpdateIKAlphaInVehicle(float DeltaTime, float CurrentIKAlpha, TArray<FName> HandSockets, USkeletalMeshComponent* VehicleMesh);
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	static FTransform CalculateIKTargetInVehicle(FName SocketName, USkeletalMeshComponent* VehicleMesh, USkeletalMeshComponent* CharacterMesh);
+	
 	UFUNCTION(BlueprintCallable)
 	static void UpdateGadgetInventory(FGadgetState& Gadget, int32 InventoryDelta, int32 MaxInventoryCount);
 
