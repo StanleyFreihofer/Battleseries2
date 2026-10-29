@@ -691,7 +691,7 @@ USkeletalMeshComponent* UCharacterVehicleManager::GetActiveCharacterAttachTarget
 	}
 	
 	const FVehicleWeaponInstanceData& VWID = GetCurrentVehicle()->VehicleLoadoutManager->GetVWID(GetCSI(), GetCurrentVehicle()->VehicleLoadoutManager->GetCWIForSeat(GetCSI()), GetCurrentVehicle()->VehicleLoadoutManager->GetEquippedWeaponIDInSeat(GetCSI()));
-	if (VWID.AttachmentInstanceData.bAttachCharacter)
+	if (VWID.AttachmentInstanceData.bAttachCharacter || GetCurrentSeatData().ViewMethod  == E_ViewMethod::Windowed)
 	{
 		return GetCurrentSeatWeaponSystem().WeaponSystemMesh.Get();
 	}
