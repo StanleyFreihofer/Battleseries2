@@ -677,6 +677,30 @@ const FSeatData& UCharacterVehicleManager::GetCurrentSeatData()
 	return GetCurrentVehicle()->GetSeatData(GetCSI());
 }
 
+FSeatWeaponSystemState& UCharacterVehicleManager::GetCurrentSeatWeaponSystem()
+{
+	//assumes in a vehicle in a gunner seat
+	return GetCurrentVehicle()->VehicleLoadoutManager->VehicleWeaponSystem.Find(GetCSI())->SeatWeaponSystemState;
+}
+
+USkeletalMeshComponent* UCharacterVehicleManager::GetActiveCharacterAttachTarget()
+{
+	if (GetCurrentSeatDefinition().SeatRole != ESeatRole::DriverGunner && GetCurrentSeatDefinition().SeatRole != ESeatRole::Gunner)
+	{
+		return GetCurrentVehicle()->VehicleMeshComponent;	//default
+	}
+	
+	const FVehicleWeaponInstanceData& VWID = GetCurrentVehicle()->VehicleLoadoutManager->GetVWID(GetCSI(), GetCurrentVehicle()->VehicleLoadoutManager->GetCWIForSeat(GetCSI()), GetCurrentVehicle()->VehicleLoadoutManager->GetEquippedWeaponIDInSeat(GetCSI()));
+	if (VWID.AttachmentInstanceData.bAttachCharacter)
+	{
+		return GetCurrentSeatWeaponSystem().WeaponSystemMesh.Get();
+	}
+	else
+	{
+		return GetCurrentVehicle()->VehicleMeshComponent;
+	}
+}
+
 ACharacter_Base* UCharacterVehicleManager::GetOwnerCharacter()
 {
 	return Cast<ACharacter_Base>(GetOwner());

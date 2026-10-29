@@ -91,6 +91,10 @@ public:
 	const FVehicleTypeSeatDefinition& GetCurrentSeatDefinition();
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	const FSeatData& GetCurrentSeatData();
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	FSeatWeaponSystemState& GetCurrentSeatWeaponSystem();
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	USkeletalMeshComponent* GetActiveCharacterAttachTarget();
 	
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	AVehicle_Base* GetCurrentVehicle();
