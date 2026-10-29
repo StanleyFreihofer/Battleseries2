@@ -204,7 +204,6 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void DropSeat(int32 SeatIndex);
-
 	UFUNCTION(BlueprintCallable)
 	void SetupNewSeat(int32 SeatIndex, bool isLocalHuman);
 	UFUNCTION(BlueprintCallable)
@@ -224,10 +223,11 @@ public:
 	void DeactivateSeatCameras(int32 SeatIndex, int32 DeactivateCamMode);
 	UFUNCTION(BlueprintCallable)
 	void UpdateRemoteActiveCamPP(int32 SeatIndex, FPostProcessSettings PPSettings, float BlendWeight, UCameraComponent* Cam);
+	
 	UFUNCTION(BlueprintCallable)
 	void UpdateEngineAudio();
 	UFUNCTION(BlueprintCallable)
-	void StartupShutdownHeli(bool Spinup);
+	void UpdateEngine_Heli(bool Spinup);
 	UFUNCTION(BlueprintCallable)
 	void UpdateRotorRPM(bool SpinUp);
 
@@ -242,6 +242,11 @@ public:
 	void Input_HandleReleaseThrottle(int32 SeatIndex);
 	UFUNCTION(BlueprintCallable)
 	void ToggleRemoteViewMode(int32 SeatIndex);
+	UFUNCTION(BlueprintCallable)
+	void StartEngine();
+	UFUNCTION(BlueprintCallable)
+	void StopEngine();
+	
 	//Movement, Ground Vehicle
 	UFUNCTION(BlueprintCallable)
 	void HandleApplyThrottle_GV(float InputValue, int32 SeatIndex);
@@ -265,8 +270,6 @@ public:
 	void UpdateRoll_Heli(float InputValue);
 	UFUNCTION(BlueprintCallable)
 	void UpdateMovement_Heli();
-	UFUNCTION(BlueprintCallable)
-	void LimitHeliSpeed();
 #pragma endregion
 
 #pragma region JetFlight
@@ -370,9 +373,7 @@ public:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 private:
-	FTimerHandle TimerHandle_AudioUpdate_Engine;
+	FTimerHandle EngineUpdateTimer;
 	FTimerHandle SpeedTimer;
-	FTimerHandle RotorUpdateTimer;
-	FTimerHandle VehicleMovementTimer;
 	FTimerHandle ThrottleTimer;
 };

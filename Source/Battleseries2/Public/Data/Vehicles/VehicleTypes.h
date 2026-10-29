@@ -99,9 +99,9 @@ struct FJetState
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	bool isBoostActive = false;
-
-
+	
 	//arcade only (so far)
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	float CurrentSpeed = 0.0f;			//test if getvelocity or something matches this value (get rid of this/replace if thats the case)
 };
 

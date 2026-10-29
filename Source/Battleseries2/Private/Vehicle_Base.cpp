@@ -170,8 +170,8 @@ void AVehicle_Base::Init_Chaos_VehicleSetup(const FVehicleSetup& VehicleSetup)
 void AVehicle_Base::Init_EngineAudio()
 {
 	VehicleCurrentState.GenericVehicleState.EngineAudioComponent = NewObject<UAudioComponent>(this, UAudioComponent::StaticClass());
+	VehicleCurrentState.GenericVehicleState.EngineAudioComponent->SetupAttachment(GetRootComponent());
 	VehicleCurrentState.GenericVehicleState.EngineAudioComponent->RegisterComponent();
-	VehicleCurrentState.GenericVehicleState.EngineAudioComponent->AttachToComponent(GetRootComponent(), FAttachmentTransformRules::KeepRelativeTransform);
 	VehicleCurrentState.GenericVehicleState.EngineAudioComponent->SetActive(true);
 }
 
@@ -180,8 +180,8 @@ void AVehicle_Base::Init_Helicopter()
 	VehicleCurrentState.AircraftState.HelicopterState.RotorRPMs.Add(0.0f);
 
 	VehicleCurrentState.GenericVehicleState.InteriorAudioComponent = NewObject<UAudioComponent>(this, UAudioComponent::StaticClass());
+	VehicleCurrentState.GenericVehicleState.InteriorAudioComponent->SetupAttachment(GetRootComponent());
 	VehicleCurrentState.GenericVehicleState.InteriorAudioComponent->RegisterComponent();
-	VehicleCurrentState.GenericVehicleState.InteriorAudioComponent->AttachToComponent(GetRootComponent(), FAttachmentTransformRules::KeepRelativeTransform);
 	VehicleCurrentState.GenericVehicleState.InteriorAudioComponent->SetActive(true);
 }
 
@@ -692,22 +692,14 @@ void AVehicle_Base::SetupNewSeat(int32 SeatIndex, bool isLocalHuman)
 
 void AVehicle_Base::SetupDriver()
 {
-	//start engine
-	UGameplayStatics::PlaySoundAtLocation(this, Cast<USoundBase>(VehicleData->GenericVehicleAudio.EngineStartupAudio), GetActorLocation(), FRotator::ZeroRotator, 1.0f, 1.0f, 0.0f);
-
-	//update engine audio (do sound cue on a timer instead?)
-	VehicleCurrentState.GenericVehicleState.EngineAudioComponent->SetSound(Cast<USoundBase>(VehicleData->GenericVehicleAudio.EngineAudio));
-	GetWorldTimerManager().SetTimer(TimerHandle_AudioUpdate_Engine, this, &AVehicle_Base::UpdateEngineAudio, 0.05f, true);
-	VehicleCurrentState.GenericVehicleState.EngineAudioComponent->Play();
-	//engine/whatever else start up audio
-;
+	StartEngine();				//start engine
 
 	switch (VehicleData->MovementType)
 	{
 		case EMovementType::GroundVehicle:
 			break;
 		case EMovementType::Helicopter:
-			StartupShutdownHeli(true);
+			UpdateEngine_Heli(true);
 			break;
 		case EMovementType::Jet:
 			break;
@@ -716,16 +708,12 @@ void AVehicle_Base::SetupDriver()
 
 void AVehicle_Base::DropDriver()
 {
-	//shutdown engine
-	VehicleCurrentState.GenericVehicleState.EngineAudioComponent->Stop();
-	GetWorldTimerManager().ClearTimer(TimerHandle_AudioUpdate_Engine);
-	UGameplayStatics::PlaySoundAtLocation(this, Cast<USoundBase>(VehicleData->GenericVehicleAudio.EngineShutdownAudio), GetActorLocation(), FRotator::ZeroRotator, 1.0f, 1.0f, 0.0f);
-
+	StopEngine();			//shutdown engine
+	
 	switch (VehicleData->MovementType)
 	{
 		case EMovementType::Helicopter:
-			StartupShutdownHeli(false);
-			GetWorldTimerManager().ClearTimer(VehicleMovementTimer);
+			UpdateEngine_Heli(false);
 			break;
 	}
 }
@@ -858,18 +846,20 @@ void AVehicle_Base::UpdateEngineAudio()
 	}
 }
 
-void AVehicle_Base::StartupShutdownHeli(bool Spinup)
+void AVehicle_Base::UpdateEngine_Heli(bool Spinup)
 {
+	//should only be called once on enter driver seat/startup heli
 	FTimerDelegate RotorDelegate;
 	RotorDelegate.BindWeakLambda(this, [this, Spinup]()
 	{
 		this->UpdateRotorRPM(Spinup);
+		this->UpdateEngineAudio();
+		if (Spinup)
+		{
+			this->UpdateMovement_Heli();	//flight controller
+		}
 	});
-	GetWorldTimerManager().SetTimer(RotorUpdateTimer, RotorDelegate, 0.016f, true);
-	if (Spinup)
-	{
-		GetWorldTimerManager().SetTimer(VehicleMovementTimer, this, &AVehicle_Base::UpdateMovement_Heli, 0.05f, true);
-	}
+	GetWorldTimerManager().SetTimer(EngineUpdateTimer, RotorDelegate, GetWorld()->GetDeltaSeconds(), true);
 }
 
 void AVehicle_Base::UpdateRotorRPM(bool SpinUp)
@@ -890,15 +880,10 @@ void AVehicle_Base::UpdateRotorRPM(bool SpinUp)
 
 	RPM = FMath::FInterpConstantTo(RPM, CurrentTarget, 0.016f, SpeedMult);
 
-	if (FMath::IsNearlyEqual(RPM, CurrentTarget, 0.1f))
+	if (FMath::IsNearlyEqual(RPM, CurrentTarget, 0.1f) )
 	{
-		VehicleCurrentState.AircraftState.canFly = !VehicleCurrentState.AircraftState.canFly;
-		GetWorld()->GetTimerManager().ClearTimer(RotorUpdateTimer);
+		VehicleCurrentState.AircraftState.canFly = SpinUp;
 	}
-
-	//audio
-	//VehicleCurrentState.GenericVehicleState.EngineAudioComponent->SetFloatParameter(FName("EngineRPM"), RPM);
-	//v
 }
 
 #pragma region MovementInput
@@ -1027,12 +1012,11 @@ void AVehicle_Base::UpdateThrottle_Heli(float InputValue)
 	{
 		CurrentHoverVelocity = FMath::FInterpTo(CurrentHoverVelocity, HeliData.HoverPower, GetWorld()->GetDeltaSeconds(), 4.0f);
 	}
-	const FVector UpVel = GetActorUpVector() * CurrentHoverVelocity;
-	VehicleMeshComponent->SetAllPhysicsLinearVelocity(UpVel, true);
 }
 
 void AVehicle_Base::UpdatePitch_Heli(float InputValue, int32 SeatIndex)
 {
+	if (!VehicleCurrentState.AircraftState.canFly)	{ return; }
 	float& CurrentPitchSpeed = VehicleCurrentState.AircraftState.HelicopterState.CurrentPitchSpeed;
 	const FHelicopterData& HeliData = VehicleData->Helicopter_Data;
 
@@ -1046,6 +1030,7 @@ void AVehicle_Base::UpdatePitch_Heli(float InputValue, int32 SeatIndex)
 
 void AVehicle_Base::UpdateYaw_Heli(float InputValue)
 {
+	if (!VehicleCurrentState.AircraftState.canFly)	{ return; }
 	FHelicopterState& HeliState = VehicleCurrentState.AircraftState.HelicopterState;
 	float& CurrentYawSpeed = HeliState.CurrentYawSpeed;
 	const FHelicopterData& HeliData = VehicleData->Helicopter_Data;
@@ -1058,6 +1043,7 @@ void AVehicle_Base::UpdateYaw_Heli(float InputValue)
 
 void AVehicle_Base::UpdateRoll_Heli(float InputValue)
 {
+	if (!VehicleCurrentState.AircraftState.canFly)	{ return; }
 	FHelicopterState& HeliState = VehicleCurrentState.AircraftState.HelicopterState;
 	float& CurrentRollSpeed = HeliState.CurrentRollSpeed;
 	const FHelicopterData& HeliData = VehicleData->Helicopter_Data;
@@ -1073,6 +1059,7 @@ void AVehicle_Base::UpdateRoll_Heli(float InputValue)
 
 void AVehicle_Base::UpdateMovement_Heli()
 {
+	if (!VehicleCurrentState.AircraftState.canFly)		{return; }
 	auto& State = VehicleCurrentState.AircraftState.HelicopterState;
 	const auto& Data = VehicleData->Helicopter_Data;
 	const float DeltaTime = GetWorld()->GetDeltaSeconds();
@@ -1080,16 +1067,11 @@ void AVehicle_Base::UpdateMovement_Heli()
 	//update momentum heli
 	const float PitchDeg = FMath::Clamp(GetActorRotation().Pitch, -50.0f, 50.0f);
 	const float NormalizedPitch = (PitchDeg + 50.0f) / 100.0f; // NormalizeToRange(-50, 50, 0, 1)
-	//const float PitchDeg = FMath::Clamp(State.CurrentPitchSpeed, -Data.MaxPitchSpeed, Data.MaxPitchSpeed);
-	//const float NormalizedPitch = (PitchDeg + Data.MaxPitchSpeed) / (Data.MaxPitchSpeed * 2.0f); // NormalizeToRange(-50, 50, 0, 1)
 
 	const float CurveValue = Data.PitchCurve ? Data.PitchCurve->GetFloatValue(NormalizedPitch) : NormalizedPitch;
 
 	State.CurrentForwardMomentum += CurveValue * Data.Acceleration * DeltaTime;
 	State.CurrentForwardMomentum = FMath::Clamp(State.CurrentForwardMomentum, Data.MinMomentum, Data.MaxMomentum);
-	//float Momentum = FMath::Clamp(State.CurrentForwardMomentum, Data.MinMomentum, Data.MaxMomentum);
-	//const float TargetMomentum = FMath::Clamp(CurveValue * Data.Acceleration, Data.MinMomentum, Data.MaxMomentum);
-	//State.CurrentForwardMomentum = FMath::FInterpTo(State.CurrentForwardMomentum, TargetMomentum, DeltaTime, 2.f);						//Momentum;//FMath::IsNegative(Momentum) ? Momentum * -1.f : Momentum ;			//<--PROBABLY A BANDAID FIX!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 	//calculate target velocity from momentum
 	// Forward component: actor yaw only (strip pitch/roll from direction)
@@ -1104,7 +1086,8 @@ void AVehicle_Base::UpdateMovement_Heli()
 	const FVector TargetVel = ForwardComp + RightComp + UpComp;
 	// Smooth velocity interpolation
 	const FVector CurrentVel = VehicleMeshComponent->GetPhysicsLinearVelocity();
-	const FVector NewVel = FMath::VInterpTo(CurrentVel, TargetVel, DeltaTime, 3.0f);
+	FVector NewVel = FMath::VInterpTo(CurrentVel, TargetVel, DeltaTime, 3.0f);
+	NewVel = NewVel.GetClampedToMaxSize(Data.MaxVelocity);
 
 	VehicleMeshComponent->SetPhysicsLinearVelocity(NewVel, false, NAME_None);
 
@@ -1116,21 +1099,6 @@ void AVehicle_Base::UpdateMovement_Heli()
 		const float GravityImpulse = Alpha * Data.Gravity;
 
 		VehicleMeshComponent->AddImpulse(FVector(0.0f, 0.0f, GravityImpulse), NAME_None, true);
-	}
-
-	LimitHeliSpeed();
-}
-
-void AVehicle_Base::LimitHeliSpeed()
-{
-	const auto& Data = VehicleData->Helicopter_Data;
-
-	// Speed cap
-	FVector Vel = GetVelocity();
-	if (Vel.Size() > Data.MaxVelocity)
-	{
-		Vel = Vel.GetClampedToMaxSize(Data.MaxVelocity);
-		VehicleMeshComponent->SetAllPhysicsLinearVelocity(Vel, false);
 	}
 }
 
@@ -1358,6 +1326,8 @@ void AVehicle_Base::UpdateRoll_Jet_Arcade(float InputValue)
 
 #pragma endregion
 
+#pragma region Throttle
+
 void AVehicle_Base::Input_HandleApplyThrottle(float ThrottleValue, int32 SeatIndex)
 {
 	const EMovementType& MovementType = VehicleData->MovementType;
@@ -1386,6 +1356,8 @@ void AVehicle_Base::Input_HandleReleaseThrottle(int32 SeatIndex)
 	}
 }
 
+#pragma endregion
+
 void AVehicle_Base::ToggleRemoteViewMode(int32 SeatIndex)
 {
 	//ITS ASSUMED IF THIS IS CALLED THE THING CALLING IT IS A LOCALHUMAN
@@ -1401,6 +1373,22 @@ void AVehicle_Base::ToggleRemoteViewMode(int32 SeatIndex)
 		UpdateSeatActiveCamera(SeatIndex, SeatState.DefaultCamera);
 		UBS2FunctionLibrary::GetHUDSubsystem(this)->CurrentVehicleHMD.Get()->SetVisibility(ESlateVisibility::Visible);
 	}
+}
+
+void AVehicle_Base::StartEngine()
+{
+	//start engine audio
+	UGameplayStatics::SpawnSoundAttached( Cast<USoundBase>(VehicleData->GenericVehicleAudio.EngineStartupAudio), GetRootComponent());
+	VehicleCurrentState.GenericVehicleState.EngineAudioComponent->SetSound(Cast<USoundBase>(VehicleData->GenericVehicleAudio.EngineAudio));
+	VehicleCurrentState.GenericVehicleState.EngineAudioComponent->Play();
+}
+
+void AVehicle_Base::StopEngine()
+{
+	//shutdown engine audio
+	VehicleCurrentState.GenericVehicleState.EngineAudioComponent->Stop();
+	GetWorldTimerManager().ClearTimer(EngineUpdateTimer);
+	UGameplayStatics::SpawnSoundAttached(VehicleData->GenericVehicleAudio.EngineShutdownAudio, GetRootComponent());
 }
 
 #pragma endregion
