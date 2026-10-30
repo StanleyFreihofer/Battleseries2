@@ -97,6 +97,8 @@ public:
 	USkeletalMeshComponent* GetActiveCharacterAttachTarget();
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	FName GetIKAttachSocket(bool Foot, bool Left);
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	FTransform GetIKTransform(bool Foot, bool Left);
 	
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	AVehicle_Base* GetCurrentVehicle();

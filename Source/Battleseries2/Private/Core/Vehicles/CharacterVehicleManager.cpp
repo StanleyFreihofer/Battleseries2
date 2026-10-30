@@ -705,15 +705,26 @@ FName UCharacterVehicleManager::GetIKAttachSocket(bool Foot, bool Left)
 	FString Side = Left ? FString("Left") : FString("Right");
 	FString InitalString = FString::Printf(TEXT("%s_%s"), *Bone, *Side);
 	FName IKAttachSocket = FName(*InitalString);
-	const FVehicleWeaponInstanceData& VWID = GetCurrentVehicle()->VehicleLoadoutManager->GetVWID(GetCSI(), GetCurrentVehicle()->VehicleLoadoutManager->GetCWIForSeat(GetCSI()), GetCurrentVehicle()->VehicleLoadoutManager->GetEquippedWeaponIDInSeat(GetCSI()));
-	USkeletalMeshComponent* WeaponSystemMesh = GetCurrentSeatWeaponSystem().WeaponSystemMesh.Get();
-	if (VWID.AttachmentInstanceData.bAttachCharacter && WeaponSystemMesh)
+	
+	if (GetCurrentSeatDefinition().SeatRole == ESeatRole::Gunner || GetCurrentSeatDefinition().SeatRole == ESeatRole::DriverGunner)
 	{
-		return IKAttachSocket;	
+		const FVehicleWeaponInstanceData& VWID  = GetCurrentVehicle()->VehicleLoadoutManager->GetVWID(GetCSI(), GetCurrentVehicle()->VehicleLoadoutManager->GetCWIForSeat(GetCSI()), GetCurrentVehicle()->VehicleLoadoutManager->GetEquippedWeaponIDInSeat(GetCSI()));
+		USkeletalMeshComponent* WeaponSystemMesh = GetCurrentSeatWeaponSystem().WeaponSystemMesh.Get();
+		if (VWID.AttachmentInstanceData.bAttachCharacter && WeaponSystemMesh)
+		{
+			return IKAttachSocket;	
+		}
 	}
 
 	InitalString = FString::Printf(TEXT("%s_%s_%02d"), *Bone, *Side, GetCSI());
 	return FName(*InitalString);
+}
+
+FTransform UCharacterVehicleManager::GetIKTransform(bool Foot, bool Left)
+{
+	FName IKAttachSocket = GetIKAttachSocket(Foot, Left);
+	FTransform IKTransform = UBS2FunctionLibrary::CalculateIKTargetInVehicle(IKAttachSocket, GetActiveCharacterAttachTarget(), GetOwnerCharacter()->GetMesh());
+	return IKTransform;
 }
 
 ACharacter_Base* UCharacterVehicleManager::GetOwnerCharacter()
