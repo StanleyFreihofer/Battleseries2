@@ -49,14 +49,14 @@ struct FVehicleAttachmentInstanceData
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (Tooltip = "The mesh for this weapon if not just part of the vehicle mesh"))
 	FName AttachmentID = FName();
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)				//change sockets to have attachment ID at end so this isnt needed?
 	FTransform AttachmentTransform = FTransform::Identity;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (Tooltip = "whether or not to attach the character to a socket on this mesh, would allow the character to move with mesh, like a turret for example"))
 	bool bAttachCharacter = false;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (Tooltip = "relative transform of character on this mesh if attached", EditCondition = "bAttachCharacter", EditConditionHides = true))
-	FTransform CharacterTransform = FTransform::Identity;
+	FTransform CharacterTransform = FTransform::Identity;	//NOT NEEDED?
 };
 
 USTRUCT(BlueprintType)
@@ -176,14 +176,8 @@ struct FAvailableItems
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	TArray<FVehicleWeaponSlotChoices> AvailableWeaponSlots; //index 0 is primary, 1 is secondary
 
-	//UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (tooltip = "The Array Indexes of the turret(s) this seat controls"))
-	//TArray<int32> ControlledTurretIndexes;
-
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	TArray<FCountermeasureDefinition> AvailableCountermeasures;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	TArray<FName> AvailableOptics;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	TArray<FUpgradeDefinition> AvailableUpgrades;
@@ -229,9 +223,6 @@ struct FCharacterSeatContext
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (EditCondition = "SeatHUD != nullptr", EditConditionHides = true))
 	FVector2D SeatHUDDrawSize = FVector2D();
 
-	//UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	//class UInputMappingContext* InputMappingContext = nullptr;
-
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FTransform SeatTransform = FTransform();
 	
@@ -240,10 +231,7 @@ struct FCharacterSeatContext
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TSubclassOf<UAnimInstance> SeatABP_3P = nullptr;
-
-	//UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	//ECharacterStance SeatStance = ECharacterStance::Sitting;
-
+	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	EControlRotationMethod CharacterRotationMethod = EControlRotationMethod::None;
 };

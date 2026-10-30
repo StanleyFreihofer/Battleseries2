@@ -603,7 +603,7 @@ float UBS2FunctionLibrary::UpdateIKAlphaInVehicle(float DeltaTime, float Current
 	bool PickA = true;
 	for (FName Socket : HandSockets)
 	{
-		if (!VehicleMesh->DoesSocketExist(Socket))
+ 		if (!VehicleMesh->DoesSocketExist(Socket))
 		{
 			PickA = false;
 		}

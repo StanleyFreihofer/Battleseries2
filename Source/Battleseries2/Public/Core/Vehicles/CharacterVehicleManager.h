@@ -95,6 +95,8 @@ public:
 	FSeatWeaponSystemState& GetCurrentSeatWeaponSystem();
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	USkeletalMeshComponent* GetActiveCharacterAttachTarget();
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	FName GetIKAttachSocket(bool Foot, bool Left);
 	
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	AVehicle_Base* GetCurrentVehicle();
