@@ -129,8 +129,6 @@ void UCharacterVehicleManager::PhysicallyEnterVehicle()
 	Character->FPCamera->bUsePawnControlRotation = false;
 	Character->FPCamera->SetRelativeRotation(FRotator());
 	Character->bUseControllerRotationYaw = false;
-	
-
 }
 
 #pragma endregion

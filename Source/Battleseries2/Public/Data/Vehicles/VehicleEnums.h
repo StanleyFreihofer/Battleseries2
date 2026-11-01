@@ -89,7 +89,7 @@ enum class EWindowedAimAnchor : uint8
 {
 	FreeAim				UMETA(DisplayName = "Free Aim", ToolTip = "Follows head direction (head rotation based)"),
 	FixedHead			UMETA(DisplayName = "Fixed Head", ToolTip = "Aim direction fixed to socket on player character's head"),
-	FixedPoint			UMETA(DisplayName = "Fixed POint", ToolTip = "Aim direction fixed to socket on vehicle"),
+	FixedPoint			UMETA(DisplayName = "Fixed Point", ToolTip = "Aim direction fixed to socket on vehicle"),
 	Turret				UMETA(DisplayName = "Gimballed", ToolTip = "Follows turret (turret rotation based)"),
 	Hull				UMETA(DisplayName = "Fixed", ToolTip = "Aim direction fixed to Hull (direction vehicle is facing)")
 };
