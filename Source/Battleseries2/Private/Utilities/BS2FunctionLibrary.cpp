@@ -186,11 +186,12 @@ UCameraComponent* UBS2FunctionLibrary::CreateAndAttachCamera(UObject* Owner, USc
 	return Cam;
 }
 
-TWeakObjectPtr<UStaticMeshComponent> UBS2FunctionLibrary::CreateAndAttachStaticMesh(UObject* Owner, USceneComponent* AttachTarget, UStaticMesh* Mesh, FName SocketName, EFirstPersonPrimitiveType FPPrimitiveType)
+TWeakObjectPtr<UStaticMeshComponent> UBS2FunctionLibrary::CreateAndAttachStaticMesh(UObject* Owner, USceneComponent* AttachTarget, UStaticMesh* Mesh, FName SocketName, EFirstPersonPrimitiveType FPPrimitiveType, ECollisionEnabled::Type CollisionEnabled)
 {
 	TWeakObjectPtr<UStaticMeshComponent> NewSM = NewObject<UStaticMeshComponent>(Owner);                                                     
 	NewSM->FirstPersonPrimitiveType = FPPrimitiveType;                                                                     
-	NewSM->RegisterComponent();                                                                                                                   
+	NewSM->RegisterComponent();                
+	NewSM->SetCollisionEnabled(CollisionEnabled);			//make this an input
 	NewSM->AttachToComponent(AttachTarget, FAttachmentTransformRules::SnapToTargetIncludingScale, SocketName);         
 	if (Mesh)
 	{

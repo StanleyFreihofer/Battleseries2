@@ -126,6 +126,9 @@ void ACharacter_Base::Init_CharacterMovement()
 	GetCharacterMovement()->MaxAcceleration = CharacterMovementData.CharacterMovementDefaults.MaxAcceleration;
 	GetCharacterMovement()->MaxWalkSpeed = CharacterMovementData.CharacterMovementDefaults.MaxWalkSpeed;
 	GetCharacterMovement()->MaxWalkSpeedCrouched = CharacterMovementData.CharacterMovementDefaults.MaxWalkSpeedCrouched;
+	
+	// Kinematic capsules must not impart impulses to simulated bodies (Chaos vehicle chassis).
+	//GetCharacterMovement()->bEnablePhysicsInteraction = false;
 
 	CharacterState.CharacterMovementState.canSprint = CharacterMovementData.canSprint;
 	CharacterState.CharacterMovementState.CurrentStamina = CharacterMovementData.StaminaDuration;

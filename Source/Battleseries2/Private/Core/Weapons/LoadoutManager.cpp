@@ -163,6 +163,7 @@ void ULoadoutManager::Init_WeaponMesh(TWeakObjectPtr<USkeletalMeshComponent>& We
 {
 	TWeakObjectPtr<USkeletalMeshComponent> NewWeapon = NewObject<USkeletalMeshComponent>(GetOwner());
 	NewWeapon->RegisterComponent();
+	NewWeapon->SetCollisionEnabled(ECollisionEnabled::QueryOnly);  
 	WeaponMesh = NewWeapon;			//cache
 }
 
@@ -186,7 +187,7 @@ void ULoadoutManager::Init_WAC()
 void ULoadoutManager::Init_AttachmentMesh(FWeaponAttachmentState& RuntimeSlotState, FInfantryWeaponState& WeaponToApplyTo, EAttachmentSlot AttachmentSlot)
 {
 	//Initialize/Create Attachment, attach to gun, cache
-	RuntimeSlotState.SpawnedAttachment = UBS2FunctionLibrary::CreateAndAttachStaticMesh(GetOwner(), WeaponToApplyTo.WeaponMesh.Get(), nullptr, GetSocketNameForSlot(AttachmentSlot), EFirstPersonPrimitiveType::FirstPerson);;
+	RuntimeSlotState.SpawnedAttachment = UBS2FunctionLibrary::CreateAndAttachStaticMesh(GetOwner(), WeaponToApplyTo.WeaponMesh.Get(), nullptr, GetSocketNameForSlot(AttachmentSlot), EFirstPersonPrimitiveType::FirstPerson, ECollisionEnabled::QueryOnly);;
 }
 
 void ULoadoutManager::Init_AmmoVisuals(int32 WeaponIndex, FName AttachmentID)
@@ -217,7 +218,7 @@ void ULoadoutManager::Init_AmmoVisuals(int32 WeaponIndex, FName AttachmentID)
 		UStaticMesh* Mesh = Element.Mesh.LoadSynchronous();
 		for (const FName& Socket : Sockets)
 		{
-			WeaponState.AmmoVisuals[i].Instances.Add(UBS2FunctionLibrary::CreateAndAttachStaticMesh(GetOwner(), WeaponState.WeaponMesh.Get(), Mesh, Socket, EFirstPersonPrimitiveType::FirstPerson));
+			WeaponState.AmmoVisuals[i].Instances.Add(UBS2FunctionLibrary::CreateAndAttachStaticMesh(GetOwner(), WeaponState.WeaponMesh.Get(), Mesh, Socket, EFirstPersonPrimitiveType::FirstPerson, ECollisionEnabled::QueryOnly));
 		}
 	}
 }

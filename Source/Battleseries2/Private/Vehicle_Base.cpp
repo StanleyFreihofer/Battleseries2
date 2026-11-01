@@ -29,6 +29,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "TimerManager.h"
 #include "PhysicsEngine/PhysicsAsset.h"
+#include "PhysicsEngine/BodyInstance.h"
 #include "Components/AudioComponent.h"
 #include "ChaosVehicleMovementComponent.h"
 #include "Core/Combat/VehicleHealthComponent.h"
@@ -305,6 +306,7 @@ void AVehicle_Base::Init_VehicleMesh(USkeletalMesh* LoadedSkeletalMesh)
 	VehicleMeshComponent->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 	VehicleMeshComponent->SetCollisionObjectType(ECollisionChannel::ECC_Vehicle);
 	VehicleMeshComponent->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Block);
+	VehicleMeshComponent->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Block);
 }
 
 void AVehicle_Base::Init_VehicleMesh_Preview(USkeletalMesh* LoadedSkeletalMesh)
