@@ -1069,9 +1069,7 @@ void AVehicle_Base::UpdateMovement_Heli()
 	//update momentum heli
 	const float PitchDeg = FMath::Clamp(GetActorRotation().Pitch, -50.0f, 50.0f);
 	const float NormalizedPitch = (PitchDeg + 50.0f) / 100.0f; // NormalizeToRange(-50, 50, 0, 1)
-
 	const float CurveValue = Data.PitchCurve ? Data.PitchCurve->GetFloatValue(NormalizedPitch) : NormalizedPitch;
-
 	State.CurrentForwardMomentum += CurveValue * Data.Acceleration * DeltaTime;
 	State.CurrentForwardMomentum = FMath::Clamp(State.CurrentForwardMomentum, Data.MinMomentum, Data.MaxMomentum);
 
@@ -1080,6 +1078,7 @@ void AVehicle_Base::UpdateMovement_Heli()
 	const FRotator YawOnly(0.0f, GetActorRotation().Yaw, 0.0f);
 	const FVector ForwardDir = YawOnly.Vector();
 	const FVector RightDir = FRotationMatrix(YawOnly).GetScaledAxis(EAxis::Y);
+	
 	// Forward: pitch * -1 (nose-down = positive thrust along yaw direction)
 	const FVector ForwardComp = ForwardDir * ((GetActorRotation().Pitch * State.CurrentForwardMomentum) * -1.0f); 													///State.CurrentForwardMomentum * (PitchDeg * -1.0f);
 	// Right: momentum scaled by roll angle (bank = lateral drift)
@@ -1093,14 +1092,13 @@ void AVehicle_Base::UpdateMovement_Heli()
 
 	VehicleMeshComponent->SetPhysicsLinearVelocity(NewVel, false, NAME_None);
 
-	//gravity when upside down
-	const FVector Up = VehicleMeshComponent->GetUpVector();
-	if (Up.Z < -0.75f)
-	{
-		const float Alpha = FMath::GetMappedRangeValueClamped(FVector2D(-1.0f, 0.0f), FVector2D(-1.0f, 0.0f), Up.Z);
-		const float GravityImpulse = Alpha * Data.Gravity;
+	const float UpZ = VehicleMeshComponent->GetUpVector().Z;
+	float LerpUpZ = FMath::Lerp(-1.f, 0.f, UpZ);
+	const float GravityDeltaV =	 LerpUpZ * Data.Gravity;					//(UpZ - 1.0f) * Data.Gravity;	// 0 when level, -Gravity at 90deg bank
 
-		VehicleMeshComponent->AddImpulse(FVector(0.0f, 0.0f, GravityImpulse), NAME_None, true);
+	if (GravityDeltaV <= -0.75f)	// skips gravity only while the airframe is level
+	{
+		VehicleMeshComponent->AddImpulse(FVector(0.0f, 0.0f, GravityDeltaV * 10.0f * DeltaTime), NAME_None, true);
 	}
 }
 
