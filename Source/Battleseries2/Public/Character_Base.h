@@ -161,10 +161,6 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void UpdateisFreeLooking(bool isFreeLooking);
-	UFUNCTION(BlueprintCallable)
-	void Freelook(FVector2D InputAxisValue);
-	UFUNCTION(BlueprintCallable)
-	void UpdateHeadRotation(FRotator HeadRotation);
 
 	UFUNCTION()
 	void UpdateViewTarget(TWeakObjectPtr<AActor> NewViewTarget, TWeakObjectPtr<UCameraComponent> CameraComponent);

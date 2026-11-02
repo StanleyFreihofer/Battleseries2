@@ -408,7 +408,7 @@ void ACharacter_Base::UpdateMovementMode(ECharacterMovementMode NewMode)
 		case ECharacterMovementMode::Sprinting:
 		{
 			if (LoadoutManager->CombatState.isAiming) { return; }
-			else if (CurrentMovementMode == ECharacterMovementMode::Walking)
+			if (CurrentMovementMode == ECharacterMovementMode::Walking)
 			{
 				StartSprint();
 			}
@@ -510,40 +510,13 @@ void ACharacter_Base::UpdateisFreeLooking(bool isFreeLooking)
 	CharacterState.CharacterMovementState.isFreeLooking = isFreeLooking;
 	if (!CharacterState.CharacterMovementState.isFreeLooking)
 	{
-		CharacterState.CharacterMovementState.HeadRotation = FRotator(0.0f, 0.0f, 0.0f);
+		CharacterState.CharacterMovementState.HeadRotation = UBS2FunctionLibrary::GetDataSubsystem(this)->GetVehicleDefaults()->DefaultHeadRotation;
 		UAnimInstance* AnimInstance = FPArms->GetAnimInstance();
 		IAnims::Execute_OnUpdateHeadRotation(AnimInstance, CharacterState.CharacterMovementState.HeadRotation);
 	}
 }
 
 #pragma endregion
-
-#pragma endregion
-
-void ACharacter_Base::Freelook(FVector2D InputAxisValue)
-{
-	/**
-	float NewYaw = CharacterState.CurrentHeadDelta.X + InputAxisValue.X;
-	float NewPitch = CharacterState.CurrentHeadDelta.Y + InputAxisValue.Y;
-	NewPitch = FMath::Clamp(NewPitch, -80.0f, 80.0f);
-	CharacterState.CurrentHeadDelta = FVector2D(NewYaw, NewPitch);
-	FRotator NewRotation = FRotator(0.0f, CharacterState.CurrentHeadDelta.Y, CharacterState.CurrentHeadDelta.X);
-	UpdateHeadRotation(NewRotation);
-	**/
-}
-
-void ACharacter_Base::UpdateHeadRotation(FRotator HeadRotation)
-{
-	UAnimInstance* AnimInst = GetMesh() ? GetMesh()->GetAnimInstance() : nullptr;
-	if (AnimInst && AnimInst->GetClass()->ImplementsInterface(UAnims::StaticClass()))
-	{
-		IAnims::Execute_OnUpdateHeadRotation(AnimInst, HeadRotation);
-	}
-}
-
-#pragma region Vehicle
-
-
 
 #pragma endregion
 

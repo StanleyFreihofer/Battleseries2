@@ -180,6 +180,9 @@ public:
     
     UPROPERTY(EditAnywhere, BlueprintReadOnly)
     TArray<TSoftObjectPtr<UNiagaraSystem>> FireFX;
+    
+    UPROPERTY(EditAnywhere, BlueprintReadOnly)
+    FRotator DefaultHeadRotation = FRotator();
 
     UPROPERTY(EditAnywhere, BlueprintReadOnly)
     TMap<EVehicleType, FVehicleTypeDefinition> VehicleTypeDefintions;

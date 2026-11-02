@@ -129,6 +129,9 @@ void UCharacterVehicleManager::PhysicallyEnterVehicle()
 	Character->FPCamera->bUsePawnControlRotation = false;
 	Character->FPCamera->SetRelativeRotation(FRotator());
 	Character->bUseControllerRotationYaw = false;
+	
+	UAnimInstance* AnimInstance = GetOwnerCharacter()->FPArms->GetAnimInstance();
+	IAnims::Execute_OnUpdateHeadRotation(AnimInstance, UBS2FunctionLibrary::GetDataSubsystem(this)->GetVehicleDefaults()->DefaultHeadRotation);
 }
 
 #pragma endregion
@@ -186,6 +189,9 @@ void UCharacterVehicleManager::PhysicallyExitVehicle()
 	Character->FPArmsSpringArm->bUsePawnControlRotation = true;
 	Character->FPArmsSpringArm->bInheritRoll = false;
 	Character->FPArmsSpringArm->bEnableCameraLag = true;
+	
+	UAnimInstance* AnimInstance = GetOwnerCharacter()->FPArms->GetAnimInstance();
+	IAnims::Execute_OnUpdateHeadRotation(AnimInstance, FRotator());
 }
 
 #pragma endregion
