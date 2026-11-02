@@ -897,7 +897,7 @@ void AVehicle_Base::HandleApplyThrottle_GV(float RawInputValue, int32 SeatIndex)
     const bool bInDeadzone = FMath::IsNearlyZero(RawInputValue, 0.15);		//hardcode for now but should be throttle deadzone
     const bool bGearMidShift = ChaosVehicleMovement->GetTargetGear() != ChaosVehicleMovement->GetCurrentGear();
 
-    if (bInDeadzone || bGearMidShift)
+    if (bInDeadzone)
     {
         UpdateThrottle_GV_Stop(SeatIndex);
         return; 
@@ -920,7 +920,7 @@ void AVehicle_Base::HandleApplyThrottle_GV(float RawInputValue, int32 SeatIndex)
 
 void AVehicle_Base::UpdateThrottle_GV_Forward(float InputValue)
 {
-	switch (ChaosVehicleMovement->GetCurrentGear())
+	switch (ChaosVehicleMovement->GetTargetGear())
 	{
 		case -1:
 			ChaosVehicleMovement->SetTargetGear(0, true);
@@ -929,7 +929,7 @@ void AVehicle_Base::UpdateThrottle_GV_Forward(float InputValue)
 			ChaosVehicleMovement->SetTargetGear(1, true);
 			break;
 	}
-
+	ChaosVehicleMovement->SetBrakeInput(0.f);   // clear what Reverse leaves behind (line 948)
 	ChaosVehicleMovement->SetThrottleInput(InputValue);
 }
 
