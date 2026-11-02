@@ -143,16 +143,13 @@ void ACharacter_Base::Input_Look(FVector2D InputAxisValue)
 		AddControllerYawInput(InputAxisValue.X);
 		AddControllerPitchInput(InputAxisValue.Y);
 	}
-	else
+	else if (CharacterState.CharacterMovementState.isFreeLooking)
 	{
-		switch (VehicleManager->GetCurrentSeatData().DefaultCharacterContext.CharacterRotationMethod)
-		{
-			case EControlRotationMethod::Freelook:
-				Freelook(InputAxisValue);
-				break;
-		}
+		AddControllerYawInput(InputAxisValue.X);
+		AddControllerPitchInput(InputAxisValue.Y * -1.f);
+		UAnimInstance* AnimInstance = FPArms->GetAnimInstance();
+		IAnims::Execute_OnUpdateHeadRotation(AnimInstance, GetControlRotation());
 	}
-
 }
 
 void ACharacter_Base::Input_Move(FVector2D InputAxisValue)
@@ -508,18 +505,31 @@ void ACharacter_Base::InterpExitProne_FP()
 	}
 }
 
+void ACharacter_Base::UpdateisFreeLooking(bool isFreeLooking)
+{
+	CharacterState.CharacterMovementState.isFreeLooking = isFreeLooking;
+	if (!CharacterState.CharacterMovementState.isFreeLooking)
+	{
+		CharacterState.CharacterMovementState.HeadRotation = FRotator(0.0f, 0.0f, 0.0f);
+		UAnimInstance* AnimInstance = FPArms->GetAnimInstance();
+		IAnims::Execute_OnUpdateHeadRotation(AnimInstance, CharacterState.CharacterMovementState.HeadRotation);
+	}
+}
+
 #pragma endregion
 
 #pragma endregion
 
 void ACharacter_Base::Freelook(FVector2D InputAxisValue)
 {
+	/**
 	float NewYaw = CharacterState.CurrentHeadDelta.X + InputAxisValue.X;
 	float NewPitch = CharacterState.CurrentHeadDelta.Y + InputAxisValue.Y;
 	NewPitch = FMath::Clamp(NewPitch, -80.0f, 80.0f);
 	CharacterState.CurrentHeadDelta = FVector2D(NewYaw, NewPitch);
 	FRotator NewRotation = FRotator(0.0f, CharacterState.CurrentHeadDelta.Y, CharacterState.CurrentHeadDelta.X);
 	UpdateHeadRotation(NewRotation);
+	**/
 }
 
 void ACharacter_Base::UpdateHeadRotation(FRotator HeadRotation)

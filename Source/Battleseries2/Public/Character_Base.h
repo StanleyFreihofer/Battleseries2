@@ -160,6 +160,8 @@ public:
 #pragma endregion
 
 	UFUNCTION(BlueprintCallable)
+	void UpdateisFreeLooking(bool isFreeLooking);
+	UFUNCTION(BlueprintCallable)
 	void Freelook(FVector2D InputAxisValue);
 	UFUNCTION(BlueprintCallable)
 	void UpdateHeadRotation(FRotator HeadRotation);

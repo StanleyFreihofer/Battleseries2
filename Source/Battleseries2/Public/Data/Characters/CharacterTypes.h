@@ -14,8 +14,6 @@ struct FCharacterVehicleState
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "State")
 	TObjectPtr<AVehicle_Base> CurrentVehicle = nullptr;		
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "State")
-	bool isFreeLooking = false;
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "State")
 	int32 CSI = -1;
 };
 
@@ -59,6 +57,11 @@ struct FCharacterMovementState
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "State")
 	FTimerHandle SprintTimer = FTimerHandle();
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "State")
+	bool isFreeLooking = false;
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "State")
+	FRotator HeadRotation = FRotator(); //should be same as controlrotation when freelooking, otherwise 0
 };
 
 USTRUCT(BlueprintType)
@@ -78,7 +81,4 @@ struct FCharacterState
 	FInteractionState InteractionState = FInteractionState();
 
 	//current controlled projectile?
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "State")
-	FVector2D CurrentHeadDelta = FVector2D();
 };
