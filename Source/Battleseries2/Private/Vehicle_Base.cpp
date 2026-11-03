@@ -916,6 +916,21 @@ void AVehicle_Base::HandleApplyThrottle_GV(float RawInputValue, int32 SeatIndex)
     {
         UpdateThrottle_GV_Reverse(RawInputValue);
     }
+	
+	if (VehicleCurrentState.SeatStates[SeatIndex].UpdateHUD)
+	{
+		//UpdateSpeed
+		if (GetVelocity().Size() <= 0.f && SpeedTimer.IsValid())
+		{
+			GetWorld()->GetTimerManager().ClearTimer(SpeedTimer);
+			return; 
+		}
+		if (SpeedTimer.IsValid())	{return; }
+		GetWorld()->GetTimerManager().SetTimer(SpeedTimer, [this]()
+		{
+			UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateSpeedHUD_Vehicle(GetVelocity().Size());		
+		}, GetWorld()->GetDeltaSeconds(), true);
+	}
 }
 
 void AVehicle_Base::UpdateThrottle_GV_Forward(float InputValue)
@@ -955,19 +970,6 @@ void AVehicle_Base::UpdateThrottle_GV_Stop(int32 SeatIndex)
 	ChaosVehicleMovement->SetHandbrakeInput(true);
 	ChaosVehicleMovement->SetThrottleInput(0.0f);
 	ChaosVehicleMovement->SetBrakeInput(0.0f);
-
-	if (VehicleCurrentState.SeatStates[SeatIndex].UpdateHUD)
-	{
-		GetWorld()->GetTimerManager().SetTimer(SpeedTimer, [this]()
-		{
-			UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateSpeedHUD_Vehicle(GetVelocity().Size());		//block behind updatehud check?
-		}, 0.05f, true);
-		if (GetVelocity().Size() <= 0.0f)
-		{
-			GetWorld()->GetTimerManager().ClearTimer(SpeedTimer);
-		}
-	}
-
 }
 
 void AVehicle_Base::Input_UpdateSteering_GV(float SteeringValue, int32 SeatIndex)

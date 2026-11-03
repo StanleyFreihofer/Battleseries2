@@ -129,7 +129,7 @@ public:
 
 	//FUNCTIONS
 
-	//INITALIZATION FUNCTIONS
+#pragma region Factory
 	//Ground Vehicle init functions
 	UFUNCTION()
 	void Init_Wheels(const FWheelSetup& WheelSetup);
@@ -170,14 +170,14 @@ public:
 	void Init_Vehicle_Preview();
 	UFUNCTION(BlueprintCallable)
 	void Init_VehicleMesh_Preview(USkeletalMesh* LoadedSkeletalMesh);
+	
+#pragma endregion
 
 	UFUNCTION(BlueprintCallable)
 	void PlayHorn();
 	UFUNCTION(BlueprintCallable)
 	void StopHorn();
-
-
-
+	
 
 	//RUNTIME FUNCTIONS
 	//Seats RUNTIME
@@ -186,6 +186,7 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void HandleOccupySeat(bool Occupy, bool LocalPlayer, int32 SeatIndex);
 
+#pragma region Loadout
 	UFUNCTION(BlueprintCallable)
 	void ApplyLoadoutToSeat(int32 SeatIndex);
 	UFUNCTION(BlueprintCallable)
@@ -201,6 +202,7 @@ public:
 	void ClearLoadoutFromSeat(int32 SeatIndex);
 	UFUNCTION(BlueprintCallable)
 	void ClearEntireLoadoutFromVehicle();
+#pragma endregion
 
 	UFUNCTION(BlueprintCallable)
 	void DropSeat(int32 SeatIndex);
@@ -215,6 +217,7 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void DropGunner(int32 SeatIndex);
 
+#pragma region Cameras
 	UFUNCTION(BlueprintCallable)
 	void SyncActiveCameraForSeat(int32 SeatIndex);
 	UFUNCTION(BlueprintCallable)
@@ -223,6 +226,7 @@ public:
 	void DeactivateSeatCameras(int32 SeatIndex, int32 DeactivateCamMode);
 	UFUNCTION(BlueprintCallable)
 	void UpdateRemoteActiveCamPP(int32 SeatIndex, FPostProcessSettings PPSettings, float BlendWeight, UCameraComponent* Cam);
+#pragma endregion
 	
 	UFUNCTION(BlueprintCallable)
 	void UpdateEngineAudio();
