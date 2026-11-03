@@ -122,8 +122,12 @@ public:
 	FOnVehicleYawUpdate OnVehicleYawUpdate;
 	UPROPERTY(BlueprintAssignable, Category = "Event Dispatchers")
 	FOnVehicleSpeedUpdate OnVehicleSpeedUpdate;
+	
 
-
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	bool DebugChaos = false;
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	bool DebugLoadout = false;
 
 
 
@@ -137,6 +141,8 @@ public:
 	void HandleChaosMovement(bool turnon);
 	UFUNCTION()
 	void Init_Chaos_VehicleSetup(const FVehicleSetup& VehicleSetup);
+	UFUNCTION(BlueprintCallable)
+	void Init_Chaos_VehicleInput(const FVehicleInput& VehicleInput);
 	UFUNCTION(BlueprintCallable)
 	void Init_EngineAudio();
 	UFUNCTION(BlueprintCallable)
@@ -172,12 +178,15 @@ public:
 	void Init_VehicleMesh_Preview(USkeletalMesh* LoadedSkeletalMesh);
 	
 #pragma endregion
+	
+#pragma region Horn
 
 	UFUNCTION(BlueprintCallable)
 	void PlayHorn();
 	UFUNCTION(BlueprintCallable)
 	void StopHorn();
 	
+#pragma endregion
 
 	//RUNTIME FUNCTIONS
 	//Seats RUNTIME
@@ -209,7 +218,7 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void SetupNewSeat(int32 SeatIndex, bool isLocalHuman);
 	UFUNCTION(BlueprintCallable)
-	void SetupDriver();
+	void SetupDriver(int32 SeatIndex);
 	UFUNCTION()
 	void DropDriver();
 	UFUNCTION(BlueprintCallable)
@@ -226,32 +235,32 @@ public:
 	void DeactivateSeatCameras(int32 SeatIndex, int32 DeactivateCamMode);
 	UFUNCTION(BlueprintCallable)
 	void UpdateRemoteActiveCamPP(int32 SeatIndex, FPostProcessSettings PPSettings, float BlendWeight, UCameraComponent* Cam);
+	UFUNCTION(BlueprintCallable)
+	void ToggleRemoteViewMode(int32 SeatIndex);
 #pragma endregion
 	
 	UFUNCTION(BlueprintCallable)
 	void UpdateEngineAudio();
 	UFUNCTION(BlueprintCallable)
+	void UpdateEngine_GV(bool StartEngine, int32 SeatIndex);
+	UFUNCTION(BlueprintCallable)
 	void UpdateEngine_Heli(bool Spinup);
 	UFUNCTION(BlueprintCallable)
 	void UpdateRotorRPM(bool SpinUp);
 
-	//Vehicle RUNTIME
+#pragma region VehicleMovement 
 	
-	//INPUTS
-
-	//Movement, Generic
 	UFUNCTION(BlueprintCallable)
 	void Input_HandleApplyThrottle(float ThrottleValue, int32 SeatIndex);		//called from seat
 	UFUNCTION(BlueprintCallable)
 	void Input_HandleReleaseThrottle(int32 SeatIndex);
-	UFUNCTION(BlueprintCallable)
-	void ToggleRemoteViewMode(int32 SeatIndex);
+
 	UFUNCTION(BlueprintCallable)
 	void StartEngine();
 	UFUNCTION(BlueprintCallable)
 	void StopEngine();
 	
-	//Movement, Ground Vehicle
+#pragma region GroundVehicleMovement
 	UFUNCTION(BlueprintCallable)
 	void HandleApplyThrottle_GV(float InputValue, int32 SeatIndex);
 	UFUNCTION(BlueprintCallable)
@@ -262,6 +271,7 @@ public:
 	void UpdateThrottle_GV_Stop(int32 SeatIndex);
 	UFUNCTION(BlueprintCallable)
 	void Input_UpdateSteering_GV(float SteeringValue, int32 SeatIndex);
+#pragma endregion
 
 #pragma region HeliFlight
 	UFUNCTION(BlueprintCallable)
@@ -303,6 +313,8 @@ public:
 	void UpdatePitch_Jet_Arcade(float InputValue);
 	UFUNCTION(BlueprintCallable)
 	void UpdateRoll_Jet_Arcade(float InputValue);
+#pragma endregion
+	
 #pragma endregion
 
 	//Applying
@@ -378,6 +390,7 @@ public:
 
 private:
 	FTimerHandle EngineUpdateTimer;
-	FTimerHandle SpeedTimer;
 	FTimerHandle ThrottleTimer;
+	
+
 };

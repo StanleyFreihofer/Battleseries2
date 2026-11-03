@@ -379,23 +379,16 @@ struct FGroundVehicleData
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	FVehicleSetup VehicleSetup = FVehicleSetup();
-
-	//Vehicle Input
+	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	FVehicleInput VehicleInput = FVehicleInput();
-	//CHANGE TO FULL VEHICLE INPUT STRUCT!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	//Yaw
-	//UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	//float Yaw_Input_Rise_Rate = 0.0f;
-	//UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	//float Yaw_Input_Fall_Rate = 0.0f;
 
 	//other
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	bool bCanAmphibiousTravel = false;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Audio")
-	class USoundCue* HornAudio = nullptr;
+	USoundCue* HornAudio = nullptr;
 	//wheel audio?
 };
 

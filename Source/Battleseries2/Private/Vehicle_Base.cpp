@@ -122,15 +122,16 @@ void AVehicle_Base::Init_GroundVehicle()
 	ChaosVehicleMovement->TransmissionSetup = VehicleData->GroundVehicle_Data.TransmissionData;
 	ChaosVehicleMovement->SteeringSetup = VehicleData->GroundVehicle_Data.SteeringData;
 	
-	//Vehicle Setup
 	Init_Chaos_VehicleSetup(VehicleData->GroundVehicle_Data.VehicleSetup);
-
-	//Vehicle Input
+	Init_Chaos_VehicleInput(VehicleData->GroundVehicle_Data.VehicleInput);
+	
+	/**
 	//Yaw Input Rate
 	ChaosVehicleMovement->YawInputRate.RiseRate = VehicleData->GroundVehicle_Data.VehicleInput.YawInputRate.RiseRate;
 	ChaosVehicleMovement->YawInputRate.FallRate = VehicleData->GroundVehicle_Data.VehicleInput.YawInputRate.FallRate;
+	**/
 
-	//allows the vehicle/chaos vehicle to actual simulate physics properly
+	//allows the vehicle/chaos vehicle to actually simulate physics properly
 	HandleChaosMovement(true);
 	ChaosVehicleMovement->ResetVehicle();
 	//ChaosVehicleMovement->RecreatePhysicsState();;
@@ -168,6 +169,17 @@ void AVehicle_Base::Init_Chaos_VehicleSetup(const FVehicleSetup& VehicleSetup)
 	ChaosVehicleMovement->SleepSlopeLimit = VehicleSetup.SleepSlopeLimit;
 }
 
+void AVehicle_Base::Init_Chaos_VehicleInput(const FVehicleInput& VehicleInput)
+{
+	ChaosVehicleMovement->ThrottleInputRate = VehicleInput.ThrottleInputRate;			
+	ChaosVehicleMovement->BrakeInputRate = VehicleInput.BrakeInputRate;
+	ChaosVehicleMovement->SteeringInputRate = VehicleInput.SteeringInputRate;
+	ChaosVehicleMovement->HandbrakeInputRate = VehicleInput.HandbrakeInputRate;
+	ChaosVehicleMovement->PitchInputRate = VehicleInput.PitchInputRate;
+	ChaosVehicleMovement->RollInputRate = VehicleInput.RollInputRate;
+	ChaosVehicleMovement->YawInputRate = VehicleInput.YawInputRate;
+}
+
 void AVehicle_Base::Init_EngineAudio()
 {
 	VehicleCurrentState.GenericVehicleState.EngineAudioComponent = NewObject<UAudioComponent>(this, UAudioComponent::StaticClass());
@@ -197,17 +209,10 @@ void AVehicle_Base::Init_Jet_Chaos()
 	ChaosVehicleMovement->TargetRotationControl = VehicleData->Jet_Data.ChaosFlightModelData.TargetRotationControl;
 	ChaosVehicleMovement->StabilizeControl = VehicleData->Jet_Data.ChaosFlightModelData.StabilizeControl;
 	ChaosVehicleMovement->EnableMechanicalSim(true);
-
-	//vehicle input
-	ChaosVehicleMovement->ThrottleInputRate = VehicleData->Jet_Data.ChaosFlightModelData.VehicleInput.ThrottleInputRate;			
-	ChaosVehicleMovement->BrakeInputRate = VehicleData->Jet_Data.ChaosFlightModelData.VehicleInput.BrakeInputRate;
-	ChaosVehicleMovement->SteeringInputRate = VehicleData->Jet_Data.ChaosFlightModelData.VehicleInput.SteeringInputRate;
-	ChaosVehicleMovement->HandbrakeInputRate = VehicleData->Jet_Data.ChaosFlightModelData.VehicleInput.HandbrakeInputRate;
-	ChaosVehicleMovement->PitchInputRate = VehicleData->Jet_Data.ChaosFlightModelData.VehicleInput.PitchInputRate;
-	ChaosVehicleMovement->RollInputRate = VehicleData->Jet_Data.ChaosFlightModelData.VehicleInput.RollInputRate;
-	ChaosVehicleMovement->YawInputRate = VehicleData->Jet_Data.ChaosFlightModelData.VehicleInput.YawInputRate;
-
+	
+	Init_Chaos_VehicleInput(VehicleData->Jet_Data.ChaosFlightModelData.VehicleInput);
 	Init_Chaos_VehicleSetup(VehicleData->Jet_Data.ChaosFlightModelData.VehicleSetup);
+	
 	ChaosVehicleMovement->RegisterComponent();
 	ChaosVehicleMovement->RecreatePhysicsState();;
 	VehicleMeshComponent->InitAnim(true);
@@ -670,14 +675,14 @@ void AVehicle_Base::SetupNewSeat(int32 SeatIndex, bool isLocalHuman)
 	{
 		case ESeatRole::Driver:
 			ApplyLoadoutToVehicle();
-			SetupDriver();
+			SetupDriver(SeatIndex);
 			break;
 		case ESeatRole::Gunner:
 			SetupGunner(SeatIndex);
 			break;
 		case ESeatRole::DriverGunner:
 			ApplyLoadoutToVehicle();
-			SetupDriver();
+			SetupDriver(SeatIndex);
 			SetupGunner(SeatIndex);
 			break;
 		case ESeatRole::Passenger:
@@ -692,13 +697,14 @@ void AVehicle_Base::SetupNewSeat(int32 SeatIndex, bool isLocalHuman)
 
 #pragma region DriverSeats
 
-void AVehicle_Base::SetupDriver()
+void AVehicle_Base::SetupDriver(int32 SeatIndex)
 {
-	StartEngine();				//start engine
+	StartEngine();		
 
 	switch (VehicleData->MovementType)
 	{
 		case EMovementType::GroundVehicle:
+			UpdateEngine_GV(true, SeatIndex);
 			break;
 		case EMovementType::Helicopter:
 			UpdateEngine_Heli(true);
@@ -710,7 +716,7 @@ void AVehicle_Base::SetupDriver()
 
 void AVehicle_Base::DropDriver()
 {
-	StopEngine();			//shutdown engine
+	StopEngine();	//clears movement timer
 	
 	switch (VehicleData->MovementType)
 	{
@@ -848,6 +854,20 @@ void AVehicle_Base::UpdateEngineAudio()
 	}
 }
 
+void AVehicle_Base::UpdateEngine_GV(bool StartEngine, int32 SeatIndex)
+{
+	FTimerDelegate EngineUpdateDelegate;
+	EngineUpdateDelegate.BindWeakLambda(this, [this, SeatIndex]()
+	{
+		this->UpdateEngineAudio();
+		if (VehicleCurrentState.SeatStates[SeatIndex].UpdateHUD)
+		{
+			UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateSpeedHUD_Vehicle(GetVelocity().Size());	
+		}
+	});
+	GetWorldTimerManager().SetTimer(EngineUpdateTimer, EngineUpdateDelegate, GetWorld()->GetDeltaSeconds(), true);
+}
+
 void AVehicle_Base::UpdateEngine_Heli(bool Spinup)
 {
 	//should only be called once on enter driver seat/startup heli
@@ -916,21 +936,6 @@ void AVehicle_Base::HandleApplyThrottle_GV(float RawInputValue, int32 SeatIndex)
     {
         UpdateThrottle_GV_Reverse(RawInputValue);
     }
-	
-	if (VehicleCurrentState.SeatStates[SeatIndex].UpdateHUD)
-	{
-		//UpdateSpeed
-		if (GetVelocity().Size() <= 0.f && SpeedTimer.IsValid())
-		{
-			GetWorld()->GetTimerManager().ClearTimer(SpeedTimer);
-			return; 
-		}
-		if (SpeedTimer.IsValid())	{return; }
-		GetWorld()->GetTimerManager().SetTimer(SpeedTimer, [this]()
-		{
-			UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateSpeedHUD_Vehicle(GetVelocity().Size());		
-		}, GetWorld()->GetDeltaSeconds(), true);
-	}
 }
 
 void AVehicle_Base::UpdateThrottle_GV_Forward(float InputValue)
@@ -1154,7 +1159,6 @@ void AVehicle_Base::HandlePitchInput_Jet(float InputValue)
 void AVehicle_Base::HandleRollInput_Jet(float InputValue)
 {
 	auto& AircraftState = VehicleCurrentState.AircraftState;
-	auto& JetState = AircraftState.JetState;
 	auto& JetData = VehicleData->Jet_Data;
 	switch (JetData.FlightModelType)
 	{
@@ -1380,7 +1384,7 @@ void AVehicle_Base::ToggleRemoteViewMode(int32 SeatIndex)
 void AVehicle_Base::StartEngine()
 {
 	//start engine audio
-	UGameplayStatics::SpawnSoundAttached( Cast<USoundBase>(VehicleData->GenericVehicleAudio.EngineStartupAudio), GetRootComponent());
+	UGameplayStatics::SpawnSoundAttached(Cast<USoundBase>(VehicleData->GenericVehicleAudio.EngineStartupAudio), GetRootComponent());
 	VehicleCurrentState.GenericVehicleState.EngineAudioComponent->SetSound(Cast<USoundBase>(VehicleData->GenericVehicleAudio.EngineAudio));
 	VehicleCurrentState.GenericVehicleState.EngineAudioComponent->Play();
 }

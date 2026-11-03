@@ -738,23 +738,22 @@ void UVehicleLoadoutManager::CalculateAimDirection(TWeakObjectPtr<USkeletalMeshC
 			//CALCULATE AIM DIRECTION
 			AimDirections[MI] = UBS2FunctionLibrary::CalculateFinalAimDirection(HitResult, MuzzleTransform, GetOwner(), MaxInward, MaxOutward);
 			
-			//Debug 
-			FVector RawAimDirection = UBS2FunctionLibrary::CalculateRawAimDirection(HitResult, MuzzleLocation);
-			float InwardSign = UBS2FunctionLibrary::GetInwardSign(MuzzleLocation, GetOwner());
+			if (GetOwnerVehicle()->DebugLoadout)
+			{
+				//Debug 
+				FVector RawAimDirection = UBS2FunctionLibrary::CalculateRawAimDirection(HitResult, MuzzleLocation);
+				float InwardSign = UBS2FunctionLibrary::GetInwardSign(MuzzleLocation, GetOwner());
 			
-			const FVector InwardLateralDir = GetOwner()->GetActorRightVector() * InwardSign;
-			const FVector OutwardLateralDir = -InwardLateralDir;
-			const FVector InwardBoundaryDir = (MuzzleForward * FMath::Cos(FMath::DegreesToRadians(MaxInward)) + InwardLateralDir * FMath::Sin(FMath::DegreesToRadians(MaxInward))).GetSafeNormal();
-			const FVector OutwardBoundaryDir = (MuzzleForward * FMath::Cos(FMath::DegreesToRadians(MaxOutward)) + OutwardLateralDir * FMath::Sin(FMath::DegreesToRadians(MaxOutward))).GetSafeNormal();
-			
-			DrawDebugLine(GetWorld(), MuzzleLocation, MuzzleLocation + MuzzleForward * 100000, FColor::White, false, -1.f, 0, 1.0f);       // cone axis
-			DrawDebugLine(GetWorld(), MuzzleLocation, MuzzleLocation + InwardBoundaryDir * 100000, FColor::Red, false, -1.f, 0, 1.0f);     // inward limit (toward hull)
-			DrawDebugLine(GetWorld(), MuzzleLocation, MuzzleLocation + OutwardBoundaryDir * 100000, FColor::Cyan, false, -1.f, 0, 1.0f);   // outward limit
-			DrawDebugLine(GetWorld(), MuzzleLocation, MuzzleLocation + RawAimDirection * 100000, FColor::Yellow, false, -1.f, 0, 1.0f);    // pre-clamp target direction
-			DrawDebugLine(GetWorld(), MuzzleLocation, MuzzleLocation + AimDirections[MI] * 100000, FColor::Green, false, -1.f, 0, 2.5f);		//actu shot direction
-
-			// DEBUG: Draw the convergence line
-			//UWeaponFunctions::Debug_ProjectilePath(GetWorld(), MuzzleTransform.GetLocation(), HitResult);
+				const FVector InwardLateralDir = GetOwner()->GetActorRightVector() * InwardSign;
+				const FVector OutwardLateralDir = -InwardLateralDir;
+				const FVector InwardBoundaryDir = (MuzzleForward * FMath::Cos(FMath::DegreesToRadians(MaxInward)) + InwardLateralDir * FMath::Sin(FMath::DegreesToRadians(MaxInward))).GetSafeNormal();
+				const FVector OutwardBoundaryDir = (MuzzleForward * FMath::Cos(FMath::DegreesToRadians(MaxOutward)) + OutwardLateralDir * FMath::Sin(FMath::DegreesToRadians(MaxOutward))).GetSafeNormal();
+				DrawDebugLine(GetWorld(), MuzzleLocation, MuzzleLocation + MuzzleForward * 100000, FColor::White, false, -1.f, 0, 1.0f);       // cone axis
+				DrawDebugLine(GetWorld(), MuzzleLocation, MuzzleLocation + InwardBoundaryDir * 100000, FColor::Red, false, -1.f, 0, 1.0f);     // inward limit (toward hull)
+				DrawDebugLine(GetWorld(), MuzzleLocation, MuzzleLocation + OutwardBoundaryDir * 100000, FColor::Cyan, false, -1.f, 0, 1.0f);   // outward limit
+				DrawDebugLine(GetWorld(), MuzzleLocation, MuzzleLocation + RawAimDirection * 100000, FColor::Yellow, false, -1.f, 0, 1.0f);    // pre-clamp target direction
+				DrawDebugLine(GetWorld(), MuzzleLocation, MuzzleLocation + AimDirections[MI] * 100000, FColor::Green, false, -1.f, 0, 2.5f);		//actu shot direction
+			}
 		}
 	}
 	else
