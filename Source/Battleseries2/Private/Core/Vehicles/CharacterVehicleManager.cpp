@@ -222,15 +222,18 @@ void UCharacterVehicleManager::StartEnterSeat()
 void UCharacterVehicleManager::CharacterEnterSeat(const FCharacterSeatContext& SeatContext)
 {
 	//if Vehicle RC Data does actually become a thing, Character transform should not be set (block switch behind if)
-	
 	if (!GetCurrentVehicle()->VehicleData->bCanRemoteControl)
 	{
 		switch (GetCurrentSeatDefinition().SeatRole)
 		{
 			case ESeatRole::Driver:
 			case ESeatRole::Passenger:
-				GetOwnerCharacter()->SetActorRelativeTransform(SeatContext.SeatTransform);
-				break;
+				{
+					FString FormattedString = FString::Printf(TEXT("CharacterAttach_%02d"), GetCSI());
+					GetOwnerCharacter()->AttachToComponent(GetCurrentVehicle()->GetRootComponent(), FAttachmentTransformRules::SnapToTargetIncludingScale, FName(*FormattedString));
+					//GetOwnerCharacter()->SetActorRelativeTransform(SeatContext.SeatTransform);
+					break;
+				}
 			case ESeatRole::DriverGunner:
 			case ESeatRole::Gunner:
 				HandleEnterSeat_Gunner(SeatContext);
@@ -274,7 +277,9 @@ void UCharacterVehicleManager::HandleEnterSeat_Gunner(const FCharacterSeatContex
 	}
 	else
 	{
-		GetOwnerCharacter()->SetActorRelativeTransform(SeatContext.SeatTransform);
+		//GetOwnerCharacter()->SetActorRelativeTransform(SeatContext.SeatTransform);
+		FString FormattedString = FString::Printf(TEXT("CharacterAttach_%02d"), GetCSI());
+		GetOwnerCharacter()->AttachToComponent(GetCurrentVehicle()->GetRootComponent(), FAttachmentTransformRules::SnapToTargetIncludingScale, FName(*FormattedString));
 	}
 }
 

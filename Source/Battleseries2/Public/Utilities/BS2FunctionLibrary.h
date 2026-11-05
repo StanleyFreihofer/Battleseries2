@@ -144,6 +144,9 @@ public:
 	static FTransform CalculateIKTargetInVehicle(FName SocketName, USkeletalMeshComponent* VehicleMesh, USkeletalMeshComponent* CharacterMesh);
 	
 	UFUNCTION(BlueprintCallable)
+	static TArray<FVector2D> CreateTurretStates(AVehicle_Base* Vehicle);
+	
+	UFUNCTION(BlueprintCallable)
 	static void UpdateGadgetInventory(FGadgetState& Gadget, int32 InventoryDelta, int32 MaxInventoryCount);
 
 	UFUNCTION(BlueprintCallable, Category = "Battleseries | Optic Functions")

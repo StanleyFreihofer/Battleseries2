@@ -19,10 +19,9 @@ struct FSeatState
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	UWidgetComponent* SeatHUDComponent = nullptr;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
-	UCameraComponent* DefaultCamera = nullptr;		//the safety, the camera that should be there no matter what weapon or whatever is equipped
-
 	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
+	UCameraComponent* DefaultCamera = nullptr;		
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
 	USpringArmComponent* TPSpringArm = nullptr;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")

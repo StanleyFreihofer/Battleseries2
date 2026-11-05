@@ -1372,12 +1372,18 @@ void AVehicle_Base::ToggleRemoteViewMode(int32 SeatIndex)
 	if (SeatState.DefaultCamera && SeatState.DefaultCamera->IsActive())
 	{
 		UpdateSeatActiveCamera(SeatIndex, SeatState.TPCamera);
-		UBS2FunctionLibrary::GetHUDSubsystem(this)->CurrentVehicleHMD.Get()->SetVisibility(ESlateVisibility::Hidden);
+		if (UBS2FunctionLibrary::GetHUDSubsystem(this)->CurrentVehicleHMD.Get())
+		{
+			UBS2FunctionLibrary::GetHUDSubsystem(this)->CurrentVehicleHMD.Get()->SetVisibility(ESlateVisibility::Hidden);
+		}
 	}
 	else if (SeatState.TPCamera && SeatState.TPCamera->IsActive())
 	{
 		UpdateSeatActiveCamera(SeatIndex, SeatState.DefaultCamera);
-		UBS2FunctionLibrary::GetHUDSubsystem(this)->CurrentVehicleHMD.Get()->SetVisibility(ESlateVisibility::Visible);
+		if (UBS2FunctionLibrary::GetHUDSubsystem(this)->CurrentVehicleHMD.Get())
+		{
+			UBS2FunctionLibrary::GetHUDSubsystem(this)->CurrentVehicleHMD.Get()->SetVisibility(ESlateVisibility::Visible);
+		}
 	}
 }
 
@@ -1414,7 +1420,7 @@ void AVehicle_Base::GetTurretPitchRange(int32 TurretIndex, float& OutMin, float&
 {
 	OutMin = VehicleData->Turrets[TurretIndex].TurretPitch.TurretMinMax.GetLowerBoundValue();
 	OutMax = VehicleData->Turrets[TurretIndex].TurretPitch.TurretMinMax.GetUpperBoundValue();
-	OutCurrent = VehicleLoadoutManager->TurretStates[TurretIndex].CurrentTurretPitch;
+	OutCurrent = VehicleLoadoutManager->TurretStates[TurretIndex].Y;
 }
 
 UCameraComponent* AVehicle_Base::GetSeatWeaponCam(int32 SeatIndex)

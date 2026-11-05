@@ -68,16 +68,6 @@ struct FVehicleWeapon_Runtime						//defines an entire weapon on the vehicle
 	FVehicleWeaponInstanceData VehicleWeaponInstanceData = FVehicleWeaponInstanceData();
 };
 
-USTRUCT(BlueprintType)
-struct FTurretState
-{
-	GENERATED_BODY()
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float CurrentTurretRotation = 0.0f;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float CurrentTurretPitch = 0.0f;
-};
 
 USTRUCT(BlueprintType)
 struct FSeatWeaponSystemState
@@ -144,7 +134,7 @@ public:
 	//countermeasures
 	//upgrades
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)		//either the rotation of the bone on the vehicle or the separate mesh here
-	TArray<FTurretState> TurretStates;
+	TArray<FVector2D> TurretStates;
 
 
 	UPROPERTY(BlueprintAssignable, Category = "Event Dispatchers")

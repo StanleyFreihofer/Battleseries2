@@ -106,7 +106,7 @@ void UVehicleLoadoutManager::Init_WAC(int32 SeatIndex)
 
 void UVehicleLoadoutManager::Init_Turrets(int32 NumOfTurrets)
 {
-	TurretStates.SetNum(NumOfTurrets);
+	TurretStates.Init(FVector2D::ZeroVector, NumOfTurrets);
 }
 
 #pragma endregion
@@ -525,14 +525,14 @@ void UVehicleLoadoutManager::ControlTurret(FVector2D InputValue, int32 SeatIndex
 	}
 	const int32 ControlledTurretIndex = VehicleTypeSeatDefinition.ControlledTurretIndexes[0];
 	const FTurretData& TurretData = VehicleData.Turrets[ControlledTurretIndex];
-	FTurretState& TurretState = TurretStates[ControlledTurretIndex];
-	float PreviousTurretRotation = TurretState.CurrentTurretRotation;
-	float PreviousTurretPitch = TurretState.CurrentTurretPitch;
+	FVector2D& TurretState = TurretStates[ControlledTurretIndex];
+	float PreviousTurretRotation = TurretState.X;
+	float PreviousTurretPitch = TurretState.Y;
 	float PitchMin = 0.0f;
 	float PitchMax = 0.0f;
 
 	//rotation
-	float RotRaw = CalculateTurret(InputValue.X, TurretData.TurretRotation.TurretSpeed, TurretState.CurrentTurretRotation);
+	float RotRaw = CalculateTurret(InputValue.X, TurretData.TurretRotation.TurretSpeed, TurretState.X);
 
 	const bool RotHasMin = TurretData.TurretRotation.TurretMinMax.HasLowerBound();
 	const bool RotHasMax = TurretData.TurretRotation.TurretMinMax.HasUpperBound();
@@ -551,7 +551,7 @@ void UVehicleLoadoutManager::ControlTurret(FVector2D InputValue, int32 SeatIndex
 	}
 
 	//pitch
-	float PitchRaw = CalculateTurret(InputValue.Y, TurretData.TurretPitch.TurretSpeed, TurretState.CurrentTurretPitch);
+	float PitchRaw = CalculateTurret(InputValue.Y, TurretData.TurretPitch.TurretSpeed, TurretState.Y);
 
 	const bool PitchHasMin = TurretData.TurretPitch.TurretMinMax.HasLowerBound();
 	const bool PitchHasMax = TurretData.TurretPitch.TurretMinMax.HasUpperBound();
@@ -570,8 +570,8 @@ void UVehicleLoadoutManager::ControlTurret(FVector2D InputValue, int32 SeatIndex
 	}
 
 	// Update state
-	TurretState.CurrentTurretRotation = NewTurretRotation;
-	TurretState.CurrentTurretPitch = NewTurretPitch;
+	TurretState.X = NewTurretRotation;
+	TurretState.Y = NewTurretPitch;
 
 	//if separate mesh, update mesh/mesh's anim bp
 	UpdateTurretMesh(SeatIndex, NewTurretRotation, NewTurretPitch);
@@ -1679,7 +1679,7 @@ TWeakObjectPtr<AActor> UVehicleLoadoutManager::GetCurrentViewTargetAtSeatIndex(i
 float UVehicleLoadoutManager::GetTurretWorldYaw(int32 TurretIndex)
 {
 	UE_LOG(LogTemp, Warning, TEXT("[VWLC::GetTurretWorldYaw] TurretIndex = %d"), TurretIndex);
-	const FTurretState& TurretState = TurretStates[TurretIndex];
+	const FVector2D& TurretState = TurretStates[TurretIndex];
 	const FTurretData& TurretData = OwnerDataAccessor->GetVehicleData().Turrets[TurretIndex];
 	float HullWorldYaw = OwnerDataAccessor->GetVehicle().GetActorRotation().Yaw;
 
@@ -1691,7 +1691,7 @@ float UVehicleLoadoutManager::GetTurretWorldYaw(int32 TurretIndex)
 	const bool& ProjectilesMounted = GetVWID(SI, GetCWIForSeat(SI), VehicleWeaponSystem.Find(SI)->Weapons[GetCWIForSeat(SI)].VehicleWeaponState.BaseWeaponRuntimeData.WeaponID).bAreProjectilesMounted;
 	if (ProjectilesMounted)
 	{
-		return TurretState.CurrentTurretRotation;
+		return TurretState.X;
 	}
 	else
 	{
@@ -1708,7 +1708,7 @@ float UVehicleLoadoutManager::GetTurretWorldYaw(int32 TurretIndex)
 		else
 		{
 			//turret part of vehicle mesh
-			TurretWorldYaw = TurretState.CurrentTurretRotation;
+			TurretWorldYaw = TurretState.X;
 			return TurretWorldYaw;
 		}
 	}

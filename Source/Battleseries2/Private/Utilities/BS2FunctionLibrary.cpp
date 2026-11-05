@@ -10,6 +10,8 @@
 #include "Data/Items/Weapons/WeaponTypes.h"
 #include "Data/Items/Weapons/ProjectileTypes.h"
 #include "Utilities/BS2FunctionLibrary.h"
+
+#include "Vehicle_Base.h"
 #include "Utilities/DataManagerSubsystem.h"
 #include "Utilities/ProjectilePoolSubsystem.h"
 #include "Utilities/HUDSubsystem.h"
@@ -18,6 +20,7 @@
 #include "Components/AudioComponent.h"
 #include "Camera/CameraComponent.h"
 #include "Core/Weapons/I_LockOnTarget.h"
+#include "Core/Weapons/VehicleLoadoutManager.h"
 #include "Core/Weapons/Projectiles/Projectile_Base.h"
 #include "Data/Items/Gadgets/GadgetTypes.h"
 #include "Data/Items/Weapons/Data_Projectile.h"
@@ -590,6 +593,8 @@ void UBS2FunctionLibrary::SetupMunitionGuidance(TWeakObjectPtr<AProjectile_Base>
 	}
 }
 
+#pragma endregion 
+
 float UBS2FunctionLibrary::UpdateRotorOffset(float DeltaTime, float RotorRPM, float CurrentOffset)
 {
 	float A = (DeltaTime * RotorRPM) + CurrentOffset;
@@ -623,7 +628,11 @@ FTransform UBS2FunctionLibrary::CalculateIKTargetInVehicle(FName SocketName, USk
 	return FTransform (SocketRelative.GetRotation(), SocketWorld.GetLocation(), SocketWorld.GetScale3D());
 }
 
-#pragma endregion 
+TArray<FVector2D> UBS2FunctionLibrary::CreateTurretStates(AVehicle_Base* Vehicle)
+{
+	if (!Vehicle || !Vehicle->VehicleLoadoutManager) { return TArray<FVector2D>(); }
+	return Vehicle->VehicleLoadoutManager->TurretStates;
+}
 
 void UBS2FunctionLibrary::UpdateGadgetInventory(FGadgetState& Gadget, int32 InventoryDelta, int32 MaxInventoryCount)
 {
