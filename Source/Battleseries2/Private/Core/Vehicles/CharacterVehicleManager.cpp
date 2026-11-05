@@ -273,7 +273,7 @@ void UCharacterVehicleManager::HandleEnterSeat_Gunner(const FCharacterSeatContex
 		TWeakObjectPtr<USkeletalMeshComponent> WeaponMesh = VWLC->VehicleWeaponSystem.Find(GetCSI())->SeatWeaponSystemState.WeaponSystemMesh;
 		FAttachmentTransformRules AttachmentRules(EAttachmentRule::SnapToTarget, false);
 		GetOwnerCharacter()->GetRootComponent()->AttachToComponent(WeaponMesh.Get(), AttachmentRules, FName("Test"));
-		GetOwnerCharacter()->SetActorRelativeTransform(VWID.AttachmentInstanceData.CharacterTransform);
+		//GetOwnerCharacter()->SetActorRelativeTransform(VWID.AttachmentInstanceData.CharacterTransform);
 	}
 	else
 	{

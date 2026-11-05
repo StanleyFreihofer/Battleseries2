@@ -3,8 +3,6 @@
 #pragma once
 
 #include "CoreMinimal.h"
-
-#include "Components/SpotLightComponent.h"
 #include "Data/Characters/CharacterEnums.h"
 #include "Data/Items/Weapons/WeaponEnums.h"
 #include "Data/Vehicles/VehicleEnums.h"
@@ -82,10 +80,10 @@ struct FVehicleWeaponInstanceData
 	EFireMethod FireMethod = EFireMethod::Default;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	float MaxInwardAngle = -1.f;
+	float MaxInwardAngle = 5.f;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	float MaxOutwardAngle = -1.f;
+	float MaxOutwardAngle = 5.f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	bool bAreProjectilesMounted = false;
@@ -223,8 +221,8 @@ struct FCharacterSeatContext
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (EditCondition = "SeatHUD != nullptr", EditConditionHides = true))
 	FVector2D SeatHUDDrawSize = FVector2D();
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	FTransform SeatTransform = FTransform();
+	//UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	//FTransform SeatTransform = FTransform();
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TSubclassOf<UAnimInstance> SeatABP_FP = nullptr;
@@ -232,20 +230,14 @@ struct FCharacterSeatContext
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TSubclassOf<UAnimInstance> SeatABP_3P = nullptr;
 	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	EControlRotationMethod CharacterRotationMethod = EControlRotationMethod::None;
+	//UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	//EControlRotationMethod CharacterRotationMethod = EControlRotationMethod::None;
 };
 
 USTRUCT(BlueprintType)
 struct FSeatData
 {
 	GENERATED_BODY()
-
-	//UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (tooltip = "also used for the attaching of player character to socket on vehicle mesh"))
-	//FText SeatName = FText::GetEmpty();
-
-	//UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	//E_SeatRole SeatRole = E_SeatRole::Driver;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	E_ViewMethod ViewMethod = E_ViewMethod::Windowed;
