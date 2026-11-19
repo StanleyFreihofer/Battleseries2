@@ -124,12 +124,6 @@ void AVehicle_Base::Init_GroundVehicle()
 	
 	Init_Chaos_VehicleSetup(VehicleData->GroundVehicle_Data.VehicleSetup);
 	Init_Chaos_VehicleInput(VehicleData->GroundVehicle_Data.VehicleInput);
-	
-	/**
-	//Yaw Input Rate
-	ChaosVehicleMovement->YawInputRate.RiseRate = VehicleData->GroundVehicle_Data.VehicleInput.YawInputRate.RiseRate;
-	ChaosVehicleMovement->YawInputRate.FallRate = VehicleData->GroundVehicle_Data.VehicleInput.YawInputRate.FallRate;
-	**/
 
 	//allows the vehicle/chaos vehicle to actually simulate physics properly
 	HandleChaosMovement(true);
@@ -180,12 +174,18 @@ void AVehicle_Base::Init_Chaos_VehicleInput(const FVehicleInput& VehicleInput)
 	ChaosVehicleMovement->YawInputRate = VehicleInput.YawInputRate;
 }
 
-void AVehicle_Base::Init_EngineAudio()
+void AVehicle_Base::Init_VehicleAudio()
 {
+	VehicleCurrentState.GenericVehicleState.EngineAudioComponent = UBS2FunctionLibrary::CreateAudioComp(this, GetOwner(), GetOwner()->GetRootComponent(), VehicleData->GenericVehicleAudio.ExteriorMetaSoundPreset);
+	VehicleCurrentState.GenericVehicleState.InteriorAudioComponent = UBS2FunctionLibrary::CreateAudioComp(this, GetOwner(), GetOwner()->GetRootComponent(), VehicleData->GenericVehicleAudio.InteriorMetaSoundPreset);
+	VehicleCurrentState.GenericVehicleState.InteriorAudioComponent->bAllowSpatialization = false;
+	VehicleCurrentState.GenericVehicleState.InteriorAudioComponent->AttenuationSettings = nullptr;
+	/**
 	VehicleCurrentState.GenericVehicleState.EngineAudioComponent = NewObject<UAudioComponent>(this, UAudioComponent::StaticClass());
 	VehicleCurrentState.GenericVehicleState.EngineAudioComponent->SetupAttachment(GetRootComponent());
 	VehicleCurrentState.GenericVehicleState.EngineAudioComponent->RegisterComponent();
 	VehicleCurrentState.GenericVehicleState.EngineAudioComponent->SetActive(true);
+	**/
 }
 
 void AVehicle_Base::Init_Helicopter()
@@ -339,7 +339,7 @@ void AVehicle_Base::Init_VehicleAnim(TSubclassOf<UAnimInstance> Anim_Class)
 
 void AVehicle_Base::Init_VehicleData()			//(load vehicle data)
 {
-	//1. load base vehicle data row
+	//1. fill vehicle data
 	VehicleData = UBS2FunctionLibrary::GetDataSubsystem(this)->GetVehicleDataRow(VehicleStartingData.VehicleID);
 	VehicleTypeDefintion = UBS2FunctionLibrary::GetDataSubsystem(this)->GetVehicleDefaults()->VehicleTypeDefintions.Find(VehicleData->Vehicle_Type);
 
@@ -367,7 +367,8 @@ void AVehicle_Base::Init_DetermineVehicleBuildBehavior()
 void AVehicle_Base::Init_Vehicle()
 {
 	Init_VehicleMesh(VehicleData->Vehicle_Mesh.Get());
-	Init_EngineAudio();
+	Init_VehicleAudio();
+
 	Init_Seats();
 	VehicleLoadoutManager->Init_VehicleWeaponSystem(VehicleStartingData.StartingVehicleLoadout.SeatLoadout);		//weapons and turrets
 	switch (VehicleData->MovementType)
@@ -635,6 +636,7 @@ void AVehicle_Base::HandleOccupySeat(bool Occupy, bool LocalHuman, int32 SeatInd
 {
 	VehicleCurrentState.SeatStates[SeatIndex].isOccupied = Occupy;
 	VehicleCurrentState.SeatStates[SeatIndex].UpdateHUD = LocalHuman;
+	RefreshOccupantAudio();
 }
 
 void AVehicle_Base::DropSeat(int32 SeatIndex)
@@ -843,15 +845,46 @@ void AVehicle_Base::UpdateEngineAudio()
 	switch (VehicleData->MovementType)
 	{
 		case EMovementType::GroundVehicle:
-			VehicleCurrentState.GenericVehicleState.EngineAudioComponent->SetFloatParameter(FName("RPM"), FMath::Abs(ChaosVehicleMovement->GetEngineRotationSpeed()));
-			VehicleCurrentState.GenericVehicleState.EngineAudioComponent->SetFloatParameter(FName("Speed"), FMath::Abs(ChaosVehicleMovement->GetForwardSpeed() * 0.036f));
-			break;
+			{
+				const float Throttle = ChaosVehicleMovement->GetCurrentGear() < 0 ? ChaosVehicleMovement->GetBrakeInput() : ChaosVehicleMovement->GetThrottleInput();
+				const float Speed = GetCurrentSpeed_Chaos() / 60.f;
+				const float RPM = ChaosVehicleMovement->GetEngineRotationSpeed() / ChaosVehicleMovement->EngineSetup.MaxRPM;
+				//exterior
+				VehicleCurrentState.GenericVehicleState.EngineAudioComponent->SetFloatParameter(FName("State_RPM"), FMath::Clamp(RPM, 0.f, 1.f));
+				VehicleCurrentState.GenericVehicleState.EngineAudioComponent->SetFloatParameter(FName("State_Speed"), FMath::Clamp(Speed, 0.f, 1.f));
+				VehicleCurrentState.GenericVehicleState.EngineAudioComponent->SetFloatParameter(FName("State_Throttle"), FMath::Clamp(FMath::Abs(Throttle), 0.f, 1.f));
+				//INTERIOR
+				VehicleCurrentState.GenericVehicleState.InteriorAudioComponent->SetFloatParameter(FName("State_RPM"), FMath::Clamp(RPM, 0.f, 1.f));
+				VehicleCurrentState.GenericVehicleState.InteriorAudioComponent->SetFloatParameter(FName("State_Speed"), FMath::Clamp(Speed, 0.f, 1.f));
+				VehicleCurrentState.GenericVehicleState.InteriorAudioComponent->SetFloatParameter(FName("State_Throttle"), FMath::Clamp(FMath::Abs(Throttle), 0.f, 1.f));
+				break;
+			}
 		case EMovementType::Helicopter:
 			//update rotor audio
 			VehicleCurrentState.GenericVehicleState.EngineAudioComponent->SetFloatParameter(FName("Volume"), VehicleCurrentState.AircraftState.HelicopterState.RotorRPMs[0]);			//GetVelocity().Size()
 			VehicleCurrentState.GenericVehicleState.InteriorAudioComponent->SetFloatParameter(FName("Pitch"), VehicleCurrentState.AircraftState.HelicopterState.RotorRPMs[0]);
 			break;
 	}
+}
+
+void AVehicle_Base::RefreshOccupantAudio()
+{
+	UAudioComponent* Ext = VehicleCurrentState.GenericVehicleState.EngineAudioComponent;
+	UAudioComponent* Int = VehicleCurrentState.GenericVehicleState.InteriorAudioComponent;
+	const bool bLocalInside = IsLocalHumanAboard();
+
+	if (Int && bLocalInside )
+	{
+		if (!Int->IsPlaying()) { Int->Play(); Int->SetTriggerParameter(FName("Event_Start")); }
+		Int->AdjustVolume(0.3f, 1.f);
+	}
+	else if (Int)
+	{
+		Int->AdjustVolume(0.3f, 0.f);
+	}
+	if (Ext) { Ext->SetVolumeMultiplier(bLocalInside ? 0.f : 1.f); }
+	//if (Ext) { Ext->AdjustVolume(0.3f, bLocalInside ? 0.f : 1.f); }
+	if (Ext && !bLocalInside && !Ext->IsPlaying()) { Ext->Play(); Ext->SetTriggerParameter(FName("Event_Start")); }
 }
 
 void AVehicle_Base::UpdateEngine_GV(bool StartEngine, int32 SeatIndex)
@@ -911,6 +944,8 @@ void AVehicle_Base::UpdateRotorRPM(bool SpinUp)
 #pragma region MovementInput
 
 #pragma region GroundVehicleInput
+
+#pragma region GroundVehicleThrottleInput
 
 void AVehicle_Base::HandleApplyThrottle_GV(float RawInputValue, int32 SeatIndex)
 {
@@ -976,6 +1011,8 @@ void AVehicle_Base::UpdateThrottle_GV_Stop(int32 SeatIndex)
 	ChaosVehicleMovement->SetThrottleInput(0.0f);
 	ChaosVehicleMovement->SetBrakeInput(0.0f);
 }
+
+#pragma endregion
 
 void AVehicle_Base::Input_UpdateSteering_GV(float SteeringValue, int32 SeatIndex)
 {
@@ -1391,16 +1428,22 @@ void AVehicle_Base::StartEngine()
 {
 	//start engine audio
 	UGameplayStatics::SpawnSoundAttached(Cast<USoundBase>(VehicleData->GenericVehicleAudio.EngineStartupAudio), GetRootComponent());
-	VehicleCurrentState.GenericVehicleState.EngineAudioComponent->SetSound(Cast<USoundBase>(VehicleData->GenericVehicleAudio.EngineAudio));
-	VehicleCurrentState.GenericVehicleState.EngineAudioComponent->Play();
+	
+	VehicleCurrentState.GenericVehicleState.EngineAudioComponent.Get()->Activate();
+	VehicleCurrentState.GenericVehicleState.EngineAudioComponent.Get()->SetTriggerParameter(FName("Event_Start"));
+	VehicleCurrentState.GenericVehicleState.InteriorAudioComponent.Get()->Activate();
+	VehicleCurrentState.GenericVehicleState.InteriorAudioComponent.Get()->SetTriggerParameter(FName("Event_Start"));
+	RefreshOccupantAudio();
 }
 
 void AVehicle_Base::StopEngine()
 {
 	//shutdown engine audio
-	VehicleCurrentState.GenericVehicleState.EngineAudioComponent->Stop();
+	VehicleCurrentState.GenericVehicleState.EngineAudioComponent.Get()->SetTriggerParameter(FName("Event_Stop"));
+	VehicleCurrentState.GenericVehicleState.InteriorAudioComponent.Get()->SetTriggerParameter(FName("Event_Stop"));
 	GetWorldTimerManager().ClearTimer(EngineUpdateTimer);
 	UGameplayStatics::SpawnSoundAttached(VehicleData->GenericVehicleAudio.EngineShutdownAudio, GetRootComponent());
+	RefreshOccupantAudio();
 }
 
 #pragma endregion
@@ -1461,6 +1504,15 @@ const FVehicleTypeSeatDefinition& AVehicle_Base::GetVehicleTypeSeatDefinition(in
 const FSeatData& AVehicle_Base::GetSeatData(int32 SeatIndex)
 {
 	return VehicleData->Seats[SeatIndex];
+}
+
+bool AVehicle_Base::IsLocalHumanAboard() const
+{
+	for (const FSeatState& Seat : VehicleCurrentState.SeatStates)
+	{
+		if (Seat.UpdateHUD) { return true; }
+	}
+	return false;
 }
 
 float AVehicle_Base::GetCurrentSpeed()

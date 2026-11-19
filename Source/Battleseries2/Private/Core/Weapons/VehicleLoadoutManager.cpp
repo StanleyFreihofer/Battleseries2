@@ -99,7 +99,7 @@ void UVehicleLoadoutManager::Init_HUDReticleQuad(int32 SeatIndex)
 void UVehicleLoadoutManager::Init_WAC(int32 SeatIndex)
 {
 	FSeatWeaponSystem_Runtime NewSystem;
-	TWeakObjectPtr<UAudioComponent> NewAudioComp = UBS2FunctionLibrary::CreateWAC(this, GetOwner(), OwnerDataAccessor->GetMesh());
+	TWeakObjectPtr<UAudioComponent> NewAudioComp = UBS2FunctionLibrary::CreateAudioComp(this, GetOwner(), OwnerDataAccessor->GetMesh(), UBS2FunctionLibrary::GetDataSubsystem(this)->WeaponDefaultsDAAsset->WeaponDefaults.DefaultWeaponMetaSound);
 	NewSystem.SeatWeaponSystemState.WeaponAudioComponent = NewAudioComp;
 	VehicleWeaponSystem.Add(SeatIndex, NewSystem);
 }

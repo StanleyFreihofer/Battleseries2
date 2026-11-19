@@ -68,10 +68,10 @@ public:
 	UFUNCTION(Category = "Battleseries")
 	static TWeakObjectPtr<UStaticMeshComponent> CreateAndAttachStaticMesh(UObject* Owner, USceneComponent* AttachTarget, UStaticMesh* Mesh, FName SocketName, EFirstPersonPrimitiveType FPPrimitiveType, ECollisionEnabled::Type CollisionEnabled);
 	
-#pragma region WeaponFunctions
 	UFUNCTION(BlueprintCallable, Category = "Battleseries | Weapon Functions")
-	static UAudioComponent* CreateWAC(const UObject* WorldContextObject, AActor* Owner, USceneComponent* AttachTarget);
+	static UAudioComponent* CreateAudioComp(const UObject* WorldContextObject, AActor* Owner, USceneComponent* AttachTarget, TSoftObjectPtr<UMetaSoundSource> MetaSound);
 	
+#pragma region WeaponFunctions
 
     UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Battleseries | Weapon Functions")
     static float GetFireRate(float RateOfFire);

@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Engine/DataTable.h"
-#include "InputMappingContext.h"
+#include "MetasoundSource.h"
 #include "Sound/SoundCue.h"
 #include "ChaosVehicleWheel.h"
 #include "ChaosWheeledVehicleMovementComponent.h"
@@ -16,9 +16,12 @@ USTRUCT(BlueprintType)
 struct FGenericVehicleAudio
 {
 	GENERATED_BODY()
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Audio")
-	TObjectPtr<USoundCue> EngineAudio = nullptr;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	TSoftObjectPtr<UMetaSoundSource> ExteriorMetaSoundPreset = nullptr;       //used for both exterior and interior audio?
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	TSoftObjectPtr<UMetaSoundSource> InteriorMetaSoundPreset = nullptr;   
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Audio")
 	TObjectPtr<USoundCue> EngineStartupAudio = nullptr;
@@ -651,7 +654,7 @@ struct FVehicleData : public FTableRowBase
 	FText Vehicle_DisplayName = FText();
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	EMovementType MovementType = EMovementType::GroundVehicle;
+	EMovementType MovementType = EMovementType::GroundVehicle;		//move to defaults
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	EVehicleType Vehicle_Type = EVehicleType::Tank;

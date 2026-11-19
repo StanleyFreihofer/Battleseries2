@@ -181,7 +181,7 @@ void ULoadoutManager::Init_WeaponState(int32 WeaponIndex)
 
 void ULoadoutManager::Init_WAC()
 {
-	Loadout.WeaponSystem.WeaponAudioComponent = UBS2FunctionLibrary::CreateWAC(this, GetOwner(), GetOwner()->GetRootComponent());
+	Loadout.WeaponSystem.WeaponAudioComponent = UBS2FunctionLibrary::CreateAudioComp(this, GetOwner(), GetOwner()->GetRootComponent(), UBS2FunctionLibrary::GetDataSubsystem(this)->WeaponDefaultsDAAsset->WeaponDefaults.DefaultWeaponMetaSound);
 }
 
 void ULoadoutManager::Init_AttachmentMesh(FWeaponAttachmentState& RuntimeSlotState, FInfantryWeaponState& WeaponToApplyTo, EAttachmentSlot AttachmentSlot)

@@ -144,7 +144,7 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void Init_Chaos_VehicleInput(const FVehicleInput& VehicleInput);
 	UFUNCTION(BlueprintCallable)
-	void Init_EngineAudio();
+	void Init_VehicleAudio();
 	UFUNCTION(BlueprintCallable)
 	void Init_GroundVehicle();
 	UFUNCTION(BlueprintCallable)
@@ -241,6 +241,8 @@ public:
 	
 	UFUNCTION(BlueprintCallable)
 	void UpdateEngineAudio();
+	UFUNCTION(BlueprintCallable)
+	void RefreshOccupantAudio();
 	UFUNCTION(BlueprintCallable)
 	void UpdateEngine_GV(bool StartEngine, int32 SeatIndex);
 	UFUNCTION(BlueprintCallable)
@@ -340,6 +342,8 @@ public:
 	const FVehicleTypeSeatDefinition& GetVehicleTypeSeatDefinition(int32 SeatIndex);
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	const FSeatData& GetSeatData(int32 SeatIndex);
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	bool IsLocalHumanAboard() const;
 	UFUNCTION(BlueprintCallable)
 	float GetCurrentSpeed();
 	UFUNCTION(BlueprintCallable, BlueprintPure)

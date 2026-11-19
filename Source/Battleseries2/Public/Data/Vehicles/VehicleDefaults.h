@@ -148,6 +148,8 @@ struct FVehicleTypeDefinition        //entity type definition (store in core ins
 
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
     FText Description = FText::GetEmpty();
+    
+    //movement type
 
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
     TSoftObjectPtr<UTexture2D> TypeIcon = nullptr;               //minimap?

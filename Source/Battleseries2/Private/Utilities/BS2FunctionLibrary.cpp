@@ -205,13 +205,13 @@ TWeakObjectPtr<UStaticMeshComponent> UBS2FunctionLibrary::CreateAndAttachStaticM
 
 #pragma region WeaponFunctions
 
-UAudioComponent* UBS2FunctionLibrary::CreateWAC(const UObject* WorldContextObject, AActor* Owner, USceneComponent* AttachTarget)
+UAudioComponent* UBS2FunctionLibrary::CreateAudioComp(const UObject* WorldContextObject, AActor* Owner, USceneComponent* AttachTarget, TSoftObjectPtr<UMetaSoundSource> MetaSound)
 {
 	UAudioComponent* NewAudioComp = NewObject<UAudioComponent>(Owner);
 	NewAudioComp->SetupAttachment(AttachTarget);
 	NewAudioComp->RegisterComponent();
-	TSoftObjectPtr<UDA_WeaponDefaults> WeaponDefaults = GetDataSubsystem(WorldContextObject)->WeaponDefaultsDAAsset;
-	NewAudioComp->SetSound(WeaponDefaults->WeaponDefaults.DefaultWeaponMetaSound.LoadSynchronous());
+	//TSoftObjectPtr<UDA_WeaponDefaults> WeaponDefaults = GetDataSubsystem(WorldContextObject)->WeaponDefaultsDAAsset;
+	NewAudioComp->SetSound(MetaSound.LoadSynchronous());
 	NewAudioComp->bAutoActivate = false;
 	return NewAudioComp;
 }
@@ -221,7 +221,6 @@ float UBS2FunctionLibrary::GetFireRate(float RateOfFire)
 	RateOfFire = 60 / RateOfFire;
 	return RateOfFire;
 }
-
 
 bool UBS2FunctionLibrary::PerformWeaponSphereTrace(const UObject* WorldContextObject, const FTransform& StartTransform, FHitResult& OutHit, TArray<AActor*> ActorsToIgnore, float Radius, bool Debug)
 {

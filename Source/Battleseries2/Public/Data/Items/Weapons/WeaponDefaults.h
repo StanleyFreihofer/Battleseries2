@@ -16,7 +16,7 @@ struct FWeaponDefaults
 	TArray<TSoftObjectPtr<USoundWave>> ResupplyWeaponAmmoSFX;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	TSoftObjectPtr<UMetaSoundSource> DefaultWeaponMetaSound;
+	TSoftObjectPtr<UMetaSoundSource> DefaultWeaponMetaSound = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	TArray<FText> WeaponSlotNames;
