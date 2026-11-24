@@ -652,9 +652,6 @@ struct FVehicleData : public FTableRowBase
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	FText Vehicle_DisplayName = FText();
-	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	EMovementType MovementType = EMovementType::GroundVehicle;		//move to defaults
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	EVehicleType Vehicle_Type = EVehicleType::Tank;
@@ -692,13 +689,13 @@ struct FVehicleData : public FTableRowBase
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	TArray<FTurretData> Turrets;
 	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (EditCondition = "MovementType == EMovementType::GroundVehicle", EditConditionHides))
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	FGroundVehicleData GroundVehicle_Data = FGroundVehicleData();
 	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (EditCondition = "MovementType == EMovementType::Helicopter", EditConditionHides))
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	FHelicopterData Helicopter_Data = FHelicopterData();
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (EditCondition = "MovementType == EMovementType::Jet", EditConditionHides))
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	FJetData Jet_Data = FJetData();
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)

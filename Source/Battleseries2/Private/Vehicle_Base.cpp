@@ -180,22 +180,18 @@ void AVehicle_Base::Init_VehicleAudio()
 	VehicleCurrentState.GenericVehicleState.InteriorAudioComponent = UBS2FunctionLibrary::CreateAudioComp(this, GetOwner(), GetOwner()->GetRootComponent(), VehicleData->GenericVehicleAudio.InteriorMetaSoundPreset);
 	VehicleCurrentState.GenericVehicleState.InteriorAudioComponent->bAllowSpatialization = false;
 	VehicleCurrentState.GenericVehicleState.InteriorAudioComponent->AttenuationSettings = nullptr;
-	/**
-	VehicleCurrentState.GenericVehicleState.EngineAudioComponent = NewObject<UAudioComponent>(this, UAudioComponent::StaticClass());
-	VehicleCurrentState.GenericVehicleState.EngineAudioComponent->SetupAttachment(GetRootComponent());
-	VehicleCurrentState.GenericVehicleState.EngineAudioComponent->RegisterComponent();
-	VehicleCurrentState.GenericVehicleState.EngineAudioComponent->SetActive(true);
-	**/
 }
 
 void AVehicle_Base::Init_Helicopter()
 {
 	VehicleCurrentState.AircraftState.HelicopterState.RotorRPMs.Add(0.0f);
 
+	/**
 	VehicleCurrentState.GenericVehicleState.InteriorAudioComponent = NewObject<UAudioComponent>(this, UAudioComponent::StaticClass());
 	VehicleCurrentState.GenericVehicleState.InteriorAudioComponent->SetupAttachment(GetRootComponent());
 	VehicleCurrentState.GenericVehicleState.InteriorAudioComponent->RegisterComponent();
 	VehicleCurrentState.GenericVehicleState.InteriorAudioComponent->SetActive(true);
+	**/
 }
 
 void AVehicle_Base::Init_Jet_Chaos()
@@ -371,7 +367,7 @@ void AVehicle_Base::Init_Vehicle()
 
 	Init_Seats();
 	VehicleLoadoutManager->Init_VehicleWeaponSystem(VehicleStartingData.StartingVehicleLoadout.SeatLoadout);		//weapons and turrets
-	switch (VehicleData->MovementType)
+	switch (VehicleTypeDefintion->MovementType)
 	{
 		case EMovementType::GroundVehicle:
 			UE_LOG(LogTemp, Log, TEXT("GROUND VEHICLE SETUP STARTED"));
@@ -703,7 +699,7 @@ void AVehicle_Base::SetupDriver(int32 SeatIndex)
 {
 	StartEngine();		
 
-	switch (VehicleData->MovementType)
+	switch (VehicleTypeDefintion->MovementType)
 	{
 		case EMovementType::GroundVehicle:
 			UpdateEngine_GV(true, SeatIndex);
@@ -720,7 +716,7 @@ void AVehicle_Base::DropDriver()
 {
 	StopEngine();	//clears movement timer
 	
-	switch (VehicleData->MovementType)
+	switch (VehicleTypeDefintion->MovementType)
 	{
 		case EMovementType::Helicopter:
 			UpdateEngine_Heli(false);
@@ -842,7 +838,7 @@ void AVehicle_Base::DeactivateSeatCameras(int32 SeatIndex, int32 DeactivateCamMo
 
 void AVehicle_Base::UpdateEngineAudio()
 {
-	switch (VehicleData->MovementType)
+	switch (VehicleTypeDefintion->MovementType)
 	{
 		case EMovementType::GroundVehicle:
 			{
@@ -1373,7 +1369,7 @@ void AVehicle_Base::UpdateRoll_Jet_Arcade(float InputValue)
 
 void AVehicle_Base::Input_HandleApplyThrottle(float ThrottleValue, int32 SeatIndex)
 {
-	const EMovementType& MovementType = VehicleData->MovementType;
+	const EMovementType& MovementType = VehicleTypeDefintion->MovementType;
 	switch (MovementType)
 	{
 		case EMovementType::GroundVehicle:
@@ -1390,7 +1386,7 @@ void AVehicle_Base::Input_HandleApplyThrottle(float ThrottleValue, int32 SeatInd
 
 void AVehicle_Base::Input_HandleReleaseThrottle(int32 SeatIndex)
 {
-	const EMovementType& MovementType = VehicleData->MovementType;
+	const EMovementType& MovementType = VehicleTypeDefintion->MovementType;
 	switch (MovementType)
 	{
 		case EMovementType::GroundVehicle:
@@ -1575,13 +1571,13 @@ bool AVehicle_Base::GetIfCanLockOn_Implementation(const TArray<ETargetingCategor
 				switch (TargetingCategory)
 				{
 					case ETargetingCategory::GroundVehicle:
-						if (VehicleData->MovementType == EMovementType::GroundVehicle || VehicleData->MovementType == EMovementType::Boat)
+						if (VehicleTypeDefintion->MovementType == EMovementType::GroundVehicle || VehicleTypeDefintion->MovementType == EMovementType::Boat)
 						{
 							return true;
 						}
 						break;
 					case ETargetingCategory::Aircraft:
-						if (VehicleData->MovementType == EMovementType::Helicopter || VehicleData->MovementType == EMovementType::Jet)
+						if (VehicleTypeDefintion->MovementType == EMovementType::Helicopter || VehicleTypeDefintion->MovementType == EMovementType::Jet)
 						{
 							return true;
 						}

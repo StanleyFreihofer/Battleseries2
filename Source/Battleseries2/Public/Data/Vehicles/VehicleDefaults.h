@@ -149,7 +149,8 @@ struct FVehicleTypeDefinition        //entity type definition (store in core ins
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
     FText Description = FText::GetEmpty();
     
-    //movement type
+    UPROPERTY(EditAnywhere, BlueprintReadOnly)
+    EMovementType MovementType = EMovementType::GroundVehicle;	
 
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
     TSoftObjectPtr<UTexture2D> TypeIcon = nullptr;               //minimap?
@@ -168,8 +169,6 @@ struct FVehicleTypeDefinition        //entity type definition (store in core ins
         return SeatDefinitions.Num();
     }
 };
-
-
 
 UCLASS(BlueprintType)
 class BATTLESERIES2_API UDA_VehicleDefaults : public UDataAsset

@@ -42,6 +42,14 @@
 				"Win64",
 				"Mac"
 			]
+		},
+		{
+			"Name": "AH64_SoundSystem",
+			"Enabled": true
+		},
+		{
+			"Name": "WaveformEditor",
+			"Enabled": true
 		}
 	]
 }
