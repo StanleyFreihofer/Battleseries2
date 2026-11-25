@@ -18,7 +18,7 @@ struct FGenericVehicleAudio
 	GENERATED_BODY()
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	TSoftObjectPtr<UMetaSoundSource> ExteriorMetaSoundPreset = nullptr;       //used for both exterior and interior audio?
+	TSoftObjectPtr<UMetaSoundSource> ExteriorMetaSoundPreset = nullptr;     
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	TSoftObjectPtr<UMetaSoundSource> InteriorMetaSoundPreset = nullptr;   

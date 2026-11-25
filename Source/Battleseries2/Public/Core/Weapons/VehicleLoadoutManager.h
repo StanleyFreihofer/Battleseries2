@@ -54,6 +54,9 @@ struct FVehicleWeaponState
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
 	TArray<FDecorative_Runtime> VehicleWeaponDecoratives;
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	TWeakObjectPtr<UAudioComponent> WeaponAudioComponent = nullptr; // Persistent audio slot per seat weapon
 };
 
 USTRUCT(BlueprintType)
@@ -61,7 +64,7 @@ struct FVehicleWeapon_Runtime						//defines an entire weapon on the vehicle
 {
 	GENERATED_BODY()
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)					//get rid of this? merge all here?
 	FVehicleWeaponState VehicleWeaponState = FVehicleWeaponState();
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)			//cached for quick access, contains data that defines weapon context on vehicle
@@ -81,9 +84,6 @@ struct FSeatWeaponSystemState
 	TWeakObjectPtr<USkeletalMeshComponent> WeaponSystemMesh = nullptr;
 
 	//move weapon cam here (1 per weapon system/seat?)?
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
-	TWeakObjectPtr<UAudioComponent> WeaponAudioComponent = nullptr; // Persistent audio slot per seat
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	TWeakObjectPtr<UStaticMeshComponent> ReticleQuad = nullptr;

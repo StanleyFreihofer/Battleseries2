@@ -19,6 +19,6 @@ struct FVehicleWeaponData : public FTableRowBase
 	
 	//reload while unequipped?
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	FBaseWeaponData WeaponData;
+	FBaseWeaponData WeaponData = FBaseWeaponData();
 };
 

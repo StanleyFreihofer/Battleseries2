@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "Engine/DataTable.h"
 #include "NiagaraSystem.h"
+#include "MetasoundSource.h"
 #include "Data/Items/Weapons/WeaponEnums.h"
 #include "Data_Weapon.generated.h"
 
@@ -96,7 +97,7 @@ struct FWeaponFirePerformanceData
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	EWeaponFireType WeaponFireType = EWeaponFireType::Munition; 
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (EditConition = "WeaponFireType == EWeaponFireType::Munition", EditConditionHides = true))
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (EditCondition = "WeaponFireType == EWeaponFireType::Munition", EditConditionHides = true))
 	FName MunitionID = FName("P_556");
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
@@ -114,13 +115,27 @@ USTRUCT(BlueprintType)
 struct FWeaponAudioData
 {
 	GENERATED_BODY()
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	TSoftObjectPtr<UMetaSoundSource> LocalSound = nullptr;   // 2D: the shooter (FP close mix / cockpit)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	TSoftObjectPtr<UMetaSoundSource> WorldSound = nullptr;   // 3D: everyone else
 
 	// --- EXTERNAL / MUZZLE ---
 	//what should be vehicle instance data?
 	
+	/**
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ToolTip = "use if the gunshootloop audio files contain more than 1 shot in them (multiple shots in a wave)"))
+	bool bMultiShot = false;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (EditCondition = "bMultiShot", EditConditionHides = true))
+	int32 RecordedRPM = 0;
+	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Exterior")
 	TArray<TSoftObjectPtr<USoundWave>> GunshotLoop; // The "Bangs" (Array for variance)
 
+	/**
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Exterior")
 	TSoftObjectPtr<USoundWave> FireStop = nullptr; 
 	
@@ -135,7 +150,8 @@ struct FWeaponAudioData
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	TSoftObjectPtr<USoundWave> Reload = nullptr;
-};
+	**/
+}; 
 
 USTRUCT(BlueprintType)
 struct FWeaponVFXData

@@ -399,7 +399,9 @@ void UBS2FunctionLibrary::UpdateWeaponIndex(TArray<FWeaponState> Weapons, int32 
 
 void UBS2FunctionLibrary::UpdateWACData(TWeakObjectPtr<UAudioComponent> WAC, float RPM, FWeaponAudioData WeaponAudioData)
 {
+	/**
 	WAC.Get()->SetFloatParameter(FName("Data_RPM"), RPM);
+	WAC.Get()->SetBoolParameter(FName("Data_Multishot"), WeaponAudioData.bMultiShot);
 	if (!WeaponAudioData.GunshotLoop.IsEmpty())
 	{
 		UpdateAudioCompArrayParameter(WAC, WeaponAudioData.GunshotLoop, FName("Data_FireLoopAudio"));
@@ -416,6 +418,7 @@ void UBS2FunctionLibrary::UpdateWACData(TWeakObjectPtr<UAudioComponent> WAC, flo
 	{
 		UpdateAudioCompArrayParameter(WAC, WeaponAudioData.InteriorTail, FName("Data_Tail"));
 	}
+	**/
 }
 
 void UBS2FunctionLibrary::HandleStartWAC(TWeakObjectPtr<UAudioComponent> WAC, FWeaponState& CurrentWeapon)

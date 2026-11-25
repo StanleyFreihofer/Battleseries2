@@ -236,17 +236,19 @@ struct FInfantryWeaponAudioData
 {
 	GENERATED_BODY()
 	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	FWeaponAudioData BaseWeaponAudioData = FWeaponAudioData();
+	//UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	//TSoftObjectPtr<UMetaSoundSource> MetaSoundPreset = nullptr;   
 	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	TSoftObjectPtr<USoundWave> SuppressedFireSFX = nullptr;
+	//UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	//TSoftObjectPtr<USoundWave> SuppressedFireSFX = nullptr;
 	
+	/**
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	TSoftObjectPtr<USoundWave> SelectFireModeSFX = nullptr;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	TSoftObjectPtr<USoundWave> DryFireSFX = nullptr;
+	**/
 };
 
 USTRUCT(BlueprintType)
@@ -308,7 +310,10 @@ struct FInfantryWeaponData : public FTableRowBase
 	FInfantryWeaponAnimData InfantryWeaponAnimData = FInfantryWeaponAnimData();
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	FInfantryWeaponAudioData InfantryWeaponAudioData = FInfantryWeaponAudioData();
+	FWeaponAudioData BaseWeaponAudioData = FWeaponAudioData();
+	
+	//UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	//FInfantryWeaponAudioData InfantryWeaponAudioData = FInfantryWeaponAudioData();
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	FWeaponVFXData WeaponVFXData = FWeaponVFXData();

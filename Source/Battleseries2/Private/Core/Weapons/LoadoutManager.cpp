@@ -1004,8 +1004,10 @@ void ULoadoutManager::DryFire()
 	{
 		CurrentWeapon.canFire = false;
 	}
+	
+	Loadout.WeaponSystem.WeaponAudioComponent->SetTriggerParameter(FName("Event_DryFire"));
 
-	UGameplayStatics::PlaySound2D(this,GetCurrentWeaponStaticData()->InfantryWeaponAudioData.DryFireSFX.LoadSynchronous());
+	//UGameplayStatics::PlaySound2D(this,GetCurrentWeaponStaticData()->InfantryWeaponAudioData.DryFireSFX.LoadSynchronous());
 }
 
 void ULoadoutManager::FireWeapon()
@@ -1477,7 +1479,9 @@ void ULoadoutManager::EquipWeapon(int32 WeaponIndex, bool InitialEquip)
 	TObjectPtr<USkeletalMeshComponent> NewWeaponMesh = Loadout.WeaponSystem.InfantryWeaponState.WeaponState_FP[WeaponIndex].WeaponMesh.Get();
 	
 	UpdateWeaponSlotVisibility(WeaponIndex, false);
-	UBS2FunctionLibrary::UpdateWACData(Loadout.WeaponSystem.WeaponAudioComponent, StaticWeaponData.WeaponFirePerformanceData.RateOfFire, StaticWeaponData.InfantryWeaponAudioData.BaseWeaponAudioData);
+	Loadout.WeaponSystem.WeaponAudioComponent.Get()->SetSound(StaticWeaponData.BaseWeaponAudioData.LocalSound.LoadSynchronous());
+	Loadout.WeaponSystem.WeaponAudioComponent->SetFloatParameter(FName("Data_RPM"), StaticWeaponData.WeaponFirePerformanceData.RateOfFire);
+	//UBS2FunctionLibrary::UpdateWACData(Loadout.WeaponSystem.WeaponAudioComponent, StaticWeaponData.WeaponFirePerformanceData.RateOfFire, StaticWeaponData.InfantryWeaponAudioData.BaseWeaponAudioData);
 
 	if (!GetWorld()->GetTimerManager().IsTimerActive(CombatState.RangefinderTimer))
 	{
@@ -1586,7 +1590,8 @@ void ULoadoutManager::ToggleFireMode()
 	
 	if (bSwitched)
 	{
-		UGameplayStatics::PlaySound2D(GetOwner(), GetCurrentWeaponStaticData()->InfantryWeaponAudioData.SelectFireModeSFX.LoadSynchronous());
+		//UGameplayStatics::PlaySound2D(GetOwner(), GetCurrentWeaponStaticData()->InfantryWeaponAudioData.SelectFireModeSFX.LoadSynchronous());
+		Loadout.WeaponSystem.WeaponAudioComponent->SetTriggerParameter(FName("Event_SelectFire"));
 		if (GetOwnerCharacter()->IsLocalHuman())
 		{
 			UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateStatusHUD_FireMode(CurrentWeapon.CurrentFireMode);
