@@ -77,7 +77,9 @@ public:
     static float GetFireRate(float RateOfFire);
 
     UFUNCTION(BlueprintCallable, Category = "Battleseries | Weapon Functions")
-    static bool PerformWeaponSphereTrace(const UObject* WorldContextObject, const FTransform& StartTransform, FHitResult& OutHit, TArray<AActor*> ActorsToIgnore, float Radius, bool Debug);
+    static bool PerformWeaponSphereTrace(const UObject* WorldContextObject, const FTransform& StartTransform, TArray<FHitResult>& OutHits, TArray<AActor*> ActorsToIgnore, float Radius, bool Debug);
+	UFUNCTION(BlueprintCallable)
+	static bool GetLockOnTrace(TArray<FHitResult>& InHits, FHitResult& OutHit, const FWeaponHomingData& HomingData);
     UFUNCTION()
     static FTransform GetMuzzleTransform(FName MuzzleSocketName, TWeakObjectPtr<USkeletalMeshComponent> SocketMesh);
 	

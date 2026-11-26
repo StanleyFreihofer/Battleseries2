@@ -794,56 +794,58 @@ void UVehicleLoadoutManager::HandleHoming(int32 SeatIndex, FTransform TraceTrans
 	const FBaseWeaponData& StaticWeaponData = GetBaseWeaponDataInSlot(SeatIndex, WeaponIndex);
 	const FWeaponHomingData& StaticHomingData = StaticWeaponData.WeaponFunctionality.HomingFunctionality;
 	FVehicleWeapon_Runtime& CurrentWeapon = GetEquippedWeaponInSeat(SeatIndex);
-	FHitResult& HitResult = SystemPtr->SeatWeaponSystemState.EquippedWeaponState.RaycastData.RangefinderData;
+	FHitResult& RangefinderHitResult = SystemPtr->SeatWeaponSystemState.EquippedWeaponState.RaycastData.RangefinderData;
 	
-	bool bHit = UBS2FunctionLibrary::PerformWeaponSphereTrace(this, TraceTransform, HitResult, ActorsToIgnore, StaticWeaponData.WeaponFunctionality.HomingFunctionality.LockOnRadius, true);
+	TArray<FHitResult> OutHits;
+	
+	bool bHit = UBS2FunctionLibrary::PerformWeaponSphereTrace(this, TraceTransform, OutHits, ActorsToIgnore, StaticWeaponData.WeaponFunctionality.HomingFunctionality.LockOnRadius, true);
+	RangefinderHitResult = OutHits.IsEmpty() ? FHitResult() : OutHits[0];
 
 	switch (StaticHomingData.HomingCapability)
 	{
 		case EHomingCapability::RequireLockOn:
 		case EHomingCapability::CanLockOn:
-			HandleLockOn(SeatIndex, WeaponIndex);
+		{
+			//HandleLockOn
+			FHitResult LockOnHitResult;
+			if (UBS2FunctionLibrary::GetLockOnTrace(OutHits, LockOnHitResult, StaticHomingData))
+			{
+				PromoteLockOnStatus(SeatIndex, WeaponIndex, LockOnHitResult);
+			}
+			else
+			{
+				DemoteLockOnStatus(SeatIndex, CurrentWeapon.VehicleWeaponState.BaseWeaponRuntimeData.LockOnState);
+			}
 			break;
+		}
 		case EHomingCapability::WireGuided1:
 		case EHomingCapability::WireGuided2:
-			UBS2FunctionLibrary::HandleInFlightManuallyGuidedMunitions(CurrentWeapon.VehicleWeaponState.BaseWeaponRuntimeData, HitResult);
+			UBS2FunctionLibrary::HandleInFlightManuallyGuidedMunitions(CurrentWeapon.VehicleWeaponState.BaseWeaponRuntimeData, RangefinderHitResult);
 			break;
 	}
 }
 
 #pragma region LockOn
 
-void UVehicleLoadoutManager::HandleLockOn(int32 SeatIndex, int32 WeaponIndex)
+void UVehicleLoadoutManager::PromoteLockOnStatus(int32 SeatIndex, int32 WeaponIndex, FHitResult& LockOnHit)
 {
-	FSeatWeaponSystem_Runtime& SeatWeaponSystem = *VehicleWeaponSystem.Find(SeatIndex);
 	FVehicleWeapon_Runtime& CurrentWeapon = GetEquippedWeaponInSeat(SeatIndex);
-	const FBaseWeaponData& StaticWeaponData = GetBaseWeaponDataInSlot(SeatIndex, GetCWIForSeat(SeatIndex));
+	const FBaseWeaponData& StaticWeaponData = GetBaseWeaponDataInSlot(SeatIndex, WeaponIndex);
 	const FWeaponHomingData& StaticHomingData = StaticWeaponData.WeaponFunctionality.HomingFunctionality;
 	FLockOnState& LockOnState = CurrentWeapon.VehicleWeaponState.BaseWeaponRuntimeData.LockOnState;
-	FHitResult& HitResult = SeatWeaponSystem.SeatWeaponSystemState.EquippedWeaponState.RaycastData.RangefinderData;
-	
-	bool canLockOn = UBS2FunctionLibrary::GetCanLockOn_Final(StaticHomingData, HitResult);
 
-	if (canLockOn)
+	switch (LockOnState.CurrentLockStatus)
 	{
-		//anything from here on can be seen as a "promotion" of lock status 
-		switch (LockOnState.CurrentLockStatus)
-		{
-			case ELockOnState::NotLockingOn:
-				StartLockingOn(SeatIndex, CurrentWeapon, StaticHomingData, HitResult);
-				break;
-			case ELockOnState::IsLockingOn:
-			case ELockOnState::IsLockedOn:
-				UpdateLockOnIndicator(OwnerDataAccessor->GetVehicleState().SeatStates[SeatIndex].UpdateHUD, HitResult, LockOnState);
-				break;
-			case ELockOnState::IsLosingLock:
-				//DO SOMETHING HERE!!!!!!!!!!!!!!!!!!!!!!!
-				break;
-		}
-	}
-	else
-	{
-		DemoteLockOnStatus(SeatIndex, LockOnState);
+		case ELockOnState::NotLockingOn:
+			StartLockingOn(SeatIndex, CurrentWeapon, StaticHomingData, LockOnHit);
+			break;
+		case ELockOnState::IsLockingOn:
+		case ELockOnState::IsLockedOn:
+			UpdateLockOnIndicator(OwnerDataAccessor->GetVehicleState().SeatStates[SeatIndex].UpdateHUD, LockOnHit, LockOnState);
+			break;
+		case ELockOnState::IsLosingLock:
+			//DO SOMETHING HERE!!!!!!!!!!!!!!!!!!!!!!!
+			break;
 	}
 }
 

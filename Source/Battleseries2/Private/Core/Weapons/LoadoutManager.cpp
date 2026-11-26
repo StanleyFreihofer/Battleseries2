@@ -674,17 +674,31 @@ void ULoadoutManager::WeaponRangefinder()
 
 void ULoadoutManager::HandleHoming(FTransform TraceTransform)
 {
-	FHitResult& OutHit = Loadout.WeaponSystem.BaseWeaponState.EquippedWeaponState.RaycastData.RangefinderData;
+	FHitResult& RangefinderHitResult = Loadout.WeaponSystem.BaseWeaponState.EquippedWeaponState.RaycastData.RangefinderData;
 	const FWeaponHomingData& StaticHomingData = GetCurrentWeaponStaticData()->WeaponFunctionalityData.BaseWeaponFunctionality.HomingFunctionality;
+	
+	TArray<FHitResult> OutHits;
 
-	bool bHit = UBS2FunctionLibrary::PerformWeaponSphereTrace(this, TraceTransform, OutHit, {GetOwner()}, GetCurrentWeaponStaticData()->WeaponFunctionalityData.BaseWeaponFunctionality.HomingFunctionality.LockOnRadius, true);
+	bool bHit = UBS2FunctionLibrary::PerformWeaponSphereTrace(this, TraceTransform, OutHits, {GetOwner()}, GetCurrentWeaponStaticData()->WeaponFunctionalityData.BaseWeaponFunctionality.HomingFunctionality.LockOnRadius, true);
+	RangefinderHitResult = OutHits.IsEmpty() ? FHitResult() : OutHits[0];
 	
 	switch (StaticHomingData.HomingCapability)
 	{
 		case EHomingCapability::RequireLockOn:
 		case EHomingCapability::CanLockOn:
-			HandleLockOn();
-			break;
+		{
+			//HandleLockOn
+			FHitResult LockOnHitResult;
+			if (UBS2FunctionLibrary::GetLockOnTrace(OutHits, LockOnHitResult, StaticHomingData) && CombatState.isAiming)
+			{
+				PromoteLockOnStatus(LockOnHitResult);
+			}
+			else
+			{
+				DemoteLockOnStatus();
+			}		
+			break;	
+		}
 	}
 }
 
@@ -699,38 +713,31 @@ void ULoadoutManager::DemoteLockOnStatus()
 	}
 }
 
-void ULoadoutManager::HandleLockOn()
+void ULoadoutManager::PromoteLockOnStatus(FHitResult& LockOnHit)
 {
 	const FWeaponHomingData& StaticHomingData = GetCurrentWeaponStaticData()->WeaponFunctionalityData.BaseWeaponFunctionality.HomingFunctionality;
-	FHitResult& OutHit = Loadout.WeaponSystem.BaseWeaponState.EquippedWeaponState.RaycastData.RangefinderData;
+	//FHitResult& OutHit = Loadout.WeaponSystem.BaseWeaponState.EquippedWeaponState.RaycastData.RangefinderData;
 	FLockOnState& LockOnState = GetCurrentWeaponBaseState()->LockOnState;
 	bool isLocalHuman = GetOwnerCharacter()->IsLocalHuman();
 	
-	bool canLockOn = UBS2FunctionLibrary::GetCanLockOn_Final(StaticHomingData, OutHit);
-
-	if (canLockOn && CombatState.isAiming)
+	//bool canLockOn = UBS2FunctionLibrary::GetCanLockOn_Final(StaticHomingData, OutHit);
+	
+	//anything from here on can be seen as a "promotion" of lock status 
+	switch (LockOnState.CurrentLockStatus)
 	{
-		//anything from here on can be seen as a "promotion" of lock status 
-		switch (LockOnState.CurrentLockStatus)
-		{
-			case ELockOnState::NotLockingOn:
-				StartLockingOn();
-				break;
-			case ELockOnState::IsLockingOn:
-			case ELockOnState::IsLockedOn:
-				if (isLocalHuman)
-				{
-					UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateLockOnIndicatorPosition(OutHit.GetActor()->GetRootComponent()->GetSocketLocation(FName("LockOn")));
-				}
-				break;
-			case ELockOnState::IsLosingLock:
-				//DO SOMETHING HERE!!!!!!!!!!!!!!!!!!!!!!!
-				break;
-		}
-	}
-	else
-	{
-		DemoteLockOnStatus();
+		case ELockOnState::NotLockingOn:
+			StartLockingOn();
+			break;
+		case ELockOnState::IsLockingOn:
+		case ELockOnState::IsLockedOn:
+			if (isLocalHuman)
+			{
+				UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateLockOnIndicatorPosition(LockOnHit.GetActor()->GetRootComponent()->GetSocketLocation(FName("LockOn")));
+			}
+			break;
+		case ELockOnState::IsLosingLock:
+			//DO SOMETHING HERE!!!!!!!!!!!!!!!!!!!!!!!
+			break;
 	}
 }
 

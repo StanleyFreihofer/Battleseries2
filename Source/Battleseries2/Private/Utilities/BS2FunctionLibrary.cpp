@@ -222,7 +222,7 @@ float UBS2FunctionLibrary::GetFireRate(float RateOfFire)
 	return RateOfFire;
 }
 
-bool UBS2FunctionLibrary::PerformWeaponSphereTrace(const UObject* WorldContextObject, const FTransform& StartTransform, FHitResult& OutHit, TArray<AActor*> ActorsToIgnore, float Radius, bool Debug)
+bool UBS2FunctionLibrary::PerformWeaponSphereTrace(const UObject* WorldContextObject, const FTransform& StartTransform, TArray<FHitResult>& OutHits, TArray<AActor*> ActorsToIgnore, float Radius, bool Debug)
 {
 	//if calling from any actor, WorldContextObject = this/self
 	UWorld* World = GEngine->GetWorldFromContextObject(WorldContextObject, EGetWorldErrorMode::LogAndReturnNull);
@@ -235,6 +235,10 @@ bool UBS2FunctionLibrary::PerformWeaponSphereTrace(const UObject* WorldContextOb
 	Params.AddIgnoredActors(ActorsToIgnore);
 	EDrawDebugTrace::Type DebugTrace = Debug ? EDrawDebugTrace::ForOneFrame : EDrawDebugTrace::None;
 
+	UKismetSystemLibrary::SphereTraceMulti(WorldContextObject, Startpoint, Endpoint, Radius,UEngineTypes::ConvertToTraceType(ECC_Visibility), false, ActorsToIgnore, DebugTrace, OutHits, true);
+
+	return OutHits.Num() > 0;
+	/**
 	return UKismetSystemLibrary::SphereTraceSingle(
 		WorldContextObject,
 		Startpoint,
@@ -250,8 +254,24 @@ bool UBS2FunctionLibrary::PerformWeaponSphereTrace(const UObject* WorldContextOb
 		FLinearColor::Green,// Hit Color
 		0.0f                // Draw Time
 	);
+	**/
 
 	//return bDidHit;
+}
+
+bool UBS2FunctionLibrary::GetLockOnTrace(TArray<FHitResult>& InHits, FHitResult& OutHit, const FWeaponHomingData& HomingData)
+{
+	for (const FHitResult& Hit : InHits)          // sorted nearest to farthest, blocker last
+	{
+		if (GetCanLockOn_Final(HomingData, Hit))
+		{
+			OutHit = Hit;
+			return true;
+		}
+	}
+
+	OutHit = FHitResult();
+	return false;
 }
 
 FTransform UBS2FunctionLibrary::GetMuzzleTransform(FName MuzzleSocketName, TWeakObjectPtr<USkeletalMeshComponent> SocketMesh)

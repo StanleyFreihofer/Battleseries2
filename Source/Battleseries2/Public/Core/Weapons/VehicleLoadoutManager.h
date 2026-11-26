@@ -210,7 +210,7 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void HandleHoming(int32 SeatIndex, FTransform TraceTransform, TArray<AActor*> ActorsToIgnore);
 	UFUNCTION(BlueprintCallable)
-	void HandleLockOn(int32 SeatIndex, int32 WeaponIndex);
+	void PromoteLockOnStatus(int32 SeatIndex, int32 WeaponIndex, FHitResult& LockOnHit);
 	UFUNCTION(BlueprintCallable)
 	void StartLockingOn(int32& SeatIndex, FVehicleWeapon_Runtime& CurrentWeapon, const FWeaponHomingData& HomingData, const FHitResult& HitResult);
 	UFUNCTION(BlueprintCallable)

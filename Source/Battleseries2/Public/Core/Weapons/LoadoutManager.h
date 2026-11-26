@@ -266,7 +266,7 @@ class BATTLESERIES2_API ULoadoutManager : public UActorComponent
 		UFUNCTION(BlueprintCallable)
 		void DemoteLockOnStatus();
 		UFUNCTION(BlueprintCallable)
-		void HandleLockOn();
+		void PromoteLockOnStatus(FHitResult& LockOnHit);
 		UFUNCTION(BlueprintCallable)
 		void StartLockingOn();
 		UFUNCTION(BlueprintCallable)
