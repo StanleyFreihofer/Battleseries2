@@ -209,21 +209,15 @@ public:
 	void UpdateSeatRangefinder(int32 SeatIndex, FTransform TraceTransform, TArray<AActor*> ActorsToIgnore);
 	UFUNCTION(BlueprintCallable)
 	void HandleHoming(int32 SeatIndex, FTransform TraceTransform, TArray<AActor*> ActorsToIgnore);
-	UFUNCTION(BlueprintCallable)
-	void PromoteLockOnStatus(int32 SeatIndex, int32 WeaponIndex, FHitResult& LockOnHit);
-	UFUNCTION(BlueprintCallable)
-	void StartLockingOn(int32& SeatIndex, FVehicleWeapon_Runtime& CurrentWeapon, const FWeaponHomingData& HomingData, const FHitResult& HitResult);
-	UFUNCTION(BlueprintCallable)
-	void LockOn(int32 SeatIndex, const FWeaponHomingData HomingData, const FHitResult HitResult);
-	UFUNCTION(BlueprintCallable)
-	void StartCancelLockOn(int32& SeatIndex, FLockOnState& LockOnState);
-	UFUNCTION(BlueprintCallable)
-	void CancelLockOn(int32 SeatIndex, int32 WeaponIndex);
-	UFUNCTION(BlueprintCallable)
-	void DemoteLockOnStatus(int32 SeatIndex, FLockOnState& LockOnState);
-
-	UFUNCTION(BlueprintCallable)
-	void UpdateLockOnIndicator(bool UpdateHUD, FHitResult& HitResult, FLockOnState& LockOnState);
+	//lock-on functions take everything they need as inputs (no seat/weapon index lookups)
+	//not UFUNCTIONs: FTimerDelegate isn't a UHT-supported parameter type
+	void PromoteLockOnStatus(FWeaponState& WeaponState, const FWeaponHomingData& HomingData, const FHitResult& LockOnHit, UAudioComponent* WAC, bool bUpdateHUD, FTimerDelegate OnLockAcquired);
+	void StartLockingOn(FWeaponState& WeaponState, const FWeaponHomingData& HomingData, const FHitResult& LockOnHit, UAudioComponent* WAC, bool bUpdateHUD, FTimerDelegate& OnLockAcquired);
+	void LockOn(FWeaponState& WeaponState, EHomingCapability HomingCapability, UAudioComponent* WAC, bool bUpdateHUD);
+	void StartCancelLockOn(FLockOnState& LockOnState, UAudioComponent* WAC, bool bUpdateHUD, FTimerDelegate& OnLockLost);
+	void CancelLockOn(FWeaponState& WeaponState, EHomingCapability HomingCapability, UAudioComponent* WAC, bool bUpdateHUD);
+	void DemoteLockOnStatus(FLockOnState& LockOnState, UAudioComponent* WAC, bool bUpdateHUD, FTimerDelegate OnLockLost);
+	void UpdateLockOnIndicator(bool bUpdateHUD, const FHitResult& LockOnHit, const FLockOnState& LockOnState);
 
 	UFUNCTION(BlueprintCallable)
 	FName BuildMuzzleName(int32 SeatIndex, int32 WeaponIndex, EMuzzleType MuzzleType, int32 MuzzleIndex);

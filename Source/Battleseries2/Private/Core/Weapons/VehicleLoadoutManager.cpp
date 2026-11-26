@@ -807,14 +807,48 @@ void UVehicleLoadoutManager::HandleHoming(int32 SeatIndex, FTransform TraceTrans
 		case EHomingCapability::CanLockOn:
 		{
 			//HandleLockOn
+			FWeaponState& WeaponState = CurrentWeapon.VehicleWeaponState.BaseWeaponRuntimeData;
+			UAudioComponent* WAC = CurrentWeapon.VehicleWeaponState.WeaponAudioComponent.Get();
+			const bool bUpdateHUD = OwnerDataAccessor->GetVehicleState().SeatStates[SeatIndex].UpdateHUD;
+			const int32 LockWeaponIndex = WeaponIndex;		//copy: timer must target the weapon that started the lock, not whatever CWI is later
+
+			//timers outlive this call, so the callback resolves seat/weapon again when it fires
+			auto MakeLockOnTimer = [this, SeatIndex, LockWeaponIndex](bool bAcquired)
+			{
+				return FTimerDelegate::CreateWeakLambda(this, [this, SeatIndex, LockWeaponIndex, bAcquired]()
+				{
+					FSeatWeaponSystem_Runtime* System = VehicleWeaponSystem.Find(SeatIndex);
+					if (!System || !System->Weapons.IsValidIndex(LockWeaponIndex)) { return; }
+
+					FVehicleWeaponState& VWS = System->Weapons[LockWeaponIndex].VehicleWeaponState;
+					const EHomingCapability Capability = GetBaseWeaponDataInSlot(SeatIndex, LockWeaponIndex).WeaponFunctionality.HomingFunctionality.HomingCapability;
+					const bool bHUD = OwnerDataAccessor->GetVehicleState().SeatStates[SeatIndex].UpdateHUD;
+
+					if (bAcquired)
+					{
+						LockOn(VWS.BaseWeaponRuntimeData, Capability, VWS.WeaponAudioComponent.Get(), bHUD);
+					}
+					else
+					{
+						CancelLockOn(VWS.BaseWeaponRuntimeData, Capability, VWS.WeaponAudioComponent.Get(), bHUD);
+					}
+
+					if (Capability == EHomingCapability::RequireLockOn)
+					{
+						int32 Seat = SeatIndex;
+						UpdateWeaponStatusUI(Seat, VWS.BaseWeaponRuntimeData.canFire);
+					}
+				});
+			};
+
 			FHitResult LockOnHitResult;
 			if (UBS2FunctionLibrary::GetLockOnTrace(OutHits, LockOnHitResult, StaticHomingData))
 			{
-				PromoteLockOnStatus(SeatIndex, WeaponIndex, LockOnHitResult);
+				PromoteLockOnStatus(WeaponState, StaticHomingData, LockOnHitResult, WAC, bUpdateHUD, MakeLockOnTimer(true));
 			}
 			else
 			{
-				DemoteLockOnStatus(SeatIndex, CurrentWeapon.VehicleWeaponState.BaseWeaponRuntimeData.LockOnState);
+				DemoteLockOnStatus(WeaponState.LockOnState, WAC, bUpdateHUD, MakeLockOnTimer(false));
 			}
 			break;
 		}
@@ -827,21 +861,16 @@ void UVehicleLoadoutManager::HandleHoming(int32 SeatIndex, FTransform TraceTrans
 
 #pragma region LockOn
 
-void UVehicleLoadoutManager::PromoteLockOnStatus(int32 SeatIndex, int32 WeaponIndex, FHitResult& LockOnHit)
+void UVehicleLoadoutManager::PromoteLockOnStatus(FWeaponState& WeaponState, const FWeaponHomingData& HomingData, const FHitResult& LockOnHit, UAudioComponent* WAC, bool bUpdateHUD, FTimerDelegate OnLockAcquired)
 {
-	FVehicleWeapon_Runtime& CurrentWeapon = GetEquippedWeaponInSeat(SeatIndex);
-	const FBaseWeaponData& StaticWeaponData = GetBaseWeaponDataInSlot(SeatIndex, WeaponIndex);
-	const FWeaponHomingData& StaticHomingData = StaticWeaponData.WeaponFunctionality.HomingFunctionality;
-	FLockOnState& LockOnState = CurrentWeapon.VehicleWeaponState.BaseWeaponRuntimeData.LockOnState;
-
-	switch (LockOnState.CurrentLockStatus)
+	switch (WeaponState.LockOnState.CurrentLockStatus)
 	{
 		case ELockOnState::NotLockingOn:
-			StartLockingOn(SeatIndex, CurrentWeapon, StaticHomingData, LockOnHit);
+			StartLockingOn(WeaponState, HomingData, LockOnHit, WAC, bUpdateHUD, OnLockAcquired);
 			break;
 		case ELockOnState::IsLockingOn:
 		case ELockOnState::IsLockedOn:
-			UpdateLockOnIndicator(OwnerDataAccessor->GetVehicleState().SeatStates[SeatIndex].UpdateHUD, LockOnHit, LockOnState);
+			UpdateLockOnIndicator(bUpdateHUD, LockOnHit, WeaponState.LockOnState);
 			break;
 		case ELockOnState::IsLosingLock:
 			//DO SOMETHING HERE!!!!!!!!!!!!!!!!!!!!!!!
@@ -849,64 +878,53 @@ void UVehicleLoadoutManager::PromoteLockOnStatus(int32 SeatIndex, int32 WeaponIn
 	}
 }
 
-void UVehicleLoadoutManager::StartLockingOn(int32& SeatIndex, FVehicleWeapon_Runtime& CurrentWeapon, const FWeaponHomingData& HomingData, const FHitResult& HitResult)
+void UVehicleLoadoutManager::StartLockingOn(FWeaponState& WeaponState, const FWeaponHomingData& HomingData, const FHitResult& LockOnHit, UAudioComponent* WAC, bool bUpdateHUD, FTimerDelegate& OnLockAcquired)
 {
 	UE_LOG(LogTemp, Warning, TEXT("[VWLC::StartLockingOn]"));
-	FLockOnState& LockOnState = CurrentWeapon.VehicleWeaponState.BaseWeaponRuntimeData.LockOnState;
-	
-	FTimerDelegate LockOnDelegate;
-	LockOnDelegate.BindUFunction(this, FName("LockOn"), SeatIndex, HomingData, HitResult);
-	
-	UBS2FunctionLibrary::StartLockingOn(this, LockOnDelegate, HomingData.AcquireTime, HitResult.GetActor(), LockOnState, OwnerDataAccessor->GetVehicleState().SeatStates[SeatIndex].UpdateHUD, HomingData.IndicatorReticle);
-	
-	UBS2FunctionLibrary::HandleStartWAC(GetWAC(SeatIndex), CurrentWeapon.VehicleWeaponState.BaseWeaponRuntimeData);
-	GetWAC(SeatIndex)->SetTriggerParameter(FName("Event_LockingOn"));
-}
 
-void UVehicleLoadoutManager::LockOn(int32 SeatIndex, const FWeaponHomingData HomingData, const FHitResult HitResult)
-{
-	UE_LOG(LogTemp, Warning, TEXT("[VWLC::LockOn]"));
-	FVehicleWeapon_Runtime& CurrentWeapon = GetEquippedWeaponInSeat(SeatIndex);
-	FWeaponState& WeaponState = CurrentWeapon.VehicleWeaponState.BaseWeaponRuntimeData;
-	
-	UBS2FunctionLibrary::LockOn(this, WeaponState, OwnerDataAccessor->GetVehicleState().SeatStates[SeatIndex].UpdateHUD, HomingData.HomingCapability);
-	GetWAC(SeatIndex)->SetTriggerParameter(FName("Event_LockOn"));
-	//interface to acquired target (locked on)?... do only when fire
-	
-	if (!WeaponState.canFire && UBS2FunctionLibrary::GetIfWeaponShouldBeAbleToFire(WeaponState) && HomingData.HomingCapability == EHomingCapability::RequireLockOn)
+	UBS2FunctionLibrary::StartLockingOn(this, OnLockAcquired, HomingData.AcquireTime, LockOnHit.GetActor(), WeaponState.LockOnState, bUpdateHUD, HomingData.IndicatorReticle);
+
+	if (WAC)
 	{
-		//WeaponState.canFire = true;		
-		UpdateWeaponStatusUI(SeatIndex, WeaponState.canFire);
+		UBS2FunctionLibrary::HandleStartWAC(WAC, WeaponState);
+		WAC->SetTriggerParameter(FName("Event_LockingOn"));
 	}
 }
 
-void UVehicleLoadoutManager::StartCancelLockOn(int32& SeatIndex, FLockOnState& LockOnState)
+void UVehicleLoadoutManager::LockOn(FWeaponState& WeaponState, EHomingCapability HomingCapability, UAudioComponent* WAC, bool bUpdateHUD)
 {
-	float ElapsedTime = 1.0f;			//<---make actual data 
-	FTimerDelegate LockOnDelegate;
-	LockOnDelegate.BindUFunction(this, FName("CancelLockOn"), SeatIndex, GetCWIForSeat(SeatIndex));
-	
-	UBS2FunctionLibrary::StartCancelLockOn(this, LockOnDelegate, LockOnState, ElapsedTime, OwnerDataAccessor->GetVehicleState().SeatStates[SeatIndex].UpdateHUD);
-	GetWAC(SeatIndex)->SetTriggerParameter(FName("Event_StopLockOn"));
+	UE_LOG(LogTemp, Warning, TEXT("[VWLC::LockOn]"));
+
+	UBS2FunctionLibrary::LockOn(this, WeaponState, bUpdateHUD, HomingCapability);
+	if (WAC)
+	{
+		WAC->SetTriggerParameter(FName("Event_LockOn"));
+	}
+	//interface to acquired target (locked on)?... do only when fire
+}
+
+void UVehicleLoadoutManager::StartCancelLockOn(FLockOnState& LockOnState, UAudioComponent* WAC, bool bUpdateHUD, FTimerDelegate& OnLockLost)
+{
+	float ElapsedTime = 1.0f;			//<---make actual data
+
+	UBS2FunctionLibrary::StartCancelLockOn(this, OnLockLost, LockOnState, ElapsedTime, bUpdateHUD);
+	if (WAC)
+	{
+		WAC->SetTriggerParameter(FName("Event_StopLockOn"));
+	}
 	UE_LOG(LogTemp, Warning, TEXT("[VWLC::IsLosingLock]"));
 }
 
-void UVehicleLoadoutManager::CancelLockOn(int32 SeatIndex, int32 WeaponIndex)
+void UVehicleLoadoutManager::CancelLockOn(FWeaponState& WeaponState, EHomingCapability HomingCapability, UAudioComponent* WAC, bool bUpdateHUD)
 {
-	FWeaponState& WeaponState = VehicleWeaponSystem.Find(SeatIndex)->Weapons[WeaponIndex].VehicleWeaponState.BaseWeaponRuntimeData;
-	const FWeaponHomingData& HomingData = GetBaseWeaponDataInSlot(SeatIndex, WeaponIndex).WeaponFunctionality.HomingFunctionality;
-	
-	UBS2FunctionLibrary::CancelLockOn(this, WeaponState, OwnerDataAccessor->GetVehicleState().SeatStates[SeatIndex].UpdateHUD, HomingData.HomingCapability);
-	GetWAC(SeatIndex)->SetTriggerParameter(FName("Event_StopLockingOn"));
-
-	if (HomingData.HomingCapability == EHomingCapability::RequireLockOn)
+	UBS2FunctionLibrary::CancelLockOn(this, WeaponState, bUpdateHUD, HomingCapability);
+	if (WAC)
 	{
-		//WeaponState.canFire = false;
-		UpdateWeaponStatusUI(SeatIndex, WeaponState.canFire);
+		WAC->SetTriggerParameter(FName("Event_StopLockingOn"));
 	}
 }
 
-void UVehicleLoadoutManager::DemoteLockOnStatus(int32 SeatIndex, FLockOnState& LockOnState)
+void UVehicleLoadoutManager::DemoteLockOnStatus(FLockOnState& LockOnState, UAudioComponent* WAC, bool bUpdateHUD, FTimerDelegate OnLockLost)
 {
 	//null actor or an actor that cant be locked on to
 	//anything from here on can be seen as a "demotion" of lock status
@@ -914,7 +932,7 @@ void UVehicleLoadoutManager::DemoteLockOnStatus(int32 SeatIndex, FLockOnState& L
 	{
 		case ELockOnState::IsLockingOn:
 		case ELockOnState::IsLockedOn:
-			StartCancelLockOn(SeatIndex, LockOnState);
+			StartCancelLockOn(LockOnState, WAC, bUpdateHUD, OnLockLost);
 			//interface to target
 			//do something to incrementally lose lock, not outright cancel it
 			//when completely lost lock, null target, set lock state to notlockingon
@@ -922,15 +940,15 @@ void UVehicleLoadoutManager::DemoteLockOnStatus(int32 SeatIndex, FLockOnState& L
 	}
 }
 
-void UVehicleLoadoutManager::UpdateLockOnIndicator(bool UpdateHUD, FHitResult& HitResult, FLockOnState& LockOnState)
+void UVehicleLoadoutManager::UpdateLockOnIndicator(bool bUpdateHUD, const FHitResult& LockOnHit, const FLockOnState& LockOnState)
 {
-	if (HitResult.GetActor()->GetRootComponent() != LockOnState.AcquiredTargetComp)
+	if (LockOnHit.GetActor()->GetRootComponent() != LockOnState.AcquiredTargetComp)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("[VWLC::UpdateSeatRangefinder] DifferentTarget"));
+		UE_LOG(LogTemp, Warning, TEXT("[VWLC::UpdateLockOnIndicator] DifferentTarget"));
 	}
-	if (UpdateHUD)
+	if (bUpdateHUD)
 	{
-		UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateLockOnIndicatorPosition(HitResult.GetActor()->GetRootComponent()->GetSocketLocation(FName("LockOn")));
+		UBS2FunctionLibrary::GetHUDSubsystem(this)->UpdateLockOnIndicatorPosition(LockOnHit.GetActor()->GetRootComponent()->GetSocketLocation(FName("LockOn")));
 	}
 }
 
@@ -1538,9 +1556,14 @@ void UVehicleLoadoutManager::UnequipWeapon(int32& SeatIndex, int32& WeaponIndex,
 		StopWeaponSlotFire(SeatIndex, WeaponIndex);
 	}
 	SeatWeaponSystem.Weapons[WeaponIndex].VehicleWeaponState.BaseWeaponRuntimeData.isEquipped = false;
-	if (SeatWeaponSystem.Weapons[WeaponIndex].VehicleWeaponState.BaseWeaponRuntimeData.LockOnState.CurrentLockStatus != ELockOnState::NotLockingOn)
+	if (WeaponState.LockOnState.CurrentLockStatus != ELockOnState::NotLockingOn)
 	{
-		CancelLockOn(SeatIndex, WeaponIndex);
+		const EHomingCapability Capability = GetBaseWeaponDataInSlot(SeatIndex, WeaponIndex).WeaponFunctionality.HomingFunctionality.HomingCapability;
+		CancelLockOn(WeaponState, Capability, SeatWeaponSystem.Weapons[WeaponIndex].VehicleWeaponState.WeaponAudioComponent.Get(), OwnerDataAccessor->GetVehicleState().SeatStates[SeatIndex].UpdateHUD);
+		if (Capability == EHomingCapability::RequireLockOn)
+		{
+			UpdateWeaponStatusUI(SeatIndex, WeaponState.canFire);
+		}
 	}
 }
 
