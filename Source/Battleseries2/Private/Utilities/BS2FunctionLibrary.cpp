@@ -489,16 +489,21 @@ void UBS2FunctionLibrary::StartLockingOn(UObject* WorldContextObject, FTimerDele
 	}
 }
 
-void UBS2FunctionLibrary::LockOn(UObject* WorldContextObject, FWeaponState& WeaponState, bool UpdateHUD, EHomingCapability HomingCapability)
+void UBS2FunctionLibrary::LockOn(UObject* WorldContextObject, FWeaponState& WeaponState, bool UpdateHUD, EHomingCapability HomingCapability, UAudioComponent* WAC)
 {
 	WeaponState.LockOnState.CurrentLockStatus = ELockOnState::IsLockedOn;
 	WorldContextObject->GetWorld()->GetTimerManager().ClearTimer(WeaponState.LockOnState.LockOnTimer);
-	
+
 	if (GetIfWeaponShouldBeAbleToFire(WeaponState) && HomingCapability == EHomingCapability::RequireLockOn)
 	{
 		WeaponState.canFire = true;
 	}
-	
+
+	if (WAC)
+	{
+		WAC->SetTriggerParameter(FName("Event_LockOn"));
+	}
+
 	if (UpdateHUD)
 	{
 		GetHUDSubsystem(WorldContextObject)->UpdateLockOnIndicatorStatus(WeaponState.LockOnState.CurrentLockStatus);
@@ -521,21 +526,81 @@ void UBS2FunctionLibrary::StartCancelLockOn(UObject* WorldContextObject, FTimerD
 	}
 }
 
-void UBS2FunctionLibrary::CancelLockOn(UObject* WorldContextObject, FWeaponState& WeaponState, bool UpdateHUD, EHomingCapability HomingCapability)
+void UBS2FunctionLibrary::CancelLockOn(UObject* WorldContextObject, FWeaponState& WeaponState, bool UpdateHUD, EHomingCapability HomingCapability, UAudioComponent* WAC)
 {
 	WeaponState.LockOnState.CurrentLockStatus = ELockOnState::NotLockingOn;
 	WeaponState.LockOnState.AcquiredTargetComp = nullptr;
 	WorldContextObject->GetWorld()->GetTimerManager().ClearTimer(WeaponState.LockOnState.LockOnTimer);
-	
+
 	if (GetIfWeaponShouldBeAbleToFire(WeaponState) && HomingCapability == EHomingCapability::RequireLockOn)
 	{
 		WeaponState.canFire = false;
 	}
-	
+
+	if (WAC)
+	{
+		WAC->SetTriggerParameter(FName("Event_StopLockingOn"));
+	}
+
 	if (UpdateHUD)
 	{
 		GetHUDSubsystem(WorldContextObject)->UpdateLockOnIndicatorStatus(WeaponState.LockOnState.CurrentLockStatus);
 		GetHUDSubsystem(WorldContextObject)->RemoveWidget(GetHUDSubsystem(WorldContextObject)->LockOnIndicator);
+	}
+}
+
+void UBS2FunctionLibrary::PromoteLockOnStatus(UObject* WorldContextObject, FWeaponState& WeaponState, const FWeaponHomingData& HomingData, const FHitResult& LockOnHit, UAudioComponent* WAC, bool UpdateHUD, FTimerDelegate OnLockAcquired)
+{
+	//anything from here on can be seen as a "promotion" of lock status
+	switch (WeaponState.LockOnState.CurrentLockStatus)
+	{
+		case ELockOnState::NotLockingOn:
+			StartLockingOn(WorldContextObject, OnLockAcquired, HomingData.AcquireTime, LockOnHit.GetActor(), WeaponState.LockOnState, UpdateHUD, HomingData.IndicatorReticle);
+			if (WAC)
+			{
+				HandleStartWAC(WAC, WeaponState);
+				WAC->SetTriggerParameter(FName("Event_LockingOn"));
+			}
+			break;
+		case ELockOnState::IsLockingOn:
+		case ELockOnState::IsLockedOn:
+			UpdateLockOnIndicator(WorldContextObject, LockOnHit, WeaponState.LockOnState, UpdateHUD);
+			break;
+		case ELockOnState::IsLosingLock:
+			//DO SOMETHING HERE!!!!!!!!!!!!!!!!!!!!!!!
+			break;
+	}
+}
+
+void UBS2FunctionLibrary::DemoteLockOnStatus(UObject* WorldContextObject, FLockOnState& LockOnState, UAudioComponent* WAC, bool UpdateHUD, FTimerDelegate OnLockLost)
+{
+	//null actor or an actor that cant be locked on to
+	//anything from here on can be seen as a "demotion" of lock status
+	switch (LockOnState.CurrentLockStatus)
+	{
+		case ELockOnState::IsLockingOn:
+		case ELockOnState::IsLockedOn:
+			StartCancelLockOn(WorldContextObject, OnLockLost, LockOnState, 1.0f, UpdateHUD);		//<---make actual data
+			if (WAC)
+			{
+				WAC->SetTriggerParameter(FName("Event_StopLockOn"));
+			}
+			//interface to target
+			//do something to incrementally lose lock, not outright cancel it
+			//when completely lost lock, null target, set lock state to notlockingon
+			break;
+	}
+}
+
+void UBS2FunctionLibrary::UpdateLockOnIndicator(UObject* WorldContextObject, const FHitResult& LockOnHit, const FLockOnState& LockOnState, bool UpdateHUD)
+{
+	if (LockOnHit.GetActor()->GetRootComponent() != LockOnState.AcquiredTargetComp)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[BS2FL::UpdateLockOnIndicator] DifferentTarget"));
+	}
+	if (UpdateHUD)
+	{
+		GetHUDSubsystem(WorldContextObject)->UpdateLockOnIndicatorPosition(LockOnHit.GetActor()->GetRootComponent()->GetSocketLocation(FName("LockOn")));
 	}
 }
 

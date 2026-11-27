@@ -123,9 +123,12 @@ public:
 	static bool GetIfWeaponCanReload(FWeaponState Weapon, bool canRoundbeChambered, int32 BaseMagSize);
 
 	static void StartLockingOn(UObject* WorldContextObject, FTimerDelegate& LockOnDelegate, float AcquireTime, AActor* HitActor, FLockOnState& LockOnState, bool UpdateHUD, TSubclassOf<UUserWidget> IndicatorReticle);
-	static void LockOn(UObject* WorldContextObject, FWeaponState& WeaponState, bool UpdateHUD, EHomingCapability HomingCapability);
+	static void LockOn(UObject* WorldContextObject, FWeaponState& WeaponState, bool UpdateHUD, EHomingCapability HomingCapability, UAudioComponent* WAC = nullptr);
 	static void StartCancelLockOn(UObject* WorldContextObject, FTimerDelegate& LockOnDelegate, FLockOnState& LockOnState, float ElapsedTime, bool UpdateHUD);
-	static void CancelLockOn(UObject* WorldContextObject, FWeaponState& WeaponState, bool UpdateHUD, EHomingCapability HomingCapability);
+	static void CancelLockOn(UObject* WorldContextObject, FWeaponState& WeaponState, bool UpdateHUD, EHomingCapability HomingCapability, UAudioComponent* WAC = nullptr);
+	static void PromoteLockOnStatus(UObject* WorldContextObject, FWeaponState& WeaponState, const FWeaponHomingData& HomingData, const FHitResult& LockOnHit, UAudioComponent* WAC, bool UpdateHUD, FTimerDelegate OnLockAcquired);
+	static void DemoteLockOnStatus(UObject* WorldContextObject, FLockOnState& LockOnState, UAudioComponent* WAC, bool UpdateHUD, FTimerDelegate OnLockLost);
+	static void UpdateLockOnIndicator(UObject* WorldContextObject, const FHitResult& LockOnHit, const FLockOnState& LockOnState, bool UpdateHUD);
 	static bool GetCanLockOn(const FWeaponHomingData& HomingData, AActor* HitActor);
 	static bool GetIfLockOnInRange(const FWeaponHomingData& HomingData, float Distance);
 	static bool GetCanLockOn_Final(const FWeaponHomingData& HomingData, FHitResult HitResult);

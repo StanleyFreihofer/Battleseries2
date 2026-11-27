@@ -209,15 +209,7 @@ public:
 	void UpdateSeatRangefinder(int32 SeatIndex, FTransform TraceTransform, TArray<AActor*> ActorsToIgnore);
 	UFUNCTION(BlueprintCallable)
 	void HandleHoming(int32 SeatIndex, FTransform TraceTransform, TArray<AActor*> ActorsToIgnore);
-	//lock-on functions take everything they need as inputs (no seat/weapon index lookups)
-	//not UFUNCTIONs: FTimerDelegate isn't a UHT-supported parameter type
-	void PromoteLockOnStatus(FWeaponState& WeaponState, const FWeaponHomingData& HomingData, const FHitResult& LockOnHit, UAudioComponent* WAC, bool bUpdateHUD, FTimerDelegate OnLockAcquired);
-	void StartLockingOn(FWeaponState& WeaponState, const FWeaponHomingData& HomingData, const FHitResult& LockOnHit, UAudioComponent* WAC, bool bUpdateHUD, FTimerDelegate& OnLockAcquired);
-	void LockOn(FWeaponState& WeaponState, EHomingCapability HomingCapability, UAudioComponent* WAC, bool bUpdateHUD);
-	void StartCancelLockOn(FLockOnState& LockOnState, UAudioComponent* WAC, bool bUpdateHUD, FTimerDelegate& OnLockLost);
-	void CancelLockOn(FWeaponState& WeaponState, EHomingCapability HomingCapability, UAudioComponent* WAC, bool bUpdateHUD);
-	void DemoteLockOnStatus(FLockOnState& LockOnState, UAudioComponent* WAC, bool bUpdateHUD, FTimerDelegate OnLockLost);
-	void UpdateLockOnIndicator(bool bUpdateHUD, const FHitResult& LockOnHit, const FLockOnState& LockOnState);
+	//lock-on state machine lives in UBS2FunctionLibrary (Promote/Demote/LockOn/CancelLockOn)
 
 	UFUNCTION(BlueprintCallable)
 	FName BuildMuzzleName(int32 SeatIndex, int32 WeaponIndex, EMuzzleType MuzzleType, int32 MuzzleIndex);
